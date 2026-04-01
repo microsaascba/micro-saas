@@ -504,12 +504,19 @@ function renderHistory() {
     return;
   }
 
+  const rolUsuario = localStorage.getItem('saas_role');
+
   tbody.innerHTML = ventasDelDia.map(v => {
     const cantidadItems = (v.items || []).reduce((acc, i) => acc + i.quantity, 0);
     const descripcionItems = (v.items || []).map(i => i.name).join(', ');
     const dtoTotal = toNum(v.globalDiscount) + (v.items || []).reduce((acc, i) => acc + toNum(i.discount), 0);
     const loteInfo = (v.paymentMethod !== 'Efectivo' && v.voucher) ? `<br><small style="color:var(--muted); font-size:11px;">Lote: ${escapeHtml(v.voucher)}</small>` : '';
     const horaLegible = new Date(v.createdAt || v.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+    // Botón borrar solo visible si es Admin
+    const botonBorrar = (rolUsuario === 'admin') 
+      ? `<button class="mini-btn" style="color:var(--danger); border-color:var(--danger-soft); margin-left: 8px;" onclick="borrarVenta('${v.id}')">🗑️ Anular</button>` 
+      : '';
 
     return `
       <tr>
@@ -520,11 +527,33 @@ function renderHistory() {
         <td>${currency(v.subtotal || 0)}</td>
         <td class="text-danger">${dtoTotal > 0 ? '-' + currency(dtoTotal) : '$0'}</td>
         <td><strong>${currency(v.total || 0)}</strong></td>
-        <td><button class="mini-btn" onclick="window.open('factura.html?id=${v.id}', '_blank')">🖨️ Imprimir</button></td>
+        <td>
+          <button class="mini-btn" onclick="window.open('factura.html?id=${v.id}', '_blank')">🖨️ Imprimir</button>
+          ${botonBorrar}
+        </td>
       </tr>
     `;
   }).join('');
 }
+
+// ── LÓGICA PARA ANULAR VENTAS (SOLO ADMIN) ──
+window.borrarVenta = async function(id) {
+  if (!confirm('¿Estás seguro de que querés ANULAR esta venta? El dinero se restará de la caja y el stock de los productos volverá a sumarse automáticamente.')) return;
+
+  // 1. Borrar local
+  ventasGlobales = ventasGlobales.filter(v => v.id !== id);
+  setData(KEYS.sales, ventasGlobales);
+
+  // 2. Borrar en la nube D1
+  try {
+    await fetch(`/api/sales?id=${id}`, { method: 'DELETE' });
+  } catch (error) {
+    console.error('Error borrando en la nube:', error);
+  }
+
+  // 3. Refrescar
+  init();
+};
 
 function exportarVentasExcel() {
   const filterDate = document.getElementById('historyDateFilter').value;
@@ -594,7 +623,7 @@ function mostrarArqueoCaja(nombreEncargado) {
     else if (method.includes('transferencia')) totTransf += amount;
     else if (method.includes('tarjeta')) totTarjeta += amount;
     else if (method.includes('cuenta corriente') || method.includes('cta cte')) totCtaCte += amount;
-    else totEfectivo += amount; // fallback
+    else totEfectivo += amount; 
   });
 
   const totalGral = totEfectivo + totTransf + totTarjeta + totCtaCte;
@@ -628,7 +657,7 @@ function imprimirCierre() {
   `;
   window.print();
   document.body.innerHTML = originalContent;
-  location.reload(); // Recarga para restaurar eventos JS
+  location.reload(); 
 }
 
 document.addEventListener('DOMContentLoaded', init);
