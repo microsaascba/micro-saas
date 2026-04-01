@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usuarios | Micro SaaS</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong>Micro SaaS</strong><small>Control del negocio</small></div>
+    </div>
+    <nav class="nav">
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
+      <a href="usuarios.html" class="active"><span class="nav-icon">👥</span> Usuarios</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div class="page-title">
+        <h1>Gestión de Usuarios</h1>
+        <p>Administrá el acceso y los permisos de tu equipo.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo Usuario</button>
+      </div>
+    </header>
+
+    <article class="card card-pad mt-16">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Rol / Permisos</th>
+              <th>Fecha de Creación</th>
+              <th>Estado</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="5"><div class="empty">Cargando usuarios...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </main>
+</div>
+
+<dialog id="userDialog">
+  <div class="modal-head">
+    <h3 id="modalTitle">Nuevo Usuario</h3>
+    <button class="btn btn-light" onclick="cerrarModal()">Cerrar</button>
+  </div>
+  <form class="modal-body" id="userForm">
+    <div class="form-grid">
+      <div class="field full">
+        <label>Nombre de Usuario *</label>
+        <input type="text" id="formUsername" required autocomplete="off" placeholder="Ej: cajero_tarde" />
+      </div>
+      <div class="field full">
+        <label>Contraseña <span id="passHint"></span></label>
+        <input type="text" id="formPassword" autocomplete="off" placeholder="Escribí una clave segura" />
+      </div>
+      <div class="field full">
+        <label>Rol de Acceso *</label>
+        <select id="formRole" required>
+          <option value="admin">Administrador (Acceso Total)</option>
+          <option value="encargado">Encargado (Puede cerrar caja y ver finanzas)</option>
+          <option value="pos">Cajero / Punto de Venta (Solo puede facturar)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top: 20px;">
+      <button type="submit" class="btn btn-primary" id="btnSaveUser">Guardar Usuario</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="core.js"></script>
+<script>
+let editingUserId = null;
+let currentUsers = [];
+
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/users');
+    if (res.ok) {
+      currentUsers = await res.json();
+      renderUsers();
+    }
+  } catch (error) {
+    console.error("Error cargando usuarios:", error);
+  }
+}
+
+function renderUsers() {
+  const tbody = document.getElementById('usersTableBody');
+  if (!currentUsers.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty">No hay usuarios registrados.</div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = currentUsers.map(u => {
+    let roleBadge = '';
+    if(u.role === 'admin') roleBadge = '<span class="badge badge-success">Administrador</span>';
+    if(u.role === 'encargado') roleBadge = '<span class="badge badge-warning">Encargado</span>';
+    if(u.role === 'pos') roleBadge = '<span class="badge badge-neutral">Punto de Venta</span>';
+
+    return `
+      <tr>
+        <td><strong>${escapeHtml(u.username)}</strong></td>
+        <td>${roleBadge}</td>
+        <td>${formatDate(u.createdAt)}</td>
+        <td><span class="badge badge-success">Activo</span></td>
+        <td>
+          <div class="row-actions">
+            <button class="mini-btn" onclick="editarUsuario('${u.id}')">Editar</button>
+            <button class="mini-btn" style="color:var(--danger); border-color:var(--danger-soft);" onclick="borrarUsuario('${u.id}', '${u.username}')">Borrar</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function abrirModalUsuario() {
+  editingUserId = null;
+  document.getElementById('modalTitle').textContent = 'Nuevo Usuario';
+  document.getElementById('formUsername').value = '';
+  document.getElementById('formPassword').value = '';
+  document.getElementById('formPassword').required = true;
+  document.getElementById('passHint').textContent = '*';
+  document.getElementById('formRole').value = 'pos';
+  document.getElementById('userDialog').showModal();
+}
+
+function cerrarModal() {
+  document.getElementById('userDialog').close();
+}
+
+function editarUsuario(id) {
+  const user = currentUsers.find(u => u.id === id);
+  if (!user) return;
+  editingUserId = id;
+  document.getElementById('modalTitle').textContent = 'Editar Usuario';
+  document.getElementById('formUsername').value = user.username;
+  document.getElementById('formPassword').value = ''; 
+  document.getElementById('formPassword').required = false; 
+  document.getElementById('passHint').textContent = '(Dejar vacío para no cambiarla)';
+  document.getElementById('formRole').value = user.role;
+  document.getElementById('userDialog').showModal();
+}
+
+document.getElementById('userForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('btnSaveUser');
+  btn.textContent = "Guardando..."; btn.disabled = true;
+
+  const payload = {
+    username: document.getElementById('formUsername').value.trim(),
+    password: document.getElementById('formPassword').value.trim(),
+    role: document.getElementById('formRole').value
+  };
+
+  try {
+    if (editingUserId) {
+      payload.id = editingUserId;
+      await fetch('/api/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    } else {
+      payload.id = uid('usr');
+      await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    }
+    cerrarModal();
+    loadUsers();
+  } catch (error) {
+    alert("Error al guardar el usuario.");
+  }
+  btn.textContent = "Guardar Usuario"; btn.disabled = false;
+});
+
+async function borrarUsuario(id, username) {
+  if (username === 'admin') return alert("El administrador principal no se puede borrar.");
+  if (!confirm(`¿Estás seguro de eliminar al usuario "${username}"?`)) return;
+
+  try {
+    await fetch(`/api/users?id=${id}`, { method: 'DELETE' });
+    loadUsers();
+  } catch (error) {
+    alert("Error al borrar el usuario.");
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadUsers);
+</script>
+</body>
+</html>
