@@ -190,8 +190,46 @@ function normalizeProduct(p) {
   return { ...n, ...calcMetrics(n) };
 }
 
-function loadProducts()  { products = getData(KEYS.products, []).map(normalizeProduct); }
-function saveProducts()  { setData(KEYS.products, products); syncDashboard(); }
+// --- NUEVAS FUNCIONES HÍBRIDAS (NUBE + LOCAL) ---
+async function loadProducts() {
+  try {
+    // 1. Intentamos traer el catálogo real desde la nube
+    const res = await fetch('/api/products');
+    if (res.ok) {
+      const dbProducts = await res.json();
+      if (dbProducts && dbProducts.length > 0) {
+        products = dbProducts.map(normalizeProduct);
+        // Actualizamos la memoria local para que Stock y Ventas no se rompan
+        setData(KEYS.products, products); 
+      } else {
+        products = getData(KEYS.products, []).map(normalizeProduct);
+      }
+    }
+  } catch (error) {
+    console.warn('Usando memoria local por error de conexión:', error);
+    products = getData(KEYS.products, []).map(normalizeProduct);
+  }
+}
+
+async function saveProducts(newProductData = null) {
+  // 1. Guardar en memoria local (mantiene el ecosistema rápido)
+  setData(KEYS.products, products); 
+  syncDashboard();
+
+  // 2. Si hay un producto nuevo/editado, lo mandamos a la nube
+  if (newProductData) {
+    try {
+      await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProductData)
+      });
+    } catch (error) {
+      console.error('Error guardando en la base de datos:', error);
+    }
+  }
+}
+// ------------------------------------------------
 function syncDashboard() {
   const active = products.filter(p => p.status === 'Activo');
   const summary = { updatedAt:new Date().toISOString(), products:{ totalProducts:products.length, activeProducts:active.length, averageMargin:products.length ? products.reduce((a,p)=>a+p.margin,0)/products.length : 0, lowMarginCount:products.filter(p=>p.margin<20).length, lowStockCount:products.filter(p=>p.stock<=p.stockMin&&p.status==='Activo').length } };
@@ -249,7 +287,7 @@ function submitForm(e) {
   if (editingId) { products = products.map(p => p.id===editingId ? product : p); showFlash('Registro actualizado correctamente.', 'flash-success'); }
   else           { products.unshift(product); showFlash('Nuevo registro generado.', 'flash-success'); }
   selectedId = product.id;
-  saveProducts(); renderAll(); resetForm();
+  saveProducts(product);; renderAll(); resetForm();
 }
 
 function removeProduct(id) {
@@ -458,11 +496,15 @@ window.deleteProduct = id => removeProduct(id);
 window.addEventListener('storage', () => { loadProducts(); renderAll(); });
 window.addEventListener('saas:data-updated', () => { loadProducts(); renderAll(); });
 
-loadProducts();
-if (products.length) selectedId = products[0].id;
-syncDashboard();
-renderAll();
-updateLive();
+// Arranque asíncrono
+async function iniciarModulo() {
+  await loadProducts();
+  if (products.length) selectedId = products[0].id;
+  syncDashboard();
+  renderAll();
+  updateLive();
+}
+iniciarModulo();
 </script>
 </body>
 </html>
