@@ -387,7 +387,7 @@ window.cerrarModalProveedor = function() {
 };
 
 const ef = document.getElementById('expenseForm');
-ef.addEventListener('submit', e => {
+ef.addEventListener('submit', async e => {
   e.preventDefault();
   const p = Object.fromEntries(new FormData(ef).entries()); 
   p.amount = toNum(p.amount);
@@ -402,6 +402,21 @@ ef.addEventListener('submit', e => {
   }
   
   setData(KEYS.expenses, expenses); 
+  
+  // --- PUENTE A LA NUBE ---
+  if (!editingExpenseId) { // Solo enviamos a D1 si es un gasto nuevo
+    try {
+      await fetch('/api/expenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(p)
+      });
+    } catch (error) {
+      console.error('Error guardando gasto en la nube:', error);
+    }
+  }
+  // ------------------------
+
   cerrarModalGasto();
   render();
 });
