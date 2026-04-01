@@ -113,25 +113,19 @@ function exportarAExcel(dataArray, nombreArchivo) {
     return;
   }
 
-  // 1. Extraer cabeceras
   const headers = Object.keys(dataArray[0]);
   
-  // 2. Formatear filas asegurando que los textos con comas no rompan las columnas
   const rows = dataArray.map(row => {
     return headers.map(header => {
       let cell = row[header] === null || row[header] === undefined ? '' : String(row[header]);
-      cell = cell.replace(/"/g, '""'); // Escapar comillas dobles
-      return `"${cell}"`; // Envolver en comillas para Excel
-    }).join(';'); // Separador de punto y coma para Excel en español
+      cell = cell.replace(/"/g, '""'); 
+      return `"${cell}"`; 
+    }).join(';'); 
   });
 
-  // 3. Unir cabeceras y filas
   const csvContent = [headers.join(';'), ...rows].join('\n');
-
-  // 4. Crear Blob con BOM para forzar UTF-8 en Excel (evita caracteres rotos)
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
   
-  // 5. Generar descarga
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = `${nombreArchivo}_${todayISO()}.csv`;
@@ -143,63 +137,59 @@ function exportarAExcel(dataArray, nombreArchivo) {
 // ── Control de Sesión, Roles y Seguridad ────────────────
 (function checkSessionAndSecurity() {
   const isLogged = localStorage.getItem('saas_logged_in') === 'true';
-  const role = localStorage.getItem('saas_role') || 'pos'; // Por defecto restrictivo
+  const role = localStorage.getItem('saas_role') || 'pos'; 
   const path = location.pathname.toLowerCase();
   
-  // ARREGLO DEL BUCLE: Detecta "login" en cualquier formato que use Cloudflare
   const isLoginPage = path.includes('login');
   
-  // 1. Redirección si no hay sesión
   if (!isLogged && !isLoginPage) {
     window.location.href = 'login.html';
     return;
   }
 
-  // 2. Lógica y restricciones si está logueado
   if (isLogged && !isLoginPage) {
     
-    // RESTRICCIÓN DURA: Si es POS y quiere entrar al dashboard o a contable, lo pateamos a ventas
-    if (role === 'pos' && (path.includes('dashboard') || path.includes('contable'))) {
+    // RESTRICCIÓN DURA: Bloqueo de Dashboard, Contable y ahora también STOCK
+    if (role === 'pos' && (path.includes('dashboard') || path.includes('contable') || path.includes('stock'))) {
       window.location.href = 'ventas.html';
       return;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Reemplazar nombre de usuario en el menú
+      // Nombre de usuario en el menú
       const brandText = document.querySelector('.brand-text strong');
       if (brandText) brandText.textContent = 'Usuario: ' + localStorage.getItem('saas_username');
 
-      // --- INYECTAR BOTÓN DE CERRAR SESIÓN EN EL MENÚ ---
+      // Botón Cerrar Sesión
       const nav = document.querySelector('.nav');
       if (nav && !document.getElementById('btnLogout')) {
         const logoutBtn = document.createElement('a');
         logoutBtn.id = 'btnLogout';
         logoutBtn.href = '#';
         logoutBtn.innerHTML = '<span class="nav-icon">🚪</span> Cerrar sesión';
-        // Le damos un estilo rojizo y lo separamos del resto
         logoutBtn.style.color = '#fca5a5'; 
         logoutBtn.style.marginTop = '15px';
         logoutBtn.style.borderTop = '1px solid rgba(255,255,255,0.1)';
         logoutBtn.style.paddingTop = '15px';
         
         logoutBtn.onclick = (e) => {
-          e.preventDefault(); // Evita que salte hacia arriba
-          logout(); // Llama a la función de borrado que ya tenés al final del archivo
+          e.preventDefault(); 
+          logout(); 
         };
         nav.appendChild(logoutBtn);
       }
-      // --------------------------------------------------
 
       // RESTRICCIONES VISUALES PARA ROL 'POS'
       if (role === 'pos') {
-        // Ocultar links del menú lateral
+        // Ocultar links del menú lateral (Dashboard, Contable y Stock)
         document.querySelectorAll('.nav a').forEach(link => {
-          if (link.getAttribute('href').includes('dashboard') || link.getAttribute('href').includes('contable')) {
+          const href = link.getAttribute('href');
+          if (href.includes('dashboard') || href.includes('contable') || href.includes('stock')) {
             link.style.display = 'none';
           }
         });
 
-        // Ocultar botones de crear/editar/borrar/importar en TODAS las pantallas
+        // Ocultar botones de crear/editar/borrar/importar
         const botonesProhibidos = [
           '#newProductBtn', '#importBtn', '#exportBtn', '#openAdjustBtn', 
           '#btnOpenExpense', '#btnOpenSupplier'
@@ -209,19 +199,18 @@ function exportarAExcel(dataArray, nombreArchivo) {
           if (btn) btn.style.display = 'none';
         });
 
-        // Ocultar acciones de las tablas (la última columna "Acciones")
+        // Ocultar acciones de las tablas 
         const css = document.createElement('style');
         css.innerHTML = `
           th:last-child, td:last-child .row-actions, td:last-child .mini-btn { display: none !important; }
-          .card-pad h2 { font-size: 16px; } /* Ajuste visual menor */
+          .card-pad h2 { font-size: 16px; } 
         `;
         document.head.appendChild(css);
         
-        // Ocultar el formulario de alta en producto.html (si está en esa página)
+        // Ocultar formulario de alta de productos
         const formAlta = document.getElementById('productForm');
         if (formAlta) formAlta.closest('article').style.display = 'none';
         
-        // Hacer que las listas ocupen el 100% (porque ocultamos el formulario)
         const twoCol = document.querySelector('.two-col');
         if (twoCol) twoCol.style.gridTemplateColumns = '1fr';
       }
