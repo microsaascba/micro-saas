@@ -140,3 +140,74 @@ function exportarAExcel(dataArray, nombreArchivo) {
   link.click();
   document.body.removeChild(link);
 }
+
+// ── Control de Sesión, Roles y Seguridad ────────────────
+(function checkSessionAndSecurity() {
+  const isLogged = localStorage.getItem('saas_logged_in') === 'true';
+  const role = localStorage.getItem('saas_role') || 'pos'; // Por defecto restrictivo
+  const path = location.pathname.toLowerCase();
+  const isLoginPage = path.includes('login.html');
+  
+  // 1. Redirección si no hay sesión
+  if (!isLogged && !isLoginPage) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  // 2. Lógica y restricciones si está logueado
+  if (isLogged && !isLoginPage) {
+    
+    // RESTRICCIÓN DURA: Si es POS y quiere entrar al dashboard o a contable, lo pateamos a ventas
+    if (role === 'pos' && (path.includes('dashboard.html') || path.includes('contable.html'))) {
+      window.location.href = 'ventas.html';
+      return;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Reemplazar nombre de usuario en el menú
+      const brandText = document.querySelector('.brand-text strong');
+      if (brandText) brandText.textContent = 'Usuario: ' + localStorage.getItem('saas_username');
+
+      // RESTRICCIONES VISUALES PARA ROL 'POS'
+      if (role === 'pos') {
+        // Ocultar links del menú lateral
+        document.querySelectorAll('.nav a').forEach(link => {
+          if (link.getAttribute('href').includes('dashboard') || link.getAttribute('href').includes('contable')) {
+            link.style.display = 'none';
+          }
+        });
+
+        // Ocultar botones de crear/editar/borrar/importar en TODAS las pantallas
+        const botonesProhibidos = [
+          '#newProductBtn', '#importBtn', '#exportBtn', '#openAdjustBtn', 
+          '#btnOpenExpense', '#btnOpenSupplier'
+        ];
+        botonesProhibidos.forEach(id => {
+          const btn = document.querySelector(id);
+          if (btn) btn.style.display = 'none';
+        });
+
+        // Ocultar acciones de las tablas (la última columna "Acciones")
+        const css = document.createElement('style');
+        css.innerHTML = `
+          th:last-child, td:last-child .row-actions, td:last-child .mini-btn { display: none !important; }
+          .card-pad h2 { font-size: 16px; } /* Ajuste visual menor */
+        `;
+        document.head.appendChild(css);
+        
+        // Ocultar el formulario de alta en producto.html (si está en esa página)
+        const formAlta = document.getElementById('productForm');
+        if (formAlta) formAlta.closest('article').style.display = 'none';
+        
+        // Hacer que las listas ocupen el 100% (porque ocultamos el formulario)
+        const twoCol = document.querySelector('.two-col');
+        if (twoCol) twoCol.style.gridTemplateColumns = '1fr';
+      }
+    });
+  }
+})();
+
+function logout() {
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
