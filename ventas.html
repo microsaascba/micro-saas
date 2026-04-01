@@ -316,19 +316,24 @@ document.getElementById('paymentMethod').addEventListener('change', (e) => {
   document.getElementById('voucherField').style.display = (e.target.value.includes('Tarjeta') || e.target.value === 'Transferencia') ? 'block' : 'none';
 });
 
-function procesarVenta() {
-  if (!ticket.length) return alert('El ticket está vacío.');
-  const paymentMethod = document.getElementById('paymentMethod').value;
-  if (!paymentMethod) return alert('Debe seleccionar un medio de pago.');
+  async function procesarVenta() {
+ventasGlobales.unshift(nuevaVenta);
+  setData(KEYS.sales, ventasGlobales);
+  window.dispatchEvent(new CustomEvent('saas:data-updated', { detail: { key: KEYS.sales } }));
 
-  const globalDiscount = toNum(document.getElementById('globalDiscount').value);
-  let subtotal = 0; let totalItemDiscounts = 0;
+  // --- PUENTE A LA NUBE (Envío en segundo plano) ---
+  try {
+    await fetch('/api/sales', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(nuevaVenta)
+    });
+  } catch (error) {
+    console.error('Error guardando en la nube:', error);
+  }
+  // ------------------------------------------------
 
-  const itemsGuardar = ticket.map(i => {
-    const lineSubtotal = i.price * i.quantity;
-    subtotal += lineSubtotal; totalItemDiscounts += i.discount;
-    return { ...i, subtotal: lineSubtotal - i.discount };
-  });
+  alert(`Venta registrada con éxito. Total: ${currency(totalFinal)}`);
 
   const totalFinal = Math.max(0, subtotal - totalItemDiscounts - globalDiscount);
   
