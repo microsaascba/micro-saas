@@ -15,7 +15,7 @@
     .search-bar input { flex: 1; font-size: 16px; padding: 14px 18px; border-radius: 12px; border: 2px solid var(--line); }
     .search-bar input:focus { border-color: var(--primary); }
     
-    /* Resultados de búsqueda (Tabla compacta) */
+    /* Resultados de búsqueda */
     .search-results { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: none; background: #fff; }
     .search-results.active { display: block; }
     .search-table { width: 100%; border-collapse: collapse; }
@@ -48,6 +48,15 @@
     .view-section.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
+    /* Cierre de Caja Modal */
+    .cierre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+    .cierre-box { background: var(--panel-2); padding: 15px; border-radius: 12px; border: 1px solid var(--line); text-align: center; }
+    .cierre-box span { display: block; font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
+    .cierre-box strong { font-size: 20px; color: var(--text); }
+    .cierre-box.total { grid-column: 1 / -1; background: var(--primary); color: white; border: none; }
+    .cierre-box.total span { color: rgba(255,255,255,0.8); }
+    .cierre-box.total strong { color: white; font-size: 28px; }
+
     @media (max-width: 900px) {
       .checkout-bar { flex-direction: column; align-items: stretch; }
       .checkout-actions { flex-direction: column; }
@@ -84,13 +93,12 @@
       </div>
       <div class="topbar-actions tabs">
         <button class="tab active" id="tabPos" onclick="switchView('pos')">Punto de Venta</button>
-        <button class="tab" id="tabHistory" onclick="switchView('history')">Historial Global</button>
+        <button class="tab" id="tabHistory" onclick="switchView('history')">Historial de Caja</button>
       </div>
     </header>
 
     <div id="viewPos" class="view-section active">
       <div class="pos-horizontal">
-        
         <article class="card card-pad search-module">
           <div class="search-bar">
             <input type="text" id="searchProduct" placeholder="🔍 Buscar por nombre o código para agregar al ticket..." autocomplete="off" />
@@ -163,7 +171,8 @@
           </div>
           <div style="display: flex; gap: 10px; align-items: center;">
             <input type="date" id="historyDateFilter" class="btn btn-light" style="padding: 10px; border-radius: 8px; border: 1px solid var(--line); font-family: inherit;" onchange="renderHistory()" />
-            <button class="btn btn-success" onclick="exportarVentasExcel()">⬇ Descargar Planilla</button>
+            <button class="btn btn-success" onclick="exportarVentasExcel()">⬇ Excel</button>
+            <button class="btn btn-primary" onclick="abrirModalAuthCierre()">🔒 Cerrar Caja</button>
           </div>
         </div>
         
@@ -181,15 +190,71 @@
                 <th>Acción</th>
               </tr>
             </thead>
-            <tbody id="historyTableBody">
-              </tbody>
+            <tbody id="historyTableBody"></tbody>
           </table>
         </div>
       </article>
     </div>
-
   </main>
 </div>
+
+<dialog id="authCierreDialog">
+  <div class="modal-head">
+    <h3>Autorización Requerida</h3>
+    <button class="btn btn-light" onclick="document.getElementById('authCierreDialog').close()">Cancelar</button>
+  </div>
+  <form class="modal-body" id="authCierreForm">
+    <p style="margin-bottom: 15px; font-size: 14px; color: var(--muted);">Solo un administrador o encargado puede realizar el arqueo y cierre de caja.</p>
+    <div class="form-grid">
+      <div class="field full">
+        <label>Usuario del Encargado</label>
+        <input type="text" id="authUsername" required autocomplete="off" />
+      </div>
+      <div class="field full">
+        <label>Contraseña</label>
+        <input type="password" id="authPassword" required autocomplete="off" />
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top: 20px;">
+      <button type="submit" class="btn btn-primary" id="btnAuthCierre">Verificar Identidad</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="resumenCierreDialog">
+  <div class="modal-head">
+    <h3>Arqueo de Caja: <span id="cierreFechaTexto"></span></h3>
+    <button class="btn btn-light" onclick="document.getElementById('resumenCierreDialog').close()">Cerrar</button>
+  </div>
+  <div class="modal-body" id="printCierreArea">
+    <div class="cierre-grid">
+      <div class="cierre-box">
+        <span>Efectivo</span>
+        <strong id="cierreEfectivo">$0</strong>
+      </div>
+      <div class="cierre-box">
+        <span>Transferencias</span>
+        <strong id="cierreTransferencia">$0</strong>
+      </div>
+      <div class="cierre-box">
+        <span>Tarjetas (Débito/Crédito)</span>
+        <strong id="cierreTarjeta">$0</strong>
+      </div>
+      <div class="cierre-box">
+        <span>Cuenta Corriente</span>
+        <strong id="cierreCtaCte">$0</strong>
+      </div>
+      <div class="cierre-box total">
+        <span>Ingreso Total del Día</span>
+        <strong id="cierreTotal">$0</strong>
+      </div>
+    </div>
+    <p style="text-align: center; font-size: 12px; color: var(--muted);">Cierre autorizado por: <span id="cierreAutorizadoPor"></span></p>
+  </div>
+  <div class="modal-actions">
+    <button class="btn btn-primary" onclick="imprimirCierre()">🖨️ Imprimir Cierre (Z)</button>
+  </div>
+</dialog>
 
 <script src="core.js"></script>
 <script>
@@ -199,11 +264,9 @@ let ventasGlobales = [];
 
 // ── Inicialización ───────────────────────────────────────────
 async function init() {
-  // Seteamos el filtro de fecha de hoy por defecto si está vacío
   if (!document.getElementById('historyDateFilter').value) {
     document.getElementById('historyDateFilter').value = todayISO();
   }
-
   await cargarDatos();
   renderTicket();
   renderHistory();
@@ -211,7 +274,6 @@ async function init() {
 
 async function cargarDatos() {
   const allProducts = getData(KEYS.products, []);
-  
   try {
     const res = await fetch('/api/sales');
     if(res.ok) { ventasGlobales = await res.json(); setData(KEYS.sales, ventasGlobales); }
@@ -221,7 +283,6 @@ async function cargarDatos() {
   const adjs = getData(KEYS.stockAdjustments, []);
   const purchases = getData(KEYS.purchases, []);
 
-  // Stock calculos
   const salesMap = {};
   ventasGlobales.forEach(sale => (sale.items || []).forEach(item => {
     if(item.productId) salesMap[item.productId] = (salesMap[item.productId] || 0) + toNum(item.quantity);
@@ -262,21 +323,14 @@ function switchView(viewName) {
 document.getElementById('searchProduct').addEventListener('input', (e) => {
   const q = e.target.value.toLowerCase().trim();
   if(!q) { renderSearchResults([]); return; }
-  
-  const filtrados = productosActivos.filter(p => 
-    p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))
-  );
+  const filtrados = productosActivos.filter(p => p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q)));
   renderSearchResults(filtrados);
 });
 
 function renderSearchResults(productos) {
   const container = document.getElementById('searchResults');
   const tbody = document.getElementById('searchResultsBody');
-  
-  if(!productos.length) {
-    container.classList.remove('active');
-    return;
-  }
+  if(!productos.length) { container.classList.remove('active'); return; }
   
   container.classList.add('active');
   tbody.innerHTML = productos.slice(0, 5).map(p => {
@@ -293,7 +347,6 @@ function renderSearchResults(productos) {
   }).join('');
 }
 
-// ── Lógica del Ticket ────────────────────────────────────────
 function agregarAlTicket(id) {
   const producto = productosActivos.find(p => p.id === id);
   if (!producto) return;
@@ -302,9 +355,8 @@ function agregarAlTicket(id) {
   renderSearchResults([]);
 
   const itemExistente = ticket.find(i => i.productId === id);
-  if (itemExistente) {
-    itemExistente.quantity++;
-  } else {
+  if (itemExistente) { itemExistente.quantity++; } 
+  else {
     ticket.push({
       productId: producto.id, code: producto.sku || '-', name: producto.name,
       price: toNum(producto.price), cost: toNum(producto.cost) + toNum(producto.extraCosts || 0),
@@ -334,7 +386,6 @@ function vaciarTicket() {
 
 function renderTicket() {
   const tbody = document.getElementById('ticketItemsBody');
-  
   if (!ticket.length) {
     tbody.innerHTML = '<tr><td colspan="7"><div class="empty" style="border:none; background:transparent;">Aún no hay productos seleccionados. Busque arriba para agregar.</div></td></tr>';
     document.getElementById('ticketStatus').textContent = '0 unidades en total';
@@ -379,7 +430,7 @@ document.getElementById('paymentMethod').addEventListener('change', (e) => {
   document.getElementById('voucherCode').style.display = requiresVoucher ? 'block' : 'none';
 });
 
-// ── Procesamiento de Venta Seguro (CON FACTURA CORRELATIVA) ──
+// ── Procesamiento de Venta ──
 async function procesarVenta() {
   if (!ticket.length) return alert('El ticket está vacío.');
   const paymentMethod = document.getElementById('paymentMethod').value;
@@ -396,76 +447,58 @@ async function procesarVenta() {
 
   const totalFinal = Math.max(0, subtotal - totalItemDiscounts - globalDiscount);
   
-  // Calcular número de factura correlativo
   let nextInvoice = 1;
   if (ventasGlobales.length > 0) {
-    // Buscamos el número de factura más alto que ya esté guardado
     const maxNum = Math.max(...ventasGlobales.map(v => toNum(v.invoiceNumber)));
-    // Si ya había facturas con número, le sumamos 1. Si son ventas viejas sin número, usamos el largo de la lista + 1.
     nextInvoice = maxNum > 0 ? maxNum + 1 : ventasGlobales.length + 1; 
   }
-  const formattedInvoice = 'FC-' + String(nextInvoice).padStart(6, '0'); // Formato: FC-000001
+  const formattedInvoice = 'FC-' + String(nextInvoice).padStart(6, '0'); 
   
   const nuevaVenta = {
     id: uid('sale'), 
-    invoiceNumber: nextInvoice, // Guardamos el número limpio para sumar fácil después
-    code: formattedInvoice, // Guardamos el código formateado para mostrar en pantalla
+    invoiceNumber: nextInvoice,
+    code: formattedInvoice, 
     date: new Date().toISOString(), 
     createdAt: new Date().toISOString(),
     paymentMethod: paymentMethod, 
-    voucher: document.getElementById('voucherCode').value.trim(), // Acá va el comprobante/lote de tarjeta
+    voucher: document.getElementById('voucherCode').value.trim(), 
     items: itemsGuardar, 
     subtotal: subtotal, 
     globalDiscount: globalDiscount, 
     total: totalFinal
   };
 
-  // Guardado local
   ventasGlobales.unshift(nuevaVenta);
   setData(KEYS.sales, ventasGlobales);
   window.dispatchEvent(new CustomEvent('saas:data-updated', { detail: { key: KEYS.sales } }));
 
-  // Envío a la nube D1
   try {
-    await fetch('/api/sales', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(nuevaVenta)
-    });
-  } catch (error) {
-    console.error('Error guardando en la nube:', error);
-  }
+    await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nuevaVenta) });
+  } catch (error) { console.error('Error guardando en la nube:', error); }
 
   alert(`Venta registrada con éxito.\nComprobante: ${formattedInvoice}\nTotal: ${currency(totalFinal)}`);
   
-  // Limpieza
   ticket = [];
   document.getElementById('paymentMethod').value = '';
   document.getElementById('voucherCode').value = '';
   document.getElementById('voucherCode').style.display = 'none';
   document.getElementById('globalDiscount').value = '';
-  
   init(); 
 }
 
-// ── Lógica del Historial Global e Informes (FILTRADO POR DÍA) ──
+// ── Historial ──
 function renderHistory() {
   const tbody = document.getElementById('historyTableBody');
-  const filterDate = document.getElementById('historyDateFilter').value; // Ej: "2026-04-01"
+  const filterDate = document.getElementById('historyDateFilter').value;
 
   if (!ventasGlobales.length) {
     tbody.innerHTML = '<tr><td colspan="8"><div class="empty">No hay ventas registradas en el sistema.</div></td></tr>';
     return;
   }
 
-  // Filtramos las ventas para mostrar SOLO las que coincidan con la fecha seleccionada
-  const ventasDelDia = ventasGlobales.filter(v => {
-    const saleDate = (v.createdAt || v.date).slice(0, 10);
-    return saleDate === filterDate;
-  });
+  const ventasDelDia = ventasGlobales.filter(v => (v.createdAt || v.date).slice(0, 10) === filterDate);
 
   if (!ventasDelDia.length) {
-    // Si hay ventas globales pero ninguna en el día seleccionado
     const fechaLegible = new Date(filterDate + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     tbody.innerHTML = `<tr><td colspan="8"><div class="empty">No hay ventas registradas el ${fechaLegible}.</div></td></tr>`;
     return;
@@ -475,13 +508,7 @@ function renderHistory() {
     const cantidadItems = (v.items || []).reduce((acc, i) => acc + i.quantity, 0);
     const descripcionItems = (v.items || []).map(i => i.name).join(', ');
     const dtoTotal = toNum(v.globalDiscount) + (v.items || []).reduce((acc, i) => acc + toNum(i.discount), 0);
-    
-    // Si hay un voucher/lote, lo preparamos para mostrarlo debajo del número de factura
-    const loteInfo = (v.paymentMethod !== 'Efectivo' && v.voucher) 
-      ? `<br><small style="color:var(--muted); font-size:11px;">Lote: ${escapeHtml(v.voucher)}</small>` 
-      : '';
-
-    // Extraemos solo la hora para que la tabla sea más limpia, ya que la fecha está en el filtro arriba
+    const loteInfo = (v.paymentMethod !== 'Efectivo' && v.voucher) ? `<br><small style="color:var(--muted); font-size:11px;">Lote: ${escapeHtml(v.voucher)}</small>` : '';
     const horaLegible = new Date(v.createdAt || v.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
     return `
@@ -493,9 +520,7 @@ function renderHistory() {
         <td>${currency(v.subtotal || 0)}</td>
         <td class="text-danger">${dtoTotal > 0 ? '-' + currency(dtoTotal) : '$0'}</td>
         <td><strong>${currency(v.total || 0)}</strong></td>
-        <td>
-          <button class="mini-btn" onclick="window.open('factura.html?id=${v.id}', '_blank')">🖨️ Imprimir</button>
-        </td>
+        <td><button class="mini-btn" onclick="window.open('factura.html?id=${v.id}', '_blank')">🖨️ Imprimir</button></td>
       </tr>
     `;
   }).join('');
@@ -503,37 +528,18 @@ function renderHistory() {
 
 function exportarVentasExcel() {
   const filterDate = document.getElementById('historyDateFilter').value;
-  
-  // Filtramos para exportar solo las del día seleccionado
-  const ventasAExportar = ventasGlobales.filter(v => {
-    const saleDate = (v.createdAt || v.date).slice(0, 10);
-    return saleDate === filterDate;
-  });
-
-  if (!ventasAExportar.length) {
-    alert("No hay ventas en la fecha seleccionada para exportar.");
-    return;
-  }
+  const ventasAExportar = ventasGlobales.filter(v => (v.createdAt || v.date).slice(0, 10) === filterDate);
+  if (!ventasAExportar.length) return alert("No hay ventas en la fecha seleccionada.");
 
   const datosPlanos = [];
   ventasAExportar.forEach(v => {
     if (v.items && v.items.length > 0) {
       v.items.forEach(item => {
         datosPlanos.push({
-          "Fecha": (v.createdAt || v.date).slice(0, 10),
-          "Hora": new Date(v.createdAt || v.date).toLocaleTimeString('es-AR'),
-          "Factura": v.code || '-',
-          "Medio de Pago": v.paymentMethod || 'N/D',
-          "Cupón / Lote": v.voucher || '-',
-          "Cód. Producto": item.code || '-',
-          "Producto": item.name || '-',
-          "Costo Unitario": item.cost || 0,
-          "Precio Venta Unitario": item.price || 0,
-          "Cantidad": item.quantity || 0,
-          "Descuento Item": item.discount || 0,
-          "Subtotal Linea": item.subtotal || 0,
-          "Descuento Global Aplicado Venta": v.globalDiscount || 0,
-          "Total Venta": v.total || 0
+          "Fecha": (v.createdAt || v.date).slice(0, 10), "Hora": new Date(v.createdAt || v.date).toLocaleTimeString('es-AR'),
+          "Factura": v.code || '-', "Medio de Pago": v.paymentMethod || 'N/D', "Cupón / Lote": v.voucher || '-',
+          "Cód. Producto": item.code || '-', "Producto": item.name || '-', "Cantidad": item.quantity || 0,
+          "Precio Venta Unitario": item.price || 0, "Subtotal Linea": item.subtotal || 0, "Total Venta": v.total || 0
         });
       });
     }
@@ -541,12 +547,94 @@ function exportarVentasExcel() {
   exportarAExcel(datosPlanos, `Reporte_Ventas_${filterDate}`);
 }
 
+// ── LÓGICA DE CIERRE DE CAJA ──
+function abrirModalAuthCierre() {
+  document.getElementById('authUsername').value = '';
+  document.getElementById('authPassword').value = '';
+  document.getElementById('authCierreDialog').showModal();
+}
+
+document.getElementById('authCierreForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const u = document.getElementById('authUsername').value.trim();
+  const p = document.getElementById('authPassword').value.trim();
+  const btn = document.getElementById('btnAuthCierre');
+  btn.textContent = "Verificando..."; btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, password: p })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.user.role === 'admin' || data.user.role === 'encargado') {
+        document.getElementById('authCierreDialog').close();
+        mostrarArqueoCaja(data.user.username);
+      } else {
+        alert("Acceso denegado: El usuario no tiene permisos de encargado.");
+      }
+    } else { alert("Usuario o contraseña incorrectos."); }
+  } catch (error) { alert("Error de conexión al verificar permisos."); }
+  
+  btn.textContent = "Verificar Identidad"; btn.disabled = false;
+});
+
+function mostrarArqueoCaja(nombreEncargado) {
+  const filterDate = document.getElementById('historyDateFilter').value;
+  const ventasDelDia = ventasGlobales.filter(v => (v.createdAt || v.date).slice(0, 10) === filterDate);
+  
+  let totEfectivo = 0, totTransf = 0, totTarjeta = 0, totCtaCte = 0;
+
+  ventasDelDia.forEach(v => {
+    const amount = toNum(v.total);
+    const method = (v.paymentMethod || '').toLowerCase();
+    if (method.includes('efectivo')) totEfectivo += amount;
+    else if (method.includes('transferencia')) totTransf += amount;
+    else if (method.includes('tarjeta')) totTarjeta += amount;
+    else if (method.includes('cuenta corriente') || method.includes('cta cte')) totCtaCte += amount;
+    else totEfectivo += amount; // fallback
+  });
+
+  const totalGral = totEfectivo + totTransf + totTarjeta + totCtaCte;
+  const fechaLegible = new Date(filterDate + 'T12:00:00').toLocaleDateString('es-AR');
+
+  document.getElementById('cierreFechaTexto').textContent = fechaLegible;
+  document.getElementById('cierreEfectivo').textContent = currency(totEfectivo);
+  document.getElementById('cierreTransferencia').textContent = currency(totTransf);
+  document.getElementById('cierreTarjeta').textContent = currency(totTarjeta);
+  document.getElementById('cierreCtaCte').textContent = currency(totCtaCte);
+  document.getElementById('cierreTotal').textContent = currency(totalGral);
+  document.getElementById('cierreAutorizadoPor').textContent = nombreEncargado;
+
+  document.getElementById('resumenCierreDialog').showModal();
+}
+
+function imprimirCierre() {
+  const printContent = document.getElementById('printCierreArea').innerHTML;
+  const originalContent = document.body.innerHTML;
+  const fechaFiltro = document.getElementById('historyDateFilter').value;
+  
+  document.body.innerHTML = `
+    <div style="padding: 20px; font-family: monospace; max-width: 400px; margin: 0 auto;">
+      <h2 style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px;">CIERRE DE CAJA X/Z</h2>
+      <p style="text-align: center;">Fecha: ${fechaFiltro}</p>
+      <br>
+      ${printContent.replace(/class="cierre-box/g, 'style="margin-bottom: 10px;" class="')}
+      <br>
+      <p style="text-align: center; border-top: 1px dashed #000; padding-top: 10px;">Comprobante de uso interno.</p>
+    </div>
+  `;
+  window.print();
+  document.body.innerHTML = originalContent;
+  location.reload(); // Recarga para restaurar eventos JS
+}
+
 document.addEventListener('DOMContentLoaded', init);
 window.addEventListener('saas:data-updated', (e) => {
   if(e.detail && (e.detail.key === KEYS.products || e.detail.key === KEYS.sales || e.detail.key === KEYS.purchases)) {
-    if(!document.getElementById('viewPos').classList.contains('active')) {
-      init();
-    }
+    if(!document.getElementById('viewPos').classList.contains('active')) { init(); }
   }
 });
 </script>
