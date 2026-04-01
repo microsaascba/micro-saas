@@ -16,9 +16,9 @@
     .input-money-wrapper input { padding-left: 30px !important; font-weight: 600; }
 
     /* Grupo para seleccionar o agregar proveedor */
-    .supplier-group { display: flex; gap: 8px; }
+    .supplier-group { display: flex; gap: 6px; }
     .supplier-group select { flex: 1; }
-    .supplier-group button { padding: 0 16px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; font-weight: 700; cursor: pointer; }
+    .supplier-group button { padding: 0 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; }
     .supplier-group button:hover { border-color: var(--primary); color: var(--primary); }
 
     @media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
@@ -159,7 +159,8 @@
           <select name="supplierName" id="supplierSelect" required>
             <option value="">Seleccione un proveedor...</option>
             </select>
-          <button type="button" onclick="crearProveedor()">➕ Nuevo</button>
+          <button type="button" onclick="crearProveedor()" title="Agregar Nuevo Proveedor">➕</button>
+          <button type="button" onclick="gestionarProveedor()" title="Editar o Borrar Proveedor Seleccionado">⚙️</button>
         </div>
       </div>
       <div class="field"><label>Tipo Comprobante *</label>
@@ -220,7 +221,6 @@ function parseMascaraMoneda(valStr) {
   return parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
 }
 
-// Transformar número real de nuevo a texto con máscara (para edición)
 function formatNumberToMask(num) {
   if(!num && num !== 0) return '';
   let str = Number(num).toFixed(2).replace('.', ',');
@@ -258,6 +258,57 @@ function crearProveedor() {
   cargarSelectProveedores();
   document.getElementById('supplierSelect').value = nuevoNom;
 }
+
+window.gestionarProveedor = function() {
+  const select = document.getElementById('supplierSelect');
+  const seleccionado = select.value;
+
+  if (!seleccionado) {
+    alert("Primero seleccione un proveedor de la lista desplegable para gestionarlo.");
+    return;
+  }
+
+  const accion = prompt(`GESTIÓN DE PROVEEDOR:\nEstás modificando a: "${seleccionado}"\n\n- Escribí el NUEVO NOMBRE si querés corregirlo.\n- Escribí la palabra BORRAR si querés eliminarlo de la lista.`, seleccionado);
+
+  if (accion === null || accion.trim() === '') return;
+
+  let provs = getData('saas_suppliers_list', []);
+
+  if (accion.trim().toUpperCase() === 'BORRAR') {
+    if (confirm(`¿Seguro que querés quitar a "${seleccionado}" de la lista? (No se borrarán sus facturas pasadas)`)) {
+      provs = provs.filter(p => p !== seleccionado);
+      localStorage.setItem('saas_suppliers_list', JSON.stringify(provs));
+      cargarSelectProveedores();
+    }
+  } else {
+    const nuevoNombre = accion.trim();
+    if (nuevoNombre !== seleccionado) {
+      // Modifica la lista
+      const index = provs.indexOf(seleccionado);
+      if (index !== -1) provs[index] = nuevoNombre;
+      else provs.push(nuevoNombre); 
+      
+      localStorage.setItem('saas_suppliers_list', JSON.stringify(provs));
+
+      // Actualiza automáticamente las compras pasadas para no perder el rastro
+      let purchases = getData(KEYS.purchases, []);
+      let changed = false;
+      purchases.forEach(p => {
+        if (p.supplierName === seleccionado) {
+          p.supplierName = nuevoNombre;
+          changed = true;
+        }
+      });
+      if (changed) {
+        setData(KEYS.purchases, purchases);
+        render(); // Actualiza la tabla de fondo
+      }
+
+      cargarSelectProveedores();
+      select.value = nuevoNombre;
+    }
+  }
+};
 // ------------------------------
 
 function computeState() {
