@@ -86,11 +86,15 @@ function exportarAExcel(dataArray, nombreArchivo) {
   if (isLogged && !isLoginPage) {
     
     // RESTRICCIONES DURAS DE SEGURIDAD (Redirecciones forzadas si intentan entrar por URL)
+    
+    // 1. Cajero (POS): Bloqueado de todo menos Ventas y Catálogo
     if (role === 'pos' && (path.includes('dashboard') || path.includes('contable') || path.includes('stock') || path.includes('usuarios'))) {
       window.location.href = 'ventas.html'; return;
     }
-    if (role === 'encargado' && path.includes('usuarios')) {
-      window.location.href = 'dashboard.html'; return;
+    
+    // 2. Encargado: Bloqueado de Finanzas (Dashboard y Contable) y Gestión de Usuarios
+    if (role === 'encargado' && (path.includes('dashboard') || path.includes('contable') || path.includes('usuarios'))) {
+      window.location.href = 'ventas.html'; return;
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -117,16 +121,31 @@ function exportarAExcel(dataArray, nombreArchivo) {
         nav.appendChild(logoutBtn);
       }
 
-      // Ocultar elementos según rol
+      // --- RESTRICCIONES VISUALES DE MENÚ ---
+      
+      // Ocultar Menú Usuarios a todos menos al Admin
       if (role !== 'admin') {
         document.querySelectorAll('.nav a').forEach(link => { if (link.getAttribute('href')?.includes('usuarios')) link.style.display = 'none'; });
       }
 
+      // Ocultar Finanzas (Dashboard y Contable) a Encargados y Cajeros
+      if (role === 'encargado' || role === 'pos') {
+        document.querySelectorAll('.nav a').forEach(link => {
+          const href = link.getAttribute('href') || '';
+          if (href.includes('dashboard') || href.includes('contable')) { link.style.display = 'none'; }
+        });
+      }
+
+      // Ocultar Stock solo al Cajero (El encargado sí puede ver y cargar stock)
       if (role === 'pos') {
         document.querySelectorAll('.nav a').forEach(link => {
           const href = link.getAttribute('href') || '';
-          if (href.includes('dashboard') || href.includes('contable') || href.includes('stock')) { link.style.display = 'none'; }
+          if (href.includes('stock')) { link.style.display = 'none'; }
         });
+      }
+
+      // --- RESTRICCIONES DE BOTONES Y EDICIÓN (SOLO PARA CAJERO) ---
+      if (role === 'pos') {
         const botonesProhibidos = ['#newProductBtn', '#importBtn', '#exportBtn', '#openAdjustBtn', '#btnOpenExpense', '#btnOpenSupplier'];
         botonesProhibidos.forEach(id => { const btn = document.querySelector(id); if (btn) btn.style.display = 'none'; });
         const css = document.createElement('style');
