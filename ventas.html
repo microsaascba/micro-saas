@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ventas e Historial | Micro SaaS</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Estructura principal POS */
+    .pos-layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; align-items: start; }
+    
+    /* Catálogo de productos */
+    .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 16px; max-height: 65vh; overflow-y: auto; padding-right: 8px; }
+    .product-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; justify-content: space-between; height: 110px; }
+    .product-card:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(37,99,235,0.1); transform: translateY(-2px); }
+    .product-card strong { font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; margin-bottom: 4px; }
+    .product-card .price { font-size: 15px; font-weight: 800; color: var(--text); }
+    .product-card .stock-badge { font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 4px; align-self: flex-start; margin-top: 6px; }
+    
+    /* Ticket de venta */
+    .ticket-container { display: flex; flex-direction: column; height: 100%; }
+    .ticket-items { flex-grow: 1; max-height: 40vh; overflow-y: auto; margin-bottom: 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel-2); }
+    .ticket-item { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 12px; border-bottom: 1px solid var(--line); }
+    .ticket-item:last-child { border-bottom: none; }
+    .ticket-item-info strong { display: block; font-size: 13px; margin-bottom: 4px; }
+    .ticket-item-info small { color: var(--muted); font-size: 12px; }
+    .qty-control { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-radius: 6px; padding: 2px; }
+    .qty-control button { background: none; border: none; width: 24px; height: 24px; display: grid; place-items: center; cursor: pointer; font-weight: bold; color: var(--text); border-radius: 4px; }
+    .qty-control button:hover { background: var(--line); }
+    .qty-control input { width: 36px; text-align: center; border: none; padding: 0; font-size: 13px; font-weight: bold; background: transparent; pointer-events: none; }
+    
+    /* Totales y cierre */
+    .ticket-summary { border-top: 2px dashed var(--line); padding-top: 16px; margin-top: auto; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+    .summary-row.total { font-size: 24px; font-weight: 800; margin-bottom: 16px; margin-top: 8px; border-top: 1px solid var(--line); padding-top: 8px; }
+
+    /* Navegación por pestañas */
+    .view-section { display: none; animation: fadeIn 0.3s ease; }
+    .view-section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    @media (max-width: 1024px) {
+      .pos-layout { grid-template-columns: 1fr; }
+      .catalog-grid { max-height: 40vh; }
+      .ticket-items { max-height: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong>Micro SaaS</strong><small>Control del negocio</small></div>
+    </div>
+    <nav class="nav">
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="ventas.html" class="active"><span class="nav-icon">🧾</span> Ventas</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
+    </nav>
+    <div class="sidebar-footer">
+      <strong>Módulo de Ventas</strong>
+      Procesamiento operativo y auditoría comercial.
+    </div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div class="page-title">
+        <h1>Gestión de Ventas</h1>
+        <p>Procesamiento de caja e historial analítico.</p>
+      </div>
+      <div class="topbar-actions tabs">
+        <button class="tab active" id="tabPos" onclick="switchView('pos')">Punto de Venta</button>
+        <button class="tab" id="tabHistory" onclick="switchView('history')">Historial Global</button>
+      </div>
+    </header>
+
+    <div id="viewPos" class="view-section active">
+      <div class="pos-layout">
+        <article class="card card-pad">
+          <div class="section-head">
+            <div><h2>Catálogo Rápido</h2><p>Seleccione productos para facturar.</p></div>
+          </div>
+          <input type="text" id="searchProduct" placeholder="Buscar por nombre o código (SKU)..." autocomplete="off" />
+          <div class="catalog-grid" id="catalogGrid"></div>
+        </article>
+
+        <article class="card card-pad ticket-container">
+          <div class="section-head">
+            <div><h2>Ticket Actual</h2><p id="ticketStatus">0 items seleccionados</p></div>
+            <button class="btn btn-light mini-btn" onclick="vaciarTicket()">Vaciar</button>
+          </div>
+
+          <div class="ticket-items" id="ticketItems">
+            <div class="empty" style="border:none; background:transparent;">Aún no hay productos en el ticket.</div>
+          </div>
+
+          <div class="ticket-summary">
+            <div class="summary-row"><span>Subtotal</span><span id="subtotalDisplay">$0</span></div>
+            <div class="summary-row"><span>Descuentos</span><span id="discountDisplay" class="text-danger">-$0</span></div>
+            <div class="summary-row total"><span>Total a cobrar</span><span id="totalDisplay">$0</span></div>
+
+            <div class="form-grid" style="margin-bottom: 16px;">
+              <div class="field full">
+                <label>Medio de pago *</label>
+                <select id="paymentMethod" required>
+                  <option value="">Seleccione un método...</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Transferencia">Transferencia</option>
+                  <option value="Tarjeta de Débito">Tarjeta de Débito</option>
+                  <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
+                  <option value="Cuenta Corriente">Cuenta Corriente</option>
+                </select>
+              </div>
+              <div class="field full" id="voucherField" style="display: none;">
+                <label>Comprobante / Lote (Opcional)</label>
+                <input type="text" id="voucherCode" placeholder="Número de comprobante" />
+              </div>
+              <div class="field full">
+                <label>Descuento Global Adicional ($)</label>
+                <input type="number" id="globalDiscount" min="0" step="0.01" placeholder="0.00" onchange="renderTicket()" />
+              </div>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 14px; font-size: 16px;" onclick="procesarVenta()">Confirmar Cobro</button>
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <div id="viewHistory" class="view-section">
+      <article class="card card-pad">
+        <div class="section-head">
+          <div>
+            <h2>Historial de Ventas</h2>
+            <p>Registro completo de operaciones comerciales.</p>
+          </div>
+          <button class="btn btn-success" onclick="exportarVentasExcel()">⬇ Descargar Planilla (Excel)</button>
+        </div>
+        
+        <div class="table-wrap mt-16">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha y Hora</th>
+                <th>Comprobante</th>
+                <th>Artículos</th>
+                <th>Medio de Pago</th>
+                <th>Subtotal</th>
+                <th>Descuento</th>
+                <th>Total Final</th>
+              </tr>
+            </thead>
+<th>Acción</th>
+            <tbody id="historyTableBody">
+              </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+
+  </main>
+</div>
+
+<script src="core.js"></script>
+<script>
+let productosActivos = [];
+let ticket = [];
+let ventasGlobales = [];
+
+// ── Inicialización ───────────────────────────────────────────
+function init() {
+  cargarDatos();
+  renderCatalog(productosActivos);
+  renderTicket();
+  renderHistory();
+}
+
+function cargarDatos() {
+  const allProducts = getData(KEYS.products, []);
+  ventasGlobales = getData(KEYS.sales, []);
+  const adjs = getData(KEYS.stockAdjustments, []);
+  const purchases = getData(KEYS.purchases, []);
+
+  const salesMap = {};
+  ventasGlobales.forEach(sale => (sale.items || []).forEach(item => {
+    if(item.productId) salesMap[item.productId] = (salesMap[item.productId] || 0) + toNum(item.quantity);
+  }));
+
+  const purchaseMap = {};
+  purchases.forEach(p => (p.items || []).forEach(item => {
+    if(item.productId) purchaseMap[item.productId] = (purchaseMap[item.productId] || 0) + toNum(item.quantity);
+  }));
+
+  productosActivos = allProducts.filter(p => p.status === 'Activo' || p.active !== false).map(p => {
+    let currentStock = toNum(p.stockInitial ?? p.stock ?? 0) + toNum(purchaseMap[p.id] || 0) - toNum(salesMap[p.id] || 0);
+    (adjs.filter(a => a.productId === p.id) || []).forEach(adj => {
+      if (adj.type === 'add') currentStock += toNum(adj.qty);
+      if (adj.type === 'remove') currentStock -= toNum(adj.qty);
+      if (adj.type === 'set') currentStock = toNum(adj.qty);
+    });
+    return { ...p, currentStock: Math.max(0, currentStock) };
+  });
+}
+
+// ── Control de Pestañas ──────────────────────────────────────
+function switchView(viewName) {
+  document.getElementById('viewPos').classList.remove('active');
+  document.getElementById('viewHistory').classList.remove('active');
+  document.getElementById('tabPos').classList.remove('active');
+  document.getElementById('tabHistory').classList.remove('active');
+
+  if(viewName === 'pos') {
+    document.getElementById('viewPos').classList.add('active');
+    document.getElementById('tabPos').classList.add('active');
+    init(); // Refrescar stock visual
+  } else {
+    document.getElementById('viewHistory').classList.add('active');
+    document.getElementById('tabHistory').classList.add('active');
+    cargarDatos();
+    renderHistory();
+  }
+}
+
+// ── Lógica del Punto de Venta (POS) ──────────────────────────
+function renderCatalog(productos) {
+  const grid = document.getElementById('catalogGrid');
+  if (!productos.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column: 1/-1;">No se encontraron productos disponibles.</div>';
+    return;
+  }
+  grid.innerHTML = productos.map(p => {
+    const stockClass = p.currentStock <= 0 ? 'badge-danger' : (p.currentStock <= toNum(p.stockMin || 3) ? 'badge-warning' : 'badge-neutral');
+    const stockText = p.currentStock <= 0 ? 'Sin stock' : `${p.currentStock} u.`;
+    return `
+      <div class="product-card" onclick="agregarAlTicket('${p.id}')">
+        <div><strong>${escapeHtml(p.name)}</strong><span class="stock-badge ${stockClass}">${stockText}</span></div>
+        <div class="price">${currency(p.price)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+document.getElementById('searchProduct').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  renderCatalog(productosActivos.filter(p => p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q))));
+});
+
+function agregarAlTicket(id) {
+  const producto = productosActivos.find(p => p.id === id);
+  if (!producto) return;
+  const itemExistente = ticket.find(i => i.productId === id);
+  if (itemExistente) {
+    itemExistente.quantity++;
+  } else {
+    ticket.push({
+      productId: producto.id, code: producto.sku || '-', name: producto.name,
+      price: toNum(producto.price), cost: toNum(producto.cost) + toNum(producto.extraCosts || 0),
+      quantity: 1, discount: 0
+    });
+  }
+  renderTicket();
+}
+
+function updateQty(index, delta) {
+  const newQty = ticket[index].quantity + delta;
+  if (newQty <= 0) ticket.splice(index, 1); else ticket[index].quantity = newQty;
+  renderTicket();
+}
+
+function vaciarTicket() {
+  if (ticket.length > 0 && confirm('¿Desea vaciar el ticket actual?')) {
+    ticket = []; document.getElementById('globalDiscount').value = ''; renderTicket();
+  }
+}
+
+function renderTicket() {
+  const container = document.getElementById('ticketItems');
+  if (!ticket.length) {
+    container.innerHTML = '<div class="empty" style="border:none; background:transparent;">Aún no hay productos en el ticket.</div>';
+    document.getElementById('ticketStatus').textContent = '0 items seleccionados';
+    document.getElementById('subtotalDisplay').textContent = currency(0);
+    document.getElementById('discountDisplay').textContent = '-' + currency(0);
+    document.getElementById('totalDisplay').textContent = currency(0);
+    return;
+  }
+
+  let subtotal = 0; let totalItemDiscounts = 0;
+  container.innerHTML = ticket.map((item, index) => {
+    const itemSubtotal = item.price * item.quantity;
+    const itemTotal = itemSubtotal - item.discount;
+    subtotal += itemSubtotal; totalItemDiscounts += item.discount;
+    return `
+      <div class="ticket-item">
+        <div class="ticket-item-info"><strong>${escapeHtml(item.name)}</strong><small>${currency(item.price)} c/u</small></div>
+        <div class="qty-control"><button onclick="updateQty(${index}, -1)">-</button><input type="text" value="${item.quantity}" readonly /><button onclick="updateQty(${index}, 1)">+</button></div>
+        <div style="text-align: right; font-weight: bold;">${currency(itemTotal)}</div>
+      </div>
+    `;
+  }).join('');
+
+  const globalDiscount = toNum(document.getElementById('globalDiscount').value);
+  const totalDiscounts = totalItemDiscounts + globalDiscount;
+  const totalFinal = Math.max(0, subtotal - totalDiscounts);
+
+  document.getElementById('ticketStatus').textContent = `${ticket.reduce((acc, item) => acc + item.quantity, 0)} unidades en el ticket`;
+  document.getElementById('subtotalDisplay').textContent = currency(subtotal);
+  document.getElementById('discountDisplay').textContent = '-' + currency(totalDiscounts);
+  document.getElementById('totalDisplay').textContent = currency(totalFinal);
+}
+
+document.getElementById('paymentMethod').addEventListener('change', (e) => {
+  document.getElementById('voucherField').style.display = (e.target.value.includes('Tarjeta') || e.target.value === 'Transferencia') ? 'block' : 'none';
+});
+
+function procesarVenta() {
+  if (!ticket.length) return alert('El ticket está vacío.');
+  const paymentMethod = document.getElementById('paymentMethod').value;
+  if (!paymentMethod) return alert('Debe seleccionar un medio de pago.');
+
+  const globalDiscount = toNum(document.getElementById('globalDiscount').value);
+  let subtotal = 0; let totalItemDiscounts = 0;
+
+  const itemsGuardar = ticket.map(i => {
+    const lineSubtotal = i.price * i.quantity;
+    subtotal += lineSubtotal; totalItemDiscounts += i.discount;
+    return { ...i, subtotal: lineSubtotal - i.discount };
+  });
+
+  const totalFinal = Math.max(0, subtotal - totalItemDiscounts - globalDiscount);
+  
+  const nuevaVenta = {
+    id: uid('sale'), code: 'VTA-' + Date.now().toString().slice(-6),
+    date: new Date().toISOString(), createdAt: new Date().toISOString(),
+    paymentMethod: paymentMethod, voucher: document.getElementById('voucherCode').value.trim(),
+    items: itemsGuardar, subtotal: subtotal, globalDiscount: globalDiscount, total: totalFinal
+  };
+
+  ventasGlobales.unshift(nuevaVenta);
+  setData(KEYS.sales, ventasGlobales);
+  window.dispatchEvent(new CustomEvent('saas:data-updated', { detail: { key: KEYS.sales } }));
+
+  alert(`Venta registrada con éxito. Total: ${currency(totalFinal)}`);
+  
+  ticket = [];
+  document.getElementById('paymentMethod').value = '';
+  document.getElementById('voucherCode').value = '';
+  document.getElementById('voucherField').style.display = 'none';
+  document.getElementById('globalDiscount').value = '';
+  init();
+}
+
+// ── Lógica del Historial Global e Informes ───────────────────
+function renderHistory() {
+  const tbody = document.getElementById('historyTableBody');
+  if (!ventasGlobales.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty">No hay ventas registradas en el sistema.</div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = ventasGlobales.map(v => {
+    const cantidadItems = (v.items || []).reduce((acc, i) => acc + i.quantity, 0);
+    const descripcionItems = (v.items || []).map(i => i.name).join(', ');
+    const dtoTotal = toNum(v.globalDiscount) + (v.items || []).reduce((acc, i) => acc + toNum(i.discount), 0);
+    
+    return `
+      <tr>
+        <td>${formatDate(v.createdAt || v.date)}</td>
+        <td><strong>${escapeHtml(v.code || '-')}</strong></td>
+        <td><span title="${escapeHtml(descripcionItems)}">${cantidadItems} unidades</span></td>
+        <td><span class="badge badge-neutral">${escapeHtml(v.paymentMethod || 'N/D')}</span></td>
+        <td>${currency(v.subtotal || 0)}</td>
+        <td class="text-danger">${dtoTotal > 0 ? '-' + currency(dtoTotal) : '$0'}</td>
+        <td><strong>${currency(v.total || 0)}</strong></td>
+        <td>
+          <button class="mini-btn" onclick="window.open('factura.html?id=${v.id}', '_blank')">🖨️ Imprimir</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+// Motor de Exportación a Excel (CSV con formato plano analítico)
+function exportarVentasExcel() {
+  if (!ventasGlobales || !ventasGlobales.length) {
+    alert("No hay datos de ventas para exportar.");
+    return;
+  }
+
+  const datosPlanos = [];
+  
+  ventasGlobales.forEach(v => {
+    if (v.items && v.items.length > 0) {
+      v.items.forEach(item => {
+        datosPlanos.push({
+          "Fecha": (v.createdAt || v.date).slice(0, 10),
+          "Hora": new Date(v.createdAt || v.date).toLocaleTimeString('es-AR'),
+          "Comprobante": v.code || '-',
+          "Medio de Pago": v.paymentMethod || 'N/D',
+          "Lote/Referencia": v.voucher || '-',
+          "Cód. Producto": item.code || '-',
+          "Producto": item.name || '-',
+          "Costo Unitario": item.cost || 0,
+          "Precio Venta Unitario": item.price || 0,
+          "Cantidad": item.quantity || 0,
+          "Descuento Item": item.discount || 0,
+          "Subtotal Linea": item.subtotal || 0,
+          "Descuento Global Aplicado Venta": v.globalDiscount || 0,
+          "Total Venta": v.total || 0
+        });
+      });
+    } else {
+      datosPlanos.push({
+        "Fecha": (v.createdAt || v.date).slice(0, 10),
+        "Hora": new Date(v.createdAt || v.date).toLocaleTimeString('es-AR'),
+        "Comprobante": v.code || '-',
+        "Medio de Pago": v.paymentMethod || 'N/D',
+        "Lote/Referencia": v.voucher || '-',
+        "Cód. Producto": "-", "Producto": "Venta sin items", "Costo Unitario": 0, "Precio Venta Unitario": 0, "Cantidad": 0, "Descuento Item": 0, "Subtotal Linea": 0,
+        "Descuento Global Aplicado Venta": v.globalDiscount || 0,
+        "Total Venta": v.total || 0
+      });
+    }
+  });
+
+  exportarAExcel(datosPlanos, 'Reporte_Ventas');
+}
+
+document.addEventListener('DOMContentLoaded', init);
+window.addEventListener('saas:data-updated', (e) => {
+  if(e.detail && (e.detail.key === KEYS.products || e.detail.key === KEYS.sales || e.detail.key === KEYS.purchases)) {
+    cargarDatos();
+    if(document.getElementById('viewPos').classList.contains('active')) {
+      renderCatalog(productosActivos);
+    } else {
+      renderHistory();
+    }
+  }
+});
+</script>
+</body>
+</html>

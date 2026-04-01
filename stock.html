@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock | Micro SaaS</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .two-col { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; }
+    .state-normal   { background: var(--success-soft); color: var(--success); }
+    .state-low      { background: var(--warning-soft); color: var(--warning); }
+    .state-zero     { background: var(--danger-soft);  color: var(--danger); }
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+    .filters input, .filters select { width: auto; flex: 1; min-width: 140px; }
+    .critical-item { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: #fff; }
+    .critical-item strong { display: block; margin-bottom: 6px; }
+    .critical-item p { margin: 0; color: var(--muted); font-size: 13px; }
+    .msg-box { margin-top: 8px; font-size: 13px; font-weight: 700; }
+    .msg-low  { color: var(--warning); }
+    .msg-zero { color: var(--danger); }
+    .history-item { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #fff; }
+    .history-top { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 5px; flex-wrap: wrap; }
+    .history-top strong { font-size: 14px; }
+    .history-item p, .history-item small { margin: 0; color: var(--muted); font-size: 12px; }
+    .qty-up   { color: var(--success); font-weight: 700; }
+    .qty-down { color: var(--danger);  font-weight: 700; }
+    .history-list { max-height: 400px; overflow-y: auto; display: grid; gap: 10px; }
+    @media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong>Micro SaaS</strong><small>Control del negocio</small></div>
+    </div>
+    <nav class="nav">
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html" class="active"><span class="nav-icon">📚</span> Stock</a>
+    </nav>
+    <div class="sidebar-footer">
+      <strong>Fuentes de datos</strong>
+      Toma la base desde <strong>saas_products</strong> y se actualiza con <strong>saas_sales</strong>. Sincroniza con el dashboard.
+    </div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div class="page-title">
+        <h1>Stock</h1>
+        <p>Control simple de unidades, alertas de faltantes y movimientos básicos.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-success" id="exportBtn">⬇ Exportar Excel</button>
+        <button class="btn btn-light" id="syncBtn">Sincronizar</button>
+        <button class="btn btn-primary" id="openAdjustBtn">+ Ajuste manual</button>
+      </div>
+    </header>
+
+    <section class="kpi-grid" style="margin-bottom:22px;">
+      <article class="card kpi-card"><div class="kpi-label">Productos activos</div><div class="kpi-value" id="metricProducts">0</div><div class="kpi-sub">Vinculados al módulo producto</div></article>
+      <article class="card kpi-card"><div class="kpi-label">Unidades en stock</div><div class="kpi-value" id="metricUnits">0</div><div class="kpi-sub">Suma total del stock actual</div></article>
+      <article class="card kpi-card"><div class="kpi-label">Stock bajo</div><div class="kpi-value" id="metricLow">0</div><div class="kpi-sub">Cerca de agotarse</div></article>
+      <article class="card kpi-card"><div class="kpi-label">Sin stock</div><div class="kpi-value" id="metricZero">0</div><div class="kpi-sub">No se pueden vender</div></article>
+    </section>
+
+    <div class="two-col" style="margin-bottom:18px;">
+      <article class="card card-pad">
+        <div class="section-head">
+          <div><h2>Stock actual</h2><p>Vista central del inventario y alertas automáticas.</p></div>
+          <div class="filters">
+            <input type="text" id="searchInput" placeholder="Buscar producto..." />
+            <select id="statusFilter">
+              <option value="all">Todos</option>
+              <option value="normal">Normal</option>
+              <option value="low">Stock bajo</option>
+              <option value="zero">Sin stock</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Producto</th><th>SKU</th><th>Stock actual</th><th>Stock mínimo</th><th>Estado</th><th>Mensaje</th><th>Acciones</th></tr></thead>
+            <tbody id="stockTableBody"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card card-pad">
+        <div class="section-head"><div><h2>Productos críticos</h2><p>Priorizá reposición sin perder tiempo.</p></div></div>
+        <div id="criticalList" style="display:grid;gap:10px;"></div>
+      </article>
+    </div>
+
+    <div class="two-col">
+      <article class="card card-pad">
+        <div class="section-head"><div><h2>Ajuste manual</h2><p>Para diferencias de conteo, roturas, muestras o correcciones.</p></div></div>
+        <form id="adjustForm" class="form-grid">
+          <div class="field full"><select id="adjustProduct" required><option value="">Seleccionar producto</option></select></div>
+          <div class="field"><select id="adjustType" required><option value="add">Sumar stock</option><option value="remove">Restar stock</option><option value="set">Fijar valor exacto</option></select></div>
+          <div class="field"><input type="number" id="adjustQty" min="0" step="1" placeholder="Cantidad" required /></div>
+          <div class="field full"><input type="text" id="adjustReason" placeholder="Motivo. Ej: rotura, conteo físico, muestra" required /></div>
+          <div class="field full"><button type="submit" class="btn btn-primary">Guardar ajuste</button></div>
+        </form>
+        <p style="margin-top:12px;color:var(--muted);font-size:12px;">El ajuste se guarda como movimiento y recalcula el stock sin tocar la venta original.</p>
+      </article>
+
+      <article class="card card-pad">
+        <div class="section-head"><div><h2>Historial básico</h2><p>Últimos movimientos de stock del sistema.</p></div></div>
+        <div id="historyList" class="history-list"></div>
+      </article>
+    </div>
+  </main>
+</div>
+
+<script src="core.js"></script>
+<script>
+function normalizeProduct(p) {
+  return {
+    id: p.id || uid('prd'),
+    name: p.name || p.nombre || 'Producto sin nombre',
+    sku: p.sku || p.codigo || '-',
+    stockInitial: toNum(p.stockInitial ?? p.stock_inicial ?? p.stock ?? 0),
+    stockMin: toNum(p.stockMin ?? p.stock_min ?? p.minStock ?? 3),
+    price: toNum(p.price ?? p.precio ?? 0),
+    status: p.status || (p.active===false ? 'Inactivo' : 'Activo'),
+    active: p.active !== false && (p.status || 'Activo') !== 'Inactivo'
+  };
+}
+function normalizeSale(sale) {
+  return { id:sale.id||uid('sale'), date:sale.date||sale.fecha||sale.createdAt||new Date().toISOString(), items:Array.isArray(sale.items)?sale.items.map(i=>({productId:i.productId||i.id||'',name:i.name||'',quantity:toNum(i.quantity??i.qty??i.cantidad??0)})):[] };
+}
+function normalizeAdj(adj) { return { id:adj.id||uid('adj'), productId:adj.productId, type:adj.type, qty:toNum(adj.qty||0), reason:adj.reason||'Ajuste manual', date:adj.date||new Date().toISOString() }; }
+
+function loadAll() {
+  return {
+    products: getData(KEYS.products,[]).map(normalizeProduct).filter(p=>p.active),
+    sales:    getData(KEYS.sales,[]).map(normalizeSale),
+    adjs:     getData(KEYS.stockAdjustments,[]).map(normalizeAdj),
+    purchases: getData(KEYS.purchases,[])
+  };
+}
+
+function getStockState(current, min) {
+  if (current <= 0) return { key:'zero', label:'Sin stock', cls:'state-zero', msg:'Reponer urgente' };
+  if (current <= min) return { key:'low', label:'Stock bajo', cls:'state-low', msg:`Te quedan ${current} unidades` };
+  return { key:'normal', label:'Normal', cls:'state-normal', msg:'Stock saludable' };
+}
+
+function buildDataset() {
+  const { products, sales, adjs, purchases } = loadAll();
+  const salesMap={}, purchaseMap={}, adjMap={}, movements=[];
+
+  sales.forEach(sale => sale.items.forEach(item => {
+    if (!item.productId) return;
+    salesMap[item.productId] = (salesMap[item.productId]||0) + toNum(item.quantity);
+    movements.push({ type:'sale', productId:item.productId, qty:-Math.abs(toNum(item.quantity)), ref:`Venta ${sale.id}`, reason:'Descuento automático por venta', date:sale.date });
+  }));
+
+  purchases.forEach(p => (p.items||[]).forEach(item => {
+    if (!item.productId) return;
+    purchaseMap[item.productId] = (purchaseMap[item.productId]||0) + toNum(item.quantity);
+    movements.push({ type:'purchase', productId:item.productId, qty:Math.abs(toNum(item.quantity)), ref:`Compra ${p.id}`, reason:'Ingreso por compra', date:p.date||new Date().toISOString() });
+  }));
+
+  adjs.forEach(adj => { if (!adj.productId) return; if (!adjMap[adj.productId]) adjMap[adj.productId]=[]; adjMap[adj.productId].push(adj); });
+
+  const rows = products.map(product => {
+    let current = toNum(product.stockInitial) + toNum(purchaseMap[product.id]||0) - toNum(salesMap[product.id]||0);
+    (adjMap[product.id]||[]).sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(adj => {
+      if (adj.type==='add')    current += toNum(adj.qty);
+      if (adj.type==='remove') current -= toNum(adj.qty);
+      if (adj.type==='set')    current  = toNum(adj.qty);
+      movements.push({ type:'adjustment', productId:product.id, qty:adj.type==='remove'?-Math.abs(adj.qty):adj.type==='set'?0:Math.abs(adj.qty), ref:'Ajuste manual', reason:adj.reason, date:adj.date, meta:adj.type==='set'?`Nuevo valor: ${adj.qty}`:'' });
+    });
+    current = Math.max(0, current);
+    return { ...product, current, sold:toNum(salesMap[product.id]||0), purchased:toNum(purchaseMap[product.id]||0), state:getStockState(current, product.stockMin) };
+  });
+
+  const prodMap = Object.fromEntries(rows.map(r=>[r.id,r]));
+  const movs = movements.filter(m=>prodMap[m.productId]).sort((a,b)=>new Date(b.date)-new Date(a.date)).map(m=>({...m,productName:prodMap[m.productId]?.name||'Producto'}));
+  return { rows, movements:movs };
+}
+
+function syncDashboardStock(rows) {
+  const payload = { stock:{ totalProducts:rows.length, totalUnits:rows.reduce((a,i)=>a+i.current,0), low:rows.filter(i=>i.state.key==='low').length, zero:rows.filter(i=>i.state.key==='zero').length, updatedAt:new Date().toISOString() } };
+  setData(KEYS.dashboard, { ...getData(KEYS.dashboard,{}), ...payload });
+}
+
+function fillMetrics(rows) {
+  document.getElementById('metricProducts').textContent = rows.length;
+  document.getElementById('metricUnits').textContent    = rows.reduce((a,i)=>a+i.current,0);
+  document.getElementById('metricLow').textContent      = rows.filter(i=>i.state.key==='low').length;
+  document.getElementById('metricZero').textContent     = rows.filter(i=>i.state.key==='zero').length;
+}
+
+function renderStockTable(rows) {
+  const tbody=document.getElementById('stockTableBody'), q=document.getElementById('searchInput').value.trim().toLowerCase(), st=document.getElementById('statusFilter').value;
+  const filtered=rows.filter(i=>(i.name.toLowerCase().includes(q)||i.sku.toLowerCase().includes(q))&&(st==='all'||i.state.key===st));
+  tbody.innerHTML = filtered.length
+    ? filtered.map(item=>`<tr>
+        <td><strong>${escapeHtml(item.name)}</strong></td>
+        <td>${escapeHtml(item.sku)}</td>
+        <td><strong>${item.current}</strong> u.</td>
+        <td>${item.stockMin}</td>
+        <td><span class="badge ${item.state.cls}">${item.state.label}</span></td>
+        <td>${item.state.key==='zero'?'Reponer urgente':item.state.msg}</td>
+        <td><div class="row-actions"><button class="mini-btn" onclick="prefillAdjustment('${item.id}')">Ajustar</button><button class="mini-btn" onclick="showSummary('${item.id}')">Ver</button></div></td>
+      </tr>`).join('')
+    : `<tr><td colspan="7"><div class="empty">Sin productos con ese filtro.</div></td></tr>`;
+}
+
+function renderCritical(rows) {
+  const el=document.getElementById('criticalList'), critical=rows.filter(i=>i.state.key!=='normal').sort((a,b)=>a.current-b.current);
+  el.innerHTML = critical.length
+    ? critical.map(item=>`<div class="critical-item"><strong>${escapeHtml(item.name)}</strong><p>Stock actual: ${item.current} · Mínimo: ${item.stockMin}</p><div class="msg-box ${item.state.key==='zero'?'msg-zero':'msg-low'}">${item.state.key==='zero'?'Reponer urgente':item.state.msg}</div></div>`).join('')
+    : '<div class="empty">Sin productos críticos. El stock está bajo control.</div>';
+}
+
+function renderHistory(movements) {
+  const el=document.getElementById('historyList');
+  el.innerHTML = movements.length
+    ? movements.slice(0,20).map(m=>`<div class="history-item"><div class="history-top"><strong>${escapeHtml(m.productName)}</strong><span class="${m.qty<0?'qty-down':'qty-up'}">${m.qty>0?'+':''} ${m.qty}</span></div><p>${escapeHtml(m.ref)} · ${escapeHtml(m.reason)}${m.meta?' · '+escapeHtml(m.meta):''}</p><small>${formatDate(m.date)}</small></div>`).join('')
+    : '<div class="empty">Sin movimientos de stock.</div>';
+}
+
+function renderSelect(rows) {
+  const sel=document.getElementById('adjustProduct'), cur=sel.value;
+  sel.innerHTML='<option value="">Seleccionar producto</option>'+rows.map(r=>`<option value="${r.id}">${escapeHtml(r.name)} (${r.current} u.)</option>`).join('');
+  sel.value=cur;
+}
+
+function refreshAll() {
+  const { rows, movements } = buildDataset();
+  window.__stockRows = rows;
+  fillMetrics(rows);
+  renderStockTable(rows);
+  renderCritical(rows);
+  renderHistory(movements);
+  renderSelect(rows);
+  syncDashboardStock(rows);
+}
+
+// ── Exportación a Excel ──────────────────────────────────────
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const rows = window.__stockRows || buildDataset().rows;
+  if (!rows || !rows.length) {
+    alert("No hay datos de stock para exportar.");
+    return;
+  }
+
+  const datosPlanos = rows.map(r => ({
+    "Nombre del Producto": r.name,
+    "Código/SKU": r.sku || '-',
+    "Stock Actual": r.current,
+    "Stock Mínimo": r.stockMin,
+    "Estado de Stock": r.state.label,
+    "Alerta Operativa": r.state.msg,
+    "Unidades Vendidas Históricas": r.sold || 0,
+    "Unidades Compradas Históricas": r.purchased || 0
+  }));
+
+  exportarAExcel(datosPlanos, 'Reporte_Inventario');
+});
+
+window.prefillAdjustment = productId => { document.getElementById('adjustProduct').value=productId; document.getElementById('adjustQty').focus(); window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); };
+window.showSummary = productId => {
+  const item=(window.__stockRows||[]).find(p=>p.id===productId); if(!item) return;
+  alert([`Producto: ${item.name}`,`SKU: ${item.sku}`,`Stock actual: ${item.current}`,`Stock mínimo: ${item.stockMin}`,`Estado: ${item.state.label}`,`Ventas descontadas: ${item.sold}`].join('\n'));
+};
+
+document.getElementById('adjustForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const productId=document.getElementById('adjustProduct').value, type=document.getElementById('adjustType').value, qty=toNum(document.getElementById('adjustQty').value||0), reason=document.getElementById('adjustReason').value.trim();
+  if (!productId || qty < 0 || !reason) { alert('Completá producto, cantidad y motivo.'); return; }
+  const adjs = getData(KEYS.stockAdjustments,[]);
+  adjs.push({ id:uid('adj'), productId, type, qty, reason, date:new Date().toISOString() });
+  setData(KEYS.stockAdjustments, adjs);
+  document.getElementById('adjustForm').reset();
+  refreshAll();
+  alert('Ajuste guardado correctamente.');
+});
+
+document.getElementById('searchInput').addEventListener('input', refreshAll);
+document.getElementById('statusFilter').addEventListener('change', refreshAll);
+document.getElementById('syncBtn').addEventListener('click', refreshAll);
+document.getElementById('openAdjustBtn').addEventListener('click', () => { document.getElementById('adjustForm').scrollIntoView({behavior:'smooth',block:'center'}); document.getElementById('adjustProduct').focus(); });
+
+window.addEventListener('storage', e => { if(Object.values(KEYS).includes(e.key)) refreshAll(); });
+window.addEventListener('saas:data-updated', refreshAll);
+refreshAll();
+</script>
+</body>
+</html>

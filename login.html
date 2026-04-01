@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Acceso | Micro SaaS</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Fondo moderno y centrado */
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #f0f2f7 0%, #e2e8f0 100%);
+      margin: 0;
+      font-family: var(--font, 'DM Sans', sans-serif);
+    }
+
+    /* Contenedor responsivo */
+    .login-wrapper {
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    /* Tarjeta principal */
+    .login-card {
+      background: var(--panel, #ffffff);
+      padding: 40px 32px;
+      border-radius: 24px;
+      box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08);
+      border: 1px solid var(--line, #e2e8f0);
+      text-align: center;
+    }
+
+    /* Logo */
+    .login-logo {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-radius: 18px;
+      margin: 0 auto 24px;
+      display: grid;
+      place-items: center;
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 800;
+      box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+    }
+
+    /* Textos */
+    .login-card h1 {
+      margin: 0 0 8px;
+      font-size: 26px;
+      color: var(--text, #0f172a);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+    .login-card p {
+      color: var(--muted, #64748b);
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 0 0 32px;
+      padding: 0 10px;
+    }
+
+    /* Campos de formulario */
+    .form-group {
+      text-align: left;
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    /* Arreglo específico para forzar el diseño de los inputs */
+    .form-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--line, #cbd5e1);
+      border-radius: 12px;
+      background: #ffffff;
+      color: var(--text, #0f172a);
+      font-family: inherit;
+      font-size: 14px;
+      box-sizing: border-box;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-group input:focus {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      outline: none;
+    }
+
+    /* Botón principal */
+    .btn-login {
+      width: 100%;
+      background: var(--primary, #2563eb);
+      color: #ffffff;
+      border: none;
+      padding: 15px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+      margin-top: 8px;
+    }
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35);
+    }
+
+    /* Módulo de Soporte Whatsapp */
+    .support-link {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line, #e2e8f0);
+      font-size: 13px;
+      color: var(--muted, #64748b);
+    }
+    .support-link a {
+      color: #25D366; /* Color oficial Whatsapp */
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 4px;
+      transition: opacity 0.2s;
+    }
+    .support-link a:hover {
+      opacity: 0.8;
+    }
+    .wpp-icon {
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="login-logo">M</div>
+      <h1>Bienvenido al sistema</h1>
+      <p>Ingrese los datos operativos de su comercio para acceder al panel de control.</p>
+      
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Nombre del Comercio</label>
+          <input type="text" id="businessName" placeholder="Ej: Barbería Central" required autocomplete="organization" />
+        </div>
+        <div class="form-group">
+          <label>Usuario / PIN operativo</label>
+          <input type="password" id="userPin" placeholder="Ingrese cualquier valor" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn-login">Ingresar al Dashboard</button>
+      </form>
+
+      <div class="support-link">
+        ¿Necesitás ayuda? 
+        <a href="https://wa.me/5493516506955" target="_blank">
+          <span class="wpp-icon">💬</span> Escribinos
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="core.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const bName = document.getElementById('businessName').value.trim();
+      
+      // Guardar nombre del comercio y estado de sesión
+      localStorage.setItem('saas_business_name', bName);
+      localStorage.setItem('saas_logged_in', 'true');
+      
+      window.location.href = 'dashboard.html';
+    });
+  </script>
+</body>
+</html>

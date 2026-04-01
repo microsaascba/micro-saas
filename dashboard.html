@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard | Micro SaaS</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* ── Estilos específicos del Dashboard ── */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #fff;
+      border-radius: 24px;
+      padding: 28px;
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 22px;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      width: 320px; height: 320px;
+      right: -70px; top: -90px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,.14), transparent 60%);
+    }
+    .hero h2 { margin: 0; font-size: 24px; line-height: 1.2; }
+    .hero p  { margin: 10px 0 0; color: rgba(255,255,255,.8); font-size: 14px; line-height: 1.6; }
+    .hero-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    }
+    .hero-badge.primary { background: rgba(255,255,255,.12); color: #fff; }
+    .hero-badge.success { background: var(--success-soft); color: #166534; }
+    .hero-badge.warning { background: var(--warning-soft); color: #92400e; }
+
+    .quick-actions { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; position: relative; z-index: 1; }
+    .action-btn {
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
+      color: #fff; border-radius: var(--radius); padding: 14px; text-align: left;
+      cursor: pointer; transition: background .2s, transform .2s;
+    }
+    .action-btn:hover { background: rgba(255,255,255,.14); transform: translateY(-2px); }
+    .action-btn strong { display: block; font-size: 14px; margin-top: 6px; }
+    .action-btn span   { font-size: 12px; color: rgba(255,255,255,.7); }
+
+    .kpi-grid-5 { grid-template-columns: repeat(5, 1fr); }
+
+    .two-col { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; margin-bottom: 18px; }
+    .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 18px; }
+    .two-col-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    .insight-item { display: flex; gap: 10px; align-items: flex-start; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .dot-green  { background: var(--success); }
+    .dot-amber  { background: var(--warning); }
+    .dot-red    { background: var(--danger); }
+    .insight-item strong { display: block; font-size: 14px; margin-bottom: 2px; }
+    .insight-item p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .alert-item { display: grid; grid-template-columns: 38px 1fr auto; gap: 12px; align-items: start; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel-2); }
+    .alert-icon { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-weight: 800; font-size: 16px; }
+    .alert-icon-red    { background: var(--danger-soft); color: var(--danger); }
+    .alert-icon-amber  { background: var(--warning-soft); color: var(--warning); }
+    .alert-icon-blue   { background: var(--primary-soft); color: var(--primary); }
+    .alert-item h4 { margin: 0 0 4px; font-size: 14px; }
+    .alert-item p  { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .alert-cta { color: var(--primary); font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+    .simple-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2); }
+    .simple-item h4 { margin: 0 0 3px; font-size: 14px; }
+    .simple-item p  { margin: 0; color: var(--muted); font-size: 12px; }
+    .simple-meta { text-align: right; flex-shrink: 0; }
+    .simple-meta strong { display: block; font-size: 14px; }
+    .simple-meta small  { color: var(--muted); font-size: 12px; }
+
+    .activity-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-left { display: flex; gap: 10px; align-items: center; min-width: 0; }
+    .activity-badge { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; flex-shrink: 0; font-size: 15px; }
+    .badge-sale    { background: var(--success-soft); color: var(--success); }
+    .badge-expense { background: var(--danger-soft); color: var(--danger); }
+    .activity-left h4 { margin: 0 0 2px; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .activity-left p  { margin: 0; font-size: 12px; color: var(--muted); }
+    .amount-pos { color: var(--success); font-weight: 700; font-size: 15px; }
+    .amount-neg { color: var(--danger); font-weight: 700; font-size: 15px; }
+
+    /* Chart */
+    .perf-chart { height: 240px; display: grid; grid-template-columns: repeat(10,1fr); gap: 8px; align-items: end; padding-top: 8px; }
+    .bar-group  { display: flex; align-items: end; gap: 3px; height: 100%; }
+    .bar { flex: 1; border-radius: 8px 8px 3px 3px; min-height: 10px; }
+    .bar-s { background: linear-gradient(180deg, #60a5fa, #2563eb); }
+    .bar-e { background: linear-gradient(180deg, #fca5a5, #ef4444); }
+    .bar-n { background: linear-gradient(180deg, #86efac, #22c55e); }
+    .chart-labels { display: grid; grid-template-columns: repeat(10,1fr); gap: 8px; margin-top: 8px; text-align: center; font-size: 11px; color: var(--muted); }
+    .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--muted); }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+    @media (max-width: 1200px) {
+      .kpi-grid-5 { grid-template-columns: repeat(3,1fr); }
+      .hero { grid-template-columns: 1fr; }
+      .two-col, .three-col, .two-col-eq { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong>Micro SaaS</strong><small>Control del negocio</small></div>
+    </div>
+    <nav class="nav">
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
+    </nav>
+    <div class="sidebar-footer">
+      <strong>Estado del negocio</strong>
+      <span id="sidebarState">Leyendo información...</span>
+    </div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div class="page-title">
+        <h1>Panel principal</h1>
+        <p id="topbarDate">Resumen operativo del negocio</p>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <h2 id="heroTitle">Cargando datos del negocio...</h2>
+        <p id="heroText"></p>
+        <div class="hero-badges" id="heroBadges"></div>
+      </div>
+      <div class="quick-actions">
+        <button class="action-btn" onclick="location.href='ventas.html'">➕<strong>Cargar venta</strong><span>Registrar ingreso y bajar stock</span></button>
+        <button class="action-btn" onclick="location.href='contable.html'">💳<strong>Cargar gasto</strong><span>Registrar egreso del día</span></button>
+        <button class="action-btn" onclick="location.href='contable.html'">🏦<strong>Pago proveedor</strong><span>Actualizar deuda o pago</span></button>
+        <button class="action-btn" onclick="location.href='producto.html'">📦<strong>Nuevo producto</strong><span>Alta rápida de producto</span></button>
+      </div>
+    </section>
+
+    <section class="kpi-grid kpi-grid-5 card-pad" id="kpiGrid" style="display:grid;margin-bottom:22px;"></section>
+
+    <div class="two-col">
+      <article class="card card-pad">
+        <div class="section-head">
+          <div><h2>Estado del negocio hoy</h2><p>Lectura simple para decidir rápido</p></div>
+          <a href="contable.html" class="ghost-link">Ver detalle</a>
+        </div>
+        <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;">
+          <p id="stateNarrative" style="margin:0;font-size:14px;line-height:1.65;color:var(--text);"></p>
+        </div>
+        <div id="insightList" style="display:grid;gap:10px;"></div>
+      </article>
+
+      <article class="card card-pad">
+        <div class="section-head">
+          <div><h2>Alertas del negocio</h2><p>Prioridad operativa del día</p></div>
+          <a href="stock.html" class="ghost-link">Ver todo</a>
+        </div>
+        <div id="alertList" style="display:grid;gap:10px;"></div>
+      </article>
+    </div>
+
+    <div class="two-col" style="margin-bottom:18px;">
+      <article class="card card-pad">
+        <div class="section-head">
+          <div><h2>Rendimiento del período</h2><p>Ventas, egresos y resultado neto</p></div>
+          <a href="ventas.html" class="ghost-link">Ver ventas</a>
+        </div>
+        <div class="perf-chart" id="performanceChart"></div>
+        <div class="chart-labels" id="performanceLabels"></div>
+        <div class="legend">
+          <span><i style="background:#2563eb"></i> Ventas</span>
+          <span><i style="background:#ef4444"></i> Egresos</span>
+          <span><i style="background:#22c55e"></i> Resultado</span>
+        </div>
+      </article>
+
+      <article class="card card-pad">
+        <div class="section-head">
+          <div><h2>Gastos recientes</h2><p>Últimos movimientos</p></div>
+          <a href="contable.html" class="ghost-link">Ver más</a>
+        </div>
+        <div id="recentExpensesList" style="display:grid;gap:10px;"></div>
+      </article>
+    </div>
+
+    <div class="three-col">
+      <article class="card card-pad">
+        <div class="section-head"><div><h2>Más vendidos</h2><p>Mayor salida del período</p></div><a href="ventas.html" class="ghost-link">Ver ventas</a></div>
+        <div id="topProductsList" style="display:grid;gap:10px;"></div>
+      </article>
+      <article class="card card-pad">
+        <div class="section-head"><div><h2>Menor margen</h2><p>Productos a revisar</p></div><a href="producto.html" class="ghost-link">Ir a pricing</a></div>
+        <div id="lowMarginList" style="display:grid;gap:10px;"></div>
+      </article>
+      <article class="card card-pad">
+        <div class="section-head"><div><h2>Stock bajo</h2><p>Reposición sugerida</p></div><a href="stock.html" class="ghost-link">Ver stock</a></div>
+        <div id="lowStockList" style="display:grid;gap:10px;"></div>
+      </article>
+    </div>
+
+    <div class="two-col-eq">
+      <article class="card card-pad">
+        <div class="section-head"><div><h2>Últimas ventas</h2><p>Movimiento comercial reciente</p></div><a href="ventas.html" class="ghost-link">Historial</a></div>
+        <div id="latestSalesList"></div>
+      </article>
+      <article class="card card-pad">
+        <div class="section-head"><div><h2>Pagos y egresos recientes</h2><p>Movimientos de caja y proveedores</p></div><a href="contable.html" class="ghost-link">Ver contable</a></div>
+        <div id="latestOutflowsList"></div>
+      </article>
+    </div>
+  </main>
+</div>
+
+<script src="core.js"></script>
+<script>
+function computeState() {
+  const products        = getData(KEYS.products, []);
+  const sales           = getData(KEYS.sales, []);
+  const expenses        = getData(KEYS.expenses, []);
+  const supplierDebts   = getData(KEYS.supplierDebts, []);
+  const supplierPayments= getData(KEYS.supplierPayments, []);
+  const today           = todayISO();
+  const cm              = monthKey(today);
+
+  const salesToday  = sales.filter(s => (s.createdAt || s.date || '').slice(0,10) === today);
+  const salesMonth  = sales.filter(s => monthKey(s.createdAt || s.date || '') === cm);
+  const incomeToday = salesToday.reduce((a,s) => a + saleTotal(s), 0);
+  const incomeMonth = salesMonth.reduce((a,s) => a + saleTotal(s), 0);
+
+  const mExpenses   = expenses.filter(e => monthKey(e.date) === cm && e.status === 'pagado').reduce((a,e) => a + toNum(e.amount), 0);
+  const mSupplPay   = supplierPayments.filter(p => monthKey(p.date) === cm).reduce((a,p) => a + toNum(p.amount), 0);
+  const monthOutflows = mExpenses + mSupplPay;
+  const netMonth    = incomeMonth - monthOutflows;
+
+  const avgMargin   = products.length ? products.reduce((a,p) => a + toNum(p.margin), 0) / products.length : 0;
+  const lowMargin   = [...products].filter(p => toNum(p.margin) < 20).sort((a,b)=>toNum(a.margin)-toNum(b.margin)).slice(0,3);
+  const lowStock    = [...products].filter(p => toNum(p.stock) <= toNum(p.stockMin || 3) && p.status !== 'Inactivo').sort((a,b)=>toNum(a.stock)-toNum(b.stock)).slice(0,3);
+
+  const topMap = {};
+  salesMonth.forEach(sale => (sale.items || []).forEach(item => {
+    const k = item.name || 'Producto';
+    if (!topMap[k]) topMap[k] = { name: k, units: 0, revenue: 0 };
+    topMap[k].units += toNum(item.quantity);
+    topMap[k].revenue += toNum(item.subtotal) || toNum(item.quantity) * toNum(item.price);
+  }));
+  const topProducts = Object.values(topMap).sort((a,b)=>b.units-a.units).slice(0,3);
+
+  const latestSales = [...sales].sort((a,b)=>(b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||'')).slice(0,4);
+  const latestExpenses = [
+    ...expenses.map(e => ({ type:'Gasto',  date:e.date, title:e.concept,      detail:e.category||'Gasto',       amount:-Math.abs(toNum(e.amount)) })),
+    ...supplierPayments.map(p => ({ type:'Pago', date:p.date, title:p.supplierName, detail:p.concept||'Pago a proveedor', amount:-Math.abs(toNum(p.amount)) }))
+  ].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4);
+
+  const supplierDebtPending = Math.max(0,
+    supplierDebts.reduce((a,d) => a + toNum(d.amount), 0) -
+    supplierPayments.reduce((a,p) => a + toNum(p.amount), 0)
+  );
+
+  return { products, sales, incomeToday, incomeMonth, monthOutflows, netMonth, avgMargin, lowMargin, lowStock, topProducts, latestSales, latestExpenses, supplierDebtPending };
+}
+
+function renderHero(s) {
+  const date = new Intl.DateTimeFormat('es-AR', { weekday:'long', day:'numeric', month:'long' }).format(new Date());
+  document.getElementById('topbarDate').textContent = date + ' · Resumen operativo';
+  document.getElementById('heroTitle').textContent = s.incomeToday > 0
+    ? `Hoy vendiste ${currency(s.incomeToday)} y el negocio ${s.netMonth >= 0 ? 'sigue en positivo' : 'está ajustado'}.`
+    : 'Todavía no registraste ventas hoy.';
+  document.getElementById('heroText').textContent =
+    `Ingresos del mes: ${currency(s.incomeMonth)}. Egresos: ${currency(s.monthOutflows)}. Margen promedio: ${percent(s.avgMargin)}. ${s.lowStock.length} productos con stock bajo.`;
+  document.getElementById('heroBadges').innerHTML = `
+    <span class="hero-badge primary">Estado: ${s.netMonth >= 0 ? 'positivo' : 'en alerta'}</span>
+    <span class="hero-badge ${s.avgMargin >= 25 ? 'success' : 'warning'}">Margen ${percent(s.avgMargin)}</span>
+    <span class="hero-badge ${s.lowStock.length ? 'warning' : 'success'}">${s.lowStock.length} con stock bajo</span>
+  `;
+  document.getElementById('sidebarState').textContent = s.netMonth >= 0
+    ? `Ingresos ${currency(s.incomeMonth)} vs egresos ${currency(s.monthOutflows)}. Positivo.`
+    : `Egresos superan ingresos por ${currency(Math.abs(s.netMonth))}.`;
+}
+
+function renderKpis(s) {
+  const cards = [
+    { label:'Ventas del día',    value:currency(s.incomeToday),  note: s.incomeToday > 0 ? 'Con movimiento' : 'Sin ventas hoy' },
+    { label:'Ingresos del mes',  value:currency(s.incomeMonth),  note: 'Facturación acumulada' },
+    { label:'Egresos del mes',   value:currency(s.monthOutflows),note: 'Gastos + pagos' },
+    { label:'Resultado neto',    value:currency(s.netMonth),     note: s.netMonth >= 0 ? 'Positivo ✓' : 'Negativo ⚠' },
+    { label:'Margen general',    value:percent(s.avgMargin),     note: s.avgMargin >= 25 ? 'Saludable' : 'A revisar' },
+  ];
+  document.getElementById('kpiGrid').innerHTML = cards.map(c => `
+    <article class="card kpi-card">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-sub">${c.note}</div>
+    </article>
+  `).join('');
+}
+
+function renderNarrative(s) {
+  let text = `El negocio viene ${s.netMonth >= 0 ? 'en positivo con resultado neto de ' + currency(s.netMonth) : 'ajustado, resultado neto ' + currency(s.netMonth)}. `;
+  text += `Margen promedio: ${percent(s.avgMargin)}. `;
+  if (s.topProducts.length) text += `El producto más vendido es ${s.topProducts[0].name}. `;
+  if (s.lowMargin.length)   text += `Hay ${s.lowMargin.length} productos con margen bajo. `;
+  if (s.lowStock.length)    text += `${s.lowStock.length} productos con stock bajo.`;
+  document.getElementById('stateNarrative').textContent = text;
+
+  const insights = [
+    { dot: s.incomeToday > 0 ? 'green' : 'amber', title: s.incomeToday > 0 ? 'Hoy hubo ventas' : 'Sin ventas todavía', body: s.incomeToday > 0 ? `Ingresaste ${currency(s.incomeToday)} hoy.` : 'Todavía no hay actividad comercial.' },
+    { dot: s.avgMargin >= 25 ? 'green' : 'amber',  title: 'Margen del negocio', body: `El margen promedio es ${percent(s.avgMargin)}.` },
+    { dot: s.lowStock.length ? 'red' : 'green',    title: 'Estado del stock', body: s.lowStock.length ? `${s.lowStock.length} productos bajo el mínimo.` : 'Stock bajo control.' },
+  ];
+  document.getElementById('insightList').innerHTML = insights.map(i => `
+    <div class="insight-item">
+      <span class="dot dot-${i.dot}"></span>
+      <div><strong>${i.title}</strong><p>${i.body}</p></div>
+    </div>
+  `).join('');
+}
+
+function renderAlerts(s) {
+  const alerts = [];
+  if (s.lowStock.length)          alerts.push({ cls:'red',   title:`${s.lowStock.length} con stock crítico`, text:s.lowStock.map(p=>p.name).join(', ') + ' necesitan reposición.', cta:'Ver stock', href:'stock.html' });
+  if (s.supplierDebtPending > 0)  alerts.push({ cls:'amber', title:'Pagos a proveedores pendientes', text:`Monto pendiente: ${currency(s.supplierDebtPending)}.`, cta:'Revisar', href:'contable.html' });
+  if (s.lowMargin.length)         alerts.push({ cls:'blue',  title:'Productos con margen bajo', text:s.lowMargin.map(p=>p.name).join(', ') + ' están dejando poca rentabilidad.', cta:'Ver pricing', href:'producto.html' });
+  if (!alerts.length)             alerts.push({ cls:'blue',  title:'Sin alertas críticas', text:'El sistema no detectó problemas importantes.', cta:'Dashboard', href:'dashboard.html' });
+
+  document.getElementById('alertList').innerHTML = alerts.map(a => `
+    <div class="alert-item">
+      <div class="alert-icon alert-icon-${a.cls}">${a.cls==='red'?'!':a.cls==='amber'?'$':'i'}</div>
+      <div><h4>${a.title}</h4><p>${a.text}</p></div>
+      <a href="${a.href}" class="alert-cta">${a.cta} →</a>
+    </div>
+  `).join('');
+}
+
+function renderChart(s) {
+  const days = Array.from({length:10}, (_,i) => i+1);
+  const mx = Math.max(s.incomeMonth, s.monthOutflows, Math.abs(s.netMonth), 1);
+  document.getElementById('performanceChart').innerHTML = days.map((d,i) => {
+    const f = (i+3)/12;
+    const sv = Math.max(10, (s.incomeMonth/mx)*75*f);
+    const ev = Math.max(10, (s.monthOutflows/mx)*55*f);
+    const nv = Math.max(10, (Math.max(s.netMonth,0)/mx)*65*f);
+    return `<div class="bar-group"><div class="bar bar-s" style="height:${sv}%"></div><div class="bar bar-e" style="height:${ev}%"></div><div class="bar bar-n" style="height:${nv}%"></div></div>`;
+  }).join('');
+  document.getElementById('performanceLabels').innerHTML = days.map(d=>`<span>${d}</span>`).join('');
+}
+
+function simpleItem(title, sub, value, note) {
+  return `<div class="simple-item"><div><h4>${escapeHtml(title)}</h4><p>${escapeHtml(sub)}</p></div><div class="simple-meta"><strong>${value}</strong><small>${note}</small></div></div>`;
+}
+
+function renderSimpleLists(s) {
+  document.getElementById('recentExpensesList').innerHTML = s.latestExpenses.length
+    ? s.latestExpenses.map(e => simpleItem(e.title, e.date + ' · ' + e.detail, `<span style="color:var(--danger)">${currency(e.amount)}</span>`, e.type)).join('')
+    : '<div class="empty">Sin egresos recientes.</div>';
+
+  document.getElementById('topProductsList').innerHTML = s.topProducts.length
+    ? s.topProducts.map(p => simpleItem(p.name, p.units + ' unidades vendidas', currency(p.revenue), 'Top ventas')).join('')
+    : '<div class="empty">Sin ventas del período.</div>';
+
+  document.getElementById('lowMarginList').innerHTML = s.lowMargin.length
+    ? s.lowMargin.map(p => simpleItem(p.name, 'Margen actual', percent(p.margin||0), 'Bajo')).join('')
+    : '<div class="empty">Sin alertas de margen.</div>';
+
+  document.getElementById('lowStockList').innerHTML = s.lowStock.length
+    ? s.lowStock.map(p => simpleItem(p.name, `Mín ${p.stockMin||3} · Actual ${p.stock||0}`, `<span style="color:${toNum(p.stock)<=0?'var(--danger)':'var(--warning)'}">${toNum(p.stock)<=0?'Crítico':'Bajo'}</span>`, 'Reponer')).join('')
+    : '<div class="empty">Sin alertas de stock.</div>';
+}
+
+function renderActivity(s) {
+  document.getElementById('latestSalesList').innerHTML = s.latestSales.length
+    ? s.latestSales.map(sale => `
+      <div class="activity-item">
+        <div class="activity-left">
+          <div class="activity-badge badge-sale">V</div>
+          <div><h4>${escapeHtml(sale.code || 'Venta')}</h4><p>${(sale.createdAt||sale.date||'').slice(0,10)} · ${(sale.items||[]).length} productos</p></div>
+        </div>
+        <span class="amount-pos">+${currency(saleTotal(sale))}</span>
+      </div>`).join('')
+    : '<div class="empty">Sin ventas recientes.</div>';
+
+  document.getElementById('latestOutflowsList').innerHTML = s.latestExpenses.length
+    ? s.latestExpenses.map(item => `
+      <div class="activity-item">
+        <div class="activity-left">
+          <div class="activity-badge badge-expense">${item.type==='Pago'?'P':'G'}</div>
+          <div><h4>${escapeHtml(item.title)}</h4><p>${item.date} · ${escapeHtml(item.detail)}</p></div>
+        </div>
+        <span class="amount-neg">${currency(item.amount)}</span>
+      </div>`).join('')
+    : '<div class="empty">Sin egresos recientes.</div>';
+}
+
+function renderDashboard() {
+  const s = computeState();
+  renderHero(s);
+  renderKpis(s);
+  renderNarrative(s);
+  renderAlerts(s);
+  renderChart(s);
+  renderSimpleLists(s);
+  renderActivity(s);
+}
+
+window.addEventListener('storage', renderDashboard);
+window.addEventListener('saas:data-updated', renderDashboard);
+renderDashboard();
+</script>
+</body>
+</html>

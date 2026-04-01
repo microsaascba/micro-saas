@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Productos | Micro SaaS</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .two-col { display: grid; grid-template-columns: 420px 1fr; gap: 20px; align-items: start; }
+    .analysis-grid { display: grid; grid-template-columns: 1.25fr .95fr; gap: 20px; margin-top: 20px; }
+
+    .helper-box { margin-top: 18px; background: var(--panel-2); border: 1px dashed #cbd5e1; border-radius: 14px; padding: 16px; }
+    .helper-row { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 6px 0; }
+    .helper-row strong { font-size: 15px; }
+    .helper-msg { margin-top: 10px; padding: 11px 14px; border-radius: 12px; font-size: 13px; font-weight: 600; }
+
+    .toolbar { display: grid; grid-template-columns: 1.2fr repeat(3,.6fr); gap: 10px; margin-bottom: 14px; }
+
+    .product-thumb { width: 46px; height: 46px; border-radius: 12px; background: #eef2ff; border: 1px solid var(--line); overflow: hidden; flex-shrink: 0; }
+    .product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .product-main { display: flex; align-items: center; gap: 10px; }
+    .product-name { display: grid; gap: 2px; }
+    .product-name strong { font-size: 14px; }
+    .product-name span { font-size: 12px; color: var(--muted); }
+
+    .img-preview { width: 100%; height: 160px; border: 1px dashed #cbd5e1; border-radius: 14px; background: var(--panel-2); display: grid; place-items: center; overflow: hidden; color: var(--muted); font-size: 13px; font-weight: 600; }
+    .img-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+    .mini-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-top: 16px; }
+    .mini-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+    .mini-card span { font-size: 12px; color: var(--muted); display: block; margin-bottom: 6px; font-weight: 600; }
+    .mini-card strong { font-size: 20px; letter-spacing: -.03em; }
+
+    .insights-list { display: grid; gap: 10px; margin-top: 16px; }
+    .insight { border: 1px solid var(--line); border-radius: 14px; padding: 13px 15px; background: #fff; font-size: 14px; line-height: 1.55; }
+
+    .bar-chart-wrap { margin-top: 16px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+    .bar-chart-wrap .bar-chart { display: flex; align-items: end; gap: 18px; height: 200px; margin-top: 10px; }
+    .bar-group { display: flex; align-items: end; gap: 8px; height: 100%; flex: 1; }
+    .bar { flex: 1; border-radius: 12px 12px 5px 5px; position: relative; }
+    .bar.cost   { background: rgba(100,116,139,.35); border: 1px solid rgba(100,116,139,.25); }
+    .bar.price  { background: rgba(37,99,235,.85); }
+    .bar.profit { background: rgba(22,163,74,.82); }
+    .bar-value  { position: absolute; top: -22px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--muted); font-weight: 700; white-space: nowrap; }
+    .bar-label  { text-align: center; margin-top: 10px; font-size: 12px; color: var(--muted); font-weight: 600; }
+
+    @media (max-width: 1100px) {
+      .two-col { grid-template-columns: 1fr; }
+      .analysis-grid { grid-template-columns: 1fr; }
+      .toolbar { grid-template-columns: 1fr 1fr; }
+      .mini-cards { grid-template-columns: repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong>Micro SaaS</strong><small>Control del negocio</small></div>
+    </div>
+    <nav class="nav">
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html" class="active"><span class="nav-icon">📦</span> Productos</a>
+      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
+    </nav>
+    <div class="sidebar-footer">
+      <strong>Conexión del sistema</strong>
+      Comparte datos con ventas, stock, contable y dashboard usando claves normalizadas.
+    </div>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div class="page-title">
+        <h1>Productos</h1>
+        <p>Gestión integral del catálogo, fijación de precios y análisis de márgenes.</p>
+      </div>
+      <div class="topbar-actions">
+        <input type="file" id="importFile" accept=".csv" style="display:none;" />
+        <button class="btn btn-light" id="importBtn">⬆ Importar CSV</button>
+        <button class="btn btn-success" id="exportBtn">⬇ Exportar Excel</button>
+        <button class="btn btn-primary" id="newProductBtn">+ Nuevo producto</button>
+      </div>
+    </header>
+
+    <div class="flash" id="flash"></div>
+
+    <section class="kpi-grid" id="statsCards" style="margin-bottom:22px;"></section>
+
+    <section class="two-col">
+      <article class="card card-pad">
+        <h2 id="formTitle" style="margin:0 0 6px;font-size:18px;">Alta de producto</h2>
+        <p style="margin:0 0 16px;color:var(--muted);font-size:13px;">Definición de costos y rentabilidad unitaria.</p>
+        <form id="productForm">
+          <div class="form-grid">
+            <div class="field full"><label>Nombre del producto *</label><input id="name" type="text" placeholder="Ej: Máquina de corte profesional" required /></div>
+            <div class="field"><label>Categoría</label><input id="category" type="text" placeholder="Ej: Herramientas" /></div>
+            <div class="field"><label>Estado</label><select id="status"><option value="Activo">Activo</option><option value="Pausado">Pausado</option><option value="Inactivo">Inactivo</option></select></div>
+            <div class="field"><label>Costo unitario *</label><input id="cost" type="number" min="0" step="0.01" placeholder="0.00" required /></div>
+            <div class="field"><label>Gastos asociados</label><input id="extraCosts" type="number" min="0" step="0.01" placeholder="0.00" /></div>
+            <div class="field"><label>Precio de venta *</label><input id="price" type="number" min="0" step="0.01" placeholder="0.00" required /></div>
+            <div class="field"><label>Margen objetivo %</label><input id="targetMargin" type="number" min="0" max="95" step="0.1" placeholder="35" /></div>
+            <div class="field"><label>Stock actual</label><input id="stock" type="number" min="0" step="1" placeholder="0" /></div>
+            <div class="field"><label>Stock mínimo</label><input id="stockMin" type="number" min="0" step="1" placeholder="3" /></div>
+            <div class="field"><label>SKU / Código</label><input id="sku" type="text" placeholder="Opcional" /></div>
+            <div class="field full"><label>Imagen (URL)</label><input id="image" type="url" placeholder="https://..." /></div>
+            <div class="field full"><div class="img-preview" id="imagePreview">Vista previa de imagen</div></div>
+          </div>
+          <div class="helper-box">
+            <div class="helper-row"><span>Costo total</span><strong id="liveTotalCost">$ 0</strong></div>
+            <div class="helper-row"><span>Utilidad por unidad</span><strong id="liveUnitProfit">$ 0</strong></div>
+            <div class="helper-row"><span>Margen</span><strong id="liveMargin">0%</strong></div>
+            <div class="helper-row"><span>Mark up</span><strong id="liveMarkup">0%</strong></div>
+            <div class="helper-row"><span>Precio sugerido</span><strong id="liveSuggested">$ 0</strong></div>
+            <div class="helper-msg flash-info" id="liveMessage">Completá costo y precio para validar rentabilidad.</div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+            <button type="submit" class="btn btn-primary" id="saveBtn">Guardar producto</button>
+            <button type="button" class="btn btn-light" id="cancelEditBtn" style="display:none;">Cancelar edición</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="card card-pad">
+        <h2 style="margin:0 0 6px;font-size:18px;">Listado y control</h2>
+        <p style="margin:0 0 14px;color:var(--muted);font-size:13px;">Matriz operativa de productos.</p>
+        <div class="toolbar">
+          <input type="text" id="searchInput" placeholder="Buscar producto o código..." />
+          <select id="filterStatus"><option value="Todos">Todos los estados</option><option value="Activo">Activos</option><option value="Pausado">Pausados</option><option value="Inactivo">Inactivos</option></select>
+          <select id="filterHealth"><option value="Todos">Toda la salud</option><option value="Saludable">Buen margen</option><option value="Atención">Margen medio</option><option value="Crítico">Margen bajo</option></select>
+          <select id="sortBy"><option value="updated-desc">Más recientes</option><option value="margin-desc">Mayor margen</option><option value="margin-asc">Menor margen</option><option value="stock-asc">Menor stock</option></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Producto</th><th>Costo</th><th>Precio</th><th>Margen</th><th>Utilidad</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+
+    <section class="analysis-grid">
+      <article class="card card-pad">
+        <h2 style="margin:0 0 6px;font-size:18px;">Detalle y análisis</h2>
+        <div id="detailContent"><div class="empty" style="margin-top:16px;">Seleccione un producto del listado para ver su análisis de rentabilidad.</div></div>
+      </article>
+      <article class="card card-pad">
+        <h2 style="margin:0 0 6px;font-size:18px;">Resumen comercial</h2>
+        <div id="rankingContent"></div>
+      </article>
+    </section>
+  </main>
+</div>
+
+<script src="core.js"></script>
+<script>
+let products = [], editingId = null, selectedId = null;
+const fmt = new Intl.NumberFormat('es-AR', { style:'currency', currency:'ARS', maximumFractionDigits:2 });
+const pct = v => Number(v||0).toFixed(1) + '%';
+
+function showFlash(text, type='flash-info') {
+  const el = document.getElementById('flash');
+  el.className = 'flash show ' + type;
+  el.textContent = text;
+  clearTimeout(showFlash._t);
+  showFlash._t = setTimeout(() => { el.className = 'flash'; el.textContent = ''; }, 4000);
+}
+
+function calcMetrics(d) {
+  const cost = toNum(d.cost), extra = toNum(d.extraCosts), price = toNum(d.price), tm = toNum(d.targetMargin);
+  const totalCost = cost + extra;
+  const unitProfit = price - totalCost;
+  const margin = price > 0 ? ((price - totalCost) / price) * 100 : 0;
+  const markup  = totalCost > 0 ? ((price - totalCost) / totalCost) * 100 : 0;
+  const suggestedPrice = tm > 0 && tm < 100 ? totalCost / (1 - tm / 100) : totalCost;
+  return { totalCost, unitProfit, margin, markup, suggestedPrice };
+}
+
+function getHealth(margin) {
+  if (margin >= 35) return { label:'Saludable', cls:'badge-success', text:'Rentabilidad óptima.' };
+  if (margin >= 20) return { label:'Atención',  cls:'badge-warning', text:'Margen ajustado.' };
+  return { label:'Crítico', cls:'badge-danger', text:'Rentabilidad crítica.' };
+}
+
+function normalizeProduct(p) {
+  const n = { id:p.id||crypto.randomUUID(), name:p.name||'', category:p.category||'', status:p.status||'Activo', cost:toNum(p.cost), extraCosts:toNum(p.extraCosts), price:toNum(p.price), targetMargin:toNum(p.targetMargin), stock:Math.max(0,Math.round(toNum(p.stock))), stockMin:Math.max(0,Math.round(toNum(p.stockMin||3))), sku:p.sku||'', image:p.image||'', active:p.active!==false, createdAt:p.createdAt||new Date().toISOString(), updatedAt:p.updatedAt||new Date().toISOString() };
+  return { ...n, ...calcMetrics(n) };
+}
+
+function loadProducts()  { products = getData(KEYS.products, []).map(normalizeProduct); }
+function saveProducts()  { setData(KEYS.products, products); syncDashboard(); }
+function syncDashboard() {
+  const active = products.filter(p => p.status === 'Activo');
+  const summary = { updatedAt:new Date().toISOString(), products:{ totalProducts:products.length, activeProducts:active.length, averageMargin:products.length ? products.reduce((a,p)=>a+p.margin,0)/products.length : 0, lowMarginCount:products.filter(p=>p.margin<20).length, lowStockCount:products.filter(p=>p.stock<=p.stockMin&&p.status==='Activo').length } };
+  setData(KEYS.dashboard, { ...getData(KEYS.dashboard, {}), ...summary });
+}
+
+function updateImagePreview() {
+  const url = document.getElementById('image').value.trim();
+  const el = document.getElementById('imagePreview');
+  if (!url) { el.textContent = 'Vista previa de imagen'; return; }
+  el.innerHTML = `<img src="${escapeHtml(url)}" alt="Vista previa" onerror="this.parentElement.textContent='No se pudo cargar la imagen';">`;
+}
+
+function updateLive() {
+  const m = calcMetrics({ cost:document.getElementById('cost').value, extraCosts:document.getElementById('extraCosts').value, price:document.getElementById('price').value, targetMargin:document.getElementById('targetMargin').value });
+  document.getElementById('liveTotalCost').textContent  = fmt.format(m.totalCost);
+  document.getElementById('liveUnitProfit').textContent = fmt.format(m.unitProfit);
+  document.getElementById('liveMargin').textContent     = pct(m.margin);
+  document.getElementById('liveMarkup').textContent     = pct(m.markup);
+  document.getElementById('liveSuggested').textContent  = fmt.format(m.suggestedPrice);
+  const lm = document.getElementById('liveMessage');
+  if (m.unitProfit <= 0 && toNum(document.getElementById('price').value) > 0) { lm.className='helper-msg flash-danger'; lm.textContent='Atención: El producto genera pérdida o no tiene utilidad.'; }
+  else if (m.margin >= 35) { lm.className='helper-msg flash-success'; lm.textContent='Margen saludable alineado a estándares comerciales.'; }
+  else if (m.margin >= 20) { lm.className='helper-msg flash-warning'; lm.textContent='Rentabilidad ajustada. Sugiere monitoreo.'; }
+  else { lm.className='helper-msg flash-info'; lm.textContent='Ingrese parámetros financieros para procesar.'; }
+  updateImagePreview();
+}
+
+function resetForm() {
+  editingId = null;
+  document.getElementById('productForm').reset();
+  document.getElementById('status').value = 'Activo';
+  document.getElementById('stockMin').value = '3';
+  document.getElementById('formTitle').textContent = 'Alta de producto';
+  document.getElementById('saveBtn').textContent = 'Guardar producto';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  updateLive();
+}
+
+function fillForm(p) {
+  editingId = p.id;
+  ['name','category','status','cost','extraCosts','price','targetMargin','stock','stockMin','sku','image'].forEach(f => { document.getElementById(f).value = p[f] ?? ''; });
+  document.getElementById('formTitle').textContent = 'Editar producto';
+  document.getElementById('saveBtn').textContent = 'Guardar cambios';
+  document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+  updateLive();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function submitForm(e) {
+  e.preventDefault();
+  const base = { id:editingId||crypto.randomUUID(), name:document.getElementById('name').value.trim(), category:document.getElementById('category').value.trim(), status:document.getElementById('status').value, cost:toNum(document.getElementById('cost').value), extraCosts:toNum(document.getElementById('extraCosts').value), price:toNum(document.getElementById('price').value), targetMargin:toNum(document.getElementById('targetMargin').value), stock:Math.max(0,Math.round(toNum(document.getElementById('stock').value))), stockMin:Math.max(0,Math.round(toNum(document.getElementById('stockMin').value||3))), sku:document.getElementById('sku').value.trim(), image:document.getElementById('image').value.trim(), active:document.getElementById('status').value!=='Inactivo', createdAt:editingId?(products.find(p=>p.id===editingId)?.createdAt||new Date().toISOString()):new Date().toISOString(), updatedAt:new Date().toISOString() };
+  if (!base.name || base.cost <= 0 || base.price <= 0) { showFlash('Los campos Nombre, Costo y Precio son obligatorios.', 'flash-warning'); return; }
+  const product = { ...base, ...calcMetrics(base) };
+  if (editingId) { products = products.map(p => p.id===editingId ? product : p); showFlash('Registro actualizado correctamente.', 'flash-success'); }
+  else           { products.unshift(product); showFlash('Nuevo registro generado.', 'flash-success'); }
+  selectedId = product.id;
+  saveProducts(); renderAll(); resetForm();
+}
+
+function removeProduct(id) {
+  if (!confirm('¿Confirma la eliminación del registro? Esta acción no se puede deshacer.')) return;
+  products = products.filter(p => p.id !== id);
+  if (selectedId === id) selectedId = products[0]?.id || null;
+  saveProducts(); renderAll(); showFlash('Registro eliminado.', 'flash-success');
+}
+
+function getFiltered() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  const st = document.getElementById('filterStatus').value;
+  const hf = document.getElementById('filterHealth').value;
+  const sb = document.getElementById('sortBy').value;
+  let list = [...products].filter(p => {
+    const mt = !q || [p.name,p.category,p.sku].join(' ').toLowerCase().includes(q);
+    const ms = st==='Todos'||p.status===st;
+    const mh = hf==='Todos'||getHealth(p.margin).label===hf;
+    return mt && ms && mh;
+  });
+  const sorters = { 'updated-desc':(a,b)=>new Date(b.updatedAt)-new Date(a.updatedAt), 'margin-desc':(a,b)=>b.margin-a.margin, 'margin-asc':(a,b)=>a.margin-b.margin, 'stock-asc':(a,b)=>a.stock-b.stock };
+  list.sort(sorters[sb] || sorters['updated-desc']);
+  return list;
+}
+
+function renderStats() {
+  const total = products.length;
+  const avg   = total ? products.reduce((a,p)=>a+p.margin,0)/total : 0;
+  const cards = [
+    { label:'Catálogo activo',    value:total, foot:'Total de referencias' },
+    { label:'Margen general',     value:pct(avg), foot:'Promedio ponderado' },
+    { label:'Rentables',          value:products.filter(p=>p.unitProfit>0).length, foot:'Utilidad positiva' },
+    { label:'Alerta financiera',  value:products.filter(p=>p.margin<20).length, foot:'Requieren ajuste' },
+  ];
+  document.getElementById('statsCards').innerHTML = cards.map(c => `
+    <article class="card kpi-card">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-sub">${c.foot}</div>
+    </article>`).join('');
+}
+
+function renderTable() {
+  const list = getFiltered();
+  document.getElementById('productsTableBody').innerHTML = list.length
+    ? list.map(p => {
+        const h = getHealth(p.margin);
+        const sc = p.status==='Activo'?'badge-success':p.status==='Pausado'?'badge-warning':'badge-neutral';
+        return `<tr>
+          <td><div class="product-main"><div class="product-name"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.sku||'Sin SKU')}</span></div></div></td>
+          <td>${fmt.format(p.totalCost)}</td>
+          <td>${fmt.format(p.price)}</td>
+          <td><span class="${p.margin<20?'text-danger':''}">${pct(p.margin)}</span></td>
+          <td><strong>${fmt.format(p.unitProfit)}</strong></td>
+          <td>${p.stock}</td>
+          <td><span class="badge ${sc}">${p.status}</span></td>
+          <td><div class="row-actions"><button class="mini-btn" onclick="selectProduct('${p.id}')">Ver</button><button class="mini-btn" onclick="editProduct('${p.id}')">Editar</button><button class="mini-btn" onclick="deleteProduct('${p.id}')">Eliminar</button></div></td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="8"><div class="empty">No se encontraron registros activos.</div></td></tr>`;
+}
+
+function renderDetail() {
+  const el = document.getElementById('detailContent');
+  if (!selectedId || !products.find(p=>p.id===selectedId)) { el.innerHTML='<div class="empty" style="margin-top:16px;">Seleccione un registro para su análisis.</div>'; return; }
+  const p = products.find(x=>x.id===selectedId);
+  const h = getHealth(p.margin);
+  const missing = Math.max(0, p.suggestedPrice - p.price);
+  const mx = Math.max(p.totalCost, p.price, p.unitProfit, 1);
+  const bh = v => Math.max(10, (v/mx)*180) + 'px';
+  el.innerHTML = `
+    <div class="product-main" style="margin-top:16px;">
+      <div class="product-name"><strong style="font-size:20px;">${escapeHtml(p.name)}</strong><span>${escapeHtml(p.category||'General')} · ${p.status}</span></div>
+    </div>
+    <div class="mini-cards">
+      <div class="mini-card"><span>Margen Real</span><strong>${pct(p.margin)}</strong></div>
+      <div class="mini-card"><span>Utilidad/Unidad</span><strong>${fmt.format(p.unitProfit)}</strong></div>
+      <div class="mini-card"><span>Precio Ideal</span><strong>${fmt.format(p.suggestedPrice)}</strong></div>
+      <div class="mini-card"><span>Mark up</span><strong>${pct(p.markup)}</strong></div>
+    </div>
+    <div class="insights-list">
+      <div class="insight"><strong>Estructura de costos:</strong> Genera ${fmt.format(p.unitProfit)} de ganancia bruta por unidad. ${h.text}</div>
+      <div class="insight"><strong>Política de Precios:</strong> ${p.targetMargin>0?`Bajo un objetivo del ${pct(p.targetMargin)}, el valor sugerido es ${fmt.format(p.suggestedPrice)}.`:'Margen objetivo no parametrizado.'} ${missing>0?`Brecha de rentabilidad: ${fmt.format(missing)}.`:''}</div>
+    </div>
+    <div class="bar-chart-wrap">
+      <strong style="font-size:13px;">Estructura Financiera Unitaria</strong>
+      <div class="bar-chart">
+        <div style="flex:1">
+          <div class="bar-group">
+            <div class="bar cost"  style="height:${bh(p.totalCost)}"><span class="bar-value">${fmt.format(p.totalCost)}</span></div>
+            <div class="bar price" style="height:${bh(p.price)}"><span class="bar-value">${fmt.format(p.price)}</span></div>
+            <div class="bar profit" style="height:${bh(Math.max(p.unitProfit,0))}"><span class="bar-value">${fmt.format(p.unitProfit)}</span></div>
+          </div>
+          <div class="bar-label">Costo Total · Precio Final · Utilidad Neta</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderRanking() {
+  const el = document.getElementById('rankingContent');
+  if (!products.length) { el.innerHTML='<div class="empty" style="margin-top:16px;">Requiere carga inicial de datos.</div>'; return; }
+  const best = [...products].sort((a,b)=>b.margin-a.margin)[0];
+  const worst = [...products].sort((a,b)=>a.margin-b.margin)[0];
+  const mp = [...products].sort((a,b)=>b.unitProfit-a.unitProfit)[0];
+  el.innerHTML = `<div class="insights-list" style="margin-top:16px;">
+    <div class="insight"><strong>Mayor Rentabilidad (%):</strong> ${escapeHtml(best.name)} (${pct(best.margin)}).</div>
+    <div class="insight"><strong>Menor Rentabilidad (%):</strong> ${escapeHtml(worst.name)} (${pct(worst.margin)}).</div>
+    <div class="insight"><strong>Mayor Utilidad ($):</strong> ${escapeHtml(mp.name)} reporta ${fmt.format(mp.unitProfit)} por transacción.</div>
+  </div>`;
+}
+
+function renderAll() { renderStats(); renderTable(); renderDetail(); renderRanking(); }
+
+// ── Exportar Excel ─────────────────────────────────────────
+document.getElementById('exportBtn').addEventListener('click', () => {
+  if (!products.length) return showFlash('No hay registros para exportar.', 'flash-warning');
+  const data = getFiltered().map(p => ({
+    "Código/SKU": p.sku || '',
+    "Nombre del Producto": p.name,
+    "Categoría": p.category || '',
+    "Estado": p.status,
+    "Costo Base": p.cost,
+    "Costos Adicionales": p.extraCosts,
+    "Costo Total": p.totalCost,
+    "Precio de Venta": p.price,
+    "Margen Obtenido (%)": p.margin.toFixed(2),
+    "Utilidad Unitaria ($)": p.unitProfit,
+    "Stock Disponible": p.stock,
+    "Stock Mínimo": p.stockMin
+  }));
+  exportarAExcel(data, 'Catalogo_Productos');
+});
+
+// ── Importar Masivo CSV ────────────────────────────────────
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const text = evt.target.result;
+    const lines = text.split('\n').filter(l => l.trim() !== '');
+    if (lines.length < 2) return showFlash('El archivo no posee datos válidos o estructura correcta.', 'flash-warning');
+    
+    // Normalizar cabeceras asumiendo separador ";" (formato Excel AR)
+    const headers = lines[0].split(';').map(h => h.trim().replace(/"/g, '').toLowerCase());
+    let count = 0;
+    
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(';').map(c => c.trim().replace(/"/g, ''));
+      const row = {};
+      headers.forEach((h, idx) => row[h] = cols[idx]);
+      
+      // Validación estricta mínima: Requiere nombre
+      if (row.nombre || row['nombre del producto'] || row.name) {
+        const rawName = row.nombre || row['nombre del producto'] || row.name;
+        const p = {
+          id: crypto.randomUUID(),
+          name: rawName,
+          category: row.categoría || row.categoria || row.category || '',
+          sku: row.sku || row.codigo || row['código/sku'] || '',
+          cost: toNum(row.costo || row.cost || row['costo base']),
+          extraCosts: toNum(row['costos adicionales'] || row['gasto extra'] || 0),
+          price: toNum(row.precio || row['precio de venta'] || row.price),
+          stock: toNum(row.stock || row['stock disponible'] || row['stock actual']),
+          stockMin: toNum(row['stock mínimo'] || row.stock_min || 3),
+          status: row.estado || row.status || 'Activo',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        products.unshift(normalizeProduct(p));
+        count++;
+      }
+    }
+    
+    if (count > 0) {
+      saveProducts();
+      renderAll();
+      showFlash(`Procedimiento exitoso. Se integraron ${count} registros a la matriz.`, 'flash-success');
+    } else {
+      showFlash('No se detectaron filas procesables. Verifique las cabeceras (Nombre, Costo, Precio).', 'flash-danger');
+    }
+    e.target.value = ''; // Limpiar input
+  };
+  reader.readAsText(file);
+});
+
+// Event Listeners base
+document.getElementById('productForm').addEventListener('submit', submitForm);
+document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+['cost','extraCosts','price','targetMargin','stock','stockMin','status','image'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateLive);
+});
+['searchInput','filterStatus','filterHealth','sortBy'].forEach(id => {
+  document.getElementById(id).addEventListener('change', renderTable);
+  document.getElementById(id).addEventListener('input',  renderTable);
+});
+document.getElementById('newProductBtn').addEventListener('click', () => { resetForm(); window.scrollTo({top:0,behavior:'smooth'}); document.getElementById('name').focus(); });
+
+window.selectProduct = id => { selectedId = id; renderDetail(); };
+window.editProduct   = id => { const p = products.find(x=>x.id===id); if(p) fillForm(p); };
+window.deleteProduct = id => removeProduct(id);
+
+window.addEventListener('storage', () => { loadProducts(); renderAll(); });
+window.addEventListener('saas:data-updated', () => { loadProducts(); renderAll(); });
+
+loadProducts();
+if (products.length) selectedId = products[0].id;
+syncDashboard();
+renderAll();
+updateLive();
+</script>
+</body>
+</html>
