@@ -138,7 +138,7 @@
             
             <div class="checkout-actions">
               <input type="number" id="globalDiscount" min="0" step="0.01" placeholder="Dto. extra venta entera ($)" onchange="renderTicket()" />
-              <input type="text" id="voucherCode" placeholder="Nº Comprobante / Lote" />
+              <input type="text" id="voucherCode" placeholder="Nº de Cupón / Lote de Tarjeta" />
               <select id="paymentMethod" required>
                 <option value="">Medio de pago...</option>
                 <option value="Efectivo">Efectivo</option>
@@ -159,16 +159,19 @@
         <div class="section-head">
           <div>
             <h2>Historial de Ventas</h2>
-            <p>Registro completo de operaciones comerciales.</p>
+            <p>Mostrando las operaciones de la fecha seleccionada.</p>
           </div>
-          <button class="btn btn-success" onclick="exportarVentasExcel()">⬇ Descargar Planilla (Excel)</button>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="date" id="historyDateFilter" class="btn btn-light" style="padding: 10px; border-radius: 8px; border: 1px solid var(--line); font-family: inherit;" onchange="renderHistory()" />
+            <button class="btn btn-success" onclick="exportarVentasExcel()">⬇ Descargar Planilla</button>
+          </div>
         </div>
         
         <div class="table-wrap mt-16">
           <table>
             <thead>
               <tr>
-                <th>Fecha y Hora</th>
+                <th>Hora</th>
                 <th>Comprobante</th>
                 <th>Artículos</th>
                 <th>Medio de Pago</th>
@@ -196,13 +199,17 @@ let ventasGlobales = [];
 
 // ── Inicialización ───────────────────────────────────────────
 async function init() {
+  // Seteamos el filtro de fecha de hoy por defecto si está vacío
+  if (!document.getElementById('historyDateFilter').value) {
+    document.getElementById('historyDateFilter').value = todayISO();
+  }
+
   await cargarDatos();
   renderTicket();
   renderHistory();
 }
 
 async function cargarDatos() {
-  // Lógica híbrida para leer nube o local (asumiendo que tenés las funciones en core.js o fetch directos)
   const allProducts = getData(KEYS.products, []);
   
   try {
@@ -291,7 +298,6 @@ function agregarAlTicket(id) {
   const producto = productosActivos.find(p => p.id === id);
   if (!producto) return;
 
-  // Ocultar resultados al agregar
   document.getElementById('searchProduct').value = '';
   renderSearchResults([]);
 
@@ -308,7 +314,6 @@ function agregarAlTicket(id) {
   renderTicket();
 }
 
-// Funciones expuestas para los inputs de la tabla
 window.cambiarCantidad = function(index, value) {
   const newQty = toNum(value);
   if (newQty <= 0) ticket.splice(index, 1);
@@ -369,13 +374,12 @@ function renderTicket() {
   document.getElementById('totalDisplay').textContent = currency(totalFinal);
 }
 
-// Control visual de inputs extra en el checkout
 document.getElementById('paymentMethod').addEventListener('change', (e) => {
   const requiresVoucher = e.target.value.includes('Tarjeta') || e.target.value === 'Transferencia';
   document.getElementById('voucherCode').style.display = requiresVoucher ? 'block' : 'none';
 });
 
-// ── Procesamiento de Venta Seguro ────────────────────────────
+// ── Procesamiento de Venta Seguro (CON FACTURA CORRELATIVA) ──
 async function procesarVenta() {
   if (!ticket.length) return alert('El ticket está vacío.');
   const paymentMethod = document.getElementById('paymentMethod').value;
@@ -392,26 +396,36 @@ async function procesarVenta() {
 
   const totalFinal = Math.max(0, subtotal - totalItemDiscounts - globalDiscount);
   
-  // 1. CREACIÓN SEGURA DE LA VARIABLE
+  // Calcular número de factura correlativo
+  let nextInvoice = 1;
+  if (ventasGlobales.length > 0) {
+    // Buscamos el número de factura más alto que ya esté guardado
+    const maxNum = Math.max(...ventasGlobales.map(v => toNum(v.invoiceNumber)));
+    // Si ya había facturas con número, le sumamos 1. Si son ventas viejas sin número, usamos el largo de la lista + 1.
+    nextInvoice = maxNum > 0 ? maxNum + 1 : ventasGlobales.length + 1; 
+  }
+  const formattedInvoice = 'FC-' + String(nextInvoice).padStart(6, '0'); // Formato: FC-000001
+  
   const nuevaVenta = {
     id: uid('sale'), 
-    code: 'VTA-' + Date.now().toString().slice(-6),
+    invoiceNumber: nextInvoice, // Guardamos el número limpio para sumar fácil después
+    code: formattedInvoice, // Guardamos el código formateado para mostrar en pantalla
     date: new Date().toISOString(), 
     createdAt: new Date().toISOString(),
     paymentMethod: paymentMethod, 
-    voucher: document.getElementById('voucherCode').value.trim(),
+    voucher: document.getElementById('voucherCode').value.trim(), // Acá va el comprobante/lote de tarjeta
     items: itemsGuardar, 
     subtotal: subtotal, 
     globalDiscount: globalDiscount, 
     total: totalFinal
   };
 
-  // 2. GUARDADO LOCAL
+  // Guardado local
   ventasGlobales.unshift(nuevaVenta);
   setData(KEYS.sales, ventasGlobales);
   window.dispatchEvent(new CustomEvent('saas:data-updated', { detail: { key: KEYS.sales } }));
 
-  // 3. ENVÍO A LA NUBE (D1)
+  // Envío a la nube D1
   try {
     await fetch('/api/sales', {
       method: 'POST',
@@ -422,35 +436,58 @@ async function procesarVenta() {
     console.error('Error guardando en la nube:', error);
   }
 
-  alert(`Venta registrada con éxito. Total: ${currency(totalFinal)}`);
+  alert(`Venta registrada con éxito.\nComprobante: ${formattedInvoice}\nTotal: ${currency(totalFinal)}`);
   
-  // 4. LIMPIEZA
+  // Limpieza
   ticket = [];
   document.getElementById('paymentMethod').value = '';
   document.getElementById('voucherCode').value = '';
   document.getElementById('voucherCode').style.display = 'none';
   document.getElementById('globalDiscount').value = '';
   
-  init(); // Refresca y borra todo visualmente
+  init(); 
 }
 
-// ── Lógica del Historial Global e Informes ───────────────────
+// ── Lógica del Historial Global e Informes (FILTRADO POR DÍA) ──
 function renderHistory() {
   const tbody = document.getElementById('historyTableBody');
+  const filterDate = document.getElementById('historyDateFilter').value; // Ej: "2026-04-01"
+
   if (!ventasGlobales.length) {
     tbody.innerHTML = '<tr><td colspan="8"><div class="empty">No hay ventas registradas en el sistema.</div></td></tr>';
     return;
   }
 
-  tbody.innerHTML = ventasGlobales.map(v => {
+  // Filtramos las ventas para mostrar SOLO las que coincidan con la fecha seleccionada
+  const ventasDelDia = ventasGlobales.filter(v => {
+    const saleDate = (v.createdAt || v.date).slice(0, 10);
+    return saleDate === filterDate;
+  });
+
+  if (!ventasDelDia.length) {
+    // Si hay ventas globales pero ninguna en el día seleccionado
+    const fechaLegible = new Date(filterDate + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty">No hay ventas registradas el ${fechaLegible}.</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = ventasDelDia.map(v => {
     const cantidadItems = (v.items || []).reduce((acc, i) => acc + i.quantity, 0);
     const descripcionItems = (v.items || []).map(i => i.name).join(', ');
     const dtoTotal = toNum(v.globalDiscount) + (v.items || []).reduce((acc, i) => acc + toNum(i.discount), 0);
     
+    // Si hay un voucher/lote, lo preparamos para mostrarlo debajo del número de factura
+    const loteInfo = (v.paymentMethod !== 'Efectivo' && v.voucher) 
+      ? `<br><small style="color:var(--muted); font-size:11px;">Lote: ${escapeHtml(v.voucher)}</small>` 
+      : '';
+
+    // Extraemos solo la hora para que la tabla sea más limpia, ya que la fecha está en el filtro arriba
+    const horaLegible = new Date(v.createdAt || v.date).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
     return `
       <tr>
-        <td>${formatDate(v.createdAt || v.date)}</td>
-        <td><strong>${escapeHtml(v.code || '-')}</strong></td>
+        <td>${horaLegible} hs</td>
+        <td><strong>${escapeHtml(v.code || '-')}</strong>${loteInfo}</td>
         <td><span title="${escapeHtml(descripcionItems)}">${cantidadItems} unidades</span></td>
         <td><span class="badge badge-neutral">${escapeHtml(v.paymentMethod || 'N/D')}</span></td>
         <td>${currency(v.subtotal || 0)}</td>
@@ -465,21 +502,29 @@ function renderHistory() {
 }
 
 function exportarVentasExcel() {
-  if (!ventasGlobales || !ventasGlobales.length) {
-    alert("No hay datos de ventas para exportar.");
+  const filterDate = document.getElementById('historyDateFilter').value;
+  
+  // Filtramos para exportar solo las del día seleccionado
+  const ventasAExportar = ventasGlobales.filter(v => {
+    const saleDate = (v.createdAt || v.date).slice(0, 10);
+    return saleDate === filterDate;
+  });
+
+  if (!ventasAExportar.length) {
+    alert("No hay ventas en la fecha seleccionada para exportar.");
     return;
   }
 
   const datosPlanos = [];
-  ventasGlobales.forEach(v => {
+  ventasAExportar.forEach(v => {
     if (v.items && v.items.length > 0) {
       v.items.forEach(item => {
         datosPlanos.push({
           "Fecha": (v.createdAt || v.date).slice(0, 10),
           "Hora": new Date(v.createdAt || v.date).toLocaleTimeString('es-AR'),
-          "Comprobante": v.code || '-',
+          "Factura": v.code || '-',
           "Medio de Pago": v.paymentMethod || 'N/D',
-          "Lote/Referencia": v.voucher || '-',
+          "Cupón / Lote": v.voucher || '-',
           "Cód. Producto": item.code || '-',
           "Producto": item.name || '-',
           "Costo Unitario": item.cost || 0,
@@ -493,7 +538,7 @@ function exportarVentasExcel() {
       });
     }
   });
-  exportarAExcel(datosPlanos, 'Reporte_Ventas');
+  exportarAExcel(datosPlanos, `Reporte_Ventas_${filterDate}`);
 }
 
 document.addEventListener('DOMContentLoaded', init);
