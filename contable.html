@@ -6,7 +6,7 @@
   <title>Contable | Micro SaaS</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .two-col  { display: grid; grid-template-columns: 1.3fr .9fr; gap: 18px; }
+    .two-col  { display: grid; grid-template-columns: 1.4fr .8fr; gap: 18px; }
     .smart-banner { margin-bottom: 18px; padding: 16px 20px; border-radius: var(--radius); background: #111827; color: #fff; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 14px; }
     .smart-banner span { color: #94a3b8; }
     
@@ -20,6 +20,14 @@
     .supplier-group select { flex: 1; }
     .supplier-group button { padding: 0 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; }
     .supplier-group button:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* Barra de filtros */
+    .filters-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; background: var(--panel-2); padding: 12px; border-radius: 12px; border: 1px solid var(--line); align-items: center; }
+    .filters-bar input, .filters-bar select { padding: 8px 12px; font-family: inherit; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; outline: none; }
+    .filters-bar input:focus, .filters-bar select:focus { border-color: var(--primary); }
+    
+    .amount-in { color: #10b981; font-weight: 700; }
+    .amount-out { color: #ef4444; font-weight: 700; }
 
     @media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
   </style>
@@ -39,58 +47,92 @@
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
     </nav>
     <div class="sidebar-footer">
-      <strong>Fuentes de datos</strong>
-      Egresos · Compras con Factura
+      <strong>Módulo Financiero</strong>
+      Cajas, Bancos y Egresos
     </div>
   </aside>
 
   <main class="content">
     <header class="topbar">
       <div class="page-title">
-        <h1>Módulo Contable</h1>
-        <p>Controlá gastos operativos y facturas de compras.</p>
+        <h1>Control Financiero y Cajas</h1>
+        <p>Arqueo de fondos disponibles, gastos operativos y compras.</p>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-success" id="btnExportExcel">⬇ Exportar Movimientos</button>
+        <button class="btn btn-success" id="btnExportExcel">⬇ Exportar Mayor</button>
         <button class="btn btn-primary" id="btnOpenExpense">+ Registar Gasto</button>
-        <button class="btn btn-primary" id="btnOpenSupplier">+ Cargar Compra (Factura)</button>
+        <button class="btn btn-primary" id="btnOpenSupplier">+ Cargar Compra</button>
       </div>
     </header>
 
     <div class="smart-banner">
-      <div id="smartMessage">Cargando datos...</div>
+      <div id="smartMessage">Cargando saldos...</div>
       <span>Última actualización: <strong id="lastUpdate">-</strong></span>
     </div>
 
     <section class="kpi-grid" style="margin-bottom:22px;">
-      <article class="card kpi-card"><div class="kpi-label">Egresos de Hoy</div><div class="kpi-value" id="kpiTodayExpense">$0</div><div class="kpi-sub" id="subTodayExpense">0 movimientos hoy</div></article>
-      <article class="card kpi-card"><div class="kpi-label">Gastos del mes</div><div class="kpi-value" id="kpiMonthExpense">$0</div><div class="kpi-sub">Operativos</div></article>
-      <article class="card kpi-card"><div class="kpi-label">Compras del mes</div><div class="kpi-value" id="kpiMonthPurchases">$0</div><div class="kpi-sub">Mercadería y Proveedores</div></article>
-      <article class="card kpi-card"><div class="kpi-label">Resultado Neto</div><div class="kpi-value" id="kpiNet">$0</div><div class="kpi-sub" id="subNet">Ingresos - Egresos Totales</div></article>
+      <article class="card kpi-card" style="border-top: 4px solid #10b981;">
+        <div class="kpi-label">Caja Fuerte (Efectivo)</div>
+        <div class="kpi-value" id="kpiEfectivo">$0</div>
+        <div class="kpi-sub">Dinero físico disponible</div>
+      </article>
+      <article class="card kpi-card" style="border-top: 4px solid #3b82f6;">
+        <div class="kpi-label">Bancos (Transferencias)</div>
+        <div class="kpi-value" id="kpiBancos">$0</div>
+        <div class="kpi-sub">Saldo en cuentas bancarias</div>
+      </article>
+      <article class="card kpi-card" style="border-top: 4px solid #f59e0b;">
+        <div class="kpi-label">Tarjetas (Posnet)</div>
+        <div class="kpi-value" id="kpiTarjetas">$0</div>
+        <div class="kpi-sub">Acreditaciones pendientes/listas</div>
+      </article>
+      <article class="card kpi-card" style="background: var(--panel-2);">
+        <div class="kpi-label">Capital Total Líquido</div>
+        <div class="kpi-value" id="kpiTotalLiquido">$0</div>
+        <div class="kpi-sub">Suma de todas las cajas</div>
+      </article>
     </section>
 
     <div class="two-col">
       <div style="display:grid;gap:18px;">
         <article class="card card-pad">
           <div class="section-head">
-            <div><h2>Movimientos Generales</h2><p>Últimos gastos y compras registradas.</p></div>
-            <div class="tabs">
-              <button class="tab active" data-view="all">Todos</button>
-              <button class="tab" data-view="expenses">Gastos</button>
-              <button class="tab" data-view="purchases">Compras</button>
+            <div><h2>Libro Mayor (Flujo de Fondos)</h2><p>Registro histórico de ingresos y egresos.</p></div>
+          </div>
+          
+          <div class="filters-bar">
+            <div><label style="font-size:11px; color:var(--muted); display:block; margin-bottom:2px;">Desde:</label><input type="date" id="filterFrom"></div>
+            <div><label style="font-size:11px; color:var(--muted); display:block; margin-bottom:2px;">Hasta:</label><input type="date" id="filterTo"></div>
+            <div>
+              <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:2px;">Caja / Origen:</label>
+              <select id="filterCaja">
+                <option value="all">Todas las Cajas</option>
+                <option value="efectivo">Solo Efectivo</option>
+                <option value="transferencia">Solo Bancos (Transf.)</option>
+                <option value="tarjeta">Solo Tarjetas</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:2px;">Tipo Operación:</label>
+              <select id="filterType">
+                <option value="all">Todos los Movimientos</option>
+                <option value="ingreso">Solo Ingresos (Ventas)</option>
+                <option value="egreso">Solo Egresos (Compras/Gastos)</option>
+              </select>
+            </div>
+            <div style="align-self: flex-end;">
+              <button class="btn btn-light" onclick="limpiarFiltros()" style="padding: 9px 14px;">Limpiar</button>
             </div>
           </div>
-          <div class="table-wrap">
+
+          <div class="table-wrap" style="max-height: 500px; overflow-y: auto;">
             <table>
-              <thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto / Nro</th><th>Categoría / Proveedor</th><th>Monto</th><th>Acción</th></tr></thead>
-              <tbody id="recentTableBody"></tbody>
+              <thead style="position: sticky; top: 0; background: #fff; z-index: 10;">
+                <tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Medio de Pago</th><th>Monto</th><th>Acción</th></tr>
+              </thead>
+              <tbody id="ledgerTableBody"></tbody>
             </table>
           </div>
-        </article>
-
-        <article class="card card-pad">
-          <div class="section-head"><div><h2>Egresos por categoría</h2><p>Dónde se destina el dinero.</p></div></div>
-          <div id="categoryChart" style="display:grid;gap:10px;"></div>
         </article>
       </div>
 
@@ -106,11 +148,8 @@
         </article>
 
         <article class="card card-pad">
-          <div class="section-head"><div><h2>Conexión del sistema</h2></div></div>
-          <div class="metric-list">
-            <div class="metric-row"><span>Estado</span><strong id="systemStatus">Conectado</strong></div>
-            <div class="metric-row"><span>Sincronización</span><strong id="dashboardStatus">Actualizado</strong></div>
-          </div>
+          <div class="section-head"><div><h2>Egresos del Mes por Categoría</h2></div></div>
+          <div id="categoryChart" style="display:grid;gap:10px;"></div>
         </article>
       </div>
     </div>
@@ -138,7 +177,7 @@
           <option value="Administración">Administración</option><option value="Otros">Otros</option>
         </select>
       </div>
-      <div class="field"><label>Medio de pago *</label><select name="paymentMethod" required><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="Tarjeta">Tarjeta</option><option value="Cuenta corriente">Cuenta corriente</option><option value="Otro">Otro</option></select></div>
+      <div class="field"><label>De qué caja sale el dinero? *</label><select name="paymentMethod" required><option value="Efectivo">Caja Efectivo</option><option value="Transferencia">Banco (Transferencia)</option><option value="Tarjeta">Tarjeta de Crédito</option><option value="Cuenta corriente">Cuenta corriente (Deuda)</option><option value="Otro">Otro</option></select></div>
       <div class="field full"><label>Observación</label><textarea name="notes" placeholder="Detalle adicional (Opcional)"></textarea></div>
     </div>
     <div class="modal-actions">
@@ -158,7 +197,7 @@
         <div class="supplier-group">
           <select name="supplierName" id="supplierSelect" required>
             <option value="">Seleccione un proveedor...</option>
-            </select>
+          </select>
           <button type="button" onclick="crearProveedor()" title="Agregar Nuevo Proveedor">➕</button>
           <button type="button" onclick="gestionarProveedor()" title="Editar o Borrar Proveedor Seleccionado">⚙️</button>
         </div>
@@ -179,7 +218,7 @@
           <input type="hidden" name="amount" id="purAmountReal" />
         </div>
       </div>
-      <div class="field"><label>Medio de pago *</label><select name="paymentMethod" required><option value="Transferencia">Transferencia</option><option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Cuenta corriente">Cuenta corriente</option></select></div>
+      <div class="field"><label>De qué caja sale el dinero? *</label><select name="paymentMethod" required><option value="Transferencia">Banco (Transferencia)</option><option value="Efectivo">Caja Efectivo</option><option value="Tarjeta">Tarjeta de Crédito</option><option value="Cuenta corriente">Cuenta Corriente (Deuda)</option></select></div>
       <div class="field full"><label>Detalle de la compra *</label><input type="text" name="concept" placeholder="Ej: Lote de 50 clippers Volt" required /></div>
     </div>
     <div class="modal-actions">
@@ -191,11 +230,10 @@
 
 <script src="core.js"></script>
 <script>
-let currentRecentFilter = 'all';
 let editingExpenseId = null;
 let editingPurchaseId = null;
 
-// --- MÁSCARA DE MONEDA (PESOS ARGENTINOS) ---
+// --- MÁSCARA DE MONEDA ---
 function aplicarMascaraMoneda() {
   document.querySelectorAll('.money-input').forEach(inp => {
     inp.addEventListener('input', function(e) {
@@ -203,15 +241,10 @@ function aplicarMascaraMoneda() {
       const parts = val.split(',');
       if(parts.length > 2) val = parts[0] + ',' + parts.slice(1).join('');
       if(val === '') { this.value = ''; return; }
-      
       let [intStr, decStr] = val.split(',');
       if(intStr) intStr = parseInt(intStr, 10).toLocaleString('es-AR');
-      
-      if(decStr !== undefined) {
-        this.value = `${intStr},${decStr.substring(0, 2)}`;
-      } else {
-        this.value = val.endsWith(',') ? `${intStr},` : intStr;
-      }
+      if(decStr !== undefined) this.value = `${intStr},${decStr.substring(0, 2)}`;
+      else this.value = val.endsWith(',') ? `${intStr},` : intStr;
     });
   });
 }
@@ -228,13 +261,11 @@ function formatNumberToMask(num) {
   intStr = parseInt(intStr, 10).toLocaleString('es-AR');
   return `${intStr},${decStr}`;
 }
-// ---------------------------------------------
 
 // --- GESTIÓN DE PROVEEDORES ---
 function cargarSelectProveedores() {
   const select = document.getElementById('supplierSelect');
   const proveedores = getData('saas_suppliers_list', []);
-  
   select.innerHTML = '<option value="">Seleccione un proveedor...</option>';
   proveedores.sort().forEach(prov => {
     const opt = document.createElement('option');
@@ -246,36 +277,22 @@ function cargarSelectProveedores() {
 function crearProveedor() {
   const nombre = prompt("Ingrese el nombre del nuevo proveedor o marca:");
   if (!nombre || !nombre.trim()) return;
-  
   const provs = getData('saas_suppliers_list', []);
   const nuevoNom = nombre.trim();
-  
-  if (!provs.includes(nuevoNom)) {
-    provs.push(nuevoNom);
-    localStorage.setItem('saas_suppliers_list', JSON.stringify(provs));
-  }
-  
-  cargarSelectProveedores();
-  document.getElementById('supplierSelect').value = nuevoNom;
+  if (!provs.includes(nuevoNom)) { provs.push(nuevoNom); localStorage.setItem('saas_suppliers_list', JSON.stringify(provs)); }
+  cargarSelectProveedores(); document.getElementById('supplierSelect').value = nuevoNom;
 }
 
 window.gestionarProveedor = function() {
   const select = document.getElementById('supplierSelect');
   const seleccionado = select.value;
-
-  if (!seleccionado) {
-    alert("Primero seleccione un proveedor de la lista desplegable para gestionarlo.");
-    return;
-  }
-
-  const accion = prompt(`GESTIÓN DE PROVEEDOR:\nEstás modificando a: "${seleccionado}"\n\n- Escribí el NUEVO NOMBRE si querés corregirlo.\n- Escribí la palabra BORRAR si querés eliminarlo de la lista.`, seleccionado);
-
+  if (!seleccionado) return alert("Seleccione un proveedor de la lista desplegable.");
+  const accion = prompt(`Estás modificando a: "${seleccionado}"\n\n- Escribí el NUEVO NOMBRE para corregirlo.\n- Escribí BORRAR para eliminarlo de la lista.`, seleccionado);
   if (accion === null || accion.trim() === '') return;
-
   let provs = getData('saas_suppliers_list', []);
 
   if (accion.trim().toUpperCase() === 'BORRAR') {
-    if (confirm(`¿Seguro que querés quitar a "${seleccionado}" de la lista? (No se borrarán sus facturas pasadas)`)) {
+    if (confirm(`¿Quitar a "${seleccionado}"? (No borra sus facturas pasadas)`)) {
       provs = provs.filter(p => p !== seleccionado);
       localStorage.setItem('saas_suppliers_list', JSON.stringify(provs));
       cargarSelectProveedores();
@@ -283,272 +300,205 @@ window.gestionarProveedor = function() {
   } else {
     const nuevoNombre = accion.trim();
     if (nuevoNombre !== seleccionado) {
-      // Modifica la lista
       const index = provs.indexOf(seleccionado);
-      if (index !== -1) provs[index] = nuevoNombre;
-      else provs.push(nuevoNombre); 
-      
+      if (index !== -1) provs[index] = nuevoNombre; else provs.push(nuevoNombre); 
       localStorage.setItem('saas_suppliers_list', JSON.stringify(provs));
-
-      // Actualiza automáticamente las compras pasadas para no perder el rastro
       let purchases = getData(KEYS.purchases, []);
       let changed = false;
-      purchases.forEach(p => {
-        if (p.supplierName === seleccionado) {
-          p.supplierName = nuevoNombre;
-          changed = true;
-        }
-      });
-      if (changed) {
-        setData(KEYS.purchases, purchases);
-        render(); // Actualiza la tabla de fondo
-      }
-
-      cargarSelectProveedores();
-      select.value = nuevoNombre;
+      purchases.forEach(p => { if (p.supplierName === seleccionado) { p.supplierName = nuevoNombre; changed = true; } });
+      if (changed) { setData(KEYS.purchases, purchases); render(); }
+      cargarSelectProveedores(); select.value = nuevoNombre;
     }
   }
 };
-// ------------------------------
 
+// --- CORE DEL FLUJO DE CAJA ---
 function computeState() {
   const expenses = getData(KEYS.expenses, []);
   const purchases = getData(KEYS.purchases, []); 
   const sales = getData(KEYS.sales, []);
-  const today = todayISO(), cm = monthKey(today);
-
-  const totalIncomeMonth = sales.filter(s => monthKey(s.date || s.createdAt || today) === cm).reduce((a,s) => a + saleTotal(s), 0);
   
-  const expenseToday = expenses.filter(e => e.date === today).reduce((a,e) => a + toNum(e.amount), 0);
-  const expenseMonth = expenses.filter(e => monthKey(e.date) === cm).reduce((a,e) => a + toNum(e.amount), 0);
+  const saldos = { efectivo: 0, bancos: 0, tarjetas: 0, total: 0 };
   
-  const purchasesToday = purchases.filter(p => p.date === today).reduce((a,p) => a + toNum(p.amount), 0);
-  const purchasesMonth = purchases.filter(p => monthKey(p.date) === cm).reduce((a,p) => a + toNum(p.amount), 0);
+  // Calcular Ingresos (Ventas)
+  sales.forEach(s => {
+    const amt = toNum(s.total);
+    const method = (s.paymentMethod || '').toLowerCase();
+    if (method.includes('efectivo')) saldos.efectivo += amt;
+    else if (method.includes('transferencia') || method.includes('banco')) saldos.bancos += amt;
+    else if (method.includes('tarjeta')) saldos.tarjetas += amt;
+    saldos.total += amt;
+  });
 
-  const net = totalIncomeMonth - (expenseMonth + purchasesMonth);
+  // Calcular Egresos (Gastos y Compras)
+  [...expenses, ...purchases].forEach(e => {
+    const amt = toNum(e.amount);
+    const method = (e.paymentMethod || '').toLowerCase();
+    if (method.includes('efectivo')) saldos.efectivo -= amt;
+    else if (method.includes('transferencia') || method.includes('banco')) saldos.bancos -= amt;
+    else if (method.includes('tarjeta')) saldos.tarjetas -= amt;
+    saldos.total -= amt;
+  });
 
+  // Armar el Libro Mayor (Todas las operaciones)
+  const allMoves = [
+    ...sales.map(s => ({ id: s.id, date: (s.createdAt || s.date).slice(0,10), type: 'Ingreso', concept: `Venta ${s.code || ''}`, owner: 'Cliente', amount: toNum(s.total), source: 'sales', paymentMethod: s.paymentMethod || 'N/D' })),
+    ...expenses.map(e => ({ id: e.id, date: e.date, type: 'Gasto', concept: e.concept, owner: e.category, amount: toNum(e.amount), source: 'expenses', paymentMethod: e.paymentMethod || 'N/D' })),
+    ...purchases.map(p => ({ id: p.id, date: p.date, type: 'Compra', concept: `${p.invoiceType} ${p.invoiceNumber}`, owner: p.supplierName, amount: toNum(p.amount), source: 'purchases', paymentMethod: p.paymentMethod || 'N/D' }))
+  ].sort((a,b) => (b.date||'').localeCompare(a.date||''));
+
+  // Gráfico Egresos del mes
+  const cm = monthKey(todayISO());
   const categoryTotals = {};
   expenses.filter(e => monthKey(e.date)===cm).forEach(e => { const c=e.category||'Otros'; categoryTotals[c]=(categoryTotals[c]||0)+toNum(e.amount); });
-  if (purchasesMonth > 0) categoryTotals['Mercadería/Compras'] = purchasesMonth;
+  const purchasesMonth = purchases.filter(p => monthKey(p.date)===cm).reduce((a,p) => a + toNum(p.amount), 0);
+  if (purchasesMonth > 0) categoryTotals['Mercadería/Proveedores'] = purchasesMonth;
 
-  const recentMoves = [
-    ...expenses.map(e => ({ id: e.id, date:e.date, type:'Gasto', concept:e.concept, owner:e.category, amount:toNum(e.amount), source:'expenses' })),
-    ...purchases.map(p => ({ id: p.id, date:p.date, type:'Compra', concept:`${p.invoiceType} ${p.invoiceNumber}`, owner:p.supplierName, amount:toNum(p.amount), source:'purchases' }))
-  ].sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0,15);
-
-  const recentPurchases = purchases.sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0, 10);
-
-  return { totalIncomeMonth, expenseToday, purchasesToday, expenseMonth, purchasesMonth, net, categoryTotals, recentMoves, recentPurchases };
+  return { saldos, allMoves, categoryTotals, recentPurchases: purchases.sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0, 8) };
 }
 
 function render() {
   const s = computeState();
-  const egresosHoy = s.expenseToday + s.purchasesToday;
 
-  document.getElementById('kpiTodayExpense').textContent   = currency(egresosHoy);
-  document.getElementById('subTodayExpense').textContent   = 'Total gastado en el día';
-  document.getElementById('kpiMonthExpense').textContent   = currency(s.expenseMonth);
-  document.getElementById('kpiMonthPurchases').textContent = currency(s.purchasesMonth);
-  
-  document.getElementById('kpiNet').textContent            = currency(s.net);
-  document.getElementById('subNet').textContent            = s.net >= 0 ? 'El negocio sigue en positivo' : 'Los egresos superan los ingresos';
-  document.getElementById('lastUpdate').textContent        = nowReadable();
-  document.getElementById('smartMessage').textContent      = s.net < 0 ? `Atención: Gastos superan ingresos por ${currency(Math.abs(s.net))}` : egresosHoy > 0 ? `Hoy llevás gastado ${currency(egresosHoy)}` : 'Día sin egresos registrados';
+  // KPIs
+  document.getElementById('kpiEfectivo').textContent = currency(s.saldos.efectivo);
+  document.getElementById('kpiBancos').textContent   = currency(s.saldos.bancos);
+  document.getElementById('kpiTarjetas').textContent = currency(s.saldos.tarjetas);
+  document.getElementById('kpiTotalLiquido').textContent = currency(s.saldos.total);
+  document.getElementById('lastUpdate').textContent  = nowReadable();
+
+  // Filtros
+  let filteredMoves = s.allMoves;
+  const fFrom = document.getElementById('filterFrom').value;
+  const fTo = document.getElementById('filterTo').value;
+  const fCaja = document.getElementById('filterCaja').value;
+  const fType = document.getElementById('filterType').value;
+
+  if (fFrom) filteredMoves = filteredMoves.filter(m => m.date >= fFrom);
+  if (fTo) filteredMoves = filteredMoves.filter(m => m.date <= fTo);
+  if (fCaja !== 'all') filteredMoves = filteredMoves.filter(m => (m.paymentMethod||'').toLowerCase().includes(fCaja));
+  if (fType === 'ingreso') filteredMoves = filteredMoves.filter(m => m.type === 'Ingreso');
+  if (fType === 'egreso') filteredMoves = filteredMoves.filter(m => m.type !== 'Ingreso');
+
+  // Renderizar Tabla Mayor
+  document.getElementById('ledgerTableBody').innerHTML = filteredMoves.length
+    ? filteredMoves.map(r => {
+        const isIngreso = r.type === 'Ingreso';
+        const colorClass = isIngreso ? 'amount-in' : 'amount-out';
+        const sign = isIngreso ? '+ ' : '- ';
+        const badgeColor = isIngreso ? 'badge-success' : (r.type === 'Compra' ? 'badge-warning' : 'badge-danger');
+        
+        // Las ventas solo se anulan desde el módulo ventas para cuidar el stock
+        const actionBtn = isIngreso 
+          ? `<span style="font-size:11px; color:var(--muted);">Administrar en Ventas</span>`
+          : `<button class="mini-btn" onclick="editarMovimiento('${r.source}', '${r.id}')">Editar</button> <button class="mini-btn" style="color:var(--danger); border-color:var(--danger-soft);" onclick="eliminarMovimiento('${r.source}', '${r.id}')">Borrar</button>`;
+
+        return `
+        <tr>
+          <td>${formatDate(r.date)}</td>
+          <td><span class="badge ${badgeColor}">${r.type}</span></td>
+          <td><strong>${escapeHtml(r.concept)}</strong><br><small>${escapeHtml(r.owner)}</small></td>
+          <td><span class="badge badge-neutral">${escapeHtml(r.paymentMethod)}</span></td>
+          <td class="${colorClass}">${sign}${currency(r.amount)}</td>
+          <td><div class="row-actions">${actionBtn}</div></td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="6"><div class="empty">No hay movimientos con los filtros actuales.</div></td></tr>`;
+
+  // Últimas Compras y Gráfico
+  document.getElementById('purchasesTableBody').innerHTML = s.recentPurchases.length
+    ? s.recentPurchases.map(r => `<tr><td><strong>${escapeHtml(r.supplierName)}</strong><br><small>${formatDate(r.date)}</small></td><td>${escapeHtml(r.invoiceType)} ${escapeHtml(r.invoiceNumber)}</td><td><strong>${currency(r.amount)}</strong></td></tr>`).join('')
+    : `<tr><td colspan="3"><div class="empty">Sin registros.</div></td></tr>`;
 
   const entries = Object.entries(s.categoryTotals).sort((a,b)=>b[1]-a[1]), maxV = entries.length ? entries[0][1] : 0;
   document.getElementById('categoryChart').innerHTML = entries.length
     ? entries.map(([n,v]) => `<div class="bar-row"><div>${n}</div><div class="bar-track"><div class="bar-fill" style="width:${maxV?(v/maxV)*100:0}%"></div></div><strong>${currency(v)}</strong></div>`).join('')
-    : '<div class="empty">Sin egresos en el mes.</div>';
-
-  const filtered = s.recentMoves.filter(m => currentRecentFilter === 'all' || m.source === currentRecentFilter);
-  document.getElementById('recentTableBody').innerHTML = filtered.length
-    ? filtered.map(r => `
-        <tr>
-          <td>${formatDate(r.date)}</td>
-          <td><span class="badge ${r.type==='Compra'?'badge-warning':'badge-neutral'}">${r.type}</span></td>
-          <td>${escapeHtml(r.concept)}</td>
-          <td>${escapeHtml(r.owner)}</td>
-          <td><strong>${currency(r.amount)}</strong></td>
-          <td>
-            <div class="row-actions">
-              <button class="mini-btn" onclick="editarMovimiento('${r.source}', '${r.id}')">Editar</button>
-              <button class="mini-btn" style="color:var(--danger); border-color:var(--danger-soft);" onclick="eliminarMovimiento('${r.source}', '${r.id}')">Borrar</button>
-            </div>
-          </td>
-        </tr>
-      `).join('')
-    : `<tr><td colspan="6"><div class="empty">Sin movimientos.</div></td></tr>`;
-
-  document.getElementById('purchasesTableBody').innerHTML = s.recentPurchases.length
-    ? s.recentPurchases.map(r => `<tr><td><strong>${escapeHtml(r.supplierName)}</strong><br><small>${formatDate(r.date)}</small></td><td>${escapeHtml(r.invoiceType)} ${escapeHtml(r.invoiceNumber)}</td><td><strong>${currency(r.amount)}</strong></td></tr>`).join('')
-    : `<tr><td colspan="3"><div class="empty">No hay compras registradas.</div></td></tr>`;
-
-  syncDashboard(s);
+    : '<div class="empty">Sin egresos en el mes actual.</div>';
 }
 
-function syncDashboard(s) {
-  const summary = { updatedAt:new Date().toISOString(), accounting:{ expenseToday:(s.expenseToday+s.purchasesToday), monthExpense:(s.expenseMonth+s.purchasesMonth), netResult:s.net, totalIncomeMonth:s.totalIncomeMonth } };
-  setData(KEYS.dashboard, { ...getData(KEYS.dashboard,{}), ...summary });
-}
+// Eventos de los filtros
+document.querySelectorAll('.filters-bar input, .filters-bar select').forEach(el => el.addEventListener('change', render));
 
-// ── Control de Interfaz y Filtros ───────────────────────────
+window.limpiarFiltros = function() {
+  document.getElementById('filterFrom').value = '';
+  document.getElementById('filterTo').value = '';
+  document.getElementById('filterCaja').value = 'all';
+  document.getElementById('filterType').value = 'all';
+  render();
+};
+
+// ── Control de Modales y Guardado ───────────────────────────
 document.getElementById('btnOpenExpense').addEventListener('click', () => {
-  editingExpenseId = null;
-  document.getElementById('expenseModalTitle').textContent = 'Registrar Gasto Operativo';
-  document.getElementById('expenseForm').reset();
-  document.getElementById('expenseForm').date.value = todayISO();
+  editingExpenseId = null; document.getElementById('expenseModalTitle').textContent = 'Registrar Gasto Operativo';
+  document.getElementById('expenseForm').reset(); document.getElementById('expenseForm').date.value = todayISO();
   document.getElementById('expenseDialog').showModal();
 });
 
 document.getElementById('btnOpenSupplier').addEventListener('click', () => {
-  editingPurchaseId = null;
-  document.getElementById('supplierModalTitle').textContent = 'Cargar Compra (Factura)';
-  document.getElementById('supplierForm').reset();
-  document.getElementById('supplierForm').date.value = todayISO();
-  cargarSelectProveedores();
-  document.getElementById('supplierDialog').showModal();
+  editingPurchaseId = null; document.getElementById('supplierModalTitle').textContent = 'Cargar Compra (Factura)';
+  document.getElementById('supplierForm').reset(); document.getElementById('supplierForm').date.value = todayISO();
+  cargarSelectProveedores(); document.getElementById('supplierDialog').showModal();
 });
 
-document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active'); currentRecentFilter=btn.dataset.view; render();
-}));
-
-window.cerrarModalGasto = function() { 
-  document.getElementById('expenseDialog').close(); 
-  editingExpenseId = null; 
-};
-window.cerrarModalProveedor = function() { 
-  document.getElementById('supplierDialog').close(); 
-  editingPurchaseId = null; 
-};
+window.cerrarModalGasto = function() { document.getElementById('expenseDialog').close(); editingExpenseId = null; };
+window.cerrarModalProveedor = function() { document.getElementById('supplierDialog').close(); editingPurchaseId = null; };
 
 window.eliminarMovimiento = async function(source, id) {
-  if(!confirm('¿Estás seguro de que querés ELIMINAR este registro? Esta acción no se puede deshacer.')) return;
-  
-  if (source === 'expenses') {
-    let expenses = getData(KEYS.expenses, []);
-    expenses = expenses.filter(e => e.id !== id);
-    setData(KEYS.expenses, expenses);
-  } else if (source === 'purchases') {
-    let purchases = getData(KEYS.purchases, []);
-    purchases = purchases.filter(p => p.id !== id);
-    setData(KEYS.purchases, purchases);
-  }
+  if(!confirm('¿Estás seguro de que querés ELIMINAR este registro? Afectará los saldos de caja.')) return;
+  if (source === 'expenses') { let e = getData(KEYS.expenses, []); setData(KEYS.expenses, e.filter(x => x.id !== id)); } 
+  else if (source === 'purchases') { let p = getData(KEYS.purchases, []); setData(KEYS.purchases, p.filter(x => x.id !== id)); }
   render();
 };
 
 window.editarMovimiento = function(source, id) {
   if (source === 'expenses') {
-    const expenses = getData(KEYS.expenses, []);
-    const exp = expenses.find(e => e.id === id);
-    if (!exp) return;
-    
-    editingExpenseId = id;
-    const ef = document.getElementById('expenseForm');
-    
+    const exp = getData(KEYS.expenses, []).find(e => e.id === id); if (!exp) return;
+    editingExpenseId = id; const ef = document.getElementById('expenseForm');
     document.getElementById('expenseModalTitle').textContent = 'Editar Gasto Operativo';
-    ef.date.value = exp.date || '';
-    document.getElementById('expAmountMasked').value = formatNumberToMask(exp.amount);
-    ef.concept.value = exp.concept || '';
-    ef.category.value = exp.category || '';
-    ef.paymentMethod.value = exp.paymentMethod || '';
-    ef.notes.value = exp.notes || '';
-    
+    ef.date.value = exp.date || ''; document.getElementById('expAmountMasked').value = formatNumberToMask(exp.amount);
+    ef.concept.value = exp.concept || ''; ef.category.value = exp.category || ''; ef.paymentMethod.value = exp.paymentMethod || ''; ef.notes.value = exp.notes || '';
     document.getElementById('expenseDialog').showModal();
-    
   } else if (source === 'purchases') {
-    const purchases = getData(KEYS.purchases, []);
-    const pur = purchases.find(p => p.id === id);
-    if (!pur) return;
-    
-    editingPurchaseId = id;
-    cargarSelectProveedores();
-    const sf = document.getElementById('supplierForm');
-    
+    const pur = getData(KEYS.purchases, []).find(p => p.id === id); if (!pur) return;
+    editingPurchaseId = id; cargarSelectProveedores(); const sf = document.getElementById('supplierForm');
     document.getElementById('supplierModalTitle').textContent = 'Editar Compra (Factura)';
-    sf.date.value = pur.date || '';
-    sf.supplierName.value = pur.supplierName || '';
-    sf.invoiceType.value = pur.invoiceType || '';
-    sf.invoiceNumber.value = pur.invoiceNumber || '';
-    document.getElementById('purAmountMasked').value = formatNumberToMask(pur.amount);
-    sf.paymentMethod.value = pur.paymentMethod || '';
-    sf.concept.value = pur.concept || '';
-    
+    sf.date.value = pur.date || ''; sf.supplierName.value = pur.supplierName || ''; sf.invoiceType.value = pur.invoiceType || ''; sf.invoiceNumber.value = pur.invoiceNumber || '';
+    document.getElementById('purAmountMasked').value = formatNumberToMask(pur.amount); sf.paymentMethod.value = pur.paymentMethod || ''; sf.concept.value = pur.concept || '';
     document.getElementById('supplierDialog').showModal();
   }
 };
 
-// Guardar Gasto Operativo
-const ef = document.getElementById('expenseForm');
-ef.addEventListener('submit', e => {
-  e.preventDefault();
-  const p = Object.fromEntries(new FormData(ef).entries()); 
-  
+document.getElementById('expenseForm').addEventListener('submit', e => {
+  e.preventDefault(); const p = Object.fromEntries(new FormData(e.target).entries()); 
   p.amount = parseMascaraMoneda(document.getElementById('expAmountMasked').value);
-  if (p.amount <= 0) return alert('El monto no puede ser 0 o negativo.');
-  
+  if (p.amount <= 0) return alert('Monto inválido.');
   let expenses = getData(KEYS.expenses, []);
-  
-  if (editingExpenseId) {
-    p.id = editingExpenseId;
-    expenses = expenses.map(ex => ex.id === editingExpenseId ? p : ex);
-  } else {
-    p.id = uid('exp');
-    expenses.unshift(p);
-  }
-  
-  setData(KEYS.expenses, expenses); 
-  cerrarModalGasto();
-  render();
+  if (editingExpenseId) { p.id = editingExpenseId; expenses = expenses.map(ex => ex.id === editingExpenseId ? p : ex); } 
+  else { p.id = uid('exp'); expenses.unshift(p); }
+  setData(KEYS.expenses, expenses); cerrarModalGasto(); render();
 });
 
-// Guardar Compra / Factura
-const sf = document.getElementById('supplierForm');
-sf.addEventListener('submit', e => {
-  e.preventDefault();
-  const p = Object.fromEntries(new FormData(sf).entries()); 
-  
+document.getElementById('supplierForm').addEventListener('submit', e => {
+  e.preventDefault(); const p = Object.fromEntries(new FormData(e.target).entries()); 
   p.amount = parseMascaraMoneda(document.getElementById('purAmountMasked').value);
-  if (p.amount <= 0) return alert('El monto no puede ser 0 o negativo.');
-  
+  if (p.amount <= 0) return alert('Monto inválido.');
   let purchases = getData(KEYS.purchases, []);
-
-  if (editingPurchaseId) {
-    p.id = editingPurchaseId;
-    purchases = purchases.map(pur => pur.id === editingPurchaseId ? p : pur);
-  } else {
-    p.id = uid('pur');
-    purchases.unshift(p);
-  }
-
-  setData(KEYS.purchases, purchases);
-  cerrarModalProveedor();
-  render();
+  if (editingPurchaseId) { p.id = editingPurchaseId; purchases = purchases.map(pur => pur.id === editingPurchaseId ? p : pur); } 
+  else { p.id = uid('pur'); purchases.unshift(p); }
+  setData(KEYS.purchases, purchases); cerrarModalProveedor(); render();
 });
 
-// Exportación
 document.getElementById('btnExportExcel').addEventListener('click', () => {
-  const expenses = getData(KEYS.expenses, []);
-  const purchases = getData(KEYS.purchases, []);
-  const datosPlanos = [
-    ...expenses.map(e => ({ "Fecha": e.date || '-', "Tipo": "Gasto Operativo", "Concepto / Factura": e.concept || '-', "Categoría / Proveedor": e.category || '-', "Medio de Pago": e.paymentMethod || '-', "Monto": e.amount || 0 })),
-    ...purchases.map(p => ({ "Fecha": p.date || '-', "Tipo": "Compra a Proveedor", "Concepto / Factura": `${p.invoiceType} ${p.invoiceNumber} - ${p.concept}`, "Categoría / Proveedor": p.supplierName || '-', "Medio de Pago": p.paymentMethod || '-', "Monto": p.amount || 0 }))
-  ].sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
-
-  if (!datosPlanos.length) return alert("No hay movimientos para exportar.");
-  exportarAExcel(datosPlanos, 'Libro_Egresos_y_Compras');
+  const s = computeState();
+  if (!s.allMoves.length) return alert("No hay movimientos para exportar.");
+  exportarAExcel(s.allMoves, 'Libro_Mayor_Fondos');
 });
 
-window.addEventListener('saas:data-updated', (e) => {
-  if (e.detail && e.detail.key === KEYS.dashboard) return;
-  render();
-});
+window.addEventListener('saas:data-updated', (e) => { if (e.detail && e.detail.key === KEYS.dashboard) return; render(); });
 
 // Inicio
 aplicarMascaraMoneda();
 render();
-
 </script>
 </body>
 </html>
