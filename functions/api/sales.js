@@ -35,3 +35,15 @@ export async function onRequestPost(context) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
+export async function onRequestDelete(context) {
+  try {
+    const url = new URL(context.request.url);
+    const id = url.searchParams.get('id');
+    
+    await context.env.DB.prepare("DELETE FROM sales WHERE id = ?1").bind(id).run();
+    
+    return Response.json({ success: true, message: "Venta eliminada" });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
