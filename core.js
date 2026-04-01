@@ -169,6 +169,27 @@ function exportarAExcel(dataArray, nombreArchivo) {
       const brandText = document.querySelector('.brand-text strong');
       if (brandText) brandText.textContent = 'Usuario: ' + localStorage.getItem('saas_username');
 
+      // --- INYECTAR BOTÓN DE CERRAR SESIÓN EN EL MENÚ ---
+      const nav = document.querySelector('.nav');
+      if (nav && !document.getElementById('btnLogout')) {
+        const logoutBtn = document.createElement('a');
+        logoutBtn.id = 'btnLogout';
+        logoutBtn.href = '#';
+        logoutBtn.innerHTML = '<span class="nav-icon">🚪</span> Cerrar sesión';
+        // Le damos un estilo rojizo y lo separamos del resto
+        logoutBtn.style.color = '#fca5a5'; 
+        logoutBtn.style.marginTop = '15px';
+        logoutBtn.style.borderTop = '1px solid rgba(255,255,255,0.1)';
+        logoutBtn.style.paddingTop = '15px';
+        
+        logoutBtn.onclick = (e) => {
+          e.preventDefault(); // Evita que salte hacia arriba
+          logout(); // Llama a la función de borrado que ya tenés al final del archivo
+        };
+        nav.appendChild(logoutBtn);
+      }
+      // --------------------------------------------------
+
       // RESTRICCIONES VISUALES PARA ROL 'POS'
       if (role === 'pos') {
         // Ocultar links del menú lateral
