@@ -106,7 +106,6 @@ function saleTotal(sale) {
   });
 })();
 
-
 // ── Exportación a Excel (CSV optimizado) ─────────────────────
 function exportarAExcel(dataArray, nombreArchivo) {
   if (!dataArray || !dataArray.length) {
@@ -146,7 +145,9 @@ function exportarAExcel(dataArray, nombreArchivo) {
   const isLogged = localStorage.getItem('saas_logged_in') === 'true';
   const role = localStorage.getItem('saas_role') || 'pos'; // Por defecto restrictivo
   const path = location.pathname.toLowerCase();
-  const isLoginPage = path.includes('login.html');
+  
+  // ARREGLO DEL BUCLE: Detecta "login" en cualquier formato que use Cloudflare
+  const isLoginPage = path.includes('login');
   
   // 1. Redirección si no hay sesión
   if (!isLogged && !isLoginPage) {
@@ -158,7 +159,7 @@ function exportarAExcel(dataArray, nombreArchivo) {
   if (isLogged && !isLoginPage) {
     
     // RESTRICCIÓN DURA: Si es POS y quiere entrar al dashboard o a contable, lo pateamos a ventas
-    if (role === 'pos' && (path.includes('dashboard.html') || path.includes('contable.html'))) {
+    if (role === 'pos' && (path.includes('dashboard') || path.includes('contable'))) {
       window.location.href = 'ventas.html';
       return;
     }
