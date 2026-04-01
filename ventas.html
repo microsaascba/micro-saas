@@ -316,8 +316,32 @@ document.getElementById('paymentMethod').addEventListener('change', (e) => {
   document.getElementById('voucherField').style.display = (e.target.value.includes('Tarjeta') || e.target.value === 'Transferencia') ? 'block' : 'none';
 });
 
-  async function procesarVenta() {
-ventasGlobales.unshift(nuevaVenta);
+async function procesarVenta() {
+  if (!ticket.length) return alert('El ticket está vacío.');
+  const paymentMethod = document.getElementById('paymentMethod').value;
+  if (!paymentMethod) return alert('Debe seleccionar un medio de pago.');
+
+  const globalDiscount = toNum(document.getElementById('globalDiscount').value);
+  let subtotal = 0; let totalItemDiscounts = 0;
+
+  const itemsGuardar = ticket.map(i => {
+    const lineSubtotal = i.price * i.quantity;
+    subtotal += lineSubtotal; totalItemDiscounts += i.discount;
+    return { ...i, subtotal: lineSubtotal - i.discount };
+  });
+
+  const totalFinal = Math.max(0, subtotal - totalItemDiscounts - globalDiscount);
+  
+  // Acá es donde se CREA la venta
+  const nuevaVenta = {
+    id: uid('sale'), code: 'VTA-' + Date.now().toString().slice(-6),
+    date: new Date().toISOString(), createdAt: new Date().toISOString(),
+    paymentMethod: paymentMethod, voucher: document.getElementById('voucherCode').value.trim(),
+    items: itemsGuardar, subtotal: subtotal, globalDiscount: globalDiscount, total: totalFinal
+  };
+
+  // Guardamos localmente
+  ventasGlobales.unshift(nuevaVenta);
   setData(KEYS.sales, ventasGlobales);
   window.dispatchEvent(new CustomEvent('saas:data-updated', { detail: { key: KEYS.sales } }));
 
@@ -334,15 +358,15 @@ ventasGlobales.unshift(nuevaVenta);
   // ------------------------------------------------
 
   alert(`Venta registrada con éxito. Total: ${currency(totalFinal)}`);
-
-  const totalFinal = Math.max(0, subtotal - totalItemDiscounts - globalDiscount);
   
-  const nuevaVenta = {
-    id: uid('sale'), code: 'VTA-' + Date.now().toString().slice(-6),
-    date: new Date().toISOString(), createdAt: new Date().toISOString(),
-    paymentMethod: paymentMethod, voucher: document.getElementById('voucherCode').value.trim(),
-    items: itemsGuardar, subtotal: subtotal, globalDiscount: globalDiscount, total: totalFinal
-  };
+  // Limpiamos la pantalla
+  ticket = [];
+  document.getElementById('paymentMethod').value = '';
+  document.getElementById('voucherCode').value = '';
+  document.getElementById('voucherField').style.display = 'none';
+  document.getElementById('globalDiscount').value = '';
+  init();
+}
 
   ventasGlobales.unshift(nuevaVenta);
   setData(KEYS.sales, ventasGlobales);
