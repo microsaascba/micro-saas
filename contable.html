@@ -118,7 +118,7 @@
 </div>
 
 <dialog id="expenseDialog">
-  <div class="modal-head"><h3>Registrar Gasto Operativo</h3><button class="btn btn-light" onclick="cerrarModalGasto()">Cerrar</button></div>
+  <div class="modal-head"><h3 id="expenseModalTitle">Registrar Gasto Operativo</h3><button class="btn btn-light" onclick="cerrarModalGasto()">Cerrar</button></div>
   <form class="modal-body" id="expenseForm">
     <div class="form-grid">
       <div class="field"><label>Fecha *</label><input type="date" name="date" required /></div>
@@ -149,7 +149,7 @@
 </dialog>
 
 <dialog id="supplierDialog">
-  <div class="modal-head"><h3>Cargar Compra (Factura)</h3><button class="btn btn-light" onclick="cerrarModalProveedor()">Cerrar</button></div>
+  <div class="modal-head"><h3 id="supplierModalTitle">Cargar Compra (Factura)</h3><button class="btn btn-light" onclick="cerrarModalProveedor()">Cerrar</button></div>
   <form class="modal-body" id="supplierForm">
     <div class="form-grid">
       <div class="field"><label>Fecha *</label><input type="date" name="date" required /></div>
@@ -191,27 +191,23 @@
 <script src="core.js"></script>
 <script>
 let currentRecentFilter = 'all';
+let editingExpenseId = null;
+let editingPurchaseId = null;
 
 // --- MÁSCARA DE MONEDA (PESOS ARGENTINOS) ---
 function aplicarMascaraMoneda() {
   document.querySelectorAll('.money-input').forEach(inp => {
-    // Al tipear
     inp.addEventListener('input', function(e) {
-      let val = this.value.replace(/[^0-9,]/g, ''); // Solo números y comas
-      
-      // Evitar múltiples comas
+      let val = this.value.replace(/[^0-9,]/g, '');
       const parts = val.split(',');
       if(parts.length > 2) val = parts[0] + ',' + parts.slice(1).join('');
-      
       if(val === '') { this.value = ''; return; }
       
       let [intStr, decStr] = val.split(',');
-      
-      // Formatear parte entera con puntos de miles
       if(intStr) intStr = parseInt(intStr, 10).toLocaleString('es-AR');
       
       if(decStr !== undefined) {
-        this.value = `${intStr},${decStr.substring(0, 2)}`; // Máximo 2 decimales
+        this.value = `${intStr},${decStr.substring(0, 2)}`;
       } else {
         this.value = val.endsWith(',') ? `${intStr},` : intStr;
       }
@@ -221,8 +217,16 @@ function aplicarMascaraMoneda() {
 
 function parseMascaraMoneda(valStr) {
   if(!valStr) return 0;
-  // Quitar puntos de mil y cambiar coma decimal por punto para JavaScript
   return parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
+}
+
+// Transformar número real de nuevo a texto con máscara (para edición)
+function formatNumberToMask(num) {
+  if(!num && num !== 0) return '';
+  let str = Number(num).toFixed(2).replace('.', ',');
+  let [intStr, decStr] = str.split(',');
+  intStr = parseInt(intStr, 10).toLocaleString('es-AR');
+  return `${intStr},${decStr}`;
 }
 // ---------------------------------------------
 
@@ -256,31 +260,26 @@ function crearProveedor() {
 }
 // ------------------------------
 
-
 function computeState() {
   const expenses = getData(KEYS.expenses, []);
-  const purchases = getData(KEYS.purchases, []); // Usamos una key directa para las compras con factura
+  const purchases = getData(KEYS.purchases, []); 
   const sales = getData(KEYS.sales, []);
   const today = todayISO(), cm = monthKey(today);
 
   const totalIncomeMonth = sales.filter(s => monthKey(s.date || s.createdAt || today) === cm).reduce((a,s) => a + saleTotal(s), 0);
   
-  // Egresos (Gastos puros)
   const expenseToday = expenses.filter(e => e.date === today).reduce((a,e) => a + toNum(e.amount), 0);
   const expenseMonth = expenses.filter(e => monthKey(e.date) === cm).reduce((a,e) => a + toNum(e.amount), 0);
   
-  // Compras con factura
   const purchasesToday = purchases.filter(p => p.date === today).reduce((a,p) => a + toNum(p.amount), 0);
   const purchasesMonth = purchases.filter(p => monthKey(p.date) === cm).reduce((a,p) => a + toNum(p.amount), 0);
 
   const net = totalIncomeMonth - (expenseMonth + purchasesMonth);
 
-  // Categorías
   const categoryTotals = {};
   expenses.filter(e => monthKey(e.date)===cm).forEach(e => { const c=e.category||'Otros'; categoryTotals[c]=(categoryTotals[c]||0)+toNum(e.amount); });
   if (purchasesMonth > 0) categoryTotals['Mercadería/Compras'] = purchasesMonth;
 
-  // Movimientos recientes
   const recentMoves = [
     ...expenses.map(e => ({ id: e.id, date:e.date, type:'Gasto', concept:e.concept, owner:e.category, amount:toNum(e.amount), source:'expenses' })),
     ...purchases.map(p => ({ id: p.id, date:p.date, type:'Compra', concept:`${p.invoiceType} ${p.invoiceNumber}`, owner:p.supplierName, amount:toNum(p.amount), source:'purchases' }))
@@ -303,16 +302,13 @@ function render() {
   document.getElementById('kpiNet').textContent            = currency(s.net);
   document.getElementById('subNet').textContent            = s.net >= 0 ? 'El negocio sigue en positivo' : 'Los egresos superan los ingresos';
   document.getElementById('lastUpdate').textContent        = nowReadable();
-  
   document.getElementById('smartMessage').textContent      = s.net < 0 ? `Atención: Gastos superan ingresos por ${currency(Math.abs(s.net))}` : egresosHoy > 0 ? `Hoy llevás gastado ${currency(egresosHoy)}` : 'Día sin egresos registrados';
 
-  // Categorías
   const entries = Object.entries(s.categoryTotals).sort((a,b)=>b[1]-a[1]), maxV = entries.length ? entries[0][1] : 0;
   document.getElementById('categoryChart').innerHTML = entries.length
     ? entries.map(([n,v]) => `<div class="bar-row"><div>${n}</div><div class="bar-track"><div class="bar-fill" style="width:${maxV?(v/maxV)*100:0}%"></div></div><strong>${currency(v)}</strong></div>`).join('')
     : '<div class="empty">Sin egresos en el mes.</div>';
 
-  // Tabla Recientes
   const filtered = s.recentMoves.filter(m => currentRecentFilter === 'all' || m.source === currentRecentFilter);
   document.getElementById('recentTableBody').innerHTML = filtered.length
     ? filtered.map(r => `
@@ -324,6 +320,7 @@ function render() {
           <td><strong>${currency(r.amount)}</strong></td>
           <td>
             <div class="row-actions">
+              <button class="mini-btn" onclick="editarMovimiento('${r.source}', '${r.id}')">Editar</button>
               <button class="mini-btn" style="color:var(--danger); border-color:var(--danger-soft);" onclick="eliminarMovimiento('${r.source}', '${r.id}')">Borrar</button>
             </div>
           </td>
@@ -331,7 +328,6 @@ function render() {
       `).join('')
     : `<tr><td colspan="6"><div class="empty">Sin movimientos.</div></td></tr>`;
 
-  // Tabla de Compras
   document.getElementById('purchasesTableBody').innerHTML = s.recentPurchases.length
     ? s.recentPurchases.map(r => `<tr><td><strong>${escapeHtml(r.supplierName)}</strong><br><small>${formatDate(r.date)}</small></td><td>${escapeHtml(r.invoiceType)} ${escapeHtml(r.invoiceNumber)}</td><td><strong>${currency(r.amount)}</strong></td></tr>`).join('')
     : `<tr><td colspan="3"><div class="empty">No hay compras registradas.</div></td></tr>`;
@@ -340,19 +336,22 @@ function render() {
 }
 
 function syncDashboard(s) {
-  // Sincroniza datos básicos para el dashboard si es necesario
   const summary = { updatedAt:new Date().toISOString(), accounting:{ expenseToday:(s.expenseToday+s.purchasesToday), monthExpense:(s.expenseMonth+s.purchasesMonth), netResult:s.net, totalIncomeMonth:s.totalIncomeMonth } };
   setData(KEYS.dashboard, { ...getData(KEYS.dashboard,{}), ...summary });
 }
 
 // ── Control de Interfaz y Filtros ───────────────────────────
 document.getElementById('btnOpenExpense').addEventListener('click', () => {
+  editingExpenseId = null;
+  document.getElementById('expenseModalTitle').textContent = 'Registrar Gasto Operativo';
   document.getElementById('expenseForm').reset();
   document.getElementById('expenseForm').date.value = todayISO();
   document.getElementById('expenseDialog').showModal();
 });
 
 document.getElementById('btnOpenSupplier').addEventListener('click', () => {
+  editingPurchaseId = null;
+  document.getElementById('supplierModalTitle').textContent = 'Cargar Compra (Factura)';
   document.getElementById('supplierForm').reset();
   document.getElementById('supplierForm').date.value = todayISO();
   cargarSelectProveedores();
@@ -364,8 +363,14 @@ document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', (
   btn.classList.add('active'); currentRecentFilter=btn.dataset.view; render();
 }));
 
-window.cerrarModalGasto = function() { document.getElementById('expenseDialog').close(); };
-window.cerrarModalProveedor = function() { document.getElementById('supplierDialog').close(); };
+window.cerrarModalGasto = function() { 
+  document.getElementById('expenseDialog').close(); 
+  editingExpenseId = null; 
+};
+window.cerrarModalProveedor = function() { 
+  document.getElementById('supplierDialog').close(); 
+  editingPurchaseId = null; 
+};
 
 window.eliminarMovimiento = async function(source, id) {
   if(!confirm('¿Estás seguro de que querés ELIMINAR este registro? Esta acción no se puede deshacer.')) return;
@@ -382,22 +387,67 @@ window.eliminarMovimiento = async function(source, id) {
   render();
 };
 
+window.editarMovimiento = function(source, id) {
+  if (source === 'expenses') {
+    const expenses = getData(KEYS.expenses, []);
+    const exp = expenses.find(e => e.id === id);
+    if (!exp) return;
+    
+    editingExpenseId = id;
+    const ef = document.getElementById('expenseForm');
+    
+    document.getElementById('expenseModalTitle').textContent = 'Editar Gasto Operativo';
+    ef.date.value = exp.date || '';
+    document.getElementById('expAmountMasked').value = formatNumberToMask(exp.amount);
+    ef.concept.value = exp.concept || '';
+    ef.category.value = exp.category || '';
+    ef.paymentMethod.value = exp.paymentMethod || '';
+    ef.notes.value = exp.notes || '';
+    
+    document.getElementById('expenseDialog').showModal();
+    
+  } else if (source === 'purchases') {
+    const purchases = getData(KEYS.purchases, []);
+    const pur = purchases.find(p => p.id === id);
+    if (!pur) return;
+    
+    editingPurchaseId = id;
+    cargarSelectProveedores();
+    const sf = document.getElementById('supplierForm');
+    
+    document.getElementById('supplierModalTitle').textContent = 'Editar Compra (Factura)';
+    sf.date.value = pur.date || '';
+    sf.supplierName.value = pur.supplierName || '';
+    sf.invoiceType.value = pur.invoiceType || '';
+    sf.invoiceNumber.value = pur.invoiceNumber || '';
+    document.getElementById('purAmountMasked').value = formatNumberToMask(pur.amount);
+    sf.paymentMethod.value = pur.paymentMethod || '';
+    sf.concept.value = pur.concept || '';
+    
+    document.getElementById('supplierDialog').showModal();
+  }
+};
+
 // Guardar Gasto Operativo
 const ef = document.getElementById('expenseForm');
 ef.addEventListener('submit', e => {
   e.preventDefault();
   const p = Object.fromEntries(new FormData(ef).entries()); 
   
-  // Transformar la mascara de moneda a numero real
   p.amount = parseMascaraMoneda(document.getElementById('expAmountMasked').value);
   if (p.amount <= 0) return alert('El monto no puede ser 0 o negativo.');
   
-  p.id = uid('exp');
-  
   let expenses = getData(KEYS.expenses, []);
-  expenses.unshift(p);
-  setData(KEYS.expenses, expenses); 
   
+  if (editingExpenseId) {
+    p.id = editingExpenseId;
+    expenses = expenses.map(ex => ex.id === editingExpenseId ? p : ex);
+  } else {
+    p.id = uid('exp');
+    expenses.unshift(p);
+  }
+  
+  setData(KEYS.expenses, expenses); 
   cerrarModalGasto();
   render();
 });
@@ -408,16 +458,20 @@ sf.addEventListener('submit', e => {
   e.preventDefault();
   const p = Object.fromEntries(new FormData(sf).entries()); 
   
-  // Transformar la mascara de moneda a numero real
   p.amount = parseMascaraMoneda(document.getElementById('purAmountMasked').value);
   if (p.amount <= 0) return alert('El monto no puede ser 0 o negativo.');
   
-  p.id = uid('pur');
-
   let purchases = getData(KEYS.purchases, []);
-  purchases.unshift(p);
+
+  if (editingPurchaseId) {
+    p.id = editingPurchaseId;
+    purchases = purchases.map(pur => pur.id === editingPurchaseId ? p : pur);
+  } else {
+    p.id = uid('pur');
+    purchases.unshift(p);
+  }
+
   setData(KEYS.purchases, purchases);
-  
   cerrarModalProveedor();
   render();
 });
