@@ -173,17 +173,52 @@
     </div>
   </div>
 
-  <script src="core.js"></script>
+ <script src="core.js"></script>
   <script>
-    document.getElementById('loginForm').addEventListener('submit', (e) => {
+    // Cambiamos el texto de los labels para que sea Usuario y Contraseña real
+    document.querySelector('label[for="businessName"]').textContent = "Nombre de Usuario";
+    document.getElementById('businessName').placeholder = "Ej: admin o caja1";
+    document.querySelector('label[for="userPin"]').textContent = "Contraseña";
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const bName = document.getElementById('businessName').value.trim();
+      const username = document.getElementById('businessName').value.trim();
+      const password = document.getElementById('userPin').value.trim();
+      const btn = document.querySelector('.btn-login');
       
-      // Guardar nombre del comercio y estado de sesión
-      localStorage.setItem('saas_business_name', bName);
-      localStorage.setItem('saas_logged_in', 'true');
-      
-      window.location.href = 'dashboard.html';
+      btn.textContent = "Verificando...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          // Guardamos los datos de la sesión real
+          localStorage.setItem('saas_logged_in', 'true');
+          localStorage.setItem('saas_username', data.user.username);
+          localStorage.setItem('saas_role', data.user.role);
+          
+          // Redirigimos según el rol
+          if (data.user.role === 'pos') {
+            window.location.href = 'ventas.html';
+          } else {
+            window.location.href = 'dashboard.html';
+          }
+        } else {
+          alert("Usuario o contraseña incorrectos.");
+          btn.textContent = "Ingresar al Dashboard";
+          btn.disabled = false;
+        }
+      } catch (error) {
+        alert("Error de conexión con el servidor.");
+        btn.textContent = "Ingresar al Dashboard";
+        btn.disabled = false;
+      }
     });
   </script>
 </body>
