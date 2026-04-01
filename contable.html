@@ -28,7 +28,7 @@
     </nav>
     <div class="sidebar-footer">
       <strong>Fuentes de datos</strong>
-      saas_expenses · saas_supplier_debts · saas_supplier_payments · saas_sales · saas_dashboard_summary
+      saas_expenses · saas_supplier_debts · saas_supplier_payments · saas_sales
     </div>
   </aside>
 
@@ -36,7 +36,7 @@
     <header class="topbar">
       <div class="page-title">
         <h1>Módulo Contable</h1>
-        <p>Controlá salidas de dinero, pagos pendientes y resultado neto sin contabilidad técnica.</p>
+        <p>Controlá salidas de dinero, pagos pendientes y resultado neto.</p>
       </div>
       <div class="topbar-actions">
         <button class="btn btn-success" id="btnExportExcel">⬇ Exportar Movimientos</button>
@@ -114,9 +114,8 @@
         <article class="card card-pad">
           <div class="section-head"><div><h2>Conexión del sistema</h2></div></div>
           <div class="metric-list">
-            <div class="metric-row"><span>Estado</span><strong id="systemStatus">Conectado</strong></div>
-            <div class="metric-row"><span>Dashboard</span><strong id="dashboardStatus">Actualizado</strong></div>
-            <div class="metric-row"><span>Evento</span><strong>saas:data-updated</strong></div>
+            <div class="metric-row"><span>Estado</span><strong id="systemStatus">Conectado (Híbrido)</strong></div>
+            <div class="metric-row"><span>Sincronización</span><strong id="dashboardStatus">Actualizado</strong></div>
           </div>
         </article>
       </div>
@@ -128,10 +127,10 @@
   <div class="modal-head"><h3>Registrar gasto</h3><button class="btn btn-light" onclick="cerrarModalGasto()">Cerrar</button></div>
   <form class="modal-body" id="expenseForm">
     <div class="form-grid">
-      <div class="field"><label>Fecha</label><input type="date" name="date" required /></div>
-      <div class="field"><label>Monto</label><input type="number" step="0.01" name="amount" placeholder="0" required /></div>
-      <div class="field full"><label>Concepto</label><input type="text" name="concept" placeholder="Ej: alquiler, combustible" required /></div>
-      <div class="field"><label>Categoría</label>
+      <div class="field"><label>Fecha *</label><input type="date" name="date" required /></div>
+      <div class="field"><label>Monto * (Mayor a 0)</label><input type="number" step="0.01" min="0.01" name="amount" placeholder="Ej: 15000" required /></div>
+      <div class="field full"><label>Concepto *</label><input type="text" name="concept" placeholder="Ej: alquiler, combustible" required /></div>
+      <div class="field"><label>Categoría *</label>
         <select name="category" required>
           <option value="Servicios">Servicios</option><option value="Alquiler">Alquiler</option><option value="Sueldos">Sueldos</option>
           <option value="Logística">Logística</option><option value="Marketing">Marketing</option><option value="Mantenimiento">Mantenimiento</option>
@@ -139,10 +138,10 @@
           <option value="Administración">Administración</option><option value="Otros">Otros</option>
         </select>
       </div>
-      <div class="field"><label>Estado</label><select name="status" required><option value="pagado">Pagado</option><option value="pendiente">Pendiente</option></select></div>
-      <div class="field"><label>Medio de pago</label><select name="paymentMethod"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="Tarjeta">Tarjeta</option><option value="Cuenta corriente">Cuenta corriente</option><option value="Otro">Otro</option></select></div>
-      <div class="field"><label>Vencimiento</label><input type="date" name="dueDate" /></div>
-      <div class="field full"><label>Observación</label><textarea name="notes" placeholder="Opcional"></textarea></div>
+      <div class="field"><label>Estado *</label><select name="status" required><option value="pagado">Pagado</option><option value="pendiente">Pendiente</option></select></div>
+      <div class="field"><label>Medio de pago *</label><select name="paymentMethod" required><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="Tarjeta">Tarjeta</option><option value="Cuenta corriente">Cuenta corriente</option><option value="Otro">Otro</option></select></div>
+      <div class="field"><label>Vencimiento *</label><input type="date" name="dueDate" required /></div>
+      <div class="field full"><label>Observación *</label><textarea name="notes" placeholder="Detalle obligatorio" required></textarea></div>
     </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-light" onclick="cerrarModalGasto()">Cancelar</button>
@@ -155,15 +154,15 @@
   <div class="modal-head"><h3>Registrar proveedor / deuda</h3><button class="btn btn-light" onclick="cerrarModalProveedor()">Cerrar</button></div>
   <form class="modal-body" id="supplierForm">
     <div class="form-grid">
-      <div class="field"><label>Fecha</label><input type="date" name="date" required /></div>
-      <div class="field"><label>Tipo</label><select name="movementType" required><option value="debt">Nueva deuda / compra</option><option value="payment">Pago a proveedor</option></select></div>
-      <div class="field full"><label>Proveedor</label><input type="text" name="supplierName" placeholder="Nombre del proveedor" required /></div>
-      <div class="field"><label>Monto</label><input type="number" step="0.01" name="amount" placeholder="0" required /></div>
-      <div class="field"><label>Vencimiento</label><input type="date" name="dueDate" /></div>
-      <div class="field full"><label>Concepto</label><input type="text" name="concept" placeholder="Ej: compra de mercadería" required /></div>
-      <div class="field"><label>Estado</label><select name="status" required><option value="pendiente">Pendiente</option><option value="pagado">Pagado</option></select></div>
-      <div class="field"><label>Medio de pago</label><select name="paymentMethod"><option value="Transferencia">Transferencia</option><option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Cuenta corriente">Cuenta corriente</option></select></div>
-      <div class="field full"><label>Observación</label><textarea name="notes" placeholder="Opcional"></textarea></div>
+      <div class="field"><label>Fecha *</label><input type="date" name="date" required /></div>
+      <div class="field"><label>Tipo *</label><select name="movementType" required><option value="debt">Nueva deuda / compra</option><option value="payment">Pago a proveedor</option></select></div>
+      <div class="field full"><label>Proveedor *</label><input type="text" name="supplierName" placeholder="Nombre del proveedor" required /></div>
+      <div class="field"><label>Monto * (Mayor a 0)</label><input type="number" step="0.01" min="0.01" name="amount" placeholder="Ej: 50000" required /></div>
+      <div class="field"><label>Vencimiento *</label><input type="date" name="dueDate" required /></div>
+      <div class="field full"><label>Concepto *</label><input type="text" name="concept" placeholder="Ej: compra de mercadería" required /></div>
+      <div class="field"><label>Estado *</label><select name="status" required><option value="pendiente">Pendiente</option><option value="pagado">Pagado</option></select></div>
+      <div class="field"><label>Medio de pago *</label><select name="paymentMethod" required><option value="Transferencia">Transferencia</option><option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Cuenta corriente">Cuenta corriente</option></select></div>
+      <div class="field full"><label>Observación *</label><textarea name="notes" placeholder="Detalle obligatorio" required></textarea></div>
     </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-light" onclick="cerrarModalProveedor()">Cancelar</button>
@@ -177,6 +176,17 @@
 let currentRecentFilter = 'all';
 let editingExpenseId = null;
 let editingSupplierMoveId = null;
+
+// Híbrido: Traer datos de la API (si existe) y guardarlos en Local
+async function fetchCloudData() {
+  try {
+    const res = await fetch('/api/expenses');
+    if(res.ok) {
+      const data = await res.json();
+      setData(KEYS.expenses, data);
+    }
+  } catch(e) { console.warn('Usando datos locales.'); }
+}
 
 function computeState() {
   const expenses        = getData(KEYS.expenses, []);
@@ -219,7 +229,7 @@ function computeState() {
   expenses.filter(e => e.status==='pagado' && monthKey(e.date)===cm).forEach(e => { const c=e.category||'Otros'; categoryTotals[c]=(categoryTotals[c]||0)+toNum(e.amount); });
   payments.filter(p => monthKey(p.date)===cm).forEach(p => { categoryTotals['Proveedores']=(categoryTotals['Proveedores']||0)+toNum(p.amount); });
 
-  // Movimientos recientes (incluyendo ID original)
+  // Movimientos recientes
   const recentMoves = [
     ...expenses.map(e => ({ id: e.id, date:e.date, type:'Gasto', concept:e.concept, owner:e.category, status:e.status, amount:toNum(e.amount), source:'expenses' })),
     ...payments.map(p => ({ id: p.id, date:p.date, type:'Pago proveedor', concept:p.concept, owner:p.supplierName, status:'pagado', amount:toNum(p.amount), source:'payments' }))
@@ -262,7 +272,7 @@ function render() {
     ? entries.map(([n,v]) => `<div class="bar-row"><div>${n}</div><div class="bar-track"><div class="bar-fill" style="width:${maxV?(v/maxV)*100:0}%"></div></div><strong>${currency(v)}</strong></div>`).join('')
     : '<div class="empty">Sin egresos pagados para mostrar.</div>';
 
-  // Tabla recientes con filtrado y botón de edición
+  // Tabla recientes con botones EDITAR y BORRAR
   const filtered = s.recentMoves.filter(m => currentRecentFilter === 'all' || m.source === currentRecentFilter);
   document.getElementById('recentTableBody').innerHTML = filtered.length
     ? filtered.map(r => `
@@ -273,7 +283,12 @@ function render() {
           <td>${r.owner}</td>
           <td><span class="badge ${r.status==='pagado'?'badge-success':'badge-warning'}">${r.status}</span></td>
           <td><strong>${currency(r.amount)}</strong></td>
-          <td><button class="mini-btn" onclick="editarMovimiento('${r.source}', '${r.id}')">Editar</button></td>
+          <td>
+            <div class="row-actions">
+              <button class="mini-btn" onclick="editarMovimiento('${r.source}', '${r.id}')">Editar</button>
+              <button class="mini-btn" style="color:var(--danger); border-color:var(--danger-soft);" onclick="eliminarMovimiento('${r.source}', '${r.id}')">Borrar</button>
+            </div>
+          </td>
         </tr>
       `).join('')
     : `<tr><td colspan="7"><div class="empty">Sin movimientos.</div></td></tr>`;
@@ -286,18 +301,9 @@ function render() {
   syncDashboard(s);
 }
 
-function syncDashboard(s, feedback=false) {
+function syncDashboard(s) {
   const summary = { updatedAt:new Date().toISOString(), accounting:{ expenseToday:s.expenseToday, monthExpense:s.monthExpense, pendingTotal:s.pendingExpenses+s.supplierDebtPending, supplierDebtPending:s.supplierDebtPending, netResult:s.net, totalIncomeMonth:s.totalIncomeMonth } };
   setData(KEYS.dashboard, { ...getData(KEYS.dashboard,{}), ...summary });
-  if (feedback) { document.getElementById('dashboardStatus').textContent='Sincronizado recién'; document.getElementById('systemStatus').textContent='Conectado'; }
-}
-
-function seedIfEmpty() {
-  if (!getData(KEYS.expenses,[]).length && !getData(KEYS.supplierDebts,[]).length) {
-    setData(KEYS.expenses,[{id:uid('exp'),date:todayISO(),concept:'Combustible',category:'Transporte',amount:18500,status:'pagado',paymentMethod:'Efectivo',dueDate:'',notes:''},{id:uid('exp'),date:todayISO(),concept:'Internet local',category:'Servicios',amount:32000,status:'pendiente',paymentMethod:'Transferencia',dueDate:todayISO(),notes:''}]);
-    setData(KEYS.supplierDebts,[{id:uid('debt'),date:todayISO(),supplierName:'Proveedor Centro',concept:'Compra de mercadería',amount:240000,dueDate:todayISO(),status:'pendiente',paymentMethod:'Cuenta corriente',notes:''}]);
-    setData(KEYS.supplierPayments,[{id:uid('pay'),date:todayISO(),supplierName:'Proveedor Norte',concept:'Pago parcial',amount:80000,dueDate:'',status:'pagado',paymentMethod:'Transferencia',notes:''}]);
-  }
 }
 
 function saveSupplierMovement(payload) {
@@ -311,29 +317,54 @@ function saveSupplierMovement(payload) {
 
 // ── Control de Interfaz y Filtros ───────────────────────────
 document.getElementById('btnOpenExpense').addEventListener('click', () => {
-  cerrarModalGasto(); // Limpia estado previo
+  cerrarModalGasto(); 
   document.getElementById('expenseDialog').showModal();
 });
 
 document.getElementById('btnOpenSupplier').addEventListener('click', () => {
-  cerrarModalProveedor(); // Limpia estado previo
+  cerrarModalProveedor(); 
   document.getElementById('supplierDialog').showModal();
 });
 
-document.getElementById('btnSync').addEventListener('click', () => { syncDashboard(computeState(),true); render(); });
+document.getElementById('btnSync').addEventListener('click', async () => { 
+  await fetchCloudData(); 
+  render(); 
+  document.getElementById('dashboardStatus').textContent='Sincronizado recién';
+});
 
 document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active'); currentRecentFilter=btn.dataset.view; render();
 }));
 
-// ── Funciones de Edición y Persistencia ─────────────────────
+// ── Funciones de Edición, Borrado y Persistencia ────────────
+
+window.eliminarMovimiento = async function(source, id) {
+  if(!confirm('¿Estás seguro de que querés ELIMINAR este registro? Esta acción no se puede deshacer.')) return;
+  
+  if (source === 'expenses') {
+    let expenses = getData(KEYS.expenses, []);
+    expenses = expenses.filter(e => e.id !== id);
+    setData(KEYS.expenses, expenses);
+  } else if (source === 'payments') {
+    let payments = getData(KEYS.supplierPayments, []);
+    payments = payments.filter(p => p.id !== id);
+    setData(KEYS.supplierPayments, payments);
+  }
+
+  // Intento de borrado en la nube (si tenés configurado el DELETE en Cloudflare)
+  try {
+    await fetch(`/api/${source}?id=${id}`, { method: 'DELETE' });
+  } catch(e) { console.log('Borrado local exitoso.'); }
+
+  render();
+};
+
 window.editarMovimiento = function(source, id) {
   if (source === 'expenses') {
     const expenses = getData(KEYS.expenses, []);
     const exp = expenses.find(e => e.id === id);
     if (!exp) return;
-    
     editingExpenseId = id;
     const ef = document.getElementById('expenseForm');
     ef.date.value = exp.date || '';
@@ -352,11 +383,10 @@ window.editarMovimiento = function(source, id) {
     const payments = getData(KEYS.supplierPayments, []);
     const pay = payments.find(p => p.id === id);
     if (!pay) return;
-    
     editingSupplierMoveId = id;
     const sf = document.getElementById('supplierForm');
     sf.date.value = pay.date || '';
-    sf.movementType.value = 'payment'; // Forzado a pago
+    sf.movementType.value = 'payment';
     sf.supplierName.value = pay.supplierName || '';
     sf.amount.value = pay.amount || '';
     sf.dueDate.value = pay.dueDate || '';
@@ -386,11 +416,17 @@ window.cerrarModalProveedor = function() {
   document.getElementById('supplierDialog').close();
 };
 
+// Guardar Gasto
 const ef = document.getElementById('expenseForm');
 ef.addEventListener('submit', async e => {
   e.preventDefault();
   const p = Object.fromEntries(new FormData(ef).entries()); 
   p.amount = toNum(p.amount);
+  
+  if (p.amount <= 0) {
+    alert('El monto no puede ser 0 o negativo.');
+    return;
+  }
   
   let expenses = getData(KEYS.expenses, []);
   if (editingExpenseId) {
@@ -403,41 +439,39 @@ ef.addEventListener('submit', async e => {
   
   setData(KEYS.expenses, expenses); 
   
-  // --- PUENTE A LA NUBE ---
-  if (!editingExpenseId) { // Solo enviamos a D1 si es un gasto nuevo
+  // PUENTE A LA NUBE
+  if (!editingExpenseId) {
     try {
-      await fetch('/api/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(p)
-      });
-    } catch (error) {
-      console.error('Error guardando gasto en la nube:', error);
-    }
+      await fetch('/api/expenses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
+    } catch (error) { console.error('Error enviando a la nube'); }
   }
-  // ------------------------
 
   cerrarModalGasto();
   render();
 });
 
+// Guardar Proveedor
 const sf = document.getElementById('supplierForm');
-sf.addEventListener('submit', e => {
+sf.addEventListener('submit', async e => {
   e.preventDefault();
   const p = Object.fromEntries(new FormData(sf).entries()); 
   p.amount = toNum(p.amount);
+  
+  if (p.amount <= 0) {
+    alert('El monto no puede ser 0 o negativo.');
+    return;
+  }
   
   if (editingSupplierMoveId) {
     let payments = getData(KEYS.supplierPayments, []);
     p.id = editingSupplierMoveId;
     payments = payments.map(pay => pay.id === editingSupplierMoveId ? p : pay);
     setData(KEYS.supplierPayments, payments);
-    cerrarModalProveedor();
   } else {
     saveSupplierMovement(p);
-    cerrarModalProveedor();
   }
   
+  cerrarModalProveedor();
   render();
 });
 
@@ -445,42 +479,28 @@ sf.addEventListener('submit', e => {
 document.getElementById('btnExportExcel').addEventListener('click', () => {
   const expenses = getData(KEYS.expenses, []);
   const payments = getData(KEYS.supplierPayments, []);
-
   const datosPlanos = [
-    ...expenses.map(e => ({
-      "Fecha": e.date || '-',
-      "Tipo Operación": "Gasto Operativo",
-      "Concepto": e.concept || '-',
-      "Categoría / Proveedor": e.category || '-',
-      "Estado": e.status || '-',
-      "Medio de Pago": e.paymentMethod || '-',
-      "Vencimiento": e.dueDate || '-',
-      "Monto": e.amount || 0
-    })),
-    ...payments.map(p => ({
-      "Fecha": p.date || '-',
-      "Tipo Operación": "Pago a Proveedor",
-      "Concepto": p.concept || '-',
-      "Categoría / Proveedor": p.supplierName || '-',
-      "Estado": p.status || '-',
-      "Medio de Pago": p.paymentMethod || '-',
-      "Vencimiento": p.dueDate || '-',
-      "Monto": p.amount || 0
-    }))
+    ...expenses.map(e => ({ "Fecha": e.date || '-', "Tipo Operación": "Gasto Operativo", "Concepto": e.concept || '-', "Categoría / Proveedor": e.category || '-', "Estado": e.status || '-', "Medio de Pago": e.paymentMethod || '-', "Vencimiento": e.dueDate || '-', "Monto": e.amount || 0 })),
+    ...payments.map(p => ({ "Fecha": p.date || '-', "Tipo Operación": "Pago a Proveedor", "Concepto": p.concept || '-', "Categoría / Proveedor": p.supplierName || '-', "Estado": p.status || '-', "Medio de Pago": p.paymentMethod || '-', "Vencimiento": p.dueDate || '-', "Monto": p.amount || 0 }))
   ].sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
 
-  if (!datosPlanos.length) {
-    alert("No hay movimientos contables registrados para exportar.");
-    return;
-  }
-
+  if (!datosPlanos.length) return alert("No hay movimientos para exportar.");
   exportarAExcel(datosPlanos, 'Libro_Mayor_Contable');
 });
 
-window.addEventListener('storage', render);
-window.addEventListener('saas:data-updated', render);
-seedIfEmpty(); 
-render();
+// ESCUCHADOR DE EVENTOS (CON FRENO PARA EVITAR EL BUCLE)
+window.addEventListener('saas:data-updated', (e) => {
+  // Si la actualización es del dashboard mismo, NO hacemos render para evitar el bucle infinito
+  if (e.detail && e.detail.key === KEYS.dashboard) return;
+  render();
+});
+
+// Inicio
+async function arrancar() {
+  await fetchCloudData();
+  render();
+}
+arrancar();
 </script>
 </body>
 </html>
