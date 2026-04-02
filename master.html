@@ -93,7 +93,6 @@
       .sidebar.open { left: 0; }
       .mobile-toggle { display: block; }
       
-      /* Botón invisible para cerrar menú si tocan afuera */
       .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; }
       .sidebar-overlay.open { display: block; }
 
@@ -166,7 +165,10 @@
         <div class="card">
           <div class="card-head">
             <h2>Directorio de Clientes</h2>
-            <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo Cliente</button>
+            <div class="actions">
+              <button class="btn btn-outline" onclick="exportarClientesExcel()">⬇ Excel</button>
+              <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo Cliente</button>
+            </div>
           </div>
           <div class="table-wrap">
             <table>
@@ -189,7 +191,10 @@
         <div class="card">
           <div class="card-head">
             <h2>Historial de Cobros</h2>
-            <button class="btn btn-success" onclick="abrirModalPago()">+ Registrar Pago</button>
+            <div class="actions">
+              <button class="btn btn-outline" onclick="exportarPagosExcel()">⬇ Excel</button>
+              <button class="btn btn-success" onclick="abrirModalPago()">+ Registrar Pago</button>
+            </div>
           </div>
           <div class="table-wrap">
             <table>
@@ -288,13 +293,58 @@
   function money(num) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0); }
   function today() { return new Date().toISOString().split('T')[0]; }
   
-  // ¡AQUÍ ESTÁ LA FUNCIÓN calcEstado QUE FALTABA!
   function calcEstado(fechaVto, activo) {
     if (!activo) return { texto: 'Suspendido', clase: 'badge-neutral', status: 'suspendido' };
     const dif = Math.ceil((new Date(fechaVto).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000);
     if (dif < 0) return { texto: `Vencido (hace ${Math.abs(dif)}d)`, clase: 'badge-danger', status: 'vencido' };
     if (dif <= 5) return { texto: `Vence en ${dif}d`, clase: 'badge-warning', status: 'alerta' };
     return { texto: 'Al Día', clase: 'badge-success', status: 'ok' };
+  }
+
+  function escapeHtml(value) { return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+
+  // ── EXPORTACIÓN A EXCEL ──
+  function exportarAExcel(dataArray, nombreArchivo) {
+    if (!dataArray || !dataArray.length) { alert("No hay datos para exportar."); return; }
+    const headers = Object.keys(dataArray[0]);
+    const rows = dataArray.map(row => {
+      return headers.map(header => { let cell = row[header] === null || row[header] === undefined ? '' : String(row[header]); cell = cell.replace(/"/g, '""'); return `"${cell}"`; }).join(';');
+    });
+    const csvContent = [headers.join(';'), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${nombreArchivo}_${today()}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  }
+
+  function exportarClientesExcel() {
+    if (!dbClientes.length) return alert("No hay clientes para exportar.");
+    const datos = dbClientes.map(c => {
+      const est = calcEstado(c.dueDate, c.active);
+      return {
+        "Comercio": c.name,
+        "Titular / Contacto": c.contact || '-',
+        "Teléfono": c.phone || '-',
+        "Abono Mensual": c.fee || 0,
+        "Fecha Vencimiento": new Date(c.dueDate).toLocaleDateString('es-AR'),
+        "Estado": est.texto,
+        "Licencia Activa": c.active ? 'SI' : 'NO'
+      };
+    });
+    exportarAExcel(datos, 'Reporte_Clientes_MicroSaas');
+  }
+
+  function exportarPagosExcel() {
+    if (!dbPagos.length) return alert("No hay pagos para exportar.");
+    const datos = dbPagos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => {
+      const c = dbClientes.find(x => x.id === p.clientId);
+      return {
+        "Fecha Pago": new Date(p.date).toLocaleDateString('es-AR'),
+        "Comercio Cliente": c ? c.name : 'Cliente Eliminado',
+        "Método de Pago": p.method || '-',
+        "Monto Abonado": p.amount || 0,
+        "Notas": p.notes || '-'
+      };
+    });
+    exportarAExcel(datos, 'Reporte_Pagos_MicroSaas');
   }
 
   // ── RESPONSIVE Y NAVEGACIÓN ──
@@ -310,7 +360,6 @@
     btnElement.classList.add('active');
     document.getElementById('pageTitle').textContent = btnElement.textContent.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '').trim();
     
-    // Si estamos en mobile, cerrar el menú al hacer clic
     if(window.innerWidth <= 900) toggleMenu();
   }
 
@@ -324,7 +373,6 @@
       if(resC.ok) {
         dbClientes = await resC.json();
         dbClientes.forEach(c => c.active = (c.active === 1 || c.active === true));
-        // Guarda en local para que el core.js de los clientes pueda verificar la licencia
         localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
       }
 
@@ -336,7 +384,6 @@
       renderAll();
     } catch(e) {
       console.error("Error al cargar datos reales, usando modo local:", e);
-      // Fallback a LocalStorage para que puedas probar si falla la nube
       dbClientes = JSON.parse(localStorage.getItem('saas_db_clientes')) || [];
       dbPagos = JSON.parse(localStorage.getItem('saas_db_pagos')) || [];
       document.getElementById('cloudStatus').textContent = 'Modo Local (Offline)';
@@ -394,8 +441,6 @@
       return `<tr><td>${new Date(p.date).toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(c ? c.name : 'Cliente Eliminado')}</strong></td><td><span class="badge badge-neutral">${escapeHtml(p.method)}</span></td><td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td><td style="color:var(--muted); font-size:12px;">${escapeHtml(p.notes || '-')}</td></tr>`;
     }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay pagos registrados.</td></tr>';
   }
-
-  function escapeHtml(value) { return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
   // ── MODALES Y ACCIONES ──
   function abrirModalCliente() {
