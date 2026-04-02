@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MicroSaas Soluciones | Master Control</title>
+  <link rel="stylesheet" href="styles.css" />
   <style>
     :root {
       --bg: #0f172a; --panel: #1e293b; --panel-hover: #334155; --text: #f8fafc; --muted: #94a3b8;
@@ -80,7 +81,6 @@
     .admin-box { background: rgba(139, 92, 246, 0.1); border: 1px solid var(--primary); padding: 15px; border-radius: 8px; margin-top: 10px; }
     .admin-box p { margin: 0 0 15px 0; font-size: 13px; color: #cbd5e1; }
 
-    /* Estructura Ficha Cliente */
     .ficha-header { padding: 24px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; background: rgba(0,0,0,0.1); }
     .ficha-data label { display:block; color:var(--muted); font-size:12px; margin-bottom:5px; text-transform:uppercase; font-weight:700; }
     .ficha-data div { font-size:15px; font-weight:600; }
@@ -197,7 +197,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Fecha Pago</th><th>Período Abonado</th><th>Método</th><th>Monto</th><th>Notas</th><th>Comprobantes</th></tr></thead>
+              <thead><tr><th>Fecha Pago</th><th>Período Abonado</th><th>Método</th><th>Monto</th><th>Notas</th><th>Acciones</th></tr></thead>
               <tbody id="fichaPagosTable"></tbody>
             </table>
           </div>
@@ -222,7 +222,8 @@
                   <th>Período Abonado</th>
                   <th>Método</th>
                   <th>Monto Abonado</th>
-                  <th>Notas / Recibo</th>
+                  <th>Notas</th>
+                  <th>Acción</th>
                 </tr>
               </thead>
               <tbody id="pagosTable"></tbody>
@@ -265,7 +266,7 @@
 
   <dialog id="pagoDialog">
     <div class="modal-head">
-      <h3>Registrar Pago de Licencia</h3>
+      <h3 id="pagoModalTitle">Registrar Pago de Licencia</h3>
       <button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('pagoDialog')">✕</button>
     </div>
     <form id="pagoForm" onsubmit="guardarPago(event)">
@@ -297,13 +298,12 @@
   if (localStorage.getItem('saas_master_logged_in') !== 'true') window.location.href = 'master-login.html';
   function logoutMaster() { localStorage.removeItem('saas_master_logged_in'); window.location.href = 'master-login.html'; }
 
-  // ── ESTADO GLOBAL ──
   let dbClientes = [];
   let dbPagos = [];
   let editingClientId = null;
+  let editingPaymentId = null;
   let currentFichaId = null;
 
-  // ── HELPERS ──
   function money(num) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0); }
   function today() { return new Date().toISOString().split('T')[0]; }
   
@@ -324,11 +324,7 @@
 
   function escapeHtml(value) { return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
-  // ── NAVEGACIÓN Y RESPONSIVE ──
-  function toggleMenu() {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('sidebarOverlay').classList.toggle('open');
-  }
+  function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
 
   function switchView(viewId, btnElement) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -341,7 +337,6 @@
     if(window.innerWidth <= 900) toggleMenu();
   }
 
-  // ── SINCRONIZACIÓN API ──
   async function loadDataFromCloud() {
     document.getElementById('cloudStatus').textContent = 'Sincronizando...';
     try {
@@ -366,23 +361,13 @@
     }
   }
 
-  // ── RENDERIZADO ──
-  function renderAll() { 
-    renderDashboard(); 
-    renderClientes(); 
-    renderPagos(); 
-    if(currentFichaId) renderFicha(currentFichaId); 
-  }
+  function renderAll() { renderDashboard(); renderClientes(); renderPagos(); if(currentFichaId) renderFicha(currentFichaId); }
 
   function renderDashboard() {
     let mrr = 0, activos = 0, morosos = 0; const alertas = [];
     dbClientes.forEach(c => {
       const est = calcEstado(c.dueDate, c.active);
-      if (c.active) {
-        mrr += Number(c.fee); activos++;
-        if (est.status === 'vencido') morosos++;
-        if (est.status === 'vencido' || est.status === 'alerta') alertas.push({ ...c, est });
-      }
+      if (c.active) { mrr += Number(c.fee); activos++; if (est.status === 'vencido') morosos++; if (est.status === 'vencido' || est.status === 'alerta') alertas.push({ ...c, est }); }
     });
     document.getElementById('kpiMrr').textContent = money(mrr);
     document.getElementById('kpiActivos').textContent = activos;
@@ -416,39 +401,38 @@
     const tbody = document.getElementById('pagosTable');
     tbody.innerHTML = dbPagos.length ? dbPagos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => {
       const c = dbClientes.find(x => x.id === p.clientId);
-      return `<tr><td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(c ? c.name : 'Cliente Eliminado')}</strong></td><td><span class="badge badge-primary" style="background:rgba(139,92,246,0.2); color:#a78bfa;">${formatPeriod(p.period)}</span></td><td><span class="badge badge-neutral">${escapeHtml(p.method)}</span></td><td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td><td style="color:var(--muted); font-size:12px;">${escapeHtml(p.notes || '-')}</td></tr>`;
-    }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted);">No hay pagos registrados.</td></tr>';
+      return `<tr>
+        <td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td>
+        <td><strong>${escapeHtml(c ? c.name : 'Cliente Eliminado')}</strong></td>
+        <td><span class="badge badge-primary" style="background:rgba(139,92,246,0.2); color:#a78bfa;">${formatPeriod(p.period)}</span></td>
+        <td><span class="badge badge-neutral">${escapeHtml(p.method)}</span></td>
+        <td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td>
+        <td style="color:var(--muted); font-size:12px;">${escapeHtml(p.notes || '-')}</td>
+        <td>
+          <div class="actions">
+            <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="editarPago('${p.id}')">Editar</button>
+            <button class="btn btn-danger-text" style="padding:6px 10px; font-size:12px;" onclick="borrarPago('${p.id}')">X</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" style="text-align:center; color:var(--muted);">No hay pagos registrados.</td></tr>';
   }
 
-  // ── MÓDULO: FICHA DEL CLIENTE ──
-  function verFicha(id) {
-    currentFichaId = id;
-    renderFicha(id);
-    switchView('ficha', null);
-    document.getElementById('pageTitle').textContent = "Estado de Cuenta";
-  }
+  function verFicha(id) { currentFichaId = id; renderFicha(id); switchView('ficha', null); document.getElementById('pageTitle').textContent = "Estado de Cuenta"; }
 
   function renderFicha(id) {
-    const c = dbClientes.find(x => x.id === id);
-    if(!c) return;
-    
+    const c = dbClientes.find(x => x.id === id); if(!c) return;
     document.getElementById('fichaClientName').textContent = c.name;
     document.getElementById('fichaEmail').textContent = c.email || 'No registrado';
     document.getElementById('fichaPhone').textContent = c.phone || '-';
     document.getElementById('fichaVto').innerHTML = `${new Date(c.dueDate+'T12:00:00').toLocaleDateString('es-AR')} <span class="badge ${calcEstado(c.dueDate, c.active).clase}" style="margin-left:5px;">${calcEstado(c.dueDate, c.active).texto}</span>`;
     document.getElementById('fichaFee').textContent = money(c.fee);
-
     const pagosCli = dbPagos.filter(p => p.clientId === id).sort((a,b) => new Date(b.date) - new Date(a.date));
     const tbody = document.getElementById('fichaPagosTable');
-    
     tbody.innerHTML = pagosCli.length ? pagosCli.map(p => {
       const pFormat = formatPeriod(p.period);
-      const subject = encodeURIComponent(`Recibo de Pago - Licencia de Sistema MicroSaas`);
-      const body = encodeURIComponent(`Hola ${c.name},\n\nTe confirmamos la recepción de tu pago por ${money(p.amount)} correspondiente al período de ${pFormat}, realizado el día ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}.\n\nMétodo: ${p.method}\n\nTu sistema se encuentra renovado y operando con normalidad.\n\nMuchas gracias,\nEquipo MicroSaas Soluciones`);
-      const mailtoLink = `mailto:${c.email || ''}?subject=${subject}&body=${body}`;
-
-      return `
-      <tr>
+      const mailto = `mailto:${c.email || ''}?subject=${encodeURIComponent('Recibo de Pago - Licencia')}&body=${encodeURIComponent('Hola '+c.name+', confirmamos el pago de '+money(p.amount)+' para el periodo '+pFormat)}`;
+      return `<tr>
         <td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td>
         <td><span class="badge badge-primary" style="background:rgba(139,92,246,0.2); color:#a78bfa;">${pFormat}</span></td>
         <td><span class="badge badge-neutral">${escapeHtml(p.method)}</span></td>
@@ -456,59 +440,28 @@
         <td style="color:var(--muted); font-size:12px;">${escapeHtml(p.notes || '-')}</td>
         <td>
           <div class="actions">
-            <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="imprimirRecibo('${p.id}')">📄 Recibo</button>
-            <a href="${mailtoLink}" class="btn btn-primary" style="padding:6px 10px; font-size:12px; text-decoration:none;">📧 Enviar</a>
+            <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="imprimirRecibo('${p.id}')">📄</button>
+            <a href="${mailto}" class="btn btn-primary" style="padding:6px 10px; font-size:12px; text-decoration:none;">📧</a>
+            <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="editarPago('${p.id}')">✎</button>
+            <button class="btn btn-danger-text" style="padding:6px 10px; font-size:12px;" onclick="borrarPago('${p.id}')">X</button>
           </div>
         </td>
       </tr>`;
-    }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted);">Este cliente aún no registra pagos.</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted);">Sin pagos registrados.</td></tr>';
   }
 
   function imprimirRecibo(pagoId) {
-    const p = dbPagos.find(x => x.id === pagoId);
-    const c = dbClientes.find(x => x.id === p.clientId);
-    if(!p || !c) return;
-
+    const p = dbPagos.find(x => x.id === pagoId); const c = dbClientes.find(x => x.id === p.clientId); if(!p || !c) return;
     const receiptWin = window.open('', '_blank');
     receiptWin.document.write(`
       <html><head><title>Recibo ${p.id}</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
-        .box { border: 1px solid #ddd; padding: 30px; max-width: 600px; margin: 0 auto; border-radius: 8px; }
-        .head { display: flex; justify-content: space-between; border-bottom: 2px solid #8b5cf6; padding-bottom: 20px; margin-bottom: 20px; }
-        .row { margin-bottom: 10px; display: flex; justify-content: space-between; }
-        .row strong { color: #555; }
-        .total { font-size: 24px; color: #10b981; font-weight: bold; border-top: 1px solid #ddd; padding-top: 15px; margin-top: 15px; text-align: right; }
-      </style>
-      </head><body>
-        <div class="box">
-          <div class="head">
-            <div><h2 style="margin:0; color:#8b5cf6;">MicroSaas Soluciones</h2><small>Recibo Oficial de Pago</small></div>
-            <div style="text-align:right;"><strong>Fecha:</strong> ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}<br><strong>ID:</strong> #${p.id.toUpperCase()}</div>
-          </div>
-          <div class="row"><strong>Recibimos de:</strong> <span>${c.name}</span></div>
-          <div class="row"><strong>Concepto:</strong> <span>Abono Mensual Licencia de Software</span></div>
-          <div class="row"><strong>Período Abonado:</strong> <span style="font-weight:bold; color:#8b5cf6;">${formatPeriod(p.period)}</span></div>
-          <div class="row"><strong>Método de Pago:</strong> <span>${p.method}</span></div>
-          ${p.notes ? `<div class="row"><strong>Observaciones:</strong> <span>${p.notes}</span></div>` : ''}
-          <div class="total">Total Abonado: ${money(p.amount)}</div>
-          <p style="text-align:center; color:#999; font-size:12px; margin-top:40px;">Este documento es un comprobante de pago válido emitido por MicroSaas.</p>
-        </div>
-        <script>window.print();</sc`+`ript>
-      </body></html>
+      <style>body{font-family:Arial;padding:40px;color:#333;}.box{border:1px solid #ddd;padding:30px;max-width:600px;margin:0 auto;border-radius:8px;}.head{display:flex;justify-content:space-between;border-bottom:2px solid #8b5cf6;padding-bottom:20px;margin-bottom:20px;}.row{margin-bottom:10px;display:flex;justify-content:space-between;}.total{font-size:24px;color:#10b981;font-weight:bold;border-top:1px solid #ddd;padding-top:15px;margin-top:15px;text-align:right;}</style>
+      </head><body><div class="box"><div class="head"><div><h2 style="margin:0;color:#8b5cf6;">MicroSaas Soluciones</h2><small>Recibo de Pago</small></div><div style="text-align:right;"><strong>Fecha:</strong> ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}<br><strong>#</strong> ${p.id.toUpperCase()}</div></div><div class="row"><strong>De:</strong> <span>${c.name}</span></div><div class="row"><strong>Concepto:</strong> <span>Abono Mensual Licencia</span></div><div class="row"><strong>Período:</strong> <span>${formatPeriod(p.period)}</span></div><div class="row"><strong>Método:</strong> <span>${p.method}</span></div><div class="total">Total: ${money(p.amount)}</div></div><script>window.print();</sc`+`ript></body></html>
     `);
     receiptWin.document.close();
   }
 
-  // ── MODALES Y ACCIONES ──
-  function abrirModalCliente() {
-    editingClientId = null; document.getElementById('clienteForm').reset();
-    document.getElementById('clienteModalTitle').textContent = 'Nuevo Cliente';
-    document.getElementById('adminConfigBox').style.display = 'block'; 
-    document.getElementById('cAdminUser').required = true;
-    document.getElementById('cAdminPass').required = true;
-    document.getElementById('clienteDialog').showModal();
-  }
+  function abrirModalCliente() { editingClientId = null; document.getElementById('clienteForm').reset(); document.getElementById('clienteModalTitle').textContent = 'Nuevo Cliente'; document.getElementById('adminConfigBox').style.display = 'block'; document.getElementById('clienteDialog').showModal(); }
 
   function editarCliente(id) {
     const c = dbClientes.find(x => x.id === id); if(!c) return;
@@ -516,130 +469,82 @@
     document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || '';
     document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || '';
     document.getElementById('cFee').value = c.fee; document.getElementById('cDueDate').value = c.dueDate;
-    
-    document.getElementById('adminConfigBox').style.display = 'none';
-    document.getElementById('cAdminUser').required = false; document.getElementById('cAdminPass').required = false;
-    document.getElementById('clienteDialog').showModal();
+    document.getElementById('adminConfigBox').style.display = 'none'; document.getElementById('clienteDialog').showModal();
   }
 
   function abrirModalPago(preselectedId = null) {
-    if(dbClientes.length === 0) return alert('Primero debes registrar un cliente.');
-    document.getElementById('pClient').innerHTML = '<option value="">Seleccione...</option>' + dbClientes.filter(c => c.active).map(c => `<option value="${c.id}">${escapeHtml(c.name)} (Ciclo: ${c.dueDate.split('-')[2]})</option>`).join('');
-    document.getElementById('pagoForm').reset(); 
-    document.getElementById('pDate').value = today();
-    document.getElementById('pPeriod').value = today().slice(0,7); // Preselecciona el mes actual (YYYY-MM)
-    
-    if(preselectedId) {
-      document.getElementById('pClient').value = preselectedId;
-      autocompletarMontoPago();
-    }
+    if(dbClientes.length === 0) return alert('No hay clientes.');
+    editingPaymentId = null; document.getElementById('pagoModalTitle').textContent = "Registrar Pago";
+    document.getElementById('pClient').innerHTML = '<option value="">Seleccione...</option>' + dbClientes.filter(c => c.active).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    document.getElementById('pagoForm').reset(); document.getElementById('pDate').value = today(); document.getElementById('pPeriod').value = today().slice(0,7);
+    if(preselectedId) { document.getElementById('pClient').value = preselectedId; autocompletarMontoPago(); }
     document.getElementById('pagoDialog').showModal();
   }
 
-  function autocompletarMontoPago() {
-    const c = dbClientes.find(x => x.id === document.getElementById('pClient').value);
-    if(c) document.getElementById('pAmount').value = c.fee;
+  function editarPago(id) {
+    const p = dbPagos.find(x => x.id === id); if(!p) return;
+    editingPaymentId = id; document.getElementById('pagoModalTitle').textContent = "Editar Pago";
+    document.getElementById('pClient').innerHTML = dbClientes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    document.getElementById('pClient').value = p.clientId;
+    document.getElementById('pDate').value = p.date;
+    document.getElementById('pPeriod').value = p.period;
+    document.getElementById('pAmount').value = p.amount;
+    document.getElementById('pMethod').value = p.method;
+    document.getElementById('pNotes').value = p.notes || '';
+    document.getElementById('pagoDialog').showModal();
   }
 
+  async function borrarPago(id) {
+    if(!confirm("¿Seguro que querés ELIMINAR este registro de pago? No afectará el vencimiento actual del cliente.")) return;
+    try { await fetch(`/api/payments?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud();
+    } catch (e) { dbPagos = dbPagos.filter(x => x.id !== id); localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos)); renderAll(); }
+  }
+
+  function autocompletarMontoPago() { const c = dbClientes.find(x => x.id === document.getElementById('pClient').value); if(c) document.getElementById('pAmount').value = c.fee; }
   function cerrarModal(id) { document.getElementById(id).close(); }
 
-  // ── PUENTES CON LA API D1 (Con Fallback Local) ──
   async function guardarCliente(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btnGuardarCli'); btn.textContent = 'Procesando...'; btn.disabled = true;
-
-    const data = {
-      name: document.getElementById('cName').value.trim(), contact: document.getElementById('cContact').value.trim(),
-      phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim(),
-      fee: document.getElementById('cFee').value, dueDate: document.getElementById('cDueDate').value, active: true
-    };
-
+    e.preventDefault(); const btn = document.getElementById('btnGuardarCli'); btn.textContent = 'Procesando...'; btn.disabled = true;
+    const data = { name: document.getElementById('cName').value.trim(), contact: document.getElementById('cContact').value.trim(), phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim(), fee: document.getElementById('cFee').value, dueDate: document.getElementById('cDueDate').value, active: true };
     try {
-      if (editingClientId) {
-        data.id = editingClientId; data.active = dbClientes.find(x => x.id === editingClientId).active;
-        await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
-      } else {
-        data.id = 'cli_' + Math.random().toString(36).substr(2, 9);
-        data.adminUser = document.getElementById('cAdminUser').value.trim(); data.adminPass = document.getElementById('cAdminPass').value.trim();
-        await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
-      }
+      if (editingClientId) { data.id = editingClientId; data.active = dbClientes.find(x => x.id === editingClientId).active; await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+      } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); data.adminUser = document.getElementById('cAdminUser').value.trim(); data.adminPass = document.getElementById('cAdminPass').value.trim(); await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); }
       cerrarModal('clienteDialog'); await loadDataFromCloud();
-    } catch(err) { 
-      if (editingClientId) { const idx = dbClientes.findIndex(x => x.id === editingClientId); data.id = editingClientId; data.active = dbClientes[idx].active; dbClientes[idx] = data;
-      } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); dbClientes.push(data); }
-      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
-      cerrarModal('clienteDialog'); renderAll();
-    }
+    } catch(err) { cerrarModal('clienteDialog'); loadDataFromCloud(); }
     btn.textContent = 'Guardar Cliente'; btn.disabled = false;
   }
 
   async function guardarPago(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btnGuardarPago'); btn.textContent = 'Procesando...'; btn.disabled = true;
-
-    const cid = document.getElementById('pClient').value;
-    const c = dbClientes.find(x => x.id === cid);
-    
-    // REGLA ESTRICTA DE RENOVACIÓN DE CICLO
-    let curVto = new Date(c.dueDate + 'T12:00:00');
-    curVto.setMonth(curVto.getMonth() + 1); 
-    const newDueDate = curVto.toISOString().split('T')[0];
-
-    const data = {
-      id: 'pay_' + Math.random().toString(36).substr(2, 9), clientId: cid, date: document.getElementById('pDate').value,
-      period: document.getElementById('pPeriod').value, // <--- GUARDAMOS EL PERIODO
-      amount: document.getElementById('pAmount').value, method: document.getElementById('pMethod').value,
-      notes: document.getElementById('pNotes').value.trim(), newDueDate: newDueDate 
-    };
-
+    e.preventDefault(); const btn = document.getElementById('btnGuardarPago'); btn.textContent = 'Procesando...'; btn.disabled = true;
+    const cid = document.getElementById('pClient').value; const c = dbClientes.find(x => x.id === cid);
+    const data = { clientId: cid, date: document.getElementById('pDate').value, period: document.getElementById('pPeriod').value, amount: document.getElementById('pAmount').value, method: document.getElementById('pMethod').value, notes: document.getElementById('pNotes').value.trim() };
     try {
-      await fetch('/api/payments', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
-      cerrarModal('pagoDialog');
-      alert(`Pago acreditado.\nEl ciclo se renovó conservando el día de corte. Nuevo vencimiento: ${curVto.toLocaleDateString('es-AR')}`);
-      await loadDataFromCloud();
-    } catch(err) {
-      dbPagos.push(data); localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos));
-      c.dueDate = newDueDate; localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
-      cerrarModal('pagoDialog'); renderAll();
-    }
+      if (editingPaymentId) {
+        data.id = editingPaymentId; await fetch('/api/payments', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+      } else {
+        let curVto = new Date(c.dueDate + 'T12:00:00'); curVto.setMonth(curVto.getMonth() + 1); const newDueDate = curVto.toISOString().split('T')[0];
+        data.id = 'pay_' + Math.random().toString(36).substr(2, 9); data.newDueDate = newDueDate; await fetch('/api/payments', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+      }
+      cerrarModal('pagoDialog'); await loadDataFromCloud();
+    } catch(err) { cerrarModal('pagoDialog'); loadDataFromCloud(); }
     btn.textContent = 'Acreditar Pago'; btn.disabled = false;
   }
 
   async function toggleAcceso(id) {
-    const c = dbClientes.find(x => x.id === id);
-    if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) {
-      c.active = !c.active;
-      try { await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); await loadDataFromCloud();
-      } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); }
-    }
-  }
-
-  async function borrarCliente(id) {
-    const c = dbClientes.find(x => x.id === id);
-    if(c && confirm(`🚨 ATENCIÓN: ¿Borrar definitivamente a ${c.name}?`)) {
-      try { await fetch(`/api/clients?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud();
-      } catch (err) { dbClientes = dbClientes.filter(x => x.id !== id); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); }
-    }
+    const c = dbClientes.find(x => x.id === id); if(!c) return; c.active = !c.active;
+    try { await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); await loadDataFromCloud();
+    } catch (err) { renderAll(); }
   }
 
   function exportarAExcel(dataArray, nombreArchivo) {
-    if (!dataArray || !dataArray.length) { alert("No hay datos para exportar."); return; }
+    if (!dataArray || !dataArray.length) { alert("Sin datos."); return; }
     const headers = Object.keys(dataArray[0]);
-    const rows = dataArray.map(row => { return headers.map(header => { let cell = row[header] === null || row[header] === undefined ? '' : String(row[header]); cell = cell.replace(/"/g, '""'); return `"${cell}"`; }).join(';'); });
-    const csvContent = [headers.join(';'), ...rows].join('\n');
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${nombreArchivo}_${today()}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    const csvContent = [headers.join(';'), ...dataArray.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
+    const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `${nombreArchivo}_${today()}.csv`; link.click();
   }
 
-  function exportarClientesExcel() {
-    if (!dbClientes.length) return alert("No hay clientes para exportar.");
-    exportarAExcel(dbClientes.map(c => ({ "Comercio": c.name, "Teléfono": c.phone || '-', "Email": c.email || '-', "Abono": c.fee || 0, "Vencimiento": new Date(c.dueDate+'T12:00:00').toLocaleDateString('es-AR'), "Estado": calcEstado(c.dueDate, c.active).texto })), 'Reporte_Clientes_MicroSaas');
-  }
-
-  function exportarPagosExcel() {
-    if (!dbPagos.length) return alert("No hay pagos para exportar.");
-    exportarAExcel(dbPagos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => { const c = dbClientes.find(x => x.id === p.clientId); return { "Fecha Pago": new Date(p.date+'T12:00:00').toLocaleDateString('es-AR'), "Cliente": c ? c.name : 'Eliminado', "Período Abonado": formatPeriod(p.period), "Método": p.method || '-', "Monto": p.amount || 0, "Notas": p.notes || '-' }; }), 'Reporte_Pagos_MicroSaas');
-  }
+  function exportarClientesExcel() { exportarAExcel(dbClientes.map(c => ({ "Comercio": c.name, "Teléfono": c.phone, "Email": c.email, "Vencimiento": c.dueDate, "Estado": calcEstado(c.dueDate, c.active).texto })), 'Clientes'); }
+  function exportarPagosExcel() { exportarAExcel(dbPagos.map(p => ({ "Fecha": p.date, "Cliente": (dbClientes.find(x=>x.id===p.clientId)||{}).name || 'N/A', "Periodo": formatPeriod(p.period), "Monto": p.amount })), 'Pagos'); }
 
   loadDataFromCloud();
 </script>
