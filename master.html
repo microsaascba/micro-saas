@@ -88,7 +88,7 @@
       <button onclick="switchView('pagos', this)">💳 Pagos y Facturación</button>
     </nav>
     <div style="padding: 20px; border-top: 1px solid var(--line); text-align: center;">
-      <button class="btn btn-outline" style="width: 100%;" onclick="location.href='login.html'">Cerrar Sesión</button>
+      <button class="btn btn-outline" style="width: 100%;" onclick="logoutMaster()">Cerrar Sesión</button>
     </div>
   </aside>
 
@@ -231,6 +231,17 @@
   </dialog>
 
 <script>
+
+  // ── SEGURIDAD DEL MASTER PANEL ──
+  if (localStorage.getItem('saas_master_logged_in') !== 'true') {
+    window.location.href = 'master-login.html';
+  }
+
+  function logoutMaster() {
+    localStorage.removeItem('saas_master_logged_in');
+    window.location.href = 'master-login.html';
+  }
+  
   // ── ESTADO GLOBAL DE LA NUBE ──
   let dbClientes = [];
   let dbPagos = [];
@@ -267,7 +278,7 @@
   function money(num) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0); }
   function today() { return new Date().toISOString().split('T')[0]; }
   
-  function calcEstado(fechaVto, activo) {
+  function calco(fechaVto, activo) {
     if (!activo) return { texto: 'Suspendido', clase: 'badge-neutral', status: 'suspendido' };
     const dif = Math.ceil((new Date(fechaVto).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000);
     if (dif < 0) return { texto: `Vencido (hace ${Math.abs(dif)}d)`, clase: 'badge-danger', status: 'vencido' };
