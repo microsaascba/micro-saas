@@ -10,11 +10,12 @@ export async function onRequestPost(context) {
     const data = await context.request.json();
     
     // 1. Guardar el registro del pago
+    // (Solo reemplazá el bloque del INSERT en tu archivo payments.js)
     await context.env.DB.prepare(`
-      INSERT INTO payments (id, clientId, date, amount, method, notes) 
-      VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-    `).bind(data.id, data.clientId, data.date, data.amount, data.method, data.notes).run();
-
+      INSERT INTO payments (id, clientId, date, amount, method, notes, period) 
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+    `).bind(data.id, data.clientId, data.date, data.amount, data.method, data.notes, data.period).run();
+    
     // 2. Actualizar la fecha de vencimiento del cliente
     await context.env.DB.prepare(`
       UPDATE clients SET dueDate = ?1 WHERE id = ?2
