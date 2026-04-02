@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Master Panel | Micro SaaS</title>
+  <style>
+    :root {
+      --bg: #0f172a; --panel: #1e293b; --text: #f8fafc; --muted: #94a3b8;
+      --primary: #8b5cf6; --primary-hover: #7c3aed;
+      --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+      --line: #334155; --font: system-ui, -apple-system, sans-serif;
+    }
+    body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); }
+    .topbar { background: var(--panel); padding: 20px 40px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+    .topbar h1 { margin: 0; font-size: 22px; display: flex; align-items: center; gap: 10px; }
+    .topbar h1 span { color: var(--primary); }
+    
+    .container { padding: 40px; max-width: 1400px; margin: 0 auto; }
+    
+    /* KPIs */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .kpi-card { background: var(--panel); padding: 24px; border-radius: 16px; border: 1px solid var(--line); border-top: 4px solid var(--primary); }
+    .kpi-label { font-size: 13px; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .kpi-value { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
+    
+    /* Tabla */
+    .card { background: var(--panel); border-radius: 16px; border: 1px solid var(--line); overflow: hidden; }
+    .card-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+    .card-head h2 { margin: 0; font-size: 18px; }
+    
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 16px 24px; background: rgba(0,0,0,0.2); font-size: 12px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+    td { padding: 16px 24px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    
+    /* Badges & Botones */
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .badge-disabled { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+    
+    .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid var(--line); color: var(--text); }
+    .btn-outline:hover { border-color: var(--muted); }
+    
+    .actions { display: flex; gap: 8px; }
+    
+    /* Modal */
+    dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 500px; width: 100%; }
+    dialog::backdrop { background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+    .modal-head { padding: 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+    .modal-head h3 { margin: 0; }
+    .modal-body { padding: 20px; }
+    .field { margin-bottom: 15px; display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 13px; color: var(--muted); }
+    .field input, .field select { padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); border-radius: 8px; color: var(--text); font-family: inherit; }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--primary); }
+    .modal-foot { padding: 20px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 10px; }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <h1><span>✦</span> SaaS Master Control</h1>
+    <div>
+      <span style="color: var(--muted); margin-right: 15px;">Administrador Maestro</span>
+      <button class="btn btn-outline" onclick="location.href='login.html'">Salir</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="kpi-grid">
+      <article class="kpi-card">
+        <div class="kpi-label">MRR Proyectado</div>
+        <div class="kpi-value" id="kpiMrr">$0</div>
+        <div style="color: var(--success); font-size: 13px;">Ingreso Mensual Recurrente</div>
+      </article>
+      <article class="kpi-card">
+        <div class="kpi-label">Comercios Activos</div>
+        <div class="kpi-value" id="kpiActivos">0</div>
+        <div style="color: var(--muted); font-size: 13px;">Licencias operando</div>
+      </article>
+      <article class="kpi-card" style="border-color: var(--danger);">
+        <div class="kpi-label">Pagos Pendientes</div>
+        <div class="kpi-value" id="kpiMorosos">0</div>
+        <div style="color: var(--danger); font-size: 13px;">Cuentas vencidas o por vencer</div>
+      </article>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Licencias de Clientes</h2>
+        <button class="btn btn-primary" onclick="abrirModal()">+ Nueva Licencia</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Comercio / Cliente</th>
+            <th>Abono Mensual</th>
+            <th>Vencimiento</th>
+            <th>Estado</th>
+            <th>Acciones SaaS</th>
+          </tr>
+        </thead>
+        <tbody id="clientsTable">
+          </tbody>
+      </table>
+    </div>
+  </div>
+
+  <dialog id="clientDialog">
+    <div class="modal-head">
+      <h3 id="modalTitle">Alta de Comercio</h3>
+      <button class="btn btn-outline" style="padding: 5px 10px;" onclick="document.getElementById('clientDialog').close()">✕</button>
+    </div>
+    <form id="clientForm" onsubmit="guardarCliente(event)">
+      <div class="modal-body">
+        <div class="field">
+          <label>Nombre del Comercio</label>
+          <input type="text" id="cName" required placeholder="Ej: Barbería Central" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label>Teléfono de Contacto</label>
+          <input type="text" id="cPhone" required placeholder="Ej: 351..." autocomplete="off" />
+        </div>
+        <div class="field">
+          <label>Valor del Abono ($)</label>
+          <input type="number" id="cFee" required placeholder="Ej: 25000" />
+        </div>
+        <div class="field">
+          <label>Primer Vencimiento</label>
+          <input type="date" id="cDueDate" required />
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('clientDialog').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Crear Licencia</button>
+      </div>
+    </form>
+  </dialog>
+
+<script>
+  // BD Local del Panel Maestro
+  let clientesSaaS = JSON.parse(localStorage.getItem('saas_master_clients')) || [];
+
+  function formatearPlata(num) {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num);
+  }
+
+  function calcularEstado(fechaVto, activo) {
+    if (!activo) return { texto: 'Suspendido', clase: 'badge-disabled' };
+    
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const vto = new Date(fechaVto); vto.setHours(0,0,0,0);
+    const diffDias = Math.ceil((vto - hoy) / (1000 * 60 * 60 * 24));
+
+    if (diffDias < 0) return { texto: 'Vencido', clase: 'badge-danger' };
+    if (diffDias <= 5) return { texto: `Vence en ${diffDias}d`, clase: 'badge-warning' };
+    return { texto: 'Al día', clase: 'badge-success' };
+  }
+
+  function renderDashboard() {
+    let mrr = 0, activos = 0, morosos = 0;
+    const tbody = document.getElementById('clientsTable');
+    tbody.innerHTML = '';
+
+    if(clientesSaaS.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay comercios registrados.</td></tr>';
+    }
+
+    clientesSaaS.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate)).forEach(c => {
+      const estado = calcularEstado(c.dueDate, c.active);
+      
+      if(c.active) {
+        mrr += Number(c.monthlyFee);
+        activos++;
+        if(estado.texto === 'Vencido') morosos++;
+      }
+
+      const btnPago = c.active ? `<button class="btn btn-success" style="padding: 6px 12px; font-size:12px;" onclick="registrarPago('${c.id}')">Acreditar Pago</button>` : '';
+      const btnToggle = `<button class="btn btn-outline" style="padding: 6px 12px; font-size:12px;" onclick="toggleAcceso('${c.id}')">${c.active ? 'Bloquear' : 'Reactivar'}</button>`;
+
+      tbody.innerHTML += `
+        <tr>
+          <td><strong>${c.name}</strong><br><small style="color:var(--muted)">📞 ${c.phone}</small></td>
+          <td>${formatearPlata(c.monthlyFee)}</td>
+          <td>${new Date(c.dueDate).toLocaleDateString('es-AR')}</td>
+          <td><span class="badge ${estado.clase}">${estado.texto}</span></td>
+          <td><div class="actions">${btnPago}${btnToggle}</div></td>
+        </tr>
+      `;
+    });
+
+    document.getElementById('kpiMrr').textContent = formatearPlata(mrr);
+    document.getElementById('kpiActivos').textContent = activos;
+    document.getElementById('kpiMorosos').textContent = morosos;
+  }
+
+  function abrirModal() {
+    document.getElementById('clientForm').reset();
+    document.getElementById('clientDialog').showModal();
+  }
+
+  function guardarCliente(e) {
+    e.preventDefault();
+    const nuevo = {
+      id: 'c_' + Math.random().toString(36).substr(2, 9),
+      name: document.getElementById('cName').value,
+      phone: document.getElementById('cPhone').value,
+      monthlyFee: document.getElementById('cFee').value,
+      dueDate: document.getElementById('cDueDate').value,
+      active: true,
+      createdAt: new Date().toISOString()
+    };
+    
+    clientesSaaS.push(nuevo);
+    localStorage.setItem('saas_master_clients', JSON.stringify(clientesSaaS));
+    document.getElementById('clientDialog').close();
+    renderDashboard();
+  }
+
+  function registrarPago(id) {
+    if(!confirm('¿Confirmar pago? El vencimiento se extenderá automáticamente por 1 mes.')) return;
+    
+    const c = clientesSaaS.find(x => x.id === id);
+    if(c) {
+      let vto = new Date(c.dueDate);
+      vto.setMonth(vto.getMonth() + 1); // Suma 1 mes exacto
+      c.dueDate = vto.toISOString().split('T')[0];
+      localStorage.setItem('saas_master_clients', JSON.stringify(clientesSaaS));
+      renderDashboard();
+    }
+  }
+
+  function toggleAcceso(id) {
+    const c = clientesSaaS.find(x => x.id === id);
+    if(c) {
+      const accion = c.active ? "SUSPENDER" : "REACTIVAR";
+      if(confirm(`¿Estás seguro de ${accion} el acceso de ${c.name} al sistema?`)) {
+        c.active = !c.active;
+        localStorage.setItem('saas_master_clients', JSON.stringify(clientesSaaS));
+        renderDashboard();
+      }
+    }
+  }
+
+  renderDashboard();
+</script>
+</body>
+</html>
