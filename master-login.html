@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Maestro | Viggo SaaS</title>
+  <style>
+    :root {
+      --bg: #0f172a; --panel: #1e293b; --text: #f8fafc; --muted: #94a3b8;
+      --primary: #8b5cf6; --primary-hover: #7c3aed; --line: #334155;
+      --font: system-ui, -apple-system, sans-serif;
+    }
+    body {
+      margin: 0; font-family: var(--font); background: var(--bg); color: var(--text);
+      display: flex; align-items: center; justify-content: center; height: 100vh;
+    }
+    .login-box {
+      background: var(--panel); padding: 40px; border-radius: 16px; border: 1px solid var(--line);
+      width: 100%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+      text-align: center; border-top: 4px solid var(--primary);
+    }
+    .brand { font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .brand span { color: var(--primary); font-size: 28px; }
+    .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 30px; }
+    
+    .field { display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 20px; }
+    .field label { font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .field input { padding: 14px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); border-radius: 8px; color: var(--text); font-family: inherit; font-size: 15px; width: 100%; box-sizing: border-box; }
+    .field input:focus { outline: none; border-color: var(--primary); }
+    
+    .btn { padding: 14px; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; width: 100%; background: var(--primary); color: #fff; }
+    .btn:hover { background: var(--primary-hover); }
+    .error-msg { color: #ef4444; font-size: 13px; margin-bottom: 15px; display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="login-box">
+    <div class="brand"><span>✦</span> Viggo SaaS</div>
+    <div class="subtitle">Acceso restringido. Panel Super Admin.</div>
+
+    <form id="masterLoginForm">
+      <div class="error-msg" id="errorMsg">Usuario o contraseña incorrectos.</div>
+      
+      <div class="field">
+        <label>Usuario Maestro</label>
+        <input type="text" id="mUser" required autocomplete="off" placeholder="Ej: superadmin" />
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="mPass" required placeholder="••••••••" />
+      </div>
+      
+      <button type="submit" class="btn">Ingresar al Panel</button>
+    </form>
+  </div>
+
+  <script>
+    // Si ya está logueado, lo mandamos directo al panel
+    if (localStorage.getItem('saas_master_logged_in') === 'true') {
+      window.location.href = 'master.html';
+    }
+
+    document.getElementById('masterLoginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const u = document.getElementById('mUser').value;
+      const p = document.getElementById('mPass').value;
+
+      // CREDENCIALES MAESTRAS (Cambialas por las tuyas)
+      if (u === 'superadmin' && p === 'master2026') {
+        localStorage.setItem('saas_master_logged_in', 'true');
+        window.location.href = 'master.html';
+      } else {
+        document.getElementById('errorMsg').style.display = 'block';
+        document.getElementById('mPass').value = '';
+      }
+    });
+  </script>
+</body>
+</html>
