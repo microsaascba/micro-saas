@@ -73,7 +73,7 @@
     .field { display: flex; flex-direction: column; gap: 6px; }
     .field.full { grid-column: 1 / -1; }
     .field label { font-size: 13px; color: var(--muted); font-weight: 600; }
-    .field input, .field select, .field textarea { padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; }
+    .field input, .field select, .field textarea { padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; color-scheme: dark; }
     .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--primary); }
     .modal-foot { padding: 20px 24px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 12px; background: rgba(0,0,0,0.1); }
     
@@ -197,7 +197,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Fecha Pago</th><th>Método</th><th>Monto</th><th>Notas</th><th>Comprobantes</th></tr></thead>
+              <thead><tr><th>Fecha Pago</th><th>Período Abonado</th><th>Método</th><th>Monto</th><th>Notas</th><th>Comprobantes</th></tr></thead>
               <tbody id="fichaPagosTable"></tbody>
             </table>
           </div>
@@ -219,6 +219,7 @@
                 <tr>
                   <th>Fecha Pago</th>
                   <th>Cliente</th>
+                  <th>Período Abonado</th>
                   <th>Método</th>
                   <th>Monto Abonado</th>
                   <th>Notas / Recibo</th>
@@ -274,6 +275,7 @@
           <select id="pClient" required onchange="autocompletarMontoPago()"></select>
         </div>
         <div class="field"><label>Fecha del Pago *</label><input type="date" id="pDate" required /></div>
+        <div class="field"><label>Período a Abonar (Mes/Año) *</label><input type="month" id="pPeriod" required /></div>
         <div class="field"><label>Monto Cobrado ($) *</label><input type="number" id="pAmount" required /></div>
         <div class="field full"><label>Método de Pago *</label>
           <select id="pMethod" required>
@@ -305,6 +307,13 @@
   function money(num) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0); }
   function today() { return new Date().toISOString().split('T')[0]; }
   
+  function formatPeriod(val) {
+    if (!val) return '-';
+    const [y, m] = val.split('-');
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return `${meses[parseInt(m, 10)-1]} ${y}`;
+  }
+
   function calcEstado(fechaVto, activo) {
     if (!activo) return { texto: 'Suspendido', clase: 'badge-neutral', status: 'suspendido' };
     const dif = Math.ceil((new Date(fechaVto + 'T12:00:00').setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000);
@@ -407,8 +416,8 @@
     const tbody = document.getElementById('pagosTable');
     tbody.innerHTML = dbPagos.length ? dbPagos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => {
       const c = dbClientes.find(x => x.id === p.clientId);
-      return `<tr><td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(c ? c.name : 'Cliente Eliminado')}</strong></td><td><span class="badge badge-neutral">${escapeHtml(p.method)}</span></td><td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td><td style="color:var(--muted); font-size:12px;">${escapeHtml(p.notes || '-')}</td></tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay pagos registrados.</td></tr>';
+      return `<tr><td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(c ? c.name : 'Cliente Eliminado')}</strong></td><td><span class="badge badge-primary" style="background:rgba(139,92,246,0.2); color:#a78bfa;">${formatPeriod(p.period)}</span></td><td><span class="badge badge-neutral">${escapeHtml(p.method)}</span></td><td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td><td style="color:var(--muted); font-size:12px;">${escapeHtml(p.notes || '-')}</td></tr>`;
+    }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted);">No hay pagos registrados.</td></tr>';
   }
 
   // ── MÓDULO: FICHA DEL CLIENTE ──
@@ -433,14 +442,15 @@
     const tbody = document.getElementById('fichaPagosTable');
     
     tbody.innerHTML = pagosCli.length ? pagosCli.map(p => {
-      // URL para Mailto prearmada
+      const pFormat = formatPeriod(p.period);
       const subject = encodeURIComponent(`Recibo de Pago - Licencia de Sistema MicroSaas`);
-      const body = encodeURIComponent(`Hola ${c.name},\n\nTe confirmamos la recepción de tu pago por ${money(p.amount)} el día ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}.\n\nMétodo: ${p.method}\n\nTu sistema se encuentra renovado y operando con normalidad.\n\nMuchas gracias,\nEquipo MicroSaas Soluciones`);
+      const body = encodeURIComponent(`Hola ${c.name},\n\nTe confirmamos la recepción de tu pago por ${money(p.amount)} correspondiente al período de ${pFormat}, realizado el día ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}.\n\nMétodo: ${p.method}\n\nTu sistema se encuentra renovado y operando con normalidad.\n\nMuchas gracias,\nEquipo MicroSaas Soluciones`);
       const mailtoLink = `mailto:${c.email || ''}?subject=${subject}&body=${body}`;
 
       return `
       <tr>
         <td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td>
+        <td><span class="badge badge-primary" style="background:rgba(139,92,246,0.2); color:#a78bfa;">${pFormat}</span></td>
         <td><span class="badge badge-neutral">${escapeHtml(p.method)}</span></td>
         <td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td>
         <td style="color:var(--muted); font-size:12px;">${escapeHtml(p.notes || '-')}</td>
@@ -451,7 +461,7 @@
           </div>
         </td>
       </tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">Este cliente aún no registra pagos.</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted);">Este cliente aún no registra pagos.</td></tr>';
   }
 
   function imprimirRecibo(pagoId) {
@@ -478,6 +488,7 @@
           </div>
           <div class="row"><strong>Recibimos de:</strong> <span>${c.name}</span></div>
           <div class="row"><strong>Concepto:</strong> <span>Abono Mensual Licencia de Software</span></div>
+          <div class="row"><strong>Período Abonado:</strong> <span style="font-weight:bold; color:#8b5cf6;">${formatPeriod(p.period)}</span></div>
           <div class="row"><strong>Método de Pago:</strong> <span>${p.method}</span></div>
           ${p.notes ? `<div class="row"><strong>Observaciones:</strong> <span>${p.notes}</span></div>` : ''}
           <div class="total">Total Abonado: ${money(p.amount)}</div>
@@ -514,7 +525,9 @@
   function abrirModalPago(preselectedId = null) {
     if(dbClientes.length === 0) return alert('Primero debes registrar un cliente.');
     document.getElementById('pClient').innerHTML = '<option value="">Seleccione...</option>' + dbClientes.filter(c => c.active).map(c => `<option value="${c.id}">${escapeHtml(c.name)} (Ciclo: ${c.dueDate.split('-')[2]})</option>`).join('');
-    document.getElementById('pagoForm').reset(); document.getElementById('pDate').value = today();
+    document.getElementById('pagoForm').reset(); 
+    document.getElementById('pDate').value = today();
+    document.getElementById('pPeriod').value = today().slice(0,7); // Preselecciona el mes actual (YYYY-MM)
     
     if(preselectedId) {
       document.getElementById('pClient').value = preselectedId;
@@ -568,12 +581,13 @@
     const c = dbClientes.find(x => x.id === cid);
     
     // REGLA ESTRICTA DE RENOVACIÓN DE CICLO
-    let curVto = new Date(c.dueDate + 'T12:00:00'); // Forzamos hora para evitar desfasaje de zona horaria
-    curVto.setMonth(curVto.getMonth() + 1); // Suma 1 mes manteniendo el mismo día numérico
+    let curVto = new Date(c.dueDate + 'T12:00:00');
+    curVto.setMonth(curVto.getMonth() + 1); 
     const newDueDate = curVto.toISOString().split('T')[0];
 
     const data = {
       id: 'pay_' + Math.random().toString(36).substr(2, 9), clientId: cid, date: document.getElementById('pDate').value,
+      period: document.getElementById('pPeriod').value, // <--- GUARDAMOS EL PERIODO
       amount: document.getElementById('pAmount').value, method: document.getElementById('pMethod').value,
       notes: document.getElementById('pNotes').value.trim(), newDueDate: newDueDate 
     };
@@ -624,7 +638,7 @@
 
   function exportarPagosExcel() {
     if (!dbPagos.length) return alert("No hay pagos para exportar.");
-    exportarAExcel(dbPagos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => { const c = dbClientes.find(x => x.id === p.clientId); return { "Fecha Pago": new Date(p.date+'T12:00:00').toLocaleDateString('es-AR'), "Cliente": c ? c.name : 'Eliminado', "Método": p.method || '-', "Monto": p.amount || 0, "Notas": p.notes || '-' }; }), 'Reporte_Pagos_MicroSaas');
+    exportarAExcel(dbPagos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => { const c = dbClientes.find(x => x.id === p.clientId); return { "Fecha Pago": new Date(p.date+'T12:00:00').toLocaleDateString('es-AR'), "Cliente": c ? c.name : 'Eliminado', "Período Abonado": formatPeriod(p.period), "Método": p.method || '-', "Monto": p.amount || 0, "Notas": p.notes || '-' }; }), 'Reporte_Pagos_MicroSaas');
   }
 
   loadDataFromCloud();
