@@ -14,7 +14,6 @@
     * { box-sizing: border-box; }
     body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
     
-    /* Sidebar */
     .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; z-index: 999; }
     .brand { padding: 24px; font-size: 18px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); line-height: 1.2; }
     .brand span { color: var(--primary); font-size: 24px; }
@@ -23,7 +22,6 @@
     .nav button:hover { color: var(--text); background: rgba(255,255,255,0.02); }
     .nav button.active { color: var(--primary); border-right: 3px solid var(--primary); background: rgba(139, 92, 246, 0.1); }
     
-    /* Main Content */
     .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .topbar { padding: 20px 40px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: var(--bg); }
     .topbar-left { display: flex; align-items: center; gap: 15px; }
@@ -31,18 +29,15 @@
     .topbar h1 { margin: 0; font-size: 22px; }
     .content-area { flex: 1; padding: 40px; overflow-y: auto; }
     
-    /* Views */
     .view { display: none; animation: fadeIn 0.3s ease; }
     .view.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* KPIs */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
     .kpi-card { background: var(--panel); padding: 24px; border-radius: 16px; border: 1px solid var(--line); border-top: 4px solid var(--primary); }
     .kpi-label { font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; margin-bottom: 8px; }
     .kpi-value { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
     
-    /* Tables */
     .card { background: var(--panel); border-radius: 16px; border: 1px solid var(--line); margin-bottom: 24px; }
     .card-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
     .card-head h2 { margin: 0; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
@@ -53,7 +48,6 @@
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: var(--panel-hover); }
     
-    /* Elements */
     .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; display: inline-block; white-space: nowrap; }
     .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
     .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
@@ -70,7 +64,6 @@
     
     .actions { display: flex; gap: 8px; flex-wrap: wrap; }
     
-    /* Modals */
     dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 550px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
     dialog::backdrop { background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); }
     .modal-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
@@ -87,15 +80,17 @@
     .admin-box { background: rgba(139, 92, 246, 0.1); border: 1px solid var(--primary); padding: 15px; border-radius: 8px; margin-top: 10px; }
     .admin-box p { margin: 0 0 15px 0; font-size: 13px; color: #cbd5e1; }
 
-    /* --- RESPONSIVE DESIGN --- */
+    /* Estructura Ficha Cliente */
+    .ficha-header { padding: 24px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; background: rgba(0,0,0,0.1); }
+    .ficha-data label { display:block; color:var(--muted); font-size:12px; margin-bottom:5px; text-transform:uppercase; font-weight:700; }
+    .ficha-data div { font-size:15px; font-weight:600; }
+
     @media (max-width: 900px) {
       .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; transition: left 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.5); }
       .sidebar.open { left: 0; }
       .mobile-toggle { display: block; }
-      
       .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; }
       .sidebar-overlay.open { display: block; }
-
       .topbar { padding: 15px 20px; }
       .content-area { padding: 20px; }
       .card-head { flex-direction: column; align-items: stretch; gap: 15px; }
@@ -112,7 +107,7 @@
     <div class="brand"><span>✦</span> MicroSaas<br>Soluciones</div>
     <nav class="nav">
       <button class="active" onclick="switchView('dashboard', this)">📊 Dashboard</button>
-      <button onclick="switchView('clientes', this)">🏢 Clientes (Licencias)</button>
+      <button id="navClientes" onclick="switchView('clientes', this)">🏢 Clientes (Licencias)</button>
       <button onclick="switchView('pagos', this)">💳 Pagos y Facturación</button>
     </nav>
     <div style="padding: 20px; border-top: 1px solid var(--line); text-align: center;">
@@ -187,10 +182,32 @@
         </div>
       </div>
 
+      <div id="view-ficha" class="view">
+        <button class="btn btn-outline" onclick="switchView('clientes', document.getElementById('navClientes'))" style="margin-bottom: 20px;">← Volver al Directorio</button>
+        <div class="card">
+          <div class="card-head">
+            <h2 id="fichaClientName" style="color: #fff; font-size: 20px;">Ficha del Cliente</h2>
+            <button class="btn btn-success" onclick="abrirModalPago(currentFichaId)">+ Cargar Pago</button>
+          </div>
+          <div class="ficha-header">
+            <div class="ficha-data"><label>Email de Contacto</label><div id="fichaEmail">-</div></div>
+            <div class="ficha-data"><label>Teléfono</label><div id="fichaPhone">-</div></div>
+            <div class="ficha-data"><label>Vencimiento Actual</label><div id="fichaVto">-</div></div>
+            <div class="ficha-data"><label>Abono Pactado</label><div id="fichaFee" style="color: var(--success);">-</div></div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Fecha Pago</th><th>Método</th><th>Monto</th><th>Notas</th><th>Comprobantes</th></tr></thead>
+              <tbody id="fichaPagosTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div id="view-pagos" class="view">
         <div class="card">
           <div class="card-head">
-            <h2>Historial de Cobros</h2>
+            <h2>Historial General de Cobros</h2>
             <div class="actions">
               <button class="btn btn-outline" onclick="exportarPagosExcel()">⬇ Excel</button>
               <button class="btn btn-success" onclick="abrirModalPago()">+ Registrar Pago</button>
@@ -226,11 +243,12 @@
         <div class="field full"><label>Nombre del Comercio *</label><input type="text" id="cName" required autocomplete="off" /></div>
         <div class="field"><label>Titular / Contacto</label><input type="text" id="cContact" autocomplete="off" /></div>
         <div class="field"><label>Teléfono (WhatsApp) *</label><input type="text" id="cPhone" required autocomplete="off" /></div>
+        <div class="field full"><label>Email de Contacto *</label><input type="email" id="cEmail" required autocomplete="off" placeholder="Para enviar recibos" /></div>
         <div class="field"><label>Valor Abono ($) *</label><input type="number" id="cFee" required /></div>
-        <div class="field"><label>Fecha 1º Vencimiento *</label><input type="date" id="cDueDate" required /></div>
+        <div class="field"><label>Fecha de Corte (Día que vence) *</label><input type="date" id="cDueDate" required /></div>
         
         <div id="adminConfigBox" class="field full admin-box">
-          <p><strong>Configuración Inicial:</strong> Crearemos automáticamente el usuario administrador para que el cliente pueda ingresar a su sistema.</p>
+          <p><strong>Configuración Inicial:</strong> Usuario administrador para que el cliente ingrese.</p>
           <div class="form-grid">
             <div class="field"><label style="color:#fff;">Usuario Admin *</label><input type="text" id="cAdminUser" placeholder="Ej: admin_local" /></div>
             <div class="field"><label style="color:#fff;">Contraseña *</label><input type="text" id="cAdminPass" placeholder="Clave de acceso" /></div>
@@ -255,47 +273,41 @@
           <label>Seleccionar Cliente *</label>
           <select id="pClient" required onchange="autocompletarMontoPago()"></select>
         </div>
-        <div class="field"><label>Fecha de Pago *</label><input type="date" id="pDate" required /></div>
+        <div class="field"><label>Fecha del Pago *</label><input type="date" id="pDate" required /></div>
         <div class="field"><label>Monto Cobrado ($) *</label><input type="number" id="pAmount" required /></div>
         <div class="field full"><label>Método de Pago *</label>
           <select id="pMethod" required>
-            <option value="Transferencia">Transferencia Bancaria</option>
+            <option value="Transferencia Bancaria">Transferencia Bancaria</option>
             <option value="Efectivo">Efectivo</option>
-            <option value="Tarjeta">Tarjeta / Link de Pago</option>
+            <option value="Tarjeta / Link de Pago">Tarjeta / Link de Pago</option>
           </select>
         </div>
-        <div class="field full"><label>Notas / Ref. Transferencia</label><textarea id="pNotes" rows="2" placeholder="Ej: Transf. banco Galicia comprobante #123"></textarea></div>
+        <div class="field full"><label>Notas / Ref. Transferencia</label><textarea id="pNotes" rows="2" placeholder="Ej: Transf. comprobante #123"></textarea></div>
       </div>
       <div class="modal-foot">
         <button type="button" class="btn btn-outline" onclick="cerrarModal('pagoDialog')">Cancelar</button>
-        <button type="submit" class="btn btn-success" id="btnGuardarPago">Acreditar y Extender Vto.</button>
+        <button type="submit" class="btn btn-success" id="btnGuardarPago">Acreditar Pago</button>
       </div>
     </form>
   </dialog>
 
 <script>
-  // ── SEGURIDAD DEL MASTER PANEL ──
-  if (localStorage.getItem('saas_master_logged_in') !== 'true') {
-    window.location.href = 'master-login.html';
-  }
-
-  function logoutMaster() {
-    localStorage.removeItem('saas_master_logged_in');
-    window.location.href = 'master-login.html';
-  }
+  if (localStorage.getItem('saas_master_logged_in') !== 'true') window.location.href = 'master-login.html';
+  function logoutMaster() { localStorage.removeItem('saas_master_logged_in'); window.location.href = 'master-login.html'; }
 
   // ── ESTADO GLOBAL ──
   let dbClientes = [];
   let dbPagos = [];
   let editingClientId = null;
+  let currentFichaId = null;
 
-  // ── FUNCIONES DE AYUDA (HELPERS) ──
+  // ── HELPERS ──
   function money(num) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0); }
   function today() { return new Date().toISOString().split('T')[0]; }
   
   function calcEstado(fechaVto, activo) {
     if (!activo) return { texto: 'Suspendido', clase: 'badge-neutral', status: 'suspendido' };
-    const dif = Math.ceil((new Date(fechaVto).setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000);
+    const dif = Math.ceil((new Date(fechaVto + 'T12:00:00').setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000);
     if (dif < 0) return { texto: `Vencido (hace ${Math.abs(dif)}d)`, clase: 'badge-danger', status: 'vencido' };
     if (dif <= 5) return { texto: `Vence en ${dif}d`, clase: 'badge-warning', status: 'alerta' };
     return { texto: 'Al Día', clase: 'badge-success', status: 'ok' };
@@ -303,51 +315,7 @@
 
   function escapeHtml(value) { return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
-  // ── EXPORTACIÓN A EXCEL ──
-  function exportarAExcel(dataArray, nombreArchivo) {
-    if (!dataArray || !dataArray.length) { alert("No hay datos para exportar."); return; }
-    const headers = Object.keys(dataArray[0]);
-    const rows = dataArray.map(row => {
-      return headers.map(header => { let cell = row[header] === null || row[header] === undefined ? '' : String(row[header]); cell = cell.replace(/"/g, '""'); return `"${cell}"`; }).join(';');
-    });
-    const csvContent = [headers.join(';'), ...rows].join('\n');
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${nombreArchivo}_${today()}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
-  }
-
-  function exportarClientesExcel() {
-    if (!dbClientes.length) return alert("No hay clientes para exportar.");
-    const datos = dbClientes.map(c => {
-      const est = calcEstado(c.dueDate, c.active);
-      return {
-        "Comercio": c.name,
-        "Titular / Contacto": c.contact || '-',
-        "Teléfono": c.phone || '-',
-        "Abono Mensual": c.fee || 0,
-        "Fecha Vencimiento": new Date(c.dueDate).toLocaleDateString('es-AR'),
-        "Estado": est.texto,
-        "Licencia Activa": c.active ? 'SI' : 'NO'
-      };
-    });
-    exportarAExcel(datos, 'Reporte_Clientes_MicroSaas');
-  }
-
-  function exportarPagosExcel() {
-    if (!dbPagos.length) return alert("No hay pagos para exportar.");
-    const datos = dbPagos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => {
-      const c = dbClientes.find(x => x.id === p.clientId);
-      return {
-        "Fecha Pago": new Date(p.date).toLocaleDateString('es-AR'),
-        "Comercio Cliente": c ? c.name : 'Cliente Eliminado',
-        "Método de Pago": p.method || '-',
-        "Monto Abonado": p.amount || 0,
-        "Notas": p.notes || '-'
-      };
-    });
-    exportarAExcel(datos, 'Reporte_Pagos_MicroSaas');
-  }
-
-  // ── RESPONSIVE Y NAVEGACIÓN ──
+  // ── NAVEGACIÓN Y RESPONSIVE ──
   function toggleMenu() {
     document.getElementById('sidebar').classList.toggle('open');
     document.getElementById('sidebarOverlay').classList.toggle('open');
@@ -355,19 +323,18 @@
 
   function switchView(viewId, btnElement) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+    if(btnElement) {
+      document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+      btnElement.classList.add('active');
+      document.getElementById('pageTitle').textContent = btnElement.textContent.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '').trim();
+    }
     document.getElementById(`view-${viewId}`).classList.add('active');
-    btnElement.classList.add('active');
-    document.getElementById('pageTitle').textContent = btnElement.textContent.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '').trim();
-    
     if(window.innerWidth <= 900) toggleMenu();
   }
 
-  // ── SINCRONIZACIÓN CON LA NUBE ──
+  // ── SINCRONIZACIÓN API ──
   async function loadDataFromCloud() {
     document.getElementById('cloudStatus').textContent = 'Sincronizando...';
-    document.getElementById('cloudStatus').className = 'badge badge-warning';
-    
     try {
       const resC = await fetch('/api/clients');
       if(resC.ok) {
@@ -375,7 +342,6 @@
         dbClientes.forEach(c => c.active = (c.active === 1 || c.active === true));
         localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
       }
-
       const resP = await fetch('/api/payments');
       if(resP.ok) dbPagos = await resP.json();
 
@@ -383,17 +349,21 @@
       document.getElementById('cloudStatus').className = 'badge badge-success';
       renderAll();
     } catch(e) {
-      console.error("Error al cargar datos reales, usando modo local:", e);
       dbClientes = JSON.parse(localStorage.getItem('saas_db_clientes')) || [];
       dbPagos = JSON.parse(localStorage.getItem('saas_db_pagos')) || [];
-      document.getElementById('cloudStatus').textContent = 'Modo Local (Offline)';
+      document.getElementById('cloudStatus').textContent = 'Modo Local';
       document.getElementById('cloudStatus').className = 'badge badge-neutral';
       renderAll();
     }
   }
 
   // ── RENDERIZADO ──
-  function renderAll() { renderDashboard(); renderClientes(); renderPagos(); }
+  function renderAll() { 
+    renderDashboard(); 
+    renderClientes(); 
+    renderPagos(); 
+    if(currentFichaId) renderFicha(currentFichaId); 
+  }
 
   function renderDashboard() {
     let mrr = 0, activos = 0, morosos = 0; const alertas = [];
@@ -408,9 +378,8 @@
     document.getElementById('kpiMrr').textContent = money(mrr);
     document.getElementById('kpiActivos').textContent = activos;
     document.getElementById('kpiMorosos').textContent = morosos;
-
     alertas.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
-    document.getElementById('alertasTable').innerHTML = alertas.length ? alertas.map(c => `<tr><td><strong>${escapeHtml(c.name)}</strong></td><td>${escapeHtml(c.phone)}</td><td>${new Date(c.dueDate).toLocaleDateString('es-AR')}</td><td><span class="badge ${c.est.clase}">${c.est.texto}</span></td></tr>`).join('') : '<tr><td colspan="4"><div style="color:var(--muted); text-align:center; padding:10px;">No hay alertas.</div></td></tr>';
+    document.getElementById('alertasTable').innerHTML = alertas.length ? alertas.map(c => `<tr><td><strong>${escapeHtml(c.name)}</strong></td><td>${escapeHtml(c.phone)}</td><td>${new Date(c.dueDate+'T12:00:00').toLocaleDateString('es-AR')}</td><td><span class="badge ${c.est.clase}">${c.est.texto}</span></td></tr>`).join('') : '<tr><td colspan="4"><div style="color:var(--muted); text-align:center; padding:10px;">No hay alertas.</div></td></tr>';
   }
 
   function renderClientes() {
@@ -421,25 +390,103 @@
       <tr style="${!c.active ? 'opacity: 0.5;' : ''}">
         <td><strong>${escapeHtml(c.name)}</strong><br><small style="color:var(--muted)">👤 ${escapeHtml(c.contact || '-')} | 📞 ${escapeHtml(c.phone)}</small></td>
         <td><strong>${money(c.fee)}</strong></td>
-        <td>${new Date(c.dueDate).toLocaleDateString('es-AR')}</td>
+        <td>${new Date(c.dueDate+'T12:00:00').toLocaleDateString('es-AR')}</td>
         <td><span class="badge ${est.clase}">${est.texto}</span></td>
         <td>
           <div class="actions">
+            <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="verFicha('${c.id}')">Ver Ficha</button>
             <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="editarCliente('${c.id}')">Editar</button>
-            <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="toggleAcceso('${c.id}')">${c.active ? 'Bloquear' : 'Reactivar'}</button>
-            <button class="btn btn-danger-text" style="padding:6px 10px; font-size:12px;" onclick="borrarCliente('${c.id}')">X</button>
+            <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="toggleAcceso('${c.id}')">${c.active ? 'Bloquear' : 'Activar'}</button>
           </div>
         </td>
       </tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay clientes registrados en la Nube.</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay clientes registrados.</td></tr>';
   }
 
   function renderPagos() {
     const tbody = document.getElementById('pagosTable');
     tbody.innerHTML = dbPagos.length ? dbPagos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => {
       const c = dbClientes.find(x => x.id === p.clientId);
-      return `<tr><td>${new Date(p.date).toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(c ? c.name : 'Cliente Eliminado')}</strong></td><td><span class="badge badge-neutral">${escapeHtml(p.method)}</span></td><td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td><td style="color:var(--muted); font-size:12px;">${escapeHtml(p.notes || '-')}</td></tr>`;
+      return `<tr><td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(c ? c.name : 'Cliente Eliminado')}</strong></td><td><span class="badge badge-neutral">${escapeHtml(p.method)}</span></td><td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td><td style="color:var(--muted); font-size:12px;">${escapeHtml(p.notes || '-')}</td></tr>`;
     }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay pagos registrados.</td></tr>';
+  }
+
+  // ── MÓDULO: FICHA DEL CLIENTE ──
+  function verFicha(id) {
+    currentFichaId = id;
+    renderFicha(id);
+    switchView('ficha', null);
+    document.getElementById('pageTitle').textContent = "Estado de Cuenta";
+  }
+
+  function renderFicha(id) {
+    const c = dbClientes.find(x => x.id === id);
+    if(!c) return;
+    
+    document.getElementById('fichaClientName').textContent = c.name;
+    document.getElementById('fichaEmail').textContent = c.email || 'No registrado';
+    document.getElementById('fichaPhone').textContent = c.phone || '-';
+    document.getElementById('fichaVto').innerHTML = `${new Date(c.dueDate+'T12:00:00').toLocaleDateString('es-AR')} <span class="badge ${calcEstado(c.dueDate, c.active).clase}" style="margin-left:5px;">${calcEstado(c.dueDate, c.active).texto}</span>`;
+    document.getElementById('fichaFee').textContent = money(c.fee);
+
+    const pagosCli = dbPagos.filter(p => p.clientId === id).sort((a,b) => new Date(b.date) - new Date(a.date));
+    const tbody = document.getElementById('fichaPagosTable');
+    
+    tbody.innerHTML = pagosCli.length ? pagosCli.map(p => {
+      // URL para Mailto prearmada
+      const subject = encodeURIComponent(`Recibo de Pago - Licencia de Sistema MicroSaas`);
+      const body = encodeURIComponent(`Hola ${c.name},\n\nTe confirmamos la recepción de tu pago por ${money(p.amount)} el día ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}.\n\nMétodo: ${p.method}\n\nTu sistema se encuentra renovado y operando con normalidad.\n\nMuchas gracias,\nEquipo MicroSaas Soluciones`);
+      const mailtoLink = `mailto:${c.email || ''}?subject=${subject}&body=${body}`;
+
+      return `
+      <tr>
+        <td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td>
+        <td><span class="badge badge-neutral">${escapeHtml(p.method)}</span></td>
+        <td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td>
+        <td style="color:var(--muted); font-size:12px;">${escapeHtml(p.notes || '-')}</td>
+        <td>
+          <div class="actions">
+            <button class="btn btn-outline" style="padding:6px 10px; font-size:12px;" onclick="imprimirRecibo('${p.id}')">📄 Recibo</button>
+            <a href="${mailtoLink}" class="btn btn-primary" style="padding:6px 10px; font-size:12px; text-decoration:none;">📧 Enviar</a>
+          </div>
+        </td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">Este cliente aún no registra pagos.</td></tr>';
+  }
+
+  function imprimirRecibo(pagoId) {
+    const p = dbPagos.find(x => x.id === pagoId);
+    const c = dbClientes.find(x => x.id === p.clientId);
+    if(!p || !c) return;
+
+    const receiptWin = window.open('', '_blank');
+    receiptWin.document.write(`
+      <html><head><title>Recibo ${p.id}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+        .box { border: 1px solid #ddd; padding: 30px; max-width: 600px; margin: 0 auto; border-radius: 8px; }
+        .head { display: flex; justify-content: space-between; border-bottom: 2px solid #8b5cf6; padding-bottom: 20px; margin-bottom: 20px; }
+        .row { margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .row strong { color: #555; }
+        .total { font-size: 24px; color: #10b981; font-weight: bold; border-top: 1px solid #ddd; padding-top: 15px; margin-top: 15px; text-align: right; }
+      </style>
+      </head><body>
+        <div class="box">
+          <div class="head">
+            <div><h2 style="margin:0; color:#8b5cf6;">MicroSaas Soluciones</h2><small>Recibo Oficial de Pago</small></div>
+            <div style="text-align:right;"><strong>Fecha:</strong> ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}<br><strong>ID:</strong> #${p.id.toUpperCase()}</div>
+          </div>
+          <div class="row"><strong>Recibimos de:</strong> <span>${c.name}</span></div>
+          <div class="row"><strong>Concepto:</strong> <span>Abono Mensual Licencia de Software</span></div>
+          <div class="row"><strong>Método de Pago:</strong> <span>${p.method}</span></div>
+          ${p.notes ? `<div class="row"><strong>Observaciones:</strong> <span>${p.notes}</span></div>` : ''}
+          <div class="total">Total Abonado: ${money(p.amount)}</div>
+          <p style="text-align:center; color:#999; font-size:12px; margin-top:40px;">Este documento es un comprobante de pago válido emitido por MicroSaas.</p>
+        </div>
+        <script>window.print();</sc`+`ript>
+      </body></html>
+    `);
+    receiptWin.document.close();
   }
 
   // ── MODALES Y ACCIONES ──
@@ -456,20 +503,23 @@
     const c = dbClientes.find(x => x.id === id); if(!c) return;
     editingClientId = id; document.getElementById('clienteModalTitle').textContent = 'Editar Cliente';
     document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || '';
-    document.getElementById('cPhone').value = c.phone; document.getElementById('cFee').value = c.fee;
-    document.getElementById('cDueDate').value = c.dueDate;
+    document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || '';
+    document.getElementById('cFee').value = c.fee; document.getElementById('cDueDate').value = c.dueDate;
     
     document.getElementById('adminConfigBox').style.display = 'none';
-    document.getElementById('cAdminUser').required = false;
-    document.getElementById('cAdminPass').required = false;
-    
+    document.getElementById('cAdminUser').required = false; document.getElementById('cAdminPass').required = false;
     document.getElementById('clienteDialog').showModal();
   }
 
-  function abrirModalPago() {
+  function abrirModalPago(preselectedId = null) {
     if(dbClientes.length === 0) return alert('Primero debes registrar un cliente.');
-    document.getElementById('pClient').innerHTML = '<option value="">Seleccione...</option>' + dbClientes.filter(c => c.active).map(c => `<option value="${c.id}">${escapeHtml(c.name)} (Vto: ${new Date(c.dueDate).toLocaleDateString('es-AR')})</option>`).join('');
+    document.getElementById('pClient').innerHTML = '<option value="">Seleccione...</option>' + dbClientes.filter(c => c.active).map(c => `<option value="${c.id}">${escapeHtml(c.name)} (Ciclo: ${c.dueDate.split('-')[2]})</option>`).join('');
     document.getElementById('pagoForm').reset(); document.getElementById('pDate').value = today();
+    
+    if(preselectedId) {
+      document.getElementById('pClient').value = preselectedId;
+      autocompletarMontoPago();
+    }
     document.getElementById('pagoDialog').showModal();
   }
 
@@ -486,39 +536,27 @@
     const btn = document.getElementById('btnGuardarCli'); btn.textContent = 'Procesando...'; btn.disabled = true;
 
     const data = {
-      name: document.getElementById('cName').value.trim(),
-      contact: document.getElementById('cContact').value.trim(),
-      phone: document.getElementById('cPhone').value.trim(),
-      fee: document.getElementById('cFee').value,
-      dueDate: document.getElementById('cDueDate').value,
-      active: true
+      name: document.getElementById('cName').value.trim(), contact: document.getElementById('cContact').value.trim(),
+      phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim(),
+      fee: document.getElementById('cFee').value, dueDate: document.getElementById('cDueDate').value, active: true
     };
 
     try {
       if (editingClientId) {
-        data.id = editingClientId;
-        data.active = dbClientes.find(x => x.id === editingClientId).active;
+        data.id = editingClientId; data.active = dbClientes.find(x => x.id === editingClientId).active;
         await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
       } else {
         data.id = 'cli_' + Math.random().toString(36).substr(2, 9);
-        data.adminUser = document.getElementById('cAdminUser').value.trim();
-        data.adminPass = document.getElementById('cAdminPass').value.trim();
+        data.adminUser = document.getElementById('cAdminUser').value.trim(); data.adminPass = document.getElementById('cAdminPass').value.trim();
         await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
       }
-      cerrarModal('clienteDialog');
-      await loadDataFromCloud();
+      cerrarModal('clienteDialog'); await loadDataFromCloud();
     } catch(err) { 
-      console.log("Guardando en LocalStorage por falla de API");
-      if (editingClientId) {
-        const idx = dbClientes.findIndex(x => x.id === editingClientId);
-        data.id = editingClientId; data.active = dbClientes[idx].active; dbClientes[idx] = data;
-      } else {
-        data.id = 'cli_' + Math.random().toString(36).substr(2, 9); dbClientes.push(data);
-      }
+      if (editingClientId) { const idx = dbClientes.findIndex(x => x.id === editingClientId); data.id = editingClientId; data.active = dbClientes[idx].active; dbClientes[idx] = data;
+      } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); dbClientes.push(data); }
       localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
       cerrarModal('clienteDialog'); renderAll();
     }
-    
     btn.textContent = 'Guardar Cliente'; btn.disabled = false;
   }
 
@@ -529,62 +567,66 @@
     const cid = document.getElementById('pClient').value;
     const c = dbClientes.find(x => x.id === cid);
     
-    let curVto = new Date(c.dueDate); let hoy = new Date();
-    let baseDate = (curVto < hoy) ? hoy : curVto;
-    baseDate.setMonth(baseDate.getMonth() + 1);
-    const newDueDate = baseDate.toISOString().split('T')[0];
+    // REGLA ESTRICTA DE RENOVACIÓN DE CICLO
+    let curVto = new Date(c.dueDate + 'T12:00:00'); // Forzamos hora para evitar desfasaje de zona horaria
+    curVto.setMonth(curVto.getMonth() + 1); // Suma 1 mes manteniendo el mismo día numérico
+    const newDueDate = curVto.toISOString().split('T')[0];
 
     const data = {
-      id: 'pay_' + Math.random().toString(36).substr(2, 9),
-      clientId: cid,
-      date: document.getElementById('pDate').value,
-      amount: document.getElementById('pAmount').value,
-      method: document.getElementById('pMethod').value,
-      notes: document.getElementById('pNotes').value.trim(),
-      newDueDate: newDueDate 
+      id: 'pay_' + Math.random().toString(36).substr(2, 9), clientId: cid, date: document.getElementById('pDate').value,
+      amount: document.getElementById('pAmount').value, method: document.getElementById('pMethod').value,
+      notes: document.getElementById('pNotes').value.trim(), newDueDate: newDueDate 
     };
 
     try {
       await fetch('/api/payments', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
       cerrarModal('pagoDialog');
-      alert(`Pago acreditado con éxito.\nEl nuevo vencimiento del cliente se extendió al ${baseDate.toLocaleDateString('es-AR')}`);
+      alert(`Pago acreditado.\nEl ciclo se renovó conservando el día de corte. Nuevo vencimiento: ${curVto.toLocaleDateString('es-AR')}`);
       await loadDataFromCloud();
     } catch(err) {
       dbPagos.push(data); localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos));
       c.dueDate = newDueDate; localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
       cerrarModal('pagoDialog'); renderAll();
     }
-
-    btn.textContent = 'Acreditar y Extender Vto.'; btn.disabled = false;
+    btn.textContent = 'Acreditar Pago'; btn.disabled = false;
   }
 
   async function toggleAcceso(id) {
     const c = dbClientes.find(x => x.id === id);
     if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) {
       c.active = !c.active;
-      try {
-        await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) });
-        await loadDataFromCloud();
-      } catch (err) {
-        localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll();
-      }
+      try { await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); await loadDataFromCloud();
+      } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); }
     }
   }
 
   async function borrarCliente(id) {
     const c = dbClientes.find(x => x.id === id);
-    if(c && confirm(`🚨 ATENCIÓN: ¿Borrar definitivamente a ${c.name}?\nSe eliminará su registro de la base central.`)) {
-      try {
-        await fetch(`/api/clients?id=${id}`, { method: 'DELETE' });
-        await loadDataFromCloud();
-      } catch (err) {
-        dbClientes = dbClientes.filter(x => x.id !== id);
-        localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll();
-      }
+    if(c && confirm(`🚨 ATENCIÓN: ¿Borrar definitivamente a ${c.name}?`)) {
+      try { await fetch(`/api/clients?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud();
+      } catch (err) { dbClientes = dbClientes.filter(x => x.id !== id); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); }
     }
   }
 
-  // Iniciar cargando la info
+  function exportarAExcel(dataArray, nombreArchivo) {
+    if (!dataArray || !dataArray.length) { alert("No hay datos para exportar."); return; }
+    const headers = Object.keys(dataArray[0]);
+    const rows = dataArray.map(row => { return headers.map(header => { let cell = row[header] === null || row[header] === undefined ? '' : String(row[header]); cell = cell.replace(/"/g, '""'); return `"${cell}"`; }).join(';'); });
+    const csvContent = [headers.join(';'), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `${nombreArchivo}_${today()}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link);
+  }
+
+  function exportarClientesExcel() {
+    if (!dbClientes.length) return alert("No hay clientes para exportar.");
+    exportarAExcel(dbClientes.map(c => ({ "Comercio": c.name, "Teléfono": c.phone || '-', "Email": c.email || '-', "Abono": c.fee || 0, "Vencimiento": new Date(c.dueDate+'T12:00:00').toLocaleDateString('es-AR'), "Estado": calcEstado(c.dueDate, c.active).texto })), 'Reporte_Clientes_MicroSaas');
+  }
+
+  function exportarPagosExcel() {
+    if (!dbPagos.length) return alert("No hay pagos para exportar.");
+    exportarAExcel(dbPagos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => { const c = dbClientes.find(x => x.id === p.clientId); return { "Fecha Pago": new Date(p.date+'T12:00:00').toLocaleDateString('es-AR'), "Cliente": c ? c.name : 'Eliminado', "Método": p.method || '-', "Monto": p.amount || 0, "Notas": p.notes || '-' }; }), 'Reporte_Pagos_MicroSaas');
+  }
+
   loadDataFromCloud();
 </script>
 </body>
