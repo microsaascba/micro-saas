@@ -5,27 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MicroSaas Soluciones | Master Control</title>
   <style>
+    /* ── TEMA CLARO INSPIRADO EN EL LOGO ── */
     :root {
-      --bg: #0f172a; --panel: #1e293b; --panel-hover: #334155; --text: #f8fafc; --muted: #94a3b8;
-      --primary: #8b5cf6; --primary-hover: #7c3aed;
+      --bg: #f8fafc; /* Blanco suave de fondo */
+      --panel: #ffffff; /* Blanco puro para tarjetas y sidebar */
+      --panel-hover: #f1f5f9; /* Gris muy claro para hovers */
+      --text: #1e293b; /* Azul grisáceo muy oscuro para texto principal */
+      --muted: #64748b; /* Gris medio para texto secundario */
+      
+      /* Celeste/Azul del logo para acentos */
+      --primary: #0ea5e9; 
+      --primary-hover: #0284c7; 
+      
+      /* Colores de estado estándar */
       --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
-      --line: #334155; --font: system-ui, -apple-system, sans-serif;
+      
+      /* Líneas y bordes claros */
+      --line: #e2e8f0; 
+      --font: system-ui, -apple-system, sans-serif;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
     
+    /* Sidebar */
     .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; z-index: 999; }
-    .brand { padding: 24px; font-size: 18px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--line); line-height: 1.2; }
-    .brand span { color: var(--primary); font-size: 24px; }
-    .nav { flex: 1; padding: 20px 0; overflow-y: auto; }
-    .nav button { width: 100%; text-align: left; background: transparent; border: none; color: var(--muted); padding: 14px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
-    .nav button:hover { color: var(--text); background: rgba(255,255,255,0.02); }
-    .nav button.active { color: var(--primary); border-right: 3px solid var(--primary); background: rgba(139, 92, 246, 0.1); }
     
+    /* ── BARRA LATERAL CON LOGO CENTRADO ── */
+    .brand { padding: 16px 24px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--line); }
+    
+    .nav { flex: 1; padding: 20px 0; overflow-y: auto; }
+    .nav button { width: 100%; text-align: left; background: transparent; border: none; color: var(--muted); padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+    .nav button:hover { color: var(--text); background: var(--panel-hover); }
+    .nav button.active { color: var(--primary); border-right: 3px solid var(--primary); background: rgba(14, 165, 233, 0.05); }
+    
+    /* Main Content */
     .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .topbar { padding: 15px 40px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: var(--bg); }
     .topbar-left { display: flex; align-items: center; gap: 15px; }
-    .mobile-toggle { display: none; background: transparent; border: none; color: var(--text); font-size: 24px; cursor: pointer; padding: 0; }
+    .mobile-toggle { display: none; background: transparent; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
     .topbar h1 { margin: 0; font-size: 20px; color: var(--text); }
     .content-area { flex: 1; padding: 30px; overflow-y: auto; }
     
@@ -33,43 +50,48 @@
     .view.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+    /* KPIs */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
     .kpi-card { background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--line); border-top: 4px solid var(--primary); }
     .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
     .kpi-value { font-size: 24px; font-weight: 800; color: var(--text); }
     
-    .card { background: var(--panel); border-radius: 16px; border: 1px solid var(--line); margin-bottom: 24px; overflow: hidden; }
+    /* ── ESTILOS BLINDADOS PARA TABLAS (INMUNE A ESTILOS EXTERNOS) ── */
+    .card { background: var(--panel) !important; border-radius: 16px; border: 1px solid var(--line); margin-bottom: 24px; overflow: hidden; }
     .card-head { padding: 15px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     .card-head h2 { margin: 0; font-size: 14px; text-transform: uppercase; color: var(--muted); }
     
     .table-wrap { overflow-x: auto; width: 100%; }
-    .master-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; background: var(--panel); color: var(--text); }
-    .master-table th { padding: 12px 20px; background: rgba(0,0,0,0.3); font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
-    .master-table td { padding: 12px 20px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
-    .master-table tr:hover td { background: var(--panel-hover); }
-    .master-table tr:last-child td { border-bottom: none; }
+    .master-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; background: var(--panel) !important; color: var(--text) !important; }
+    .master-table th { padding: 12px 20px; background: rgba(0,0,0,0.03) !important; font-size: 11px; text-transform: uppercase; color: var(--muted) !important; border-bottom: 1px solid var(--line) !important; }
+    .master-table td { padding: 12px 20px; border-bottom: 1px solid var(--line) !important; font-size: 13px; vertical-align: middle; background: transparent !important; color: var(--text) !important; }
+    .master-table tr:hover td { background: var(--panel-hover) !important; }
+    .master-table tr:last-child td { border-bottom: none !important; }
     
-    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap; }
-    .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-    .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-    .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-    .badge-neutral { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
-    .badge-primary { background: rgba(139,92,246,0.2); color: #a78bfa; }
+    /* Badges */
+    .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap; }
+    .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    .badge-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+    .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .badge-neutral { background: rgba(100, 116, 139, 0.1); color: var(--muted); }
+    .badge-primary { background: rgba(14, 165, 233, 0.1); color: var(--primary); }
     
+    /* Buttons */
     .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; white-space: nowrap; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:hover { background: var(--primary-hover); }
     .btn-success { background: var(--success); color: #fff; }
     .btn-outline { background: transparent; border: 1px solid var(--line); color: var(--text); }
-    .btn-outline:hover { border-color: var(--muted); background: rgba(255,255,255,0.05); }
+    .btn-outline:hover { border-color: var(--muted); background: rgba(0,0,0,0.03); }
     .btn-danger-text { background: transparent; color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
     
     .actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .table-actions { display: flex; gap: 6px; }
     .table-actions button { padding: 6px 10px; font-size: 12px; }
-    
-    dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 600px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-    dialog::backdrop { background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); }
+
+    /* Modals */
+    dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 600px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1); }
+    dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
     .modal-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
     .modal-head h3 { margin: 0; font-size: 16px; color: var(--text); }
     .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
@@ -77,23 +99,28 @@
     .field { display: flex; flex-direction: column; gap: 6px; }
     .field.full { grid-column: 1 / -1; }
     .field label { font-size: 12px; color: var(--muted); font-weight: 600; }
-    .field input, .field select, .field textarea { padding: 10px 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; color-scheme: dark; }
-    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--primary); }
-    .modal-foot { padding: 20px 24px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 12px; background: rgba(0,0,0,0.1); }
     
-    .admin-box { background: rgba(139, 92, 246, 0.1); border: 1px solid var(--primary); padding: 15px; border-radius: 8px; margin-top: 10px; }
-    .admin-box p { margin: 0 0 15px 0; font-size: 13px; color: #cbd5e1; }
+    /* Inputs en tema claro */
+    .field input, .field select, .field textarea { padding: 10px 12px; background: #ffffff; border: 1px solid var(--line); border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; }
+    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--primary); }
+    
+    .modal-foot { padding: 20px 24px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 12px; background: rgba(0,0,0,0.02); }
+    
+    .admin-box { background: rgba(14, 165, 233, 0.05); border: 1px solid var(--primary); padding: 15px; border-radius: 8px; margin-top: 10px; }
+    .admin-box p { margin: 0 0 15px 0; font-size: 13px; color: var(--text); }
 
+    /* Presupuestos */
     .budget-items-table { width: 100%; margin-top: 10px; border-top: 1px solid var(--line); }
-    .budget-items-table input { padding: 6px; background: rgba(0,0,0,0.2); border: 1px solid var(--line); color: #fff; border-radius: 4px; width: 100%; font-size: 13px; }
+    .budget-items-table input { padding: 6px; background: #ffffff; border: 1px solid var(--line); color: var(--text); border-radius: 4px; width: 100%; font-size: 13px; }
 
+    /* Responsive */
     @media (max-width: 900px) {
-      .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; transition: left 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.5); }
+      .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; transition: left 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.1); }
       .sidebar.open { left: 0; }
       .mobile-toggle { display: block; }
       .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; }
       .sidebar-overlay.open { display: block; }
-      .topbar { padding: 15px 20px; }
+      .topbar { padding: 10px 20px; }
       .content-area { padding: 15px; }
       .form-grid { grid-template-columns: 1fr; }
     }
@@ -101,10 +128,12 @@
 </head>
 <body>
 
-  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMenu()"></div>
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
 
   <aside class="sidebar" id="sidebar">
-    <div class="brand"><span>✦</span> MicroSaas<br>Soluciones</div>
+    <div class="brand">
+      <img src="logo.png" alt="Micro Saas Soluciones" style="max-height: 50px; max-width: 100%;">
+    </div>
     <nav class="nav">
       <button class="active" onclick="switchView('dashboard', this)">📊 Dashboard</button>
       <button onclick="switchView('clientes', this)">🏢 Clientes (Licencias)</button>
@@ -160,8 +189,8 @@
           <div class="card-head">
             <h2>Directorio de Clientes</h2>
             <div class="actions">
-              <button class="btn btn-outline" title="Descargar Excel" onclick="exportarClientesExcel()">⬇ Excel</button>
-              <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo Cliente</button>
+              <button class="btn btn-outline" title="Descargar nómina de clientes en Excel" onclick="exportarClientesExcel()">⬇ Excel</button>
+              <button class="btn btn-primary" title="Dar de alta un nuevo comercio" onclick="abrirModalCliente()">+ Nuevo Cliente</button>
             </div>
           </div>
           <div class="table-wrap">
@@ -190,10 +219,7 @@
                 <option value="ALL">Mostrar Todos los Clientes</option>
               </select>
             </div>
-            <div class="actions">
-              <button class="btn btn-outline" onclick="exportarPagosExcel()">⬇ Excel</button>
-              <button class="btn btn-success" onclick="abrirModalPago()">+ Registrar Pago</button>
-            </div>
+            <button class="btn btn-success" onclick="abrirModalPago()">+ Registrar Pago</button>
           </div>
           <div class="table-wrap">
             <table class="master-table">
@@ -236,7 +262,7 @@
           </div>
           <div class="table-wrap">
             <table class="master-table">
-              <thead><tr><th>Fecha</th><th>Prospecto / Cliente</th><th>Email Contacto</th><th>Total</th><th>Acciones</th></tr></thead>
+              <thead><tr><th>Fecha</th><th>Prospecto / Cliente</th><th>Total</th><th>Acciones</th></tr></thead>
               <tbody id="presupuestosTable"></tbody>
             </table>
           </div>
@@ -255,18 +281,18 @@
       <div class="modal-body form-grid">
         <div class="field full"><label>Nombre del Comercio *</label><input type="text" id="cName" required autocomplete="off" /></div>
         <div class="field"><label>Titular / Contacto</label><input type="text" id="cContact" autocomplete="off" /></div>
-        <div class="field"><label>CUIL / CUIT</label><input type="text" id="cCuil" autocomplete="off" /></div>
+        <div class="field"><label>CUIL / CUIT</label><input type="text" id="cCuil" placeholder="Sin guiones" autocomplete="off" /></div>
         <div class="field full"><label>Dirección Comercial</label><input type="text" id="cAddress" autocomplete="off" /></div>
         <div class="field"><label>Teléfono (WhatsApp) *</label><input type="text" id="cPhone" required autocomplete="off" /></div>
-        <div class="field"><label>Email de Contacto *</label><input type="email" id="cEmail" required autocomplete="off" /></div>
+        <div class="field"><label>Email de Contacto *</label><input type="email" id="cEmail" required autocomplete="off" placeholder="Para enviar recibos" /></div>
         <div class="field"><label>Valor Abono ($) *</label><input type="number" id="cFee" required /></div>
-        <div class="field"><label>Fecha de Vencimiento *</label><input type="date" id="cDueDate" required /></div>
+        <div class="field"><label>Fecha de Corte (Vencimiento) *</label><input type="date" id="cDueDate" required /></div>
         
         <div id="adminConfigBox" class="field full admin-box">
           <p><strong>Configuración Inicial:</strong> Usuario administrador para que el cliente ingrese.</p>
           <div class="form-grid">
-            <div class="field"><label style="color:#fff;">Usuario Admin *</label><input type="text" id="cAdminUser" /></div>
-            <div class="field"><label style="color:#fff;">Contraseña *</label><input type="text" id="cAdminPass" /></div>
+            <div class="field"><label>Usuario Admin *</label><input type="text" id="cAdminUser" placeholder="Ej: admin_local" required /></div>
+            <div class="field"><label>Contraseña *</label><input type="text" id="cAdminPass" placeholder="Clave de acceso" required /></div>
           </div>
         </div>
       </div>
@@ -279,7 +305,7 @@
 
   <dialog id="pagoDialog">
     <div class="modal-head">
-      <h3 id="pagoModalTitle">Registrar Pago de Licencia</h3>
+      <h3 id="pagoModalTitle">Registrar Pago</h3>
       <button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('pagoDialog')">✕</button>
     </div>
     <form id="pagoForm" onsubmit="guardarPago(event)">
@@ -298,7 +324,7 @@
             <option value="Tarjeta / Link de Pago">Tarjeta / Link de Pago</option>
           </select>
         </div>
-        <div class="field full"><label>Notas / Ref. Transferencia</label><textarea id="pNotes" rows="2"></textarea></div>
+        <div class="field full"><label>Notas / Ref. Transferencia</label><textarea id="pNotes" rows="2" placeholder="Ej: Transf. comprobante #123"></textarea></div>
       </div>
       <div class="modal-foot">
         <button type="button" class="btn btn-outline" onclick="cerrarModal('pagoDialog')">Cancelar</button>
@@ -308,7 +334,7 @@
   </dialog>
 
   <dialog id="gastoDialog">
-    <div class="modal-head"><h3>Registrar Gasto de Negocio</h3><button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('gastoDialog')">✕</button></div>
+    <div class="modal-head"><h3>Registrar Gasto</h3><button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('gastoDialog')">✕</button></div>
     <form onsubmit="guardarGasto(event)" class="modal-body form-grid">
       <div class="field"><label>Fecha *</label><input type="date" id="gDate" required /></div>
       <div class="field"><label>Monto ($) *</label><input type="number" id="gAmount" required /></div>
@@ -376,41 +402,44 @@
     const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     return `${meses[parseInt(m, 10)-1]} ${y}`;
   }
+
+  // ── SOLUCIÓN DE ERROR DE CAPITALIZACIÓN ──
+  // Antes estaba definido como 'calcEstado', y en Image_4 se llamaba como 'calcestado'.
+  // Esta versión usa 'calcEstado' de forma consistente en todo el archivo.
   function calcEstado(fechaVto, activo) {
     if (!activo) return { texto: 'Suspendido', clase: 'badge-neutral', status: 'suspendido' };
     const dif = Math.ceil((new Date(fechaVto + 'T12:00:00').setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000);
-    if (dif < 0) return { texto: `Vencido (hace ${Math.abs(dif)}d)`, clase: 'badge-danger', status: 'vencido' };
+    if (dif < 0) return { texto: `Vencido (${Math.abs(dif)}d)`, clase: 'badge-danger', status: 'vencido' };
     if (dif <= 5) return { texto: `Vence en ${dif}d`, clase: 'badge-warning', status: 'alerta' };
     return { texto: 'Al Día', clase: 'badge-success', status: 'ok' };
   }
 
   // ── CONEXIÓN DE DATOS ──
   async function loadDataFromCloud() {
-    document.getElementById('cloudStatus').textContent = 'Sincronizando...'; document.getElementById('cloudStatus').className = 'badge badge-warning';
+    const cloudStatus = document.getElementById('cloudStatus');
+    cloudStatus.textContent = 'Sincronizando...'; cloudStatus.className = 'badge badge-warning';
     try {
       const resC = await fetch('/api/clients');
       if(resC.ok) { dbClientes = await resC.json(); dbClientes.forEach(c => c.active = (c.active === 1 || c.active === true)); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); }
       const resP = await fetch('/api/payments');
       if(resP.ok) dbPagos = await resP.json();
 
-      document.getElementById('cloudStatus').textContent = 'Conectado a D1'; document.getElementById('cloudStatus').className = 'badge badge-success';
+      cloudStatus.textContent = 'Conectado a D1'; cloudStatus.className = 'badge badge-success';
     } catch(e) {
       dbClientes = JSON.parse(localStorage.getItem('saas_db_clientes')) || [];
       dbPagos = JSON.parse(localStorage.getItem('saas_db_pagos')) || [];
-      document.getElementById('cloudStatus').textContent = 'Modo Local'; document.getElementById('cloudStatus').className = 'badge badge-neutral';
+      cloudStatus.textContent = 'Modo Local'; cloudStatus.className = 'badge badge-neutral';
     }
     
+    // Mantenemos módulos locales por ahora
     dbGastos = JSON.parse(localStorage.getItem('master_db_gastos')) || [];
     dbPresupuestos = JSON.parse(localStorage.getItem('master_db_presupuestos')) || [];
 
-    actualizarFiltrosCliente();
-    renderAll();
-  }
-
-  function actualizarFiltrosCliente() {
     const select = document.getElementById('filtroClientePagos'); const currentVal = select.value;
     select.innerHTML = '<option value="ALL">Mostrar Todos los Clientes</option>' + dbClientes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
     select.value = currentVal || 'ALL';
+    
+    renderAll();
   }
 
   // ── RENDERIZADO ──
@@ -419,6 +448,7 @@
   function renderDashboard() {
     let mrr = 0, activos = 0, morosos = 0; const alertas = [];
     dbClientes.forEach(c => {
+      // LLAMADA CORREGIDA A 'calcEstado'
       const est = calcEstado(c.dueDate, c.active);
       if (c.active) { mrr += Number(c.fee); activos++; if (est.status === 'vencido') morosos++; if (est.status === 'vencido' || est.status === 'alerta') alertas.push({ ...c, est }); }
     });
@@ -437,12 +467,16 @@
   function renderClientes() {
     const tbody = document.getElementById('clientesTable');
     tbody.innerHTML = dbClientes.length ? dbClientes.sort((a,b) => a.name.localeCompare(b.name)).map(c => {
+      // LLAMADA CORREGIDA A 'calcEstado'
       const est = calcEstado(c.dueDate, c.active);
       return `<tr style="${!c.active ? 'opacity: 0.5;' : ''}">
         <td><strong>${escapeHtml(c.name)}</strong><br><small style="color:var(--muted)">👤 ${escapeHtml(c.contact || '-')} | 📞 ${escapeHtml(c.phone)}</small></td>
         <td><strong>${money(c.fee)}</strong></td><td>${new Date(c.dueDate+'T12:00:00').toLocaleDateString('es-AR')}</td>
         <td><span class="badge ${est.clase}">${est.texto}</span></td>
-        <td><div class="table-actions"><button class="btn btn-outline" title="Editar Cliente" onclick="editarCliente('${c.id}')">✎ Editar</button><button class="btn btn-outline" title="Bloquear o Reactivar" onclick="toggleAcceso('${c.id}')">${c.active ? 'Bloquear' : 'Activar'}</button></div></td>
+        <td><div class="table-actions">
+          <button class="btn btn-outline" title="Ver o editar datos del cliente" onclick="editarCliente('${c.id}')">✎ Editar</button>
+          <button class="btn btn-outline" title="Bloquear o desbloquear acceso al sistema" onclick="toggleAcceso('${c.id}')">${c.active ? 'Bloquear' : 'Activar'}</button>
+          </div></td>
       </tr>`;
     }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay clientes registrados.</td></tr>';
   }
@@ -454,43 +488,54 @@
     tbody.innerHTML = filtrados.length ? filtrados.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => {
       const c = dbClientes.find(x => x.id === p.clientId); const pFormat = formatPeriod(p.period);
       const mailto = `mailto:${c ? (c.email || '') : ''}?subject=${encodeURIComponent('Recibo de Pago - Licencia de Software')}&body=${encodeURIComponent('Hola '+(c ? c.name : '')+',\n\nConfirmamos la recepción del pago por '+money(p.amount)+' correspondiente al período de '+pFormat+'.\n\nGracias,\nEquipo MicroSaas')}`;
+
       return `<tr>
-        <td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(c ? c.name : 'Eliminado')}</strong></td>
-        <td><span class="badge badge-primary">${pFormat}</span></td><td><span class="badge badge-neutral">${escapeHtml(p.method)}</span><br><small style="color:var(--muted);">${escapeHtml(p.notes || '')}</small></td>
+        <td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td>
+        <td><strong>${escapeHtml(c ? c.name : 'Cliente Eliminado')}</strong></td>
+        <td><span class="badge badge-primary">${pFormat}</span></td>
+        <td><span class="badge badge-neutral">${escapeHtml(p.method)}</span><br><small style="color:var(--muted);">${escapeHtml(p.notes || '')}</small></td>
         <td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td>
-        <td><div class="table-actions"><button class="btn btn-outline" title="Generar Recibo en PDF" onclick="imprimirRecibo('${p.id}')">📄</button><a href="${mailto}" class="btn btn-primary" title="Enviar Email" style="text-decoration:none;">📧</a><button class="btn btn-outline" title="Editar Pago" onclick="editarPago('${p.id}')">✎</button><button class="btn btn-danger-text" title="Eliminar Pago" onclick="borrarPago('${p.id}')">❌</button></div></td>
+        <td><div class="table-actions">
+          <button class="btn btn-outline" title="Generar recibo de pago en PDF" onclick="imprimirRecibo('${p.id}')">📄 PDF</button>
+          <a href="${mailto}" class="btn btn-primary" title="Enviar comprobante de pago por Email" style="text-decoration:none;">📧 Correo</a>
+          <button class="btn btn-outline" title="Modificar datos del pago" onclick="editarPago('${p.id}')">✎ Editar</button>
+          <button class="btn btn-danger-text" title="Eliminar registro de pago definitivamente" onclick="borrarPago('${p.id}')">❌ Borrar</button>
+          </div></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted);">No hay pagos registrados.</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted);">No hay pagos registrados para este filtro.</td></tr>';
   }
 
   function renderGastos() {
     const tbody = document.getElementById('gastosTable');
-    tbody.innerHTML = dbGastos.length ? dbGastos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(g => `<tr><td>${new Date(g.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(g.concept)}</strong></td><td><span class="badge badge-neutral">${escapeHtml(g.gCat)}</span></td><td style="color:var(--danger); font-weight:bold;">${money(g.amount)}</td><td><button class="btn btn-danger-text" title="Eliminar Gasto" onclick="borrarGasto('${g.id}')">❌</button></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay gastos registrados.</td></tr>';
+    tbody.innerHTML = dbGastos.length ? dbGastos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(g => `<tr><td>${new Date(g.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(g.concept)}</strong></td><td><span class="badge badge-neutral">${escapeHtml(g.gCat)}</span></td><td style="color:var(--danger); font-weight:bold;">${money(g.amount)}</td><td><button class="btn btn-danger-text" title="Eliminar este gasto" onclick="borrarGasto('${g.id}')">❌ Borrar</button></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay gastos registrados.</td></tr>';
   }
 
   function renderPresupuestos() {
     const tbody = document.getElementById('presupuestosTable');
-    tbody.innerHTML = dbPresupuestos.length ? dbPresupuestos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => `<tr><td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(p.clientName)}</strong></td><td>${escapeHtml(p.clientEmail)}</td><td style="font-weight:bold;">${money(p.total)}</td><td><div class="table-actions"><button class="btn btn-outline" onclick="imprimirPresupuesto('${p.id}')" title="Generar PDF">📄 Ver PDF</button><button class="btn btn-danger-text" title="Eliminar Presupuesto" onclick="borrarPresupuesto('${p.id}')">❌</button></div></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay presupuestos emitidos.</td></tr>';
+    tbody.innerHTML = dbPresupuestos.length ? dbPresupuestos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => `<tr><td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(p.clientName)}</strong></td><td>${escapeHtml(p.clientEmail)}</td><td style="font-weight:bold;">${money(p.total)}</td><td><div class="table-actions"><button class="btn btn-outline" title="Ver y descargar PDF del presupuesto" onclick="imprimirPresupuesto('${p.id}')">📄 PDF</button><button class="btn btn-danger-text" title="Eliminar este presupuesto" onclick="borrarPresupuesto('${p.id}')">❌ Borrar</button></div></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay presupuestos emitidos.</td></tr>';
   }
 
-  // ── ACCIONES: CLIENTES ──
-  function abrirModalCliente() { editingClientId = null; document.getElementById('clienteForm').reset(); document.getElementById('clienteModalTitle').textContent = 'Nuevo Cliente'; document.getElementById('adminConfigBox').style.display = 'block'; document.getElementById('clienteDialog').showModal(); }
+  // ── ACCIONES: CLIENTES ABM ──
+  function abrirModalCliente() { 
+    editingClientId = null; document.getElementById('clienteForm').reset(); 
+    document.getElementById('clienteModalTitle').textContent = 'Nuevo Cliente'; 
+    document.getElementById('cAdminUser').dataset.oldUser = '';
+    document.getElementById('clienteDialog').showModal(); 
+  }
   function editarCliente(id) {
     const c = dbClientes.find(x => x.id === id); if(!c) return; editingClientId = id; document.getElementById('clienteModalTitle').textContent = 'Editar Cliente';
     document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || ''; document.getElementById('cCuil').value = c.cuil || ''; document.getElementById('cAddress').value = c.address || ''; document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || ''; document.getElementById('cFee').value = c.fee; document.getElementById('cDueDate').value = c.dueDate;
-    document.getElementById('adminConfigBox').style.display = 'none'; document.getElementById('clienteDialog').showModal();
+    document.getElementById('cAdminUser').value = c.adminUser || ''; document.getElementById('cAdminPass').value = c.adminPass || ''; document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || '';
+    document.getElementById('clienteDialog').showModal();
   }
   async function guardarCliente(e) {
     e.preventDefault(); const btn = document.getElementById('btnGuardarCli'); btn.textContent = 'Guardando...'; btn.disabled = true;
-    const data = { name: document.getElementById('cName').value.trim(), contact: document.getElementById('cContact').value.trim(), cuil: document.getElementById('cCuil').value.trim(), address: document.getElementById('cAddress').value.trim(), phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim(), fee: document.getElementById('cFee').value, dueDate: document.getElementById('cDueDate').value, active: true };
+    const data = { name: document.getElementById('cName').value.trim(), contact: document.getElementById('cContact').value.trim(), cuil: document.getElementById('cCuil').value.trim(), address: document.getElementById('cAddress').value.trim(), phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim(), fee: document.getElementById('cFee').value, dueDate: document.getElementById('cDueDate').value, active: true, adminUser: document.getElementById('cAdminUser').value.trim(), adminPass: document.getElementById('cAdminPass').value.trim(), oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser };
     try {
       if (editingClientId) { data.id = editingClientId; data.active = dbClientes.find(x => x.id === editingClientId).active; await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
-      } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); data.adminUser = document.getElementById('cAdminUser').value.trim(); data.adminPass = document.getElementById('cAdminPass').value.trim(); await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); }
+      } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); }
       cerrarModal('clienteDialog'); await loadDataFromCloud();
-    } catch(err) { 
-      if (editingClientId) { const idx = dbClientes.findIndex(x => x.id === editingClientId); data.id = editingClientId; data.active = dbClientes[idx].active; dbClientes[idx] = data; } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); dbClientes.push(data); }
-      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('clienteDialog'); actualizarFiltrosCliente(); renderAll();
-    }
+    } catch(err) { loadDataFromCloud(); cerrarModal('clienteDialog'); }
     btn.textContent = 'Guardar Cliente'; btn.disabled = false;
   }
   async function toggleAcceso(id) { const c = dbClientes.find(x => x.id === id); if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { c.active = !c.active; try { await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); await loadDataFromCloud(); } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); } } }
@@ -500,7 +545,7 @@
   function abrirModalPago() {
     if(dbClientes.length === 0) return alert('No hay clientes.'); editingPaymentId = null; document.getElementById('pagoModalTitle').textContent = "Registrar Pago";
     document.getElementById('pClient').innerHTML = '<option value="">Seleccione...</option>' + dbClientes.filter(c => c.active).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-    const filtroActual = document.getElementById('filtroClientePagos').value; if(filtroActual !== 'ALL') { document.getElementById('pClient').value = filtroActual; autocompletarMontoPago(); }
+    const fId = document.getElementById('filtroClientePagos').value; if(fId !== 'ALL') { document.getElementById('pClient').value = fId; autocompletarMontoPago(); }
     document.getElementById('pagoForm').reset(); document.getElementById('pDate').value = today(); document.getElementById('pPeriod').value = today().slice(0,7); document.getElementById('pagoDialog').showModal();
   }
   function editarPago(id) {
@@ -516,59 +561,53 @@
       if (editingPaymentId) { data.id = editingPaymentId; await fetch('/api/payments', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
       } else { let curVto = new Date(c.dueDate + 'T12:00:00'); curVto.setMonth(curVto.getMonth() + 1); data.id = 'pay_' + Math.random().toString(36).substr(2, 9); data.newDueDate = curVto.toISOString().split('T')[0]; await fetch('/api/payments', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); }
       cerrarModal('pagoDialog'); await loadDataFromCloud();
-    } catch(err) {
-      if(editingPaymentId) { const idx = dbPagos.findIndex(x => x.id === editingPaymentId); data.id = editingPaymentId; dbPagos[idx] = data; } else { dbPagos.push(data); c.dueDate = data.newDueDate; }
-      localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos)); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('pagoDialog'); renderAll();
-    }
+    } catch(err) { loadDataFromCloud(); cerrarModal('pagoDialog'); }
     btn.textContent = 'Acreditar Pago'; btn.disabled = false;
   }
-  async function borrarPago(id) { if(confirm("¿Seguro que querés ELIMINAR este pago?")) { try { await fetch(`/api/payments?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud(); } catch (e) { dbPagos = dbPagos.filter(x => x.id !== id); localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos)); renderAll(); } } }
+  async function borrarPago(id) { if(confirm("¿ELIMINAR este pago?")) { try { await fetch(`/api/payments?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud(); } catch (e) { dbPagos = dbPagos.filter(x => x.id !== id); localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos)); renderAll(); } } }
 
-  // ── ACCIONES: GASTOS ──
+  // ── GASTOS ──
   function abrirModalGasto() { document.getElementById('gDate').value = today(); document.getElementById('gConcept').value = ''; document.getElementById('gAmount').value = ''; document.getElementById('gastoDialog').showModal(); }
   function guardarGasto(e) { e.preventDefault(); const g = { id: 'gas_'+Date.now(), date: document.getElementById('gDate').value, amount: document.getElementById('gAmount').value, concept: document.getElementById('gConcept').value, gCat: document.getElementById('gCat').value }; dbGastos.unshift(g); localStorage.setItem('master_db_gastos', JSON.stringify(dbGastos)); cerrarModal('gastoDialog'); renderAll(); }
   function borrarGasto(id) { if(confirm('¿Eliminar gasto?')) { dbGastos = dbGastos.filter(x => x.id !== id); localStorage.setItem('master_db_gastos', JSON.stringify(dbGastos)); renderAll(); } }
 
-  // ── ACCIONES: PRESUPUESTOS ──
+  // ── PRESUPUESTOS ──
   function addBudgetItem() { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="text" class="p-desc" placeholder="Servicio/Producto" required></td><td><input type="number" class="p-qty" value="1" required min="1"></td><td><input type="number" class="p-price" placeholder="Precio" required min="0"></td><td><button type="button" class="btn btn-danger-text" onclick="this.closest('tr').remove()" style="padding:4px 8px;">❌</button></td>`; document.getElementById('budgetItemsBody').appendChild(tr); }
   function abrirModalPresupuesto() { document.getElementById('presupuestoDialog').querySelector('form').reset(); document.getElementById('budgetItemsBody').innerHTML = ''; addBudgetItem(); document.getElementById('presupuestoDialog').showModal(); }
   function guardarPresupuesto(e) {
     e.preventDefault(); const items = []; let total = 0;
     document.querySelectorAll('#budgetItemsBody tr').forEach(tr => { const q = Number(tr.querySelector('.p-qty').value), p = Number(tr.querySelector('.p-price').value); items.push({ desc: tr.querySelector('.p-desc').value, qty: q, price: p }); total += (q * p); });
-    if(items.length === 0) return alert('Debes agregar al menos un ítem.');
+    if(items.length === 0) return alert('Debes cotizar al menos un ítem.');
     const pre = { id: 'PRE-'+Math.floor(Math.random()*10000), date: today(), clientName: document.getElementById('preName').value, clientEmail: document.getElementById('preEmail').value, items, total };
     dbPresupuestos.unshift(pre); localStorage.setItem('master_db_presupuestos', JSON.stringify(dbPresupuestos)); cerrarModal('presupuestoDialog'); renderAll();
   }
   function borrarPresupuesto(id) { if(confirm('¿Eliminar presupuesto?')) { dbPresupuestos = dbPresupuestos.filter(x => x.id !== id); localStorage.setItem('master_db_presupuestos', JSON.stringify(dbPresupuestos)); renderAll(); } }
 
-  // ── IMPRESIONES Y PDF ──
+  // ── PDFS ──
   function imprimirRecibo(pagoId) {
     const p = dbPagos.find(x => x.id === pagoId); const c = dbClientes.find(x => x.id === p.clientId); if(!p || !c) return;
     const win = window.open('', '_blank');
-    win.document.write(`<html><head><title>Recibo ${p.id}</title><style>body{font-family:Arial;padding:40px;color:#333;}.box{border:1px solid #ddd;padding:30px;max-width:600px;margin:0 auto;border-radius:8px;}.head{display:flex;justify-content:space-between;border-bottom:2px solid #8b5cf6;padding-bottom:20px;margin-bottom:20px;}.row{margin-bottom:10px;display:flex;justify-content:space-between;}.total{font-size:24px;color:#10b981;font-weight:bold;border-top:1px solid #ddd;padding-top:15px;margin-top:15px;text-align:right;}</style></head><body><div class="box"><div class="head"><div><h2 style="margin:0;color:#8b5cf6;">MicroSaas Soluciones</h2><small>Recibo de Pago</small></div><div style="text-align:right;"><strong>Fecha:</strong> ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}<br><strong>#</strong> ${p.id.toUpperCase()}</div></div><div class="row"><strong>De:</strong> <span>${c.name}</span></div><div class="row"><strong>Concepto:</strong> <span>Abono Mensual Licencia</span></div><div class="row"><strong>Período:</strong> <span style="font-weight:bold; color:#8b5cf6;">${formatPeriod(p.period)}</span></div><div class="row"><strong>Método:</strong> <span>${p.method}</span></div><div class="total">Total: ${money(p.amount)}</div></div><script>window.print();</sc`+`ript></body></html>`);
+    win.document.write(`<html><head><title>Recibo ${p.id}</title><style>body{font-family:Arial;padding:40px;color:#333;}.box{border:1px solid #ddd;padding:30px;max-width:600px;margin:0 auto;border-radius:8px;}.head{display:flex;justify-content:space-between;border-bottom:2px solid #0ea5e9;padding-bottom:20px;margin-bottom:20px;}.row{margin-bottom:10px;display:flex;justify-content:space-between;}.total{font-size:24px;color:#10b981;font-weight:bold;border-top:1px solid #ddd;padding-top:15px;margin-top:15px;text-align:right;}</style></head><body><div class="box"><div class="head"><div><h2 style="margin:0;color:#0ea5e9;">MicroSaas Soluciones</h2><small>Recibo de Pago</small></div><div style="text-align:right;"><strong>Fecha:</strong> ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}<br><strong>#</strong> ${p.id.toUpperCase()}</div></div><div class="row"><strong>De:</strong> <span>${escapeHtml(c.name)}</span></div><div class="row"><strong>Concepto:</strong> <span>Abono Mensual Licencia</span></div><div class="row"><strong>Período:</strong> <span style="font-weight:bold; color:#0ea5e9;">${formatPeriod(p.period)}</span></div><div class="row"><strong>Método:</strong> <span>${escapeHtml(p.method)}</span></div><div class="total">Total: ${money(p.amount)}</div></div><script>window.print();</sc`+`ript></body></html>`);
     win.document.close();
   }
 
   function imprimirPresupuesto(id) {
     const p = dbPresupuestos.find(x => x.id === id); if(!p) return;
     const win = window.open('', '_blank');
-    win.document.write(`<html><head><title>Presupuesto ${p.id}</title><style>body{font-family:Arial;padding:40px;color:#333;}.box{border:1px solid #ddd;padding:40px;max-width:700px;margin:0 auto;border-radius:8px;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{padding:12px;border-bottom:1px solid #ddd;text-align:left;}th{background:#f9fafb;color:#64748b;text-transform:uppercase;font-size:12px;}.total{font-size:20px;color:#8b5cf6;font-weight:bold;text-align:right;margin-top:20px;padding-top:20px;border-top:2px solid #ddd;}</style></head><body><div class="box"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #8b5cf6;padding-bottom:20px;margin-bottom:20px;"><div><h2 style="margin:0;color:#8b5cf6;">MicroSaas Soluciones</h2><small>Cotización de Servicios</small></div><div style="text-align:right;"><strong>Fecha:</strong> ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}<br><strong>Cotización:</strong> #${p.id}</div></div><div style="margin-bottom:20px;"><strong>Cliente / Empresa:</strong> ${p.clientName}<br><strong>Email:</strong> ${p.clientEmail}</div><table><thead><tr><th width="60">Cant</th><th>Descripción</th><th width="120">Precio Unit.</th><th width="120">Subtotal</th></tr></thead><tbody>${p.items.map(i => `<tr><td>${i.qty}</td><td>${i.desc}</td><td>${money(i.price)}</td><td>${money(i.qty*i.price)}</td></tr>`).join('')}</tbody></table><div class="total">TOTAL PRESUPUESTADO: ${money(p.total)}</div><p style="margin-top:40px;font-size:12px;color:#94a3b8;text-align:center;">Los valores expresados en esta cotización tienen una validez de 15 días hábiles.</p></div><script>window.print();</sc`+`ript></body></html>`);
+    win.document.write(`<html><head><title>Presupuesto ${p.id}</title><style>body{font-family:Arial;padding:40px;color:#333;}.box{border:1px solid #ddd;padding:40px;max-width:700px;margin:0 auto;border-radius:8px;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{padding:12px;border-bottom:1px solid #ddd;text-align:left;}th{background:#f9fafb;color:#64748b;text-transform:uppercase;font-size:12px;}.total{font-size:20px;color:#0ea5e9;font-weight:bold;text-align:right;margin-top:20px;padding-top:20px;border-top:2px solid #ddd;}</style></head><body><div class="box"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #0ea5e9;padding-bottom:20px;margin-bottom:20px;"><div><h2 style="margin:0;color:#0ea5e9;">MicroSaas Soluciones</h2><small>Cotización de Servicios</small></div><div style="text-align:right;"><strong>Fecha:</strong> ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}<br><strong>Cotización:</strong> #${p.id}</div></div><div style="margin-bottom:20px;"><strong>Cliente / Empresa:</strong> ${escapeHtml(p.clientName)}<br><strong>Email:</strong> ${escapeHtml(p.clientEmail)}</div><table><thead><tr><th width="60">Cant</th><th>Descripción</th><th width="120">Precio Unit.</th><th width="120">Subtotal</th></tr></thead><tbody>${p.items.map(i => `<tr><td>${i.qty}</td><td>${escapeHtml(i.desc)}</td><td>${money(i.price)}</td><td>${money(i.qty*i.price)}</td></tr>`).join('')}</tbody></table><div class="total">TOTAL PRESUPUESTADO: ${money(p.total)}</div><p style="margin-top:40px;font-size:12px;color:#94a3b8;text-align:center;">Los valores expresados en esta cotización tienen una validez de 15 días hábiles.</p></div><script>window.print();</sc`+`ript></body></html>`);
     win.document.close();
   }
 
-  // ── EXPORTACIÓN ──
+  // ── EXPORTACIÓN EXCEL ──
   function exportarAExcel(dataArray, nombreArchivo) {
-    if (!dataArray || !dataArray.length) return alert("Sin datos.");
+    if (!dataArray || !dataArray.length) return alert("No hay datos para exportar.");
     const headers = Object.keys(dataArray[0]);
     const csvContent = [headers.join(';'), ...dataArray.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
     const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `${nombreArchivo}_${today()}.csv`; link.click();
   }
-  function exportarClientesExcel() { exportarAExcel(dbClientes.map(c => ({ "Comercio": c.name, "Contacto": c.contact, "Teléfono": c.phone, "Email": c.email, "Vencimiento": c.dueDate, "Estado": calcEstado(c.dueDate, c.active).texto })), 'Clientes'); }
-  function exportarPagosExcel() { exportarAExcel(dbPagos.map(p => ({ "Fecha": p.date, "Cliente": (dbClientes.find(x=>x.id===p.clientId)||{}).name || 'N/A', "Periodo": formatPeriod(p.period), "Monto": p.amount })), 'Pagos'); }
+  function exportarClientesExcel() { exportarAExcel(dbClientes.map(c => ({ "Comercio": c.name, "Contacto": c.contact, "CUIL": c.cuil, "Teléfono": c.phone, "Email": c.email, "Abono": c.fee, "Vencimiento": c.dueDate, "Estado": calcEstado(c.dueDate, c.active).texto })), 'Clientes'); }
+  function exportarPagosExcel() { exportarAExcel(dbPagos.map(p => ({ "Fecha": p.date, "Cliente": (dbClientes.find(x=>x.id===p.clientId)||{}).name || 'N/A', "Periodo": formatPeriod(p.period), "Monto": p.amount, "Método": p.method })), 'Pagos'); }
 
-  function cerrarModal(id) { document.getElementById(id).close(); }
-
-  // INICIO
   loadDataFromCloud();
 </script>
 </body>
