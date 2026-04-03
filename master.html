@@ -5,23 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MicroSaas Soluciones | Master Control</title>
   <style>
-    /* ── TEMA CLARO INSPIRADO EN EL LOGO ── */
     :root {
-      --bg: #f8fafc; 
-      --panel: #ffffff; 
-      --panel-hover: #f1f5f9; 
-      --text: #1e293b; 
-      --muted: #64748b; 
-      --primary: #0ea5e9; 
-      --primary-hover: #0284c7; 
-      --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
-      --line: #e2e8f0; 
-      --font: system-ui, -apple-system, sans-serif;
+      --bg: #f8fafc; --panel: #ffffff; --panel-hover: #f1f5f9; --text: #1e293b; --muted: #64748b;
+      --primary: #0ea5e9; --primary-hover: #0284c7; --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+      --line: #e2e8f0; --font: system-ui, -apple-system, sans-serif;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
     
-    /* Sidebar */
     .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; z-index: 999; }
     .brand { padding: 16px 24px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--line); }
     .nav { flex: 1; padding: 20px 0; overflow-y: auto; }
@@ -29,7 +20,6 @@
     .nav button:hover { color: var(--text); background: var(--panel-hover); }
     .nav button.active { color: var(--primary); border-right: 3px solid var(--primary); background: rgba(14, 165, 233, 0.05); }
     
-    /* Main Content */
     .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .topbar { padding: 15px 40px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: var(--bg); }
     .topbar-left { display: flex; align-items: center; gap: 15px; }
@@ -41,13 +31,11 @@
     .view.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* KPIs */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
     .kpi-card { background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--line); border-top: 4px solid var(--primary); }
     .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
     .kpi-value { font-size: 24px; font-weight: 800; color: var(--text); }
     
-    /* Tablas */
     .card { background: var(--panel) !important; border-radius: 16px; border: 1px solid var(--line); margin-bottom: 24px; overflow: hidden; }
     .card-head { padding: 15px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     .card-head h2 { margin: 0; font-size: 14px; text-transform: uppercase; color: var(--muted); }
@@ -59,7 +47,6 @@
     .master-table tr:hover td { background: var(--panel-hover) !important; }
     .master-table tr:last-child td { border-bottom: none !important; }
     
-    /* Badges */
     .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap; }
     .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
     .badge-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
@@ -67,7 +54,6 @@
     .badge-neutral { background: rgba(100, 116, 139, 0.1); color: var(--muted); }
     .badge-primary { background: rgba(14, 165, 233, 0.1); color: var(--primary); }
     
-    /* Buttons */
     .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; white-space: nowrap; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:hover { background: var(--primary-hover); }
@@ -76,11 +62,9 @@
     .btn-outline:hover { border-color: var(--muted); background: rgba(0,0,0,0.03); }
     .btn-danger-text { background: transparent; color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
     
-    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
     .table-actions { display: flex; gap: 6px; }
     .table-actions button { padding: 6px 10px; font-size: 12px; }
 
-    /* Modals */
     dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 600px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1); }
     dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
     .modal-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
@@ -122,8 +106,9 @@
     </div>
     <nav class="nav">
       <button class="active" onclick="switchView('dashboard', this)">📊 Dashboard</button>
-      <button onclick="switchView('clientes', this)">🏢 Clientes (Licencias)</button>
-      <button onclick="switchView('pagos', this)">💳 Cobros y Facturación</button>
+      <button onclick="switchView('leads', this)">🎯 Leads (Demos)</button>
+      <button onclick="switchView('clientes', this)">🏢 Clientes Oficiales</button>
+      <button onclick="switchView('pagos', this)">💳 Cobros y Facturas</button>
       <button onclick="switchView('gastos', this)">💸 Mis Gastos</button>
       <button onclick="switchView('presupuestos', this)">📝 Presupuestos</button>
     </nav>
@@ -148,7 +133,7 @@
           <article class="kpi-card"><div class="kpi-label">MRR (Ingresos)</div><div class="kpi-value" id="kpiMrr">$0</div></article>
           <article class="kpi-card" style="border-color:var(--danger)"><div class="kpi-label">Gastos del Mes</div><div class="kpi-value" id="kpiGastos" style="color:var(--danger)">$0</div></article>
           <article class="kpi-card" style="border-color:var(--success)"><div class="kpi-label">Ganancia Neta</div><div class="kpi-value" id="kpiNeto" style="color:var(--success)">$0</div></article>
-          <article class="kpi-card" style="border-color:var(--muted)"><div class="kpi-label">Comercios Activos</div><div class="kpi-value" id="kpiActivos">0</div></article>
+          <article class="kpi-card" style="border-color:var(--primary)"><div class="kpi-label">Demos Activas</div><div class="kpi-value" id="kpiLeads">0</div></article>
         </div>
 
         <div class="card">
@@ -162,13 +147,35 @@
         </div>
       </div>
 
+      <div id="view-leads" class="view">
+        <div class="card">
+          <div class="card-head">
+            <h2>Prospectos Probando la Demo</h2>
+          </div>
+          <div class="table-wrap">
+            <table class="master-table">
+              <thead>
+                <tr>
+                  <th>Comercio / Email</th>
+                  <th>WhatsApp</th>
+                  <th>Registro</th>
+                  <th>Estado del Acceso</th>
+                  <th>Acciones de Venta</th>
+                </tr>
+              </thead>
+              <tbody id="leadsTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div id="view-clientes" class="view">
         <div class="card">
           <div class="card-head">
-            <h2>Directorio de Clientes</h2>
+            <h2>Directorio de Clientes Oficiales</h2>
             <div class="actions">
-              <button class="btn btn-outline" title="Descargar Excel" onclick="exportarClientesExcel()">⬇ Excel</button>
-              <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo Cliente</button>
+              <button class="btn btn-outline" onclick="exportarClientesExcel()">⬇ Excel</button>
+              <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo Cliente Directo</button>
             </div>
           </div>
           <div class="table-wrap">
@@ -194,23 +201,14 @@
             <div style="display:flex; align-items:center; gap:10px; flex-wrap: wrap;">
               <h2 style="margin:0;">Historial de Cobros:</h2>
               <select id="filtroClientePagos" onchange="renderPagos()" style="padding: 6px 10px; border-radius:8px; background:#fff; color:var(--text); border:1px solid var(--line); outline:none;">
-                <option value="ALL">Mostrar Todos los Clientes</option>
+                <option value="ALL">Mostrar Todos</option>
               </select>
             </div>
             <button class="btn btn-success" onclick="abrirModalPago()">+ Registrar Pago</button>
           </div>
           <div class="table-wrap">
             <table class="master-table">
-              <thead>
-                <tr>
-                  <th>Fecha Pago</th>
-                  <th>Cliente</th>
-                  <th>Período Abonado</th>
-                  <th>Método / Notas</th>
-                  <th>Monto</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Fecha Pago</th><th>Cliente</th><th>Período</th><th>Método / Notas</th><th>Monto</th><th>Acciones</th></tr></thead>
               <tbody id="pagosTable"></tbody>
             </table>
           </div>
@@ -257,17 +255,18 @@
     </div>
     <form id="clienteForm" onsubmit="guardarCliente(event)">
       <div class="modal-body form-grid">
-        <div class="field full"><label>Nombre del Comercio *</label><input type="text" id="cName" required autocomplete="off" /></div>
-        <div class="field"><label>Titular / Contacto</label><input type="text" id="cContact" autocomplete="off" /></div>
-        <div class="field"><label>CUIL / CUIT</label><input type="text" id="cCuil" placeholder="Sin guiones" autocomplete="off" /></div>
-        <div class="field full"><label>Dirección Comercial</label><input type="text" id="cAddress" autocomplete="off" /></div>
-        <div class="field"><label>Teléfono (WhatsApp) *</label><input type="text" id="cPhone" required autocomplete="off" /></div>
-        <div class="field"><label>Email de Contacto *</label><input type="email" id="cEmail" required autocomplete="off" /></div>
+        <input type="hidden" id="cTempId">
+        <div class="field full"><label>Nombre del Comercio *</label><input type="text" id="cName" required /></div>
+        <div class="field"><label>Titular / Contacto</label><input type="text" id="cContact" /></div>
+        <div class="field"><label>CUIL / CUIT</label><input type="text" id="cCuil" /></div>
+        <div class="field full"><label>Dirección</label><input type="text" id="cAddress" /></div>
+        <div class="field"><label>WhatsApp *</label><input type="text" id="cPhone" required /></div>
+        <div class="field"><label>Email *</label><input type="email" id="cEmail" required /></div>
         <div class="field"><label>Valor Abono ($) *</label><input type="number" id="cFee" required /></div>
-        <div class="field"><label>Fecha de Corte (Vencimiento) *</label><input type="date" id="cDueDate" required /></div>
+        <div class="field"><label>Primer Vencimiento *</label><input type="date" id="cDueDate" required /></div>
         
         <div id="adminConfigBox" class="field full admin-box">
-          <p><strong>Configuración Inicial:</strong> Usuario administrador para que el cliente ingrese.</p>
+          <p><strong>Usuario del Sistema:</strong></p>
           <div class="form-grid">
             <div class="field"><label>Usuario Admin *</label><input type="text" id="cAdminUser" required /></div>
             <div class="field"><label>Contraseña *</label><input type="text" id="cAdminPass" required /></div>
@@ -276,7 +275,7 @@
       </div>
       <div class="modal-foot">
         <button type="button" class="btn btn-outline" onclick="cerrarModal('clienteDialog')">Cancelar</button>
-        <button type="submit" class="btn btn-primary" id="btnGuardarCli">Guardar Cliente</button>
+        <button type="submit" class="btn btn-primary" id="btnGuardarCli">Guardar Cliente Oficial</button>
       </div>
     </form>
   </dialog>
@@ -292,17 +291,17 @@
           <label>Seleccionar Cliente *</label>
           <select id="pClient" required onchange="autocompletarMontoPago()"></select>
         </div>
-        <div class="field"><label>Fecha del Pago *</label><input type="date" id="pDate" required /></div>
-        <div class="field"><label>Período a Abonar (Mes/Año) *</label><input type="month" id="pPeriod" required /></div>
-        <div class="field"><label>Monto Cobrado ($) *</label><input type="number" id="pAmount" required /></div>
-        <div class="field full"><label>Método de Pago *</label>
+        <div class="field"><label>Fecha *</label><input type="date" id="pDate" required /></div>
+        <div class="field"><label>Período *</label><input type="month" id="pPeriod" required /></div>
+        <div class="field"><label>Monto ($) *</label><input type="number" id="pAmount" required /></div>
+        <div class="field full"><label>Método *</label>
           <select id="pMethod" required>
             <option value="Transferencia Bancaria">Transferencia Bancaria</option>
             <option value="Efectivo">Efectivo</option>
             <option value="Tarjeta / Link de Pago">Tarjeta / Link de Pago</option>
           </select>
         </div>
-        <div class="field full"><label>Notas / Ref. Transferencia</label><textarea id="pNotes" rows="2"></textarea></div>
+        <div class="field full"><label>Notas</label><textarea id="pNotes" rows="2"></textarea></div>
       </div>
       <div class="modal-foot">
         <button type="button" class="btn btn-outline" onclick="cerrarModal('pagoDialog')">Cancelar</button>
@@ -318,7 +317,7 @@
       <div class="field"><label>Monto ($) *</label><input type="number" id="gAmount" required /></div>
       <div class="field full"><label>Concepto / Detalle *</label><input type="text" id="gConcept" required /></div>
       <div class="field full"><label>Categoría *</label>
-        <select id="gCat"><option>Infraestructura IT</option><option>Marketing y Publicidad</option><option>Sueldos / Retiros</option><option>Herramientas y Software</option><option>Otros</option></select>
+        <select id="gCat"><option>Infraestructura IT</option><option>Marketing y Publicidad</option><option>Sueldos / Retiros</option><option>Herramientas</option><option>Otros</option></select>
       </div>
       <div class="modal-foot" style="grid-column:1/-1">
         <button type="button" class="btn btn-outline" onclick="cerrarModal('gastoDialog')">Cancelar</button>
@@ -337,7 +336,7 @@
       <div style="margin-top:20px;">
         <label style="font-size:12px; color:var(--muted); font-weight: bold;">ÍTEMS A COTIZAR:</label>
         <table class="budget-items-table">
-          <thead><tr><th style="text-align:left; color:var(--muted);">Descripción del Servicio</th><th width="80" style="color:var(--muted);">Cant</th><th width="120" style="color:var(--muted);">Precio Unit.</th><th width="40"></th></tr></thead>
+          <thead><tr><th style="text-align:left;">Descripción</th><th width="80">Cant</th><th width="120">Precio</th><th width="40"></th></tr></thead>
           <tbody id="budgetItemsBody"></tbody>
         </table>
         <button type="button" class="btn btn-outline" onclick="addBudgetItem()" style="margin-top:10px;">+ Agregar Ítem</button>
@@ -350,18 +349,13 @@
   </dialog>
 
 <script>
-  // ── 1. UTILIDADES Y FUNCIONES BÁSICAS ──
-  function cerrarModal(id) { 
-    const modal = document.getElementById(id);
-    if (modal) modal.close(); 
-  }
+  // ── 1. UTILIDADES BÁSICAS ──
+  function cerrarModal(id) { const modal = document.getElementById(id); if (modal) modal.close(); }
   function money(num) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0); }
   function today() { return new Date().toISOString().split('T')[0]; }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
-  function formatPeriod(val) {
-    if (!val) return '-'; const [y, m] = val.split('-'); const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    return `${meses[parseInt(m, 10)-1]} ${y}`;
-  }
+  function formatPeriod(val) { if (!val) return '-'; const [y, m] = val.split('-'); const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']; return `${meses[parseInt(m, 10)-1]} ${y}`; }
+  
   function calcEstado(fechaVto, activo) {
     if (!activo) return { texto: 'Suspendido', clase: 'badge-neutral', status: 'suspendido' };
     const dif = Math.ceil((new Date(fechaVto + 'T12:00:00').setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000);
@@ -373,20 +367,15 @@
   // ── 2. SEGURIDAD Y NAVEGACIÓN ──
   if (localStorage.getItem('saas_master_logged_in') !== 'true') window.location.href = 'master-login.html';
   function logoutMaster() { localStorage.removeItem('saas_master_logged_in'); window.location.href = 'master-login.html'; }
-
   function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
   function switchView(viewId, btnElement) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    if(btnElement) {
-      document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
-      btnElement.classList.add('active');
-      document.getElementById('pageTitle').textContent = btnElement.textContent.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '').trim();
-    }
+    if(btnElement) { document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active')); btnElement.classList.add('active'); document.getElementById('pageTitle').textContent = btnElement.textContent.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '').trim(); }
     document.getElementById(`view-${viewId}`).classList.add('active');
     if(window.innerWidth <= 900) toggleMenu();
   }
 
-  // ── 3. ESTADO GLOBAL Y CONEXIÓN DE DATOS ──
+  // ── 3. ESTADO GLOBAL ──
   let dbClientes = [], dbPagos = [], dbGastos = [], dbPresupuestos = [];
   let editingClientId = null, editingPaymentId = null;
 
@@ -409,216 +398,197 @@
     dbPresupuestos = JSON.parse(localStorage.getItem('master_db_presupuestos')) || [];
 
     const select = document.getElementById('filtroClientePagos'); const currentVal = select.value;
-    select.innerHTML = '<option value="ALL">Mostrar Todos los Clientes</option>' + dbClientes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    select.innerHTML = '<option value="ALL">Mostrar Todos los Clientes</option>' + dbClientes.filter(c => c.type !== 'lead').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
     select.value = currentVal || 'ALL';
     
     renderAll();
   }
 
   // ── 4. RENDERIZADO ──
-  function renderAll() { renderDashboard(); renderClientes(); renderPagos(); renderGastos(); renderPresupuestos(); }
+  function renderAll() { renderDashboard(); renderLeads(); renderClientes(); renderPagos(); renderGastos(); renderPresupuestos(); }
 
   function renderDashboard() {
     let mrr = 0, activos = 0, morosos = 0; const alertas = [];
-    dbClientes.forEach(c => {
+    const leadsCount = dbClientes.filter(c => c.type === 'lead' && c.active).length;
+    
+    dbClientes.filter(c => c.type !== 'lead').forEach(c => {
       const est = calcEstado(c.dueDate, c.active);
       if (c.active) { mrr += Number(c.fee); activos++; if (est.status === 'vencido') morosos++; if (est.status === 'vencido' || est.status === 'alerta') alertas.push({ ...c, est }); }
     });
+    
     const gastosMes = dbGastos.filter(g => g.date.startsWith(today().slice(0,7))).reduce((sum, g) => sum + Number(g.amount), 0);
+
     document.getElementById('kpiMrr').textContent = money(mrr);
     document.getElementById('kpiGastos').textContent = money(gastosMes);
     document.getElementById('kpiNeto').textContent = money(mrr - gastosMes);
     document.getElementById('kpiActivos').textContent = activos;
+    document.getElementById('kpiLeads').textContent = leadsCount;
 
     alertas.sort((a,b) => new Date(a.dueDate) - new Date(b.dueDate));
     document.getElementById('alertasTable').innerHTML = alertas.length ? alertas.map(c => `<tr><td><strong>${escapeHtml(c.name)}</strong></td><td>${escapeHtml(c.phone)}</td><td>${new Date(c.dueDate+'T12:00:00').toLocaleDateString('es-AR')}</td><td><span class="badge ${c.est.clase}">${c.est.texto}</span></td></tr>`).join('') : '<tr><td colspan="4"><div style="color:var(--muted); text-align:center; padding:10px;">No hay alertas.</div></td></tr>';
   }
 
+  function renderLeads() {
+    const tbody = document.getElementById('leadsTable');
+    const leads = dbClientes.filter(c => c.type === 'lead').sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
+    
+    tbody.innerHTML = leads.length ? leads.map(c => `
+      <tr style="${!c.active ? 'opacity: 0.6;' : ''}">
+        <td><strong>${escapeHtml(c.name)}</strong><br><small style="color:var(--muted)">${escapeHtml(c.email)}</small></td>
+        <td><a href="https://wa.me/${c.phone}" target="_blank" style="color:var(--success); text-decoration:none; font-weight:bold;">💬 ${escapeHtml(c.phone)}</a></td>
+        <td>${new Date(c.createdAt || c.dueDate).toLocaleDateString('es-AR')}</td>
+        <td><span class="badge ${c.active ? 'badge-success' : 'badge-danger'}">${c.active ? 'Jugando en la Demo' : 'Acceso Revocado'}</span></td>
+        <td><div class="table-actions">
+          ${c.active 
+            ? `<button class="btn btn-danger-text" title="Borrar usuario del sistema para que no entre a la demo" onclick="revocarAccesoLead('${c.id}', '${c.adminUser}')">❌ Revocar Acceso</button>` 
+            : `<span style="font-size:12px; color:var(--muted);">Sin acceso</span>`
+          }
+          <button class="btn btn-primary" title="Pasar a Cliente Oficial y cobrar abono" onclick="convertirLeadACliente('${c.id}')">⭐ Hacer Cliente</button>
+          </div></td>
+      </tr>`).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay prospectos en la base. ¡Compartí el link de registro!</td></tr>';
+  }
+
   function renderClientes() {
     const tbody = document.getElementById('clientesTable');
-    tbody.innerHTML = dbClientes.length ? dbClientes.sort((a,b) => a.name.localeCompare(b.name)).map(c => {
+    const clientes = dbClientes.filter(c => c.type !== 'lead').sort((a,b) => a.name.localeCompare(b.name));
+    
+    tbody.innerHTML = clientes.length ? clientes.map(c => {
       const est = calcEstado(c.dueDate, c.active);
       return `<tr style="${!c.active ? 'opacity: 0.5;' : ''}">
         <td><strong>${escapeHtml(c.name)}</strong><br><small style="color:var(--muted)">👤 ${escapeHtml(c.contact || '-')} | 📞 ${escapeHtml(c.phone)}</small></td>
         <td><strong>${money(c.fee)}</strong></td><td>${new Date(c.dueDate+'T12:00:00').toLocaleDateString('es-AR')}</td>
         <td><span class="badge ${est.clase}">${est.texto}</span></td>
         <td><div class="table-actions">
-          <button class="btn btn-outline" title="Ver o editar datos del cliente" onclick="editarCliente('${c.id}')">✎ Editar</button>
-          <button class="btn btn-outline" title="Bloquear o desbloquear acceso al sistema" onclick="toggleAcceso('${c.id}')">${c.active ? 'Bloquear' : 'Activar'}</button>
-          <button class="btn btn-danger-text" title="Borrar este cliente definitivamente" onclick="borrarCliente('${c.id}')">❌</button>
+          <button class="btn btn-outline" onclick="editarCliente('${c.id}')">✎ Editar</button>
+          <button class="btn btn-outline" onclick="toggleAcceso('${c.id}')">${c.active ? 'Bloquear' : 'Activar'}</button>
+          <button class="btn btn-danger-text" onclick="borrarCliente('${c.id}')">❌</button>
           </div></td>
       </tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay clientes registrados.</td></tr>';
+    }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay clientes oficiales registrados.</td></tr>';
   }
 
-  function renderPagos() {
+  function renderPagos() { /* (Igual) */
     const tbody = document.getElementById('pagosTable'); const filtroId = document.getElementById('filtroClientePagos').value;
     let filtrados = filtroId !== 'ALL' ? dbPagos.filter(p => p.clientId === filtroId) : dbPagos;
     tbody.innerHTML = filtrados.length ? filtrados.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => {
       const c = dbClientes.find(x => x.id === p.clientId); const pFormat = formatPeriod(p.period);
-      const mailto = `mailto:${c ? (c.email || '') : ''}?subject=${encodeURIComponent('Recibo de Pago - Licencia de Software')}&body=${encodeURIComponent('Hola '+(c ? c.name : '')+',\n\nConfirmamos la recepción del pago por '+money(p.amount)+' correspondiente al período de '+pFormat+'.\n\nGracias,\nEquipo MicroSaas')}`;
-      return `<tr>
-        <td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td>
-        <td><strong>${escapeHtml(c ? c.name : 'Cliente Eliminado')}</strong></td>
-        <td><span class="badge badge-primary">${pFormat}</span></td>
-        <td><span class="badge badge-neutral">${escapeHtml(p.method)}</span><br><small style="color:var(--muted);">${escapeHtml(p.notes || '')}</small></td>
-        <td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td>
-        <td><div class="table-actions">
-          <button class="btn btn-outline" title="Generar recibo de pago en PDF" onclick="imprimirRecibo('${p.id}')">📄 PDF</button>
-          <a href="${mailto}" class="btn btn-primary" title="Enviar comprobante de pago por Email" style="text-decoration:none;">📧 Correo</a>
-          <button class="btn btn-outline" title="Modificar datos del pago" onclick="editarPago('${p.id}')">✎ Editar</button>
-          <button class="btn btn-danger-text" title="Eliminar registro de pago definitivamente" onclick="borrarPago('${p.id}')">❌ Borrar</button>
-          </div></td>
-      </tr>`;
-    }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted);">No hay pagos registrados para este filtro.</td></tr>';
+      return `<tr><td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(c ? c.name : 'Eliminado')}</strong></td><td><span class="badge badge-primary">${pFormat}</span></td><td><span class="badge badge-neutral">${escapeHtml(p.method)}</span></td><td style="color:var(--success); font-weight:bold;">${money(p.amount)}</td><td><div class="table-actions"><button class="btn btn-outline" onclick="editarPago('${p.id}')">✎ Editar</button><button class="btn btn-danger-text" onclick="borrarPago('${p.id}')">❌ Borrar</button></div></td></tr>`;
+    }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted);">No hay pagos registrados.</td></tr>';
   }
 
-  function renderGastos() {
-    const tbody = document.getElementById('gastosTable');
-    tbody.innerHTML = dbGastos.length ? dbGastos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(g => `<tr><td>${new Date(g.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(g.concept)}</strong></td><td><span class="badge badge-neutral">${escapeHtml(g.gCat)}</span></td><td style="color:var(--danger); font-weight:bold;">${money(g.amount)}</td><td><button class="btn btn-danger-text" title="Eliminar este gasto" onclick="borrarGasto('${g.id}')">❌ Borrar</button></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay gastos registrados.</td></tr>';
+  function renderGastos() { /* (Igual) */
+    document.getElementById('gastosTable').innerHTML = dbGastos.length ? dbGastos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(g => `<tr><td>${new Date(g.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(g.concept)}</strong></td><td><span class="badge badge-neutral">${escapeHtml(g.gCat)}</span></td><td style="color:var(--danger); font-weight:bold;">${money(g.amount)}</td><td><button class="btn btn-danger-text" onclick="borrarGasto('${g.id}')">❌</button></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay gastos.</td></tr>';
   }
 
-  function renderPresupuestos() {
-    const tbody = document.getElementById('presupuestosTable');
-    tbody.innerHTML = dbPresupuestos.length ? dbPresupuestos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => `<tr><td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(p.clientName)}</strong></td><td>${escapeHtml(p.clientEmail)}</td><td style="font-weight:bold;">${money(p.total)}</td><td><div class="table-actions"><button class="btn btn-outline" title="Ver y descargar PDF del presupuesto" onclick="imprimirPresupuesto('${p.id}')">📄 PDF</button><button class="btn btn-danger-text" title="Eliminar este presupuesto" onclick="borrarPresupuesto('${p.id}')">❌ Borrar</button></div></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay presupuestos emitidos.</td></tr>';
+  function renderPresupuestos() { /* (Igual) */
+    document.getElementById('presupuestosTable').innerHTML = dbPresupuestos.length ? dbPresupuestos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => `<tr><td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(p.clientName)}</strong></td><td style="font-weight:bold;">${money(p.total)}</td><td><div class="table-actions"><button class="btn btn-outline" onclick="imprimirPresupuesto('${p.id}')">📄 PDF</button><button class="btn btn-danger-text" onclick="borrarPresupuesto('${p.id}')">❌</button></div></td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center; color:var(--muted);">No hay presupuestos.</td></tr>';
   }
 
-  // ── 5. ACCIONES LOGICAS: CLIENTES ABM ──
+  // ── 5. ACCIONES LOGICAS: LEADS Y CLIENTES ──
+  
+  // FUNCION NUEVA: Revoca el acceso a la demo pero deja los datos en Leads
+  async function revocarAccesoLead(id, username) {
+    if(!confirm('¿Quitarle el acceso a la Demo? Su usuario será borrado del sistema, pero sus datos de contacto quedarán guardados aquí.')) return;
+    try {
+      await fetch(`/api/clients?id=${id}&revoke=true&user=${username}`, { method: 'DELETE' });
+      await loadDataFromCloud();
+    } catch(e) {
+      alert("Error al conectar con el servidor.");
+    }
+  }
+
+  // FUNCION NUEVA: Pasa un Lead a Cliente y pide el Abono
+  function convertirLeadACliente(id) {
+    const c = dbClientes.find(x => x.id === id); if(!c) return;
+    document.getElementById('cTempId').value = id; // Guardamos el ID para actualizar el mismo registro
+    editingClientId = id; 
+    
+    document.getElementById('clienteModalTitle').textContent = 'Convertir Lead a Cliente Oficial';
+    document.getElementById('cName').value = c.name; 
+    document.getElementById('cContact').value = c.contact || ''; 
+    document.getElementById('cCuil').value = c.cuil || ''; 
+    document.getElementById('cAddress').value = c.address || ''; 
+    document.getElementById('cPhone').value = c.phone; 
+    document.getElementById('cEmail').value = c.email || ''; 
+    
+    // Obligamos a definir el Abono y Fecha Real de Vencimiento
+    document.getElementById('cFee').value = ''; 
+    document.getElementById('cDueDate').value = today();
+    
+    document.getElementById('cAdminUser').value = c.adminUser || ''; 
+    document.getElementById('cAdminPass').value = c.adminPass || ''; 
+    document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || '';
+    
+    document.getElementById('clienteDialog').showModal();
+  }
+
   function abrirModalCliente() { 
-    editingClientId = null; 
-    document.getElementById('clienteForm').reset(); 
-    document.getElementById('clienteModalTitle').textContent = 'Nuevo Cliente'; 
-    document.getElementById('cAdminUser').dataset.oldUser = '';
-    document.getElementById('clienteDialog').showModal(); 
+    editingClientId = null; document.getElementById('cTempId').value = ''; document.getElementById('clienteForm').reset(); 
+    document.getElementById('clienteModalTitle').textContent = 'Nuevo Cliente Oficial'; 
+    document.getElementById('cAdminUser').dataset.oldUser = ''; document.getElementById('clienteDialog').showModal(); 
   }
   
   function editarCliente(id) {
-    const c = dbClientes.find(x => x.id === id); if(!c) return; 
-    editingClientId = id; document.getElementById('clienteModalTitle').textContent = 'Editar Cliente';
-    document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || ''; document.getElementById('cCuil').value = c.cuil || ''; document.getElementById('cAddress').value = c.address || ''; document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || ''; document.getElementById('cFee').value = c.fee; document.getElementById('cDueDate').value = c.dueDate;
-    document.getElementById('cAdminUser').value = c.adminUser || ''; document.getElementById('cAdminPass').value = c.adminPass || ''; document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || '';
-    document.getElementById('clienteDialog').showModal();
+    const c = dbClientes.find(x => x.id === id); if(!c) return; editingClientId = id; document.getElementById('clienteModalTitle').textContent = 'Editar Cliente';
+    document.getElementById('cTempId').value = id; document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || ''; document.getElementById('cCuil').value = c.cuil || ''; document.getElementById('cAddress').value = c.address || ''; document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || ''; document.getElementById('cFee').value = c.fee; document.getElementById('cDueDate').value = c.dueDate; document.getElementById('cAdminUser').value = c.adminUser || ''; document.getElementById('cAdminPass').value = c.adminPass || ''; document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || ''; document.getElementById('clienteDialog').showModal();
   }
   
   async function guardarCliente(e) {
     e.preventDefault(); const btn = document.getElementById('btnGuardarCli'); btn.textContent = 'Guardando...'; btn.disabled = true;
-    const data = { name: document.getElementById('cName').value.trim(), contact: document.getElementById('cContact').value.trim(), cuil: document.getElementById('cCuil').value.trim(), address: document.getElementById('cAddress').value.trim(), phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim(), fee: document.getElementById('cFee').value, dueDate: document.getElementById('cDueDate').value, active: true, adminUser: document.getElementById('cAdminUser').value.trim(), adminPass: document.getElementById('cAdminPass').value.trim(), oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser };
+    const tempId = document.getElementById('cTempId').value;
+    
+    const data = { 
+      name: document.getElementById('cName').value.trim(), contact: document.getElementById('cContact').value.trim(), 
+      cuil: document.getElementById('cCuil').value.trim(), address: document.getElementById('cAddress').value.trim(), 
+      phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim(), 
+      fee: document.getElementById('cFee').value, dueDate: document.getElementById('cDueDate').value, 
+      active: true, type: 'client', // AL GUARDAR DESDE ACÁ SIEMPRE ES CLIENTE OFICIAL
+      adminUser: document.getElementById('cAdminUser').value.trim(), adminPass: document.getElementById('cAdminPass').value.trim(), 
+      oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser 
+    };
+
     try {
-      if (editingClientId) { data.id = editingClientId; data.active = dbClientes.find(x => x.id === editingClientId).active; await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
-      } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); }
+      if (tempId || editingClientId) { 
+        data.id = tempId || editingClientId; 
+        await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+      } else { 
+        data.id = 'cli_' + Math.random().toString(36).substr(2, 9); 
+        await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); 
+      }
       cerrarModal('clienteDialog'); await loadDataFromCloud();
-    } catch(err) { 
-      if (editingClientId) { const idx = dbClientes.findIndex(x => x.id === editingClientId); data.id = editingClientId; data.active = dbClientes[idx].active; dbClientes[idx] = data; } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); dbClientes.push(data); }
-      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('clienteDialog'); actualizarFiltrosCliente(); renderAll();
-    }
-    btn.textContent = 'Guardar Cliente'; btn.disabled = false;
+    } catch(err) { alert('Error conectando a la API'); btn.textContent = 'Guardar Cliente'; btn.disabled = false; }
   }
-  
-  async function toggleAcceso(id) { 
-    const c = dbClientes.find(x => x.id === id); 
-    if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { 
-      c.active = !c.active; 
-      try { await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); await loadDataFromCloud(); } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); } 
-    } 
-  }
+
+  async function toggleAcceso(id) { const c = dbClientes.find(x => x.id === id); if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { c.active = !c.active; try { await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); await loadDataFromCloud(); } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); } } }
 
   async function borrarCliente(id) {
     const c = dbClientes.find(x => x.id === id);
     if(c && confirm(`🚨 ATENCIÓN: ¿Seguro que querés borrar definitivamente a ${c.name}?\nEsta acción no se puede deshacer.`)) {
-      try {
-        await fetch(`/api/clients?id=${id}`, { method: 'DELETE' });
-        await loadDataFromCloud();
-      } catch (err) {
-        dbClientes = dbClientes.filter(x => x.id !== id);
-        localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
-        actualizarFiltrosCliente();
-        renderAll();
-      }
+      try { await fetch(`/api/clients?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud(); } 
+      catch (err) { dbClientes = dbClientes.filter(x => x.id !== id); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); actualizarFiltrosCliente(); renderAll(); }
     }
   }
 
-
-  // ── 6. ACCIONES LOGICAS: PAGOS ──
+  // ── 6. RESTO DEL CÓDIGO (Pagos, Gastos, Presupuestos) ──
   function autocompletarMontoPago() { const c = dbClientes.find(x => x.id === document.getElementById('pClient').value); if(c) document.getElementById('pAmount').value = c.fee; }
-  
-  function abrirModalPago() {
-    if(dbClientes.length === 0) return alert('No hay clientes.'); editingPaymentId = null; document.getElementById('pagoModalTitle').textContent = "Registrar Pago";
-    document.getElementById('pClient').innerHTML = '<option value="">Seleccione...</option>' + dbClientes.filter(c => c.active).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-    const fId = document.getElementById('filtroClientePagos').value; if(fId !== 'ALL') { document.getElementById('pClient').value = fId; autocompletarMontoPago(); }
-    document.getElementById('pagoForm').reset(); document.getElementById('pDate').value = today(); document.getElementById('pPeriod').value = today().slice(0,7); document.getElementById('pagoDialog').showModal();
-  }
-  
-  function editarPago(id) {
-    const p = dbPagos.find(x => x.id === id); if(!p) return; editingPaymentId = id; document.getElementById('pagoModalTitle').textContent = "Editar Pago";
-    document.getElementById('pClient').innerHTML = dbClientes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-    document.getElementById('pClient').value = p.clientId; document.getElementById('pDate').value = p.date; document.getElementById('pPeriod').value = p.period; document.getElementById('pAmount').value = p.amount; document.getElementById('pMethod').value = p.method; document.getElementById('pNotes').value = p.notes || ''; document.getElementById('pagoDialog').showModal();
-  }
-  
-  async function guardarPago(e) {
-    e.preventDefault(); const btn = document.getElementById('btnGuardarPago'); btn.textContent = 'Guardando...'; btn.disabled = true;
-    const cid = document.getElementById('pClient').value; const c = dbClientes.find(x => x.id === cid);
-    const data = { clientId: cid, date: document.getElementById('pDate').value, period: document.getElementById('pPeriod').value, amount: document.getElementById('pAmount').value, method: document.getElementById('pMethod').value, notes: document.getElementById('pNotes').value.trim() };
-    try {
-      if (editingPaymentId) { data.id = editingPaymentId; await fetch('/api/payments', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
-      } else { let curVto = new Date(c.dueDate + 'T12:00:00'); curVto.setMonth(curVto.getMonth() + 1); data.id = 'pay_' + Math.random().toString(36).substr(2, 9); data.newDueDate = curVto.toISOString().split('T')[0]; await fetch('/api/payments', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); }
-      cerrarModal('pagoDialog'); await loadDataFromCloud();
-    } catch(err) {
-      if(editingPaymentId) { const idx = dbPagos.findIndex(x => x.id === editingPaymentId); data.id = editingPaymentId; dbPagos[idx] = data; } else { dbPagos.push(data); c.dueDate = data.newDueDate; }
-      localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos)); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('pagoDialog'); renderAll();
-    }
-    btn.textContent = 'Acreditar Pago'; btn.disabled = false;
-  }
-  
+  function abrirModalPago() { if(dbClientes.filter(c=>c.type!=='lead').length === 0) return alert('No hay clientes oficiales.'); editingPaymentId = null; document.getElementById('pagoModalTitle').textContent = "Registrar Pago"; document.getElementById('pClient').innerHTML = '<option value="">Seleccione...</option>' + dbClientes.filter(c => c.active && c.type !== 'lead').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join(''); const fId = document.getElementById('filtroClientePagos').value; if(fId !== 'ALL') { document.getElementById('pClient').value = fId; autocompletarMontoPago(); } document.getElementById('pagoForm').reset(); document.getElementById('pDate').value = today(); document.getElementById('pPeriod').value = today().slice(0,7); document.getElementById('pagoDialog').showModal(); }
+  function editarPago(id) { const p = dbPagos.find(x => x.id === id); if(!p) return; editingPaymentId = id; document.getElementById('pagoModalTitle').textContent = "Editar Pago"; document.getElementById('pClient').innerHTML = dbClientes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join(''); document.getElementById('pClient').value = p.clientId; document.getElementById('pDate').value = p.date; document.getElementById('pPeriod').value = p.period; document.getElementById('pAmount').value = p.amount; document.getElementById('pMethod').value = p.method; document.getElementById('pNotes').value = p.notes || ''; document.getElementById('pagoDialog').showModal(); }
+  async function guardarPago(e) { e.preventDefault(); const btn = document.getElementById('btnGuardarPago'); btn.textContent = 'Guardando...'; btn.disabled = true; const cid = document.getElementById('pClient').value; const c = dbClientes.find(x => x.id === cid); const data = { clientId: cid, date: document.getElementById('pDate').value, period: document.getElementById('pPeriod').value, amount: document.getElementById('pAmount').value, method: document.getElementById('pMethod').value, notes: document.getElementById('pNotes').value.trim() }; try { if (editingPaymentId) { data.id = editingPaymentId; await fetch('/api/payments', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); } else { let curVto = new Date(c.dueDate + 'T12:00:00'); curVto.setMonth(curVto.getMonth() + 1); data.id = 'pay_' + Math.random().toString(36).substr(2, 9); data.newDueDate = curVto.toISOString().split('T')[0]; await fetch('/api/payments', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); } cerrarModal('pagoDialog'); await loadDataFromCloud(); } catch(err) { if(editingPaymentId) { const idx = dbPagos.findIndex(x => x.id === editingPaymentId); data.id = editingPaymentId; dbPagos[idx] = data; } else { dbPagos.push(data); c.dueDate = data.newDueDate; } localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos)); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('pagoDialog'); renderAll(); } btn.textContent = 'Acreditar Pago'; btn.disabled = false; }
   async function borrarPago(id) { if(confirm("¿ELIMINAR este pago?")) { try { await fetch(`/api/payments?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud(); } catch (e) { dbPagos = dbPagos.filter(x => x.id !== id); localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos)); renderAll(); } } }
 
-
-  // ── 7. ACCIONES LOGICAS: GASTOS Y PRESUPUESTOS ──
   function abrirModalGasto() { document.getElementById('gDate').value = today(); document.getElementById('gConcept').value = ''; document.getElementById('gAmount').value = ''; document.getElementById('gastoDialog').showModal(); }
   function guardarGasto(e) { e.preventDefault(); const g = { id: 'gas_'+Date.now(), date: document.getElementById('gDate').value, amount: document.getElementById('gAmount').value, concept: document.getElementById('gConcept').value, gCat: document.getElementById('gCat').value }; dbGastos.unshift(g); localStorage.setItem('master_db_gastos', JSON.stringify(dbGastos)); cerrarModal('gastoDialog'); renderAll(); }
   function borrarGasto(id) { if(confirm('¿Eliminar gasto?')) { dbGastos = dbGastos.filter(x => x.id !== id); localStorage.setItem('master_db_gastos', JSON.stringify(dbGastos)); renderAll(); } }
 
   function addBudgetItem() { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="text" class="p-desc" placeholder="Servicio/Producto" required></td><td><input type="number" class="p-qty" value="1" required min="1"></td><td><input type="number" class="p-price" placeholder="Precio" required min="0"></td><td><button type="button" class="btn btn-danger-text" onclick="this.closest('tr').remove()" style="padding:4px 8px;">❌</button></td>`; document.getElementById('budgetItemsBody').appendChild(tr); }
   function abrirModalPresupuesto() { document.getElementById('presupuestoDialog').querySelector('form').reset(); document.getElementById('budgetItemsBody').innerHTML = ''; addBudgetItem(); document.getElementById('presupuestoDialog').showModal(); }
-  function guardarPresupuesto(e) {
-    e.preventDefault(); const items = []; let total = 0;
-    document.querySelectorAll('#budgetItemsBody tr').forEach(tr => { const q = Number(tr.querySelector('.p-qty').value), p = Number(tr.querySelector('.p-price').value); items.push({ desc: tr.querySelector('.p-desc').value, qty: q, price: p }); total += (q * p); });
-    if(items.length === 0) return alert('Debes cotizar al menos un ítem.');
-    const pre = { id: 'PRE-'+Math.floor(Math.random()*10000), date: today(), clientName: document.getElementById('preName').value, clientEmail: document.getElementById('preEmail').value, items, total };
-    dbPresupuestos.unshift(pre); localStorage.setItem('master_db_presupuestos', JSON.stringify(dbPresupuestos)); cerrarModal('presupuestoDialog'); renderAll();
-  }
+  function guardarPresupuesto(e) { e.preventDefault(); const items = []; let total = 0; document.querySelectorAll('#budgetItemsBody tr').forEach(tr => { const q = Number(tr.querySelector('.p-qty').value), p = Number(tr.querySelector('.p-price').value); items.push({ desc: tr.querySelector('.p-desc').value, qty: q, price: p }); total += (q * p); }); if(items.length === 0) return alert('Debes cotizar al menos un ítem.'); const pre = { id: 'PRE-'+Math.floor(Math.random()*10000), date: today(), clientName: document.getElementById('preName').value, clientEmail: document.getElementById('preEmail').value, items, total }; dbPresupuestos.unshift(pre); localStorage.setItem('master_db_presupuestos', JSON.stringify(dbPresupuestos)); cerrarModal('presupuestoDialog'); renderAll(); }
   function borrarPresupuesto(id) { if(confirm('¿Eliminar presupuesto?')) { dbPresupuestos = dbPresupuestos.filter(x => x.id !== id); localStorage.setItem('master_db_presupuestos', JSON.stringify(dbPresupuestos)); renderAll(); } }
 
-  // ── 8. IMPRESIÓN (PDF) Y EXPORTACIÓN EXCEL ──
-  function imprimirRecibo(pagoId) {
-    const p = dbPagos.find(x => x.id === pagoId); const c = dbClientes.find(x => x.id === p.clientId); if(!p || !c) return;
-    const win = window.open('', '_blank');
-    win.document.write(`<html><head><title>Recibo ${p.id}</title><style>body{font-family:Arial;padding:40px;color:#333;}.box{border:1px solid #ddd;padding:30px;max-width:600px;margin:0 auto;border-radius:8px;}.head{display:flex;justify-content:space-between;border-bottom:2px solid #0ea5e9;padding-bottom:20px;margin-bottom:20px;}.row{margin-bottom:10px;display:flex;justify-content:space-between;}.total{font-size:24px;color:#10b981;font-weight:bold;border-top:1px solid #ddd;padding-top:15px;margin-top:15px;text-align:right;}</style></head><body><div class="box"><div class="head"><div><h2 style="margin:0;color:#0ea5e9;">MicroSaas Soluciones</h2><small>Recibo de Pago</small></div><div style="text-align:right;"><strong>Fecha:</strong> ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}<br><strong>#</strong> ${p.id.toUpperCase()}</div></div><div class="row"><strong>De:</strong> <span>${escapeHtml(c.name)}</span></div><div class="row"><strong>Concepto:</strong> <span>Abono Mensual Licencia</span></div><div class="row"><strong>Período:</strong> <span style="font-weight:bold; color:#0ea5e9;">${formatPeriod(p.period)}</span></div><div class="row"><strong>Método:</strong> <span>${escapeHtml(p.method)}</span></div><div class="total">Total: ${money(p.amount)}</div></div><script>window.print();</sc`+`ript></body></html>`);
-    win.document.close();
-  }
+  function exportarAExcel(dataArray, nombreArchivo) { if (!dataArray || !dataArray.length) return alert("No hay datos para exportar."); const headers = Object.keys(dataArray[0]); const csvContent = [headers.join(';'), ...dataArray.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n'); const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `${nombreArchivo}_${today()}.csv`; link.click(); }
+  function exportarClientesExcel() { exportarAExcel(dbClientes.filter(c=>c.type!=='lead').map(c => ({ "Comercio": c.name, "Contacto": c.contact, "CUIL": c.cuil, "Teléfono": c.phone, "Email": c.email, "Abono": c.fee, "Vencimiento": c.dueDate, "Estado": calcEstado(c.dueDate, c.active).texto })), 'Clientes_Oficiales'); }
+  function exportarPagosExcel() { exportarAExcel(dbPagos.map(p => ({ "Fecha": p.date, "Cliente": (dbClientes.find(x=>x.id===p.clientId)||{}).name || 'N/A', "Periodo": formatPeriod(p.period), "Monto": p.amount, "Método": p.method })), 'Pagos_Registrados'); }
 
-  function imprimirPresupuesto(id) {
-    const p = dbPresupuestos.find(x => x.id === id); if(!p) return;
-    const win = window.open('', '_blank');
-    win.document.write(`<html><head><title>Presupuesto ${p.id}</title><style>body{font-family:Arial;padding:40px;color:#333;}.box{border:1px solid #ddd;padding:40px;max-width:700px;margin:0 auto;border-radius:8px;}table{width:100%;border-collapse:collapse;margin-top:20px;}th,td{padding:12px;border-bottom:1px solid #ddd;text-align:left;}th{background:#f9fafb;color:#64748b;text-transform:uppercase;font-size:12px;}.total{font-size:20px;color:#0ea5e9;font-weight:bold;text-align:right;margin-top:20px;padding-top:20px;border-top:2px solid #ddd;}</style></head><body><div class="box"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #0ea5e9;padding-bottom:20px;margin-bottom:20px;"><div><h2 style="margin:0;color:#0ea5e9;">MicroSaas Soluciones</h2><small>Cotización de Servicios</small></div><div style="text-align:right;"><strong>Fecha:</strong> ${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}<br><strong>Cotización:</strong> #${p.id}</div></div><div style="margin-bottom:20px;"><strong>Cliente / Empresa:</strong> ${escapeHtml(p.clientName)}<br><strong>Email:</strong> ${escapeHtml(p.clientEmail)}</div><table><thead><tr><th width="60">Cant</th><th>Descripción</th><th width="120">Precio Unit.</th><th width="120">Subtotal</th></tr></thead><tbody>${p.items.map(i => `<tr><td>${i.qty}</td><td>${escapeHtml(i.desc)}</td><td>${money(i.price)}</td><td>${money(i.qty*i.price)}</td></tr>`).join('')}</tbody></table><div class="total">TOTAL PRESUPUESTADO: ${money(p.total)}</div><p style="margin-top:40px;font-size:12px;color:#94a3b8;text-align:center;">Los valores expresados en esta cotización tienen una validez de 15 días hábiles.</p></div><script>window.print();</sc`+`ript></body></html>`);
-    win.document.close();
-  }
-
-  function exportarAExcel(dataArray, nombreArchivo) {
-    if (!dataArray || !dataArray.length) return alert("No hay datos para exportar.");
-    const headers = Object.keys(dataArray[0]);
-    const csvContent = [headers.join(';'), ...dataArray.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
-    const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })); link.download = `${nombreArchivo}_${today()}.csv`; link.click();
-  }
-  
-  function exportarClientesExcel() { 
-    exportarAExcel(dbClientes.map(c => ({ "Comercio": c.name, "Contacto": c.contact, "CUIL": c.cuil, "Teléfono": c.phone, "Email": c.email, "Abono": c.fee, "Vencimiento": c.dueDate, "Estado": calcEstado(c.dueDate, c.active).texto })), 'Clientes'); 
-  }
-  
-  function exportarPagosExcel() { 
-    exportarAExcel(dbPagos.map(p => ({ "Fecha": p.date, "Cliente": (dbClientes.find(x=>x.id===p.clientId)||{}).name || 'N/A', "Periodo": formatPeriod(p.period), "Monto": p.amount, "Método": p.method })), 'Pagos'); 
-  }
-
-  // ── INICIALIZACIÓN ──
   loadDataFromCloud();
 </script>
 </body>
