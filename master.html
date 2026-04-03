@@ -5,14 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MicroSaas Soluciones | Master Control</title>
   <style>
+    /* ── TEMA CLARO INSPIRADO EN EL LOGO ── */
     :root {
-      --bg: #f8fafc; --panel: #ffffff; --panel-hover: #f1f5f9; --text: #1e293b; --muted: #64748b;
-      --primary: #0ea5e9; --primary-hover: #0284c7; --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
-      --line: #e2e8f0; --font: system-ui, -apple-system, sans-serif;
+      --bg: #f8fafc; 
+      --panel: #ffffff; 
+      --panel-hover: #f1f5f9; 
+      --text: #1e293b; 
+      --muted: #64748b; 
+      --primary: #0ea5e9; 
+      --primary-hover: #0284c7; 
+      --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+      --line: #e2e8f0; 
+      --font: system-ui, -apple-system, sans-serif;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
     
+    /* Sidebar */
     .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; z-index: 999; }
     .brand { padding: 16px 24px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--line); }
     .nav { flex: 1; padding: 20px 0; overflow-y: auto; }
@@ -20,6 +29,7 @@
     .nav button:hover { color: var(--text); background: var(--panel-hover); }
     .nav button.active { color: var(--primary); border-right: 3px solid var(--primary); background: rgba(14, 165, 233, 0.05); }
     
+    /* Main Content */
     .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .topbar { padding: 15px 40px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: var(--bg); }
     .topbar-left { display: flex; align-items: center; gap: 15px; }
@@ -31,11 +41,13 @@
     .view.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    /* KPIs */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
     .kpi-card { background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--line); border-top: 4px solid var(--primary); }
     .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
     .kpi-value { font-size: 24px; font-weight: 800; color: var(--text); }
     
+    /* Tablas */
     .card { background: var(--panel) !important; border-radius: 16px; border: 1px solid var(--line); margin-bottom: 24px; overflow: hidden; }
     .card-head { padding: 15px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
     .card-head h2 { margin: 0; font-size: 14px; text-transform: uppercase; color: var(--muted); }
@@ -47,6 +59,7 @@
     .master-table tr:hover td { background: var(--panel-hover) !important; }
     .master-table tr:last-child td { border-bottom: none !important; }
     
+    /* Badges */
     .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap; }
     .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
     .badge-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
@@ -54,6 +67,7 @@
     .badge-neutral { background: rgba(100, 116, 139, 0.1); color: var(--muted); }
     .badge-primary { background: rgba(14, 165, 233, 0.1); color: var(--primary); }
     
+    /* Buttons */
     .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; white-space: nowrap; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:hover { background: var(--primary-hover); }
@@ -65,6 +79,7 @@
     .table-actions { display: flex; gap: 6px; }
     .table-actions button { padding: 6px 10px; font-size: 12px; }
 
+    /* Modals */
     dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 600px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1); }
     dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
     .modal-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
@@ -134,6 +149,7 @@
           <article class="kpi-card" style="border-color:var(--danger)"><div class="kpi-label">Gastos del Mes</div><div class="kpi-value" id="kpiGastos" style="color:var(--danger)">$0</div></article>
           <article class="kpi-card" style="border-color:var(--success)"><div class="kpi-label">Ganancia Neta</div><div class="kpi-value" id="kpiNeto" style="color:var(--success)">$0</div></article>
           <article class="kpi-card" style="border-color:var(--primary)"><div class="kpi-label">Demos Activas</div><div class="kpi-value" id="kpiLeads">0</div></article>
+          <article class="kpi-card" style="border-color:var(--muted)"><div class="kpi-label">Clientes Activos</div><div class="kpi-value" id="kpiActivos">0</div></article>
         </div>
 
         <div class="card">
@@ -159,7 +175,7 @@
                   <th>Comercio / Email</th>
                   <th>WhatsApp</th>
                   <th>Registro</th>
-                  <th>Estado del Acceso</th>
+                  <th>Estado</th>
                   <th>Acciones de Venta</th>
                 </tr>
               </thead>
@@ -467,7 +483,7 @@
     }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay clientes oficiales registrados.</td></tr>';
   }
 
-  function renderPagos() { /* (Igual) */
+  function renderPagos() { 
     const tbody = document.getElementById('pagosTable'); const filtroId = document.getElementById('filtroClientePagos').value;
     let filtrados = filtroId !== 'ALL' ? dbPagos.filter(p => p.clientId === filtroId) : dbPagos;
     tbody.innerHTML = filtrados.length ? filtrados.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => {
@@ -476,31 +492,27 @@
     }).join('') : '<tr><td colspan="6" style="text-align:center; color:var(--muted);">No hay pagos registrados.</td></tr>';
   }
 
-  function renderGastos() { /* (Igual) */
+  function renderGastos() { 
     document.getElementById('gastosTable').innerHTML = dbGastos.length ? dbGastos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(g => `<tr><td>${new Date(g.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(g.concept)}</strong></td><td><span class="badge badge-neutral">${escapeHtml(g.gCat)}</span></td><td style="color:var(--danger); font-weight:bold;">${money(g.amount)}</td><td><button class="btn btn-danger-text" onclick="borrarGasto('${g.id}')">❌</button></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay gastos.</td></tr>';
   }
 
-  function renderPresupuestos() { /* (Igual) */
+  function renderPresupuestos() { 
     document.getElementById('presupuestosTable').innerHTML = dbPresupuestos.length ? dbPresupuestos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => `<tr><td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(p.clientName)}</strong></td><td style="font-weight:bold;">${money(p.total)}</td><td><div class="table-actions"><button class="btn btn-outline" onclick="imprimirPresupuesto('${p.id}')">📄 PDF</button><button class="btn btn-danger-text" onclick="borrarPresupuesto('${p.id}')">❌</button></div></td></tr>`).join('') : '<tr><td colspan="4" style="text-align:center; color:var(--muted);">No hay presupuestos.</td></tr>';
   }
 
   // ── 5. ACCIONES LOGICAS: LEADS Y CLIENTES ──
   
-  // FUNCION NUEVA: Revoca el acceso a la demo pero deja los datos en Leads
   async function revocarAccesoLead(id, username) {
     if(!confirm('¿Quitarle el acceso a la Demo? Su usuario será borrado del sistema, pero sus datos de contacto quedarán guardados aquí.')) return;
     try {
       await fetch(`/api/clients?id=${id}&revoke=true&user=${username}`, { method: 'DELETE' });
       await loadDataFromCloud();
-    } catch(e) {
-      alert("Error al conectar con el servidor.");
-    }
+    } catch(e) { alert("Error al conectar con el servidor."); }
   }
 
-  // FUNCION NUEVA: Pasa un Lead a Cliente y pide el Abono
   function convertirLeadACliente(id) {
     const c = dbClientes.find(x => x.id === id); if(!c) return;
-    document.getElementById('cTempId').value = id; // Guardamos el ID para actualizar el mismo registro
+    document.getElementById('cTempId').value = id; 
     editingClientId = id; 
     
     document.getElementById('clienteModalTitle').textContent = 'Convertir Lead a Cliente Oficial';
@@ -511,7 +523,6 @@
     document.getElementById('cPhone').value = c.phone; 
     document.getElementById('cEmail').value = c.email || ''; 
     
-    // Obligamos a definir el Abono y Fecha Real de Vencimiento
     document.getElementById('cFee').value = ''; 
     document.getElementById('cDueDate').value = today();
     
@@ -542,7 +553,7 @@
       cuil: document.getElementById('cCuil').value.trim(), address: document.getElementById('cAddress').value.trim(), 
       phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim(), 
       fee: document.getElementById('cFee').value, dueDate: document.getElementById('cDueDate').value, 
-      active: true, type: 'client', // AL GUARDAR DESDE ACÁ SIEMPRE ES CLIENTE OFICIAL
+      active: true, type: 'client',
       adminUser: document.getElementById('cAdminUser').value.trim(), adminPass: document.getElementById('cAdminPass').value.trim(), 
       oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser 
     };
@@ -556,7 +567,26 @@
         await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); 
       }
       cerrarModal('clienteDialog'); await loadDataFromCloud();
-    } catch(err) { alert('Error conectando a la API'); btn.textContent = 'Guardar Cliente'; btn.disabled = false; }
+    } catch(err) { 
+      // FALLBACK LOCAL AL EDITAR / CREAR
+      if (tempId || editingClientId) { 
+        const realId = tempId || editingClientId;
+        const idx = dbClientes.findIndex(x => x.id === realId); 
+        data.id = realId; 
+        data.active = dbClientes[idx].active; 
+        dbClientes[idx] = data; 
+      } else { 
+        data.id = 'cli_' + Math.random().toString(36).substr(2, 9); 
+        dbClientes.push(data); 
+      }
+      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); 
+      cerrarModal('clienteDialog'); 
+      const select = document.getElementById('filtroClientePagos'); const currentVal = select.value;
+      select.innerHTML = '<option value="ALL">Mostrar Todos los Clientes</option>' + dbClientes.filter(c => c.type !== 'lead').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      select.value = currentVal || 'ALL';
+      renderAll(); 
+    }
+    btn.textContent = 'Guardar Cliente Oficial'; btn.disabled = false;
   }
 
   async function toggleAcceso(id) { const c = dbClientes.find(x => x.id === id); if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { c.active = !c.active; try { await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); await loadDataFromCloud(); } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); } } }
@@ -565,7 +595,7 @@
     const c = dbClientes.find(x => x.id === id);
     if(c && confirm(`🚨 ATENCIÓN: ¿Seguro que querés borrar definitivamente a ${c.name}?\nEsta acción no se puede deshacer.`)) {
       try { await fetch(`/api/clients?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud(); } 
-      catch (err) { dbClientes = dbClientes.filter(x => x.id !== id); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); actualizarFiltrosCliente(); renderAll(); }
+      catch (err) { dbClientes = dbClientes.filter(x => x.id !== id); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); }
     }
   }
 
@@ -589,6 +619,7 @@
   function exportarClientesExcel() { exportarAExcel(dbClientes.filter(c=>c.type!=='lead').map(c => ({ "Comercio": c.name, "Contacto": c.contact, "CUIL": c.cuil, "Teléfono": c.phone, "Email": c.email, "Abono": c.fee, "Vencimiento": c.dueDate, "Estado": calcEstado(c.dueDate, c.active).texto })), 'Clientes_Oficiales'); }
   function exportarPagosExcel() { exportarAExcel(dbPagos.map(p => ({ "Fecha": p.date, "Cliente": (dbClientes.find(x=>x.id===p.clientId)||{}).name || 'N/A', "Periodo": formatPeriod(p.period), "Monto": p.amount, "Método": p.method })), 'Pagos_Registrados'); }
 
+  // INICIAR
   loadDataFromCloud();
 </script>
 </body>
