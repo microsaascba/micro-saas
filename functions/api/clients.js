@@ -1,8 +1,19 @@
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type"
+};
+
+// Esta función es clave: atiende a los navegadores cuando "preguntan si pueden pasar" (Preflight)
+export async function onRequestOptions() {
+  return new Response(null, { headers: corsHeaders });
+}
+
 export async function onRequestGet(context) {
   try {
     const { results } = await context.env.DB.prepare("SELECT * FROM clients ORDER BY createdAt DESC").all();
-    return Response.json(results);
-  } catch (error) { return Response.json({ error: error.message }, { status: 500 }); }
+    return Response.json(results, { headers: corsHeaders });
+  } catch (error) { return Response.json({ error: error.message }, { status: 500, headers: corsHeaders }); }
 }
 
 export async function onRequestPost(context) {
@@ -18,13 +29,12 @@ export async function onRequestPost(context) {
       new Date().toISOString()
     ).run();
 
-    // Solo creamos usuario en el sistema si se mandan credenciales (Los prospectos no mandan credenciales)
     if (data.adminUser && data.adminPass) {
       const userId = 'usr_' + Math.random().toString(36).substr(2, 9);
       await context.env.DB.prepare(`INSERT INTO users (id, username, password, role, active, createdAt) VALUES (?1, ?2, ?3, 'admin', 1, ?4)`).bind(userId, data.adminUser, data.adminPass, new Date().toISOString()).run();
     }
-    return Response.json({ success: true });
-  } catch (error) { return Response.json({ error: error.message }, { status: 500 }); }
+    return Response.json({ success: true }, { headers: corsHeaders });
+  } catch (error) { return Response.json({ error: error.message }, { status: 500, headers: corsHeaders }); }
 }
 
 export async function onRequestPut(context) {
@@ -38,7 +48,6 @@ export async function onRequestPut(context) {
       data.type || 'client', data.id
     ).run();
     
-    // Lógica para actualizar o crear el usuario del sistema al convertir un prospecto a cliente
     if (data.adminUser && data.adminPass) {
       if (data.oldAdminUser && data.oldAdminUser.trim() !== '') {
         await context.env.DB.prepare(`UPDATE users SET username=?1, password=?2 WHERE username=?3`).bind(data.adminUser, data.adminPass, data.oldAdminUser).run();
@@ -47,8 +56,8 @@ export async function onRequestPut(context) {
         await context.env.DB.prepare(`INSERT INTO users (id, username, password, role, active, createdAt) VALUES (?1, ?2, ?3, 'admin', 1, ?4)`).bind(userId, data.adminUser, data.adminPass, new Date().toISOString()).run();
       }
     }
-    return Response.json({ success: true });
-  } catch (error) { return Response.json({ error: error.message }, { status: 500 }); }
+    return Response.json({ success: true }, { headers: corsHeaders });
+  } catch (error) { return Response.json({ error: error.message }, { status: 500, headers: corsHeaders }); }
 }
 
 export async function onRequestDelete(context) {
@@ -61,10 +70,10 @@ export async function onRequestDelete(context) {
     if (revoke === 'true') {
       await context.env.DB.prepare("DELETE FROM users WHERE username = ?1").bind(user).run();
       await context.env.DB.prepare("UPDATE clients SET active = 0, adminPass = 'REVOCADO' WHERE id = ?1").bind(id).run();
-      return Response.json({ success: true });
+      return Response.json({ success: true }, { headers: corsHeaders });
     }
 
     await context.env.DB.prepare("DELETE FROM clients WHERE id = ?1").bind(id).run();
-    return Response.json({ success: true });
-  } catch (error) { return Response.json({ error: error.message }, { status: 500 }); }
+    return Response.json({ success: true }, { headers: corsHeaders });
+  } catch (error) { return Response.json({ error: error.message }, { status: 500, headers: corsHeaders }); }
 }
