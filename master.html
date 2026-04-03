@@ -57,6 +57,7 @@
     .master-table th { padding: 12px 20px; background: rgba(0,0,0,0.03) !important; font-size: 11px; text-transform: uppercase; color: var(--muted) !important; border-bottom: 1px solid var(--line) !important; }
     .master-table td { padding: 12px 20px; border-bottom: 1px solid var(--line) !important; font-size: 13px; vertical-align: middle; background: transparent !important; color: var(--text) !important; }
     .master-table tr:hover td { background: var(--panel-hover) !important; }
+    .master-table tr:last-child td { border-bottom: none !important; }
     
     /* Badges */
     .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap; }
@@ -144,18 +145,10 @@
       
       <div id="view-dashboard" class="view active">
         <div class="kpi-grid">
-          <article class="kpi-card">
-            <div class="kpi-label">MRR (Ingresos)</div><div class="kpi-value" id="kpiMrr">$0</div>
-          </article>
-          <article class="kpi-card" style="border-color:var(--danger)">
-            <div class="kpi-label">Gastos del Mes</div><div class="kpi-value" id="kpiGastos" style="color:var(--danger)">$0</div>
-          </article>
-          <article class="kpi-card" style="border-color:var(--success)">
-            <div class="kpi-label">Ganancia Neta</div><div class="kpi-value" id="kpiNeto" style="color:var(--success)">$0</div>
-          </article>
-          <article class="kpi-card" style="border-color:var(--muted)">
-            <div class="kpi-label">Comercios Activos</div><div class="kpi-value" id="kpiActivos">0</div>
-          </article>
+          <article class="kpi-card"><div class="kpi-label">MRR (Ingresos)</div><div class="kpi-value" id="kpiMrr">$0</div></article>
+          <article class="kpi-card" style="border-color:var(--danger)"><div class="kpi-label">Gastos del Mes</div><div class="kpi-value" id="kpiGastos" style="color:var(--danger)">$0</div></article>
+          <article class="kpi-card" style="border-color:var(--success)"><div class="kpi-label">Ganancia Neta</div><div class="kpi-value" id="kpiNeto" style="color:var(--success)">$0</div></article>
+          <article class="kpi-card" style="border-color:var(--muted)"><div class="kpi-label">Comercios Activos</div><div class="kpi-value" id="kpiActivos">0</div></article>
         </div>
 
         <div class="card">
@@ -174,8 +167,8 @@
           <div class="card-head">
             <h2>Directorio de Clientes</h2>
             <div class="actions">
-              <button class="btn btn-outline" title="Descargar nómina de clientes en Excel" onclick="exportarClientesExcel()">⬇ Excel</button>
-              <button class="btn btn-primary" title="Dar de alta un nuevo comercio" onclick="abrirModalCliente()">+ Nuevo Cliente</button>
+              <button class="btn btn-outline" title="Descargar Excel" onclick="exportarClientesExcel()">⬇ Excel</button>
+              <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo Cliente</button>
             </div>
           </div>
           <div class="table-wrap">
@@ -269,15 +262,15 @@
         <div class="field"><label>CUIL / CUIT</label><input type="text" id="cCuil" placeholder="Sin guiones" autocomplete="off" /></div>
         <div class="field full"><label>Dirección Comercial</label><input type="text" id="cAddress" autocomplete="off" /></div>
         <div class="field"><label>Teléfono (WhatsApp) *</label><input type="text" id="cPhone" required autocomplete="off" /></div>
-        <div class="field"><label>Email de Contacto *</label><input type="email" id="cEmail" required autocomplete="off" placeholder="Para enviar recibos" /></div>
+        <div class="field"><label>Email de Contacto *</label><input type="email" id="cEmail" required autocomplete="off" /></div>
         <div class="field"><label>Valor Abono ($) *</label><input type="number" id="cFee" required /></div>
         <div class="field"><label>Fecha de Corte (Vencimiento) *</label><input type="date" id="cDueDate" required /></div>
         
         <div id="adminConfigBox" class="field full admin-box">
           <p><strong>Configuración Inicial:</strong> Usuario administrador para que el cliente ingrese.</p>
           <div class="form-grid">
-            <div class="field"><label>Usuario Admin *</label><input type="text" id="cAdminUser" placeholder="Ej: admin_local" required /></div>
-            <div class="field"><label>Contraseña *</label><input type="text" id="cAdminPass" placeholder="Clave de acceso" required /></div>
+            <div class="field"><label>Usuario Admin *</label><input type="text" id="cAdminUser" required /></div>
+            <div class="field"><label>Contraseña *</label><input type="text" id="cAdminPass" required /></div>
           </div>
         </div>
       </div>
@@ -309,7 +302,7 @@
             <option value="Tarjeta / Link de Pago">Tarjeta / Link de Pago</option>
           </select>
         </div>
-        <div class="field full"><label>Notas / Ref. Transferencia</label><textarea id="pNotes" rows="2" placeholder="Ej: Transf. comprobante #123"></textarea></div>
+        <div class="field full"><label>Notas / Ref. Transferencia</label><textarea id="pNotes" rows="2"></textarea></div>
       </div>
       <div class="modal-foot">
         <button type="button" class="btn btn-outline" onclick="cerrarModal('pagoDialog')">Cancelar</button>
@@ -323,7 +316,7 @@
     <form onsubmit="guardarGasto(event)" class="modal-body form-grid">
       <div class="field"><label>Fecha *</label><input type="date" id="gDate" required /></div>
       <div class="field"><label>Monto ($) *</label><input type="number" id="gAmount" required /></div>
-      <div class="field full"><label>Concepto / Detalle *</label><input type="text" id="gConcept" placeholder="Ej: Pago de servidor, Publicidad" required /></div>
+      <div class="field full"><label>Concepto / Detalle *</label><input type="text" id="gConcept" required /></div>
       <div class="field full"><label>Categoría *</label>
         <select id="gCat"><option>Infraestructura IT</option><option>Marketing y Publicidad</option><option>Sueldos / Retiros</option><option>Herramientas y Software</option><option>Otros</option></select>
       </div>
@@ -358,32 +351,17 @@
 
 <script>
   // ── 1. UTILIDADES Y FUNCIONES BÁSICAS ──
-  
-  // Función para cerrar modales de forma segura
   function cerrarModal(id) { 
     const modal = document.getElementById(id);
     if (modal) modal.close(); 
   }
-
-  function money(num) { 
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0); 
-  }
-  
-  function today() { 
-    return new Date().toISOString().split('T')[0]; 
-  }
-  
-  function escapeHtml(v) { 
-    return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); 
-  }
-  
+  function money(num) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(num || 0); }
+  function today() { return new Date().toISOString().split('T')[0]; }
+  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
   function formatPeriod(val) {
-    if (!val) return '-';
-    const [y, m] = val.split('-');
-    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    if (!val) return '-'; const [y, m] = val.split('-'); const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     return `${meses[parseInt(m, 10)-1]} ${y}`;
   }
-
   function calcEstado(fechaVto, activo) {
     if (!activo) return { texto: 'Suspendido', clase: 'badge-neutral', status: 'suspendido' };
     const dif = Math.ceil((new Date(fechaVto + 'T12:00:00').setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / 86400000);
@@ -392,16 +370,11 @@
     return { texto: 'Al Día', clase: 'badge-success', status: 'ok' };
   }
 
-
   // ── 2. SEGURIDAD Y NAVEGACIÓN ──
   if (localStorage.getItem('saas_master_logged_in') !== 'true') window.location.href = 'master-login.html';
   function logoutMaster() { localStorage.removeItem('saas_master_logged_in'); window.location.href = 'master-login.html'; }
 
-  function toggleMenu() { 
-    document.getElementById('sidebar').classList.toggle('open'); 
-    document.getElementById('sidebarOverlay').classList.toggle('open'); 
-  }
-  
+  function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
   function switchView(viewId, btnElement) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     if(btnElement) {
@@ -413,7 +386,6 @@
     if(window.innerWidth <= 900) toggleMenu();
   }
 
-
   // ── 3. ESTADO GLOBAL Y CONEXIÓN DE DATOS ──
   let dbClientes = [], dbPagos = [], dbGastos = [], dbPresupuestos = [];
   let editingClientId = null, editingPaymentId = null;
@@ -423,14 +395,9 @@
     cloudStatus.textContent = 'Sincronizando...'; cloudStatus.className = 'badge badge-warning';
     try {
       const resC = await fetch('/api/clients');
-      if(resC.ok) { 
-        dbClientes = await resC.json(); 
-        dbClientes.forEach(c => c.active = (c.active === 1 || c.active === true)); 
-        localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); 
-      }
+      if(resC.ok) { dbClientes = await resC.json(); dbClientes.forEach(c => c.active = (c.active === 1 || c.active === true)); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); }
       const resP = await fetch('/api/payments');
       if(resP.ok) dbPagos = await resP.json();
-
       cloudStatus.textContent = 'Conectado a D1'; cloudStatus.className = 'badge badge-success';
     } catch(e) {
       dbClientes = JSON.parse(localStorage.getItem('saas_db_clientes')) || [];
@@ -438,27 +405,18 @@
       cloudStatus.textContent = 'Modo Local'; cloudStatus.className = 'badge badge-neutral';
     }
     
-    // Mantenemos módulos locales por ahora
     dbGastos = JSON.parse(localStorage.getItem('master_db_gastos')) || [];
     dbPresupuestos = JSON.parse(localStorage.getItem('master_db_presupuestos')) || [];
 
-    const select = document.getElementById('filtroClientePagos'); 
-    const currentVal = select.value;
+    const select = document.getElementById('filtroClientePagos'); const currentVal = select.value;
     select.innerHTML = '<option value="ALL">Mostrar Todos los Clientes</option>' + dbClientes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
     select.value = currentVal || 'ALL';
     
     renderAll();
   }
 
-
-  // ── 4. RENDERIZADO (DIBUJAR EN PANTALLA) ──
-  function renderAll() { 
-    renderDashboard(); 
-    renderClientes(); 
-    renderPagos(); 
-    renderGastos(); 
-    renderPresupuestos(); 
-  }
+  // ── 4. RENDERIZADO ──
+  function renderAll() { renderDashboard(); renderClientes(); renderPagos(); renderGastos(); renderPresupuestos(); }
 
   function renderDashboard() {
     let mrr = 0, activos = 0, morosos = 0; const alertas = [];
@@ -466,9 +424,7 @@
       const est = calcEstado(c.dueDate, c.active);
       if (c.active) { mrr += Number(c.fee); activos++; if (est.status === 'vencido') morosos++; if (est.status === 'vencido' || est.status === 'alerta') alertas.push({ ...c, est }); }
     });
-    
     const gastosMes = dbGastos.filter(g => g.date.startsWith(today().slice(0,7))).reduce((sum, g) => sum + Number(g.amount), 0);
-
     document.getElementById('kpiMrr').textContent = money(mrr);
     document.getElementById('kpiGastos').textContent = money(gastosMes);
     document.getElementById('kpiNeto').textContent = money(mrr - gastosMes);
@@ -489,6 +445,7 @@
         <td><div class="table-actions">
           <button class="btn btn-outline" title="Ver o editar datos del cliente" onclick="editarCliente('${c.id}')">✎ Editar</button>
           <button class="btn btn-outline" title="Bloquear o desbloquear acceso al sistema" onclick="toggleAcceso('${c.id}')">${c.active ? 'Bloquear' : 'Activar'}</button>
+          <button class="btn btn-danger-text" title="Borrar este cliente definitivamente" onclick="borrarCliente('${c.id}')">❌</button>
           </div></td>
       </tr>`;
     }).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay clientes registrados.</td></tr>';
@@ -497,11 +454,9 @@
   function renderPagos() {
     const tbody = document.getElementById('pagosTable'); const filtroId = document.getElementById('filtroClientePagos').value;
     let filtrados = filtroId !== 'ALL' ? dbPagos.filter(p => p.clientId === filtroId) : dbPagos;
-
     tbody.innerHTML = filtrados.length ? filtrados.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => {
       const c = dbClientes.find(x => x.id === p.clientId); const pFormat = formatPeriod(p.period);
       const mailto = `mailto:${c ? (c.email || '') : ''}?subject=${encodeURIComponent('Recibo de Pago - Licencia de Software')}&body=${encodeURIComponent('Hola '+(c ? c.name : '')+',\n\nConfirmamos la recepción del pago por '+money(p.amount)+' correspondiente al período de '+pFormat+'.\n\nGracias,\nEquipo MicroSaas')}`;
-
       return `<tr>
         <td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td>
         <td><strong>${escapeHtml(c ? c.name : 'Cliente Eliminado')}</strong></td>
@@ -528,7 +483,6 @@
     tbody.innerHTML = dbPresupuestos.length ? dbPresupuestos.sort((a,b) => new Date(b.date) - new Date(a.date)).map(p => `<tr><td>${new Date(p.date+'T12:00:00').toLocaleDateString('es-AR')}</td><td><strong>${escapeHtml(p.clientName)}</strong></td><td>${escapeHtml(p.clientEmail)}</td><td style="font-weight:bold;">${money(p.total)}</td><td><div class="table-actions"><button class="btn btn-outline" title="Ver y descargar PDF del presupuesto" onclick="imprimirPresupuesto('${p.id}')">📄 PDF</button><button class="btn btn-danger-text" title="Eliminar este presupuesto" onclick="borrarPresupuesto('${p.id}')">❌ Borrar</button></div></td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center; color:var(--muted);">No hay presupuestos emitidos.</td></tr>';
   }
 
-
   // ── 5. ACCIONES LOGICAS: CLIENTES ABM ──
   function abrirModalCliente() { 
     editingClientId = null; 
@@ -539,266 +493,100 @@
   }
   
   function editarCliente(id) {
-    const c = dbClientes.find(x => x.id === id); 
-    if(!c) return; 
-    
-    editingClientId = id; 
-    document.getElementById('clienteModalTitle').textContent = 'Editar Cliente';
-    
-    document.getElementById('cName').value = c.name; 
-    document.getElementById('cContact').value = c.contact || ''; 
-    document.getElementById('cCuil').value = c.cuil || ''; 
-    document.getElementById('cAddress').value = c.address || ''; 
-    document.getElementById('cPhone').value = c.phone; 
-    document.getElementById('cEmail').value = c.email || ''; 
-    document.getElementById('cFee').value = c.fee; 
-    document.getElementById('cDueDate').value = c.dueDate;
-    
-    document.getElementById('cAdminUser').value = c.adminUser || ''; 
-    document.getElementById('cAdminPass').value = c.adminPass || ''; 
-    document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || '';
-    
+    const c = dbClientes.find(x => x.id === id); if(!c) return; 
+    editingClientId = id; document.getElementById('clienteModalTitle').textContent = 'Editar Cliente';
+    document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || ''; document.getElementById('cCuil').value = c.cuil || ''; document.getElementById('cAddress').value = c.address || ''; document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || ''; document.getElementById('cFee').value = c.fee; document.getElementById('cDueDate').value = c.dueDate;
+    document.getElementById('cAdminUser').value = c.adminUser || ''; document.getElementById('cAdminPass').value = c.adminPass || ''; document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || '';
     document.getElementById('clienteDialog').showModal();
   }
   
   async function guardarCliente(e) {
-    e.preventDefault(); 
-    const btn = document.getElementById('btnGuardarCli'); 
-    btn.textContent = 'Guardando...'; 
-    btn.disabled = true;
-    
-    const data = { 
-      name: document.getElementById('cName').value.trim(), 
-      contact: document.getElementById('cContact').value.trim(), 
-      cuil: document.getElementById('cCuil').value.trim(), 
-      address: document.getElementById('cAddress').value.trim(), 
-      phone: document.getElementById('cPhone').value.trim(), 
-      email: document.getElementById('cEmail').value.trim(), 
-      fee: document.getElementById('cFee').value, 
-      dueDate: document.getElementById('cDueDate').value, 
-      active: true, 
-      adminUser: document.getElementById('cAdminUser').value.trim(), 
-      adminPass: document.getElementById('cAdminPass').value.trim(), 
-      oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser 
-    };
-    
+    e.preventDefault(); const btn = document.getElementById('btnGuardarCli'); btn.textContent = 'Guardando...'; btn.disabled = true;
+    const data = { name: document.getElementById('cName').value.trim(), contact: document.getElementById('cContact').value.trim(), cuil: document.getElementById('cCuil').value.trim(), address: document.getElementById('cAddress').value.trim(), phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim(), fee: document.getElementById('cFee').value, dueDate: document.getElementById('cDueDate').value, active: true, adminUser: document.getElementById('cAdminUser').value.trim(), adminPass: document.getElementById('cAdminPass').value.trim(), oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser };
     try {
-      if (editingClientId) { 
-        data.id = editingClientId; 
-        data.active = dbClientes.find(x => x.id === editingClientId).active; 
-        await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
-      } else { 
-        data.id = 'cli_' + Math.random().toString(36).substr(2, 9); 
-        await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); 
-      }
-      cerrarModal('clienteDialog'); 
-      await loadDataFromCloud();
+      if (editingClientId) { data.id = editingClientId; data.active = dbClientes.find(x => x.id === editingClientId).active; await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+      } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); }
+      cerrarModal('clienteDialog'); await loadDataFromCloud();
     } catch(err) { 
-      // Backup en modo local por si la API falla
-      if (editingClientId) { 
-        const idx = dbClientes.findIndex(x => x.id === editingClientId); 
-        data.id = editingClientId; 
-        data.active = dbClientes[idx].active; 
-        dbClientes[idx] = data; 
-      } else { 
-        data.id = 'cli_' + Math.random().toString(36).substr(2, 9); 
-        dbClientes.push(data); 
-      }
-      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); 
-      cerrarModal('clienteDialog'); 
-      actualizarFiltrosCliente(); 
-      renderAll();
+      if (editingClientId) { const idx = dbClientes.findIndex(x => x.id === editingClientId); data.id = editingClientId; data.active = dbClientes[idx].active; dbClientes[idx] = data; } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); dbClientes.push(data); }
+      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('clienteDialog'); actualizarFiltrosCliente(); renderAll();
     }
-    btn.textContent = 'Guardar Cliente'; 
-    btn.disabled = false;
+    btn.textContent = 'Guardar Cliente'; btn.disabled = false;
   }
   
   async function toggleAcceso(id) { 
     const c = dbClientes.find(x => x.id === id); 
     if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { 
       c.active = !c.active; 
-      try { 
-        await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); 
-        await loadDataFromCloud(); 
-      } catch (err) { 
-        localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); 
-        renderAll(); 
-      } 
+      try { await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); await loadDataFromCloud(); } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); } 
     } 
+  }
+
+  async function borrarCliente(id) {
+    const c = dbClientes.find(x => x.id === id);
+    if(c && confirm(`🚨 ATENCIÓN: ¿Seguro que querés borrar definitivamente a ${c.name}?\nEsta acción no se puede deshacer.`)) {
+      try {
+        await fetch(`/api/clients?id=${id}`, { method: 'DELETE' });
+        await loadDataFromCloud();
+      } catch (err) {
+        dbClientes = dbClientes.filter(x => x.id !== id);
+        localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
+        actualizarFiltrosCliente();
+        renderAll();
+      }
+    }
   }
 
 
   // ── 6. ACCIONES LOGICAS: PAGOS ──
-  function autocompletarMontoPago() { 
-    const c = dbClientes.find(x => x.id === document.getElementById('pClient').value); 
-    if(c) document.getElementById('pAmount').value = c.fee; 
-  }
+  function autocompletarMontoPago() { const c = dbClientes.find(x => x.id === document.getElementById('pClient').value); if(c) document.getElementById('pAmount').value = c.fee; }
   
   function abrirModalPago() {
-    if(dbClientes.length === 0) return alert('No hay clientes.'); 
-    editingPaymentId = null; 
-    document.getElementById('pagoModalTitle').textContent = "Registrar Pago";
-    
+    if(dbClientes.length === 0) return alert('No hay clientes.'); editingPaymentId = null; document.getElementById('pagoModalTitle').textContent = "Registrar Pago";
     document.getElementById('pClient').innerHTML = '<option value="">Seleccione...</option>' + dbClientes.filter(c => c.active).map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-    
-    const fId = document.getElementById('filtroClientePagos').value; 
-    if(fId !== 'ALL') { 
-      document.getElementById('pClient').value = fId; 
-      autocompletarMontoPago(); 
-    }
-    
-    document.getElementById('pagoForm').reset(); 
-    document.getElementById('pDate').value = today(); 
-    document.getElementById('pPeriod').value = today().slice(0,7); 
-    document.getElementById('pagoDialog').showModal();
+    const fId = document.getElementById('filtroClientePagos').value; if(fId !== 'ALL') { document.getElementById('pClient').value = fId; autocompletarMontoPago(); }
+    document.getElementById('pagoForm').reset(); document.getElementById('pDate').value = today(); document.getElementById('pPeriod').value = today().slice(0,7); document.getElementById('pagoDialog').showModal();
   }
   
   function editarPago(id) {
-    const p = dbPagos.find(x => x.id === id); 
-    if(!p) return; 
-    
-    editingPaymentId = id; 
-    document.getElementById('pagoModalTitle').textContent = "Editar Pago";
+    const p = dbPagos.find(x => x.id === id); if(!p) return; editingPaymentId = id; document.getElementById('pagoModalTitle').textContent = "Editar Pago";
     document.getElementById('pClient').innerHTML = dbClientes.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-    document.getElementById('pClient').value = p.clientId; 
-    document.getElementById('pDate').value = p.date; 
-    document.getElementById('pPeriod').value = p.period; 
-    document.getElementById('pAmount').value = p.amount; 
-    document.getElementById('pMethod').value = p.method; 
-    document.getElementById('pNotes').value = p.notes || ''; 
-    document.getElementById('pagoDialog').showModal();
+    document.getElementById('pClient').value = p.clientId; document.getElementById('pDate').value = p.date; document.getElementById('pPeriod').value = p.period; document.getElementById('pAmount').value = p.amount; document.getElementById('pMethod').value = p.method; document.getElementById('pNotes').value = p.notes || ''; document.getElementById('pagoDialog').showModal();
   }
   
   async function guardarPago(e) {
-    e.preventDefault(); 
-    const btn = document.getElementById('btnGuardarPago'); 
-    btn.textContent = 'Guardando...'; 
-    btn.disabled = true;
-    
-    const cid = document.getElementById('pClient').value; 
-    const c = dbClientes.find(x => x.id === cid);
-    const data = { 
-      clientId: cid, 
-      date: document.getElementById('pDate').value, 
-      period: document.getElementById('pPeriod').value, 
-      amount: document.getElementById('pAmount').value, 
-      method: document.getElementById('pMethod').value, 
-      notes: document.getElementById('pNotes').value.trim() 
-    };
-    
+    e.preventDefault(); const btn = document.getElementById('btnGuardarPago'); btn.textContent = 'Guardando...'; btn.disabled = true;
+    const cid = document.getElementById('pClient').value; const c = dbClientes.find(x => x.id === cid);
+    const data = { clientId: cid, date: document.getElementById('pDate').value, period: document.getElementById('pPeriod').value, amount: document.getElementById('pAmount').value, method: document.getElementById('pMethod').value, notes: document.getElementById('pNotes').value.trim() };
     try {
-      if (editingPaymentId) { 
-        data.id = editingPaymentId; 
-        await fetch('/api/payments', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
-      } else { 
-        let curVto = new Date(c.dueDate + 'T12:00:00'); 
-        curVto.setMonth(curVto.getMonth() + 1); 
-        data.id = 'pay_' + Math.random().toString(36).substr(2, 9); 
-        data.newDueDate = curVto.toISOString().split('T')[0]; 
-        await fetch('/api/payments', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); 
-      }
-      cerrarModal('pagoDialog'); 
-      await loadDataFromCloud();
+      if (editingPaymentId) { data.id = editingPaymentId; await fetch('/api/payments', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+      } else { let curVto = new Date(c.dueDate + 'T12:00:00'); curVto.setMonth(curVto.getMonth() + 1); data.id = 'pay_' + Math.random().toString(36).substr(2, 9); data.newDueDate = curVto.toISOString().split('T')[0]; await fetch('/api/payments', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); }
+      cerrarModal('pagoDialog'); await loadDataFromCloud();
     } catch(err) {
-      if(editingPaymentId) { 
-        const idx = dbPagos.findIndex(x => x.id === editingPaymentId); 
-        data.id = editingPaymentId; 
-        dbPagos[idx] = data; 
-      } else { 
-        dbPagos.push(data); 
-        c.dueDate = data.newDueDate; 
-      }
-      localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos)); 
-      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); 
-      cerrarModal('pagoDialog'); 
-      renderAll();
+      if(editingPaymentId) { const idx = dbPagos.findIndex(x => x.id === editingPaymentId); data.id = editingPaymentId; dbPagos[idx] = data; } else { dbPagos.push(data); c.dueDate = data.newDueDate; }
+      localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos)); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('pagoDialog'); renderAll();
     }
-    btn.textContent = 'Acreditar Pago'; 
-    btn.disabled = false;
+    btn.textContent = 'Acreditar Pago'; btn.disabled = false;
   }
   
-  async function borrarPago(id) { 
-    if(confirm("¿ELIMINAR este pago?")) { 
-      try { 
-        await fetch(`/api/payments?id=${id}`, { method: 'DELETE' }); 
-        await loadDataFromCloud(); 
-      } catch (e) { 
-        dbPagos = dbPagos.filter(x => x.id !== id); 
-        localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos)); 
-        renderAll(); 
-      } 
-    } 
-  }
+  async function borrarPago(id) { if(confirm("¿ELIMINAR este pago?")) { try { await fetch(`/api/payments?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud(); } catch (e) { dbPagos = dbPagos.filter(x => x.id !== id); localStorage.setItem('saas_db_pagos', JSON.stringify(dbPagos)); renderAll(); } } }
 
 
   // ── 7. ACCIONES LOGICAS: GASTOS Y PRESUPUESTOS ──
-  function abrirModalGasto() { 
-    document.getElementById('gDate').value = today(); 
-    document.getElementById('gConcept').value = ''; 
-    document.getElementById('gAmount').value = ''; 
-    document.getElementById('gastoDialog').showModal(); 
-  }
-  
-  function guardarGasto(e) { 
-    e.preventDefault(); 
-    const g = { 
-      id: 'gas_'+Date.now(), 
-      date: document.getElementById('gDate').value, 
-      amount: document.getElementById('gAmount').value, 
-      concept: document.getElementById('gConcept').value, 
-      gCat: document.getElementById('gCat').value 
-    }; 
-    dbGastos.unshift(g); 
-    localStorage.setItem('master_db_gastos', JSON.stringify(dbGastos)); 
-    cerrarModal('gastoDialog'); 
-    renderAll(); 
-  }
-  
-  function borrarGasto(id) { 
-    if(confirm('¿Eliminar gasto?')) { 
-      dbGastos = dbGastos.filter(x => x.id !== id); 
-      localStorage.setItem('master_db_gastos', JSON.stringify(dbGastos)); 
-      renderAll(); 
-    } 
-  }
+  function abrirModalGasto() { document.getElementById('gDate').value = today(); document.getElementById('gConcept').value = ''; document.getElementById('gAmount').value = ''; document.getElementById('gastoDialog').showModal(); }
+  function guardarGasto(e) { e.preventDefault(); const g = { id: 'gas_'+Date.now(), date: document.getElementById('gDate').value, amount: document.getElementById('gAmount').value, concept: document.getElementById('gConcept').value, gCat: document.getElementById('gCat').value }; dbGastos.unshift(g); localStorage.setItem('master_db_gastos', JSON.stringify(dbGastos)); cerrarModal('gastoDialog'); renderAll(); }
+  function borrarGasto(id) { if(confirm('¿Eliminar gasto?')) { dbGastos = dbGastos.filter(x => x.id !== id); localStorage.setItem('master_db_gastos', JSON.stringify(dbGastos)); renderAll(); } }
 
-  function addBudgetItem() { 
-    const tr = document.createElement('tr'); 
-    tr.innerHTML = `<td><input type="text" class="p-desc" placeholder="Servicio/Producto" required></td><td><input type="number" class="p-qty" value="1" required min="1"></td><td><input type="number" class="p-price" placeholder="Precio" required min="0"></td><td><button type="button" class="btn btn-danger-text" onclick="this.closest('tr').remove()" style="padding:4px 8px;">❌</button></td>`; 
-    document.getElementById('budgetItemsBody').appendChild(tr); 
-  }
-  
-  function abrirModalPresupuesto() { 
-    document.getElementById('presupuestoDialog').querySelector('form').reset(); 
-    document.getElementById('budgetItemsBody').innerHTML = ''; 
-    addBudgetItem(); 
-    document.getElementById('presupuestoDialog').showModal(); 
-  }
-  
+  function addBudgetItem() { const tr = document.createElement('tr'); tr.innerHTML = `<td><input type="text" class="p-desc" placeholder="Servicio/Producto" required></td><td><input type="number" class="p-qty" value="1" required min="1"></td><td><input type="number" class="p-price" placeholder="Precio" required min="0"></td><td><button type="button" class="btn btn-danger-text" onclick="this.closest('tr').remove()" style="padding:4px 8px;">❌</button></td>`; document.getElementById('budgetItemsBody').appendChild(tr); }
+  function abrirModalPresupuesto() { document.getElementById('presupuestoDialog').querySelector('form').reset(); document.getElementById('budgetItemsBody').innerHTML = ''; addBudgetItem(); document.getElementById('presupuestoDialog').showModal(); }
   function guardarPresupuesto(e) {
-    e.preventDefault(); 
-    const items = []; 
-    let total = 0;
-    document.querySelectorAll('#budgetItemsBody tr').forEach(tr => { 
-      const q = Number(tr.querySelector('.p-qty').value), p = Number(tr.querySelector('.p-price').value); 
-      items.push({ desc: tr.querySelector('.p-desc').value, qty: q, price: p }); 
-      total += (q * p); 
-    });
+    e.preventDefault(); const items = []; let total = 0;
+    document.querySelectorAll('#budgetItemsBody tr').forEach(tr => { const q = Number(tr.querySelector('.p-qty').value), p = Number(tr.querySelector('.p-price').value); items.push({ desc: tr.querySelector('.p-desc').value, qty: q, price: p }); total += (q * p); });
     if(items.length === 0) return alert('Debes cotizar al menos un ítem.');
     const pre = { id: 'PRE-'+Math.floor(Math.random()*10000), date: today(), clientName: document.getElementById('preName').value, clientEmail: document.getElementById('preEmail').value, items, total };
-    dbPresupuestos.unshift(pre); 
-    localStorage.setItem('master_db_presupuestos', JSON.stringify(dbPresupuestos)); 
-    cerrarModal('presupuestoDialog'); 
-    renderAll();
+    dbPresupuestos.unshift(pre); localStorage.setItem('master_db_presupuestos', JSON.stringify(dbPresupuestos)); cerrarModal('presupuestoDialog'); renderAll();
   }
-  
-  function borrarPresupuesto(id) { 
-    if(confirm('¿Eliminar presupuesto?')) { 
-      dbPresupuestos = dbPresupuestos.filter(x => x.id !== id); 
-      localStorage.setItem('master_db_presupuestos', JSON.stringify(dbPresupuestos)); 
-      renderAll(); 
-    } 
-  }
+  function borrarPresupuesto(id) { if(confirm('¿Eliminar presupuesto?')) { dbPresupuestos = dbPresupuestos.filter(x => x.id !== id); localStorage.setItem('master_db_presupuestos', JSON.stringify(dbPresupuestos)); renderAll(); } }
 
   // ── 8. IMPRESIÓN (PDF) Y EXPORTACIÓN EXCEL ──
   function imprimirRecibo(pagoId) {
