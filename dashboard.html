@@ -49,8 +49,6 @@
     .action-btn strong { display: block; font-size: 14px; margin-top: 6px; }
     .action-btn span   { font-size: 12px; color: rgba(255,255,255,.7); }
 
-    .kpi-grid-5 { grid-template-columns: repeat(5, 1fr); }
-
     .two-col { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; margin-bottom: 18px; }
     .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 18px; }
     .two-col-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -102,22 +100,100 @@
     .legend span { display: inline-flex; align-items: center; gap: 6px; }
     .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
+
+    /* ====================================================================
+       REGLAS MAGICAS: RESPONSIVE Y MENÚ HAMBURGUESA
+       ==================================================================== */
+    
+    /* 1. Arreglo definitivo para las tarjetas del Dashboard */
+    .kpi-grid-5 { 
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; 
+      gap: 16px !important;
+      margin-bottom: 22px;
+    }
+    .kpi-card {
+      min-width: 0; /* Evita que el texto largo estire la tarjeta */
+      word-wrap: break-word;
+    }
+
+    /* 2. Preparación del Menú Hamburguesa */
+    .mobile-toggle {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 26px;
+      cursor: pointer;
+      color: var(--text);
+      padding: 0;
+      margin-right: 15px;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 998;
+      backdrop-filter: blur(2px);
+    }
+
     @media (max-width: 1200px) {
-      .kpi-grid-5 { grid-template-columns: repeat(3,1fr); }
       .hero { grid-template-columns: 1fr; }
       .two-col, .three-col, .two-col-eq { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 900px) {
+      /* Encendemos el botón hamburguesa */
+      .mobile-toggle { display: block; }
+      
+      /* Escondemos la barra lateral y la preparamos para deslizarse */
+      .sidebar {
+        position: fixed !important;
+        left: -300px; /* Escondida a la izquierda */
+        top: 0;
+        height: 100vh !important;
+        width: 260px !important;
+        z-index: 999;
+        flex-direction: column !important;
+        transition: left 0.3s ease;
+        box-shadow: 4px 0 25px rgba(0,0,0,0.5);
+      }
+      
+      /* Clases activas cuando se toca el menú */
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      
+      .nav { flex-direction: column !important; }
+      
+      /* Forzamos 2 columnas perfectas para los KPIs en celular */
+      .kpi-grid-5 { 
+        grid-template-columns: 1fr 1fr !important; 
+        gap: 12px !important; 
+      }
+      
+      .page-title h1 { font-size: 20px; }
+      .content { padding: 15px; }
     }
   </style>
 </head>
 <body>
+
 <div class="app">
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
+
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
       <div class="brand-text"><strong>Micro SaaS</strong><small>Control del negocio</small></div>
     </div>
     <nav class="nav">
-      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="dashboard.html" class="active"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
       <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
@@ -131,9 +207,12 @@
 
   <main class="content">
     <header class="topbar">
-      <div class="page-title">
-        <h1>Panel principal</h1>
-        <p id="topbarDate">Resumen operativo del negocio</p>
+      <div class="topbar-left">
+        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
+        <div class="page-title">
+          <h1 style="margin:0;">Panel principal</h1>
+          <p id="topbarDate" style="margin:4px 0 0;">Resumen operativo del negocio</p>
+        </div>
       </div>
     </header>
 
@@ -151,7 +230,7 @@
       </div>
     </section>
 
-    <section class="kpi-grid kpi-grid-5 card-pad" id="kpiGrid" style="display:grid;margin-bottom:22px;"></section>
+    <section class="kpi-grid-5 card-pad" id="kpiGrid"></section>
 
     <div class="two-col">
       <article class="card card-pad">
@@ -228,6 +307,12 @@
 
 <script src="core.js"></script>
 <script>
+// Función para abrir y cerrar el menú hamburguesa
+function toggleMenu() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
+
 function computeState() {
   const products        = getData(KEYS.products, []);
   const sales           = getData(KEYS.sales, []);
@@ -301,7 +386,7 @@ function renderKpis(s) {
     { label:'Margen general',    value:percent(s.avgMargin),     note: s.avgMargin >= 25 ? 'Saludable' : 'A revisar' },
   ];
   document.getElementById('kpiGrid').innerHTML = cards.map(c => `
-    <article class="card kpi-card">
+    <article class="card kpi-card" style="padding: 20px;">
       <div class="kpi-label">${c.label}</div>
       <div class="kpi-value">${c.value}</div>
       <div class="kpi-sub">${c.note}</div>
