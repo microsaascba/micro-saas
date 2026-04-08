@@ -6,34 +6,76 @@
   <title>Contable | Micro SaaS</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .two-col  { display: grid; grid-template-columns: 1.4fr .8fr; gap: 18px; }
+    .two-col  { display: grid; grid-template-columns: 1.3fr .9fr; gap: 18px; }
     .smart-banner { margin-bottom: 18px; padding: 16px 20px; border-radius: var(--radius); background: #111827; color: #fff; display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 14px; }
     .smart-banner span { color: #94a3b8; }
     
-    /* Input con formato moneda */
-    .input-money-wrapper { position: relative; }
-    .input-money-wrapper::before { content: "$"; position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); font-weight: 600; }
-    .input-money-wrapper input { padding-left: 30px !important; font-weight: 600; }
-
-    /* Grupo para seleccionar o agregar proveedor */
-    .supplier-group { display: flex; gap: 6px; }
-    .supplier-group select { flex: 1; }
-    .supplier-group button { padding: 0 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 14px; }
-    .supplier-group button:hover { border-color: var(--primary); color: var(--primary); }
-
-    /* Barra de filtros */
-    .filters-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; background: var(--panel-2); padding: 12px; border-radius: 12px; border: 1px solid var(--line); align-items: center; }
-    .filters-bar input, .filters-bar select { padding: 8px 12px; font-family: inherit; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; outline: none; }
-    .filters-bar input:focus, .filters-bar select:focus { border-color: var(--primary); }
+    /* ── REGLAS MAGICAS: RESPONSIVE Y MENÚ HAMBURGUESA ── */
     
-    .amount-in { color: #10b981; font-weight: 700; }
-    .amount-out { color: #ef4444; font-weight: 700; }
+    /* Grilla de KPIs fluida */
+    .kpi-grid { 
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important; 
+      gap: 16px !important;
+      margin-bottom: 22px;
+    }
+    .kpi-card { min-width: 0; word-wrap: break-word; padding: 20px; }
 
-    @media (max-width: 1100px) { .two-col { grid-template-columns: 1fr; } }
+    /* Preparación del Menú Hamburguesa */
+    .mobile-toggle {
+      display: none; background: none; border: none; font-size: 26px;
+      cursor: pointer; color: var(--text); padding: 0; margin-right: 15px;
+    }
+    .topbar-left { display: flex; align-items: center; }
+    
+    .sidebar-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px);
+    }
+
+    @media (max-width: 1100px) { 
+      .two-col { grid-template-columns: 1fr; } 
+    }
+
+    @media (max-width: 900px) {
+      /* Encendemos el botón hamburguesa */
+      .mobile-toggle { display: block; }
+      
+      /* Sidebar deslizante */
+      .sidebar {
+        position: fixed !important; left: -300px; top: 0; height: 100vh !important;
+        width: 260px !important; z-index: 999; flex-direction: column !important;
+        transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5);
+      }
+      
+      /* Clases activas */
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+      .nav { flex-direction: column !important; }
+      
+      /* Ajuste de Topbar para móviles */
+      .topbar { flex-direction: column; align-items: flex-start; gap: 15px; }
+      .page-title h1 { font-size: 20px; }
+      
+      /* Apilamos los botones de acción para que se puedan tocar fácil */
+      .topbar-actions { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+      .topbar-actions .btn { width: 100%; justify-content: center; }
+
+      .content { padding: 15px; }
+      .kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
+    }
+
+    @media (max-width: 500px) {
+      .kpi-grid { grid-template-columns: 1fr !important; } /* 1 columna en celulares muy chicos */
+      .smart-banner { flex-direction: column; align-items: flex-start; }
+    }
   </style>
 </head>
 <body>
 <div class="app">
+
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
+
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
@@ -47,90 +89,65 @@
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
     </nav>
     <div class="sidebar-footer">
-      <strong>Módulo Financiero</strong>
-      Cajas, Bancos y Egresos
+      <strong>Fuentes de datos</strong>
+      saas_expenses · saas_supplier_debts · saas_supplier_payments · saas_sales · saas_dashboard_summary
     </div>
   </aside>
 
   <main class="content">
     <header class="topbar">
-      <div class="page-title">
-        <h1>Control Financiero y Cajas</h1>
-        <p>Arqueo de fondos disponibles, gastos operativos y compras.</p>
+      <div class="topbar-left">
+        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
+        <div class="page-title">
+          <h1 style="margin:0;">Módulo Contable</h1>
+          <p style="margin:4px 0 0;">Controlá salidas de dinero, pagos pendientes y resultado neto.</p>
+        </div>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-success" id="btnExportExcel">⬇ Exportar Mayor</button>
-        <button class="btn btn-primary" id="btnOpenExpense">+ Registar Gasto</button>
-        <button class="btn btn-primary" id="btnOpenSupplier">+ Cargar Compra</button>
+        <button class="btn btn-success" id="btnExportExcel">⬇ Exportar Movimientos</button>
+        <button class="btn btn-primary" id="btnOpenExpense">+ Registar gasto</button>
+        <button class="btn btn-primary" id="btnOpenSupplier">+ Proveedor / Deuda</button>
+        <button class="btn btn-light"   id="btnSync">Sincronizar</button>
       </div>
     </header>
 
     <div class="smart-banner">
-      <div id="smartMessage">Cargando saldos...</div>
+      <div id="smartMessage">Cargando datos...</div>
       <span>Última actualización: <strong id="lastUpdate">-</strong></span>
     </div>
 
-    <section class="kpi-grid" style="margin-bottom:22px;">
-      <article class="card kpi-card" style="border-top: 4px solid #10b981;">
-        <div class="kpi-label">Caja Fuerte (Efectivo)</div>
-        <div class="kpi-value" id="kpiEfectivo">$0</div>
-        <div class="kpi-sub">Dinero físico disponible</div>
-      </article>
-      <article class="card kpi-card" style="border-top: 4px solid #3b82f6;">
-        <div class="kpi-label">Bancos (Transferencias)</div>
-        <div class="kpi-value" id="kpiBancos">$0</div>
-        <div class="kpi-sub">Saldo en cuentas bancarias</div>
-      </article>
-      <article class="card kpi-card" style="border-top: 4px solid #f59e0b;">
-        <div class="kpi-label">Tarjetas (Posnet)</div>
-        <div class="kpi-value" id="kpiTarjetas">$0</div>
-        <div class="kpi-sub">Acreditaciones pendientes/listas</div>
-      </article>
-      <article class="card kpi-card" style="background: var(--panel-2);">
-        <div class="kpi-label">Capital Total Líquido</div>
-        <div class="kpi-value" id="kpiTotalLiquido">$0</div>
-        <div class="kpi-sub">Suma de todas las cajas</div>
-      </article>
+    <section class="kpi-grid">
+      <article class="card kpi-card"><div class="kpi-label">Gastos del día</div><div class="kpi-value" id="kpiTodayExpense">$0</div><div class="kpi-sub" id="subTodayExpense">0 movimientos hoy</div></article>
+      <article class="card kpi-card"><div class="kpi-label">Gastos del mes</div><div class="kpi-value" id="kpiMonthExpense">$0</div><div class="kpi-sub" id="subMonthExpense">Incluye gastos y pagos</div></article>
+      <article class="card kpi-card"><div class="kpi-label">Pagos pendientes</div><div class="kpi-value" id="kpiPending">$0</div><div class="kpi-sub" id="subPending">0 vencimientos activos</div></article>
+      <article class="card kpi-card"><div class="kpi-label">Resultado neto</div><div class="kpi-value" id="kpiNet">$0</div><div class="kpi-sub" id="subNet">Ingresos - egresos del mes</div></article>
     </section>
 
     <div class="two-col">
       <div style="display:grid;gap:18px;">
         <article class="card card-pad">
-          <div class="section-head">
-            <div><h2>Libro Mayor (Flujo de Fondos)</h2><p>Registro histórico de ingresos y egresos.</p></div>
-          </div>
-          
-          <div class="filters-bar">
-            <div><label style="font-size:11px; color:var(--muted); display:block; margin-bottom:2px;">Desde:</label><input type="date" id="filterFrom"></div>
-            <div><label style="font-size:11px; color:var(--muted); display:block; margin-bottom:2px;">Hasta:</label><input type="date" id="filterTo"></div>
-            <div>
-              <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:2px;">Caja / Origen:</label>
-              <select id="filterCaja">
-                <option value="all">Todas las Cajas</option>
-                <option value="efectivo">Solo Efectivo</option>
-                <option value="transferencia">Solo Bancos (Transf.)</option>
-                <option value="tarjeta">Solo Tarjetas</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:11px; color:var(--muted); display:block; margin-bottom:2px;">Tipo Operación:</label>
-              <select id="filterType">
-                <option value="all">Todos los Movimientos</option>
-                <option value="ingreso">Solo Ingresos (Ventas)</option>
-                <option value="egreso">Solo Egresos (Compras/Gastos)</option>
-              </select>
-            </div>
-            <div style="align-self: flex-end;">
-              <button class="btn btn-light" onclick="limpiarFiltros()" style="padding: 9px 14px;">Limpiar</button>
-            </div>
-          </div>
+          <div class="section-head"><div><h2>Alertas automáticas</h2><p>Mensajes simples para entender qué está pasando.</p></div></div>
+          <div id="alertsContainer" style="display:grid;gap:10px;"></div>
+        </article>
 
-          <div class="table-wrap" style="max-height: 500px; overflow-y: auto;">
+        <article class="card card-pad">
+          <div class="section-head"><div><h2>Egresos por categoría</h2><p>Qué parte del dinero se va en cada rubro.</p></div></div>
+          <div id="categoryChart" style="display:grid;gap:10px;"></div>
+        </article>
+
+        <article class="card card-pad">
+          <div class="section-head">
+            <div><h2>Movimientos recientes</h2><p>Últimos gastos y pagos cargados.</p></div>
+            <div class="tabs">
+              <button class="tab active" data-view="all">Todos</button>
+              <button class="tab" data-view="expenses">Gastos</button>
+              <button class="tab" data-view="payments">Pagos</button>
+            </div>
+          </div>
+          <div class="table-wrap">
             <table>
-              <thead style="position: sticky; top: 0; background: #fff; z-index: 10;">
-                <tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Medio de Pago</th><th>Monto</th><th>Acción</th></tr>
-              </thead>
-              <tbody id="ledgerTableBody"></tbody>
+              <thead><tr><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Categoría / Proveedor</th><th>Estado</th><th>Monto</th><th>Acción</th></tr></thead>
+              <tbody id="recentTableBody"></tbody>
             </table>
           </div>
         </article>
@@ -138,18 +155,34 @@
 
       <div style="display:grid;gap:18px;align-content:start;">
         <article class="card card-pad">
-          <div class="section-head"><div><h2>Últimas Compras (Facturas)</h2><p>Registro de proveedores.</p></div></div>
+          <div class="section-head"><div><h2>Resumen del módulo</h2><p>Indicadores clave del período.</p></div></div>
+          <div class="metric-list">
+            <div class="metric-row"><span>Gastos pagados del mes</span><strong id="metricPaidExpenses">$0</strong></div>
+            <div class="metric-row"><span>Gastos pendientes</span><strong id="metricPendingExpenses">$0</strong></div>
+            <div class="metric-row"><span>Deuda a proveedores</span><strong id="metricSupplierDebt">$0</strong></div>
+            <div class="metric-row"><span>Pagos a proveedores del mes</span><strong id="metricSupplierPaid">$0</strong></div>
+            <div class="metric-row"><span>Ingresos del mes (ventas)</span><strong id="metricIncome">$0</strong></div>
+            <div class="metric-row"><span>Resultado neto</span><strong id="metricNet">$0</strong></div>
+          </div>
+        </article>
+
+        <article class="card card-pad">
+          <div class="section-head"><div><h2>Proveedores con saldo</h2><p>Qué debés y qué vence primero.</p></div></div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Proveedor</th><th>Comprobante</th><th>Monto</th></tr></thead>
-              <tbody id="purchasesTableBody"></tbody>
+              <thead><tr><th>Proveedor</th><th>Vence</th><th>Saldo</th><th>Estado</th></tr></thead>
+              <tbody id="suppliersTableBody"></tbody>
             </table>
           </div>
         </article>
 
         <article class="card card-pad">
-          <div class="section-head"><div><h2>Egresos del Mes por Categoría</h2></div></div>
-          <div id="categoryChart" style="display:grid;gap:10px;"></div>
+          <div class="section-head"><div><h2>Conexión del sistema</h2></div></div>
+          <div class="metric-list">
+            <div class="metric-row"><span>Estado</span><strong id="systemStatus">Conectado</strong></div>
+            <div class="metric-row"><span>Dashboard</span><strong id="dashboardStatus">Actualizado</strong></div>
+            <div class="metric-row"><span>Evento</span><strong>saas:data-updated</strong></div>
+          </div>
         </article>
       </div>
     </div>
@@ -157,19 +190,13 @@
 </div>
 
 <dialog id="expenseDialog">
-  <div class="modal-head"><h3 id="expenseModalTitle">Registrar Gasto Operativo</h3><button class="btn btn-light" onclick="cerrarModalGasto()">Cerrar</button></div>
+  <div class="modal-head"><h3>Registrar gasto</h3><button class="btn btn-light" onclick="cerrarModalGasto()">Cerrar</button></div>
   <form class="modal-body" id="expenseForm">
     <div class="form-grid">
-      <div class="field"><label>Fecha *</label><input type="date" name="date" required /></div>
-      <div class="field">
-        <label>Monto Total *</label>
-        <div class="input-money-wrapper">
-          <input type="text" class="money-input" id="expAmountMasked" placeholder="0,00" required autocomplete="off" />
-          <input type="hidden" name="amount" id="expAmountReal" />
-        </div>
-      </div>
-      <div class="field full"><label>Concepto *</label><input type="text" name="concept" placeholder="Ej: Luz, Alquiler, Internet" required /></div>
-      <div class="field"><label>Categoría *</label>
+      <div class="field"><label>Fecha</label><input type="date" name="date" required /></div>
+      <div class="field"><label>Monto</label><input type="number" step="0.01" name="amount" placeholder="0" required /></div>
+      <div class="field full"><label>Concepto</label><input type="text" name="concept" placeholder="Ej: alquiler, combustible" required /></div>
+      <div class="field"><label>Categoría</label>
         <select name="category" required>
           <option value="Servicios">Servicios</option><option value="Alquiler">Alquiler</option><option value="Sueldos">Sueldos</option>
           <option value="Logística">Logística</option><option value="Marketing">Marketing</option><option value="Mantenimiento">Mantenimiento</option>
@@ -177,8 +204,10 @@
           <option value="Administración">Administración</option><option value="Otros">Otros</option>
         </select>
       </div>
-      <div class="field"><label>De qué caja sale el dinero? *</label><select name="paymentMethod" required><option value="Efectivo">Caja Efectivo</option><option value="Transferencia">Banco (Transferencia)</option><option value="Tarjeta">Tarjeta de Crédito</option><option value="Cuenta corriente">Cuenta corriente (Deuda)</option><option value="Otro">Otro</option></select></div>
-      <div class="field full"><label>Observación</label><textarea name="notes" placeholder="Detalle adicional (Opcional)"></textarea></div>
+      <div class="field"><label>Estado</label><select name="status" required><option value="pagado">Pagado</option><option value="pendiente">Pendiente</option></select></div>
+      <div class="field"><label>Medio de pago</label><select name="paymentMethod"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="Tarjeta">Tarjeta</option><option value="Cuenta corriente">Cuenta corriente</option><option value="Otro">Otro</option></select></div>
+      <div class="field"><label>Vencimiento</label><input type="date" name="dueDate" /></div>
+      <div class="field full"><label>Observación</label><textarea name="notes" placeholder="Opcional"></textarea></div>
     </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-light" onclick="cerrarModalGasto()">Cancelar</button>
@@ -188,316 +217,330 @@
 </dialog>
 
 <dialog id="supplierDialog">
-  <div class="modal-head"><h3 id="supplierModalTitle">Cargar Compra (Factura)</h3><button class="btn btn-light" onclick="cerrarModalProveedor()">Cerrar</button></div>
+  <div class="modal-head"><h3>Registrar proveedor / deuda</h3><button class="btn btn-light" onclick="cerrarModalProveedor()">Cerrar</button></div>
   <form class="modal-body" id="supplierForm">
     <div class="form-grid">
-      <div class="field"><label>Fecha *</label><input type="date" name="date" required /></div>
-      <div class="field full">
-        <label>Proveedor *</label>
-        <div class="supplier-group">
-          <select name="supplierName" id="supplierSelect" required>
-            <option value="">Seleccione un proveedor...</option>
-          </select>
-          <button type="button" onclick="crearProveedor()" title="Agregar Nuevo Proveedor">➕</button>
-          <button type="button" onclick="gestionarProveedor()" title="Editar o Borrar Proveedor Seleccionado">⚙️</button>
-        </div>
-      </div>
-      <div class="field"><label>Tipo Comprobante *</label>
-        <select name="invoiceType" required>
-          <option value="Factura A">Factura A</option>
-          <option value="Factura B">Factura B</option>
-          <option value="Factura C">Factura C</option>
-          <option value="Remito">Remito / X</option>
-        </select>
-      </div>
-      <div class="field"><label>Número de Factura *</label><input type="text" name="invoiceNumber" placeholder="Ej: 0001-00001234" required /></div>
-      <div class="field">
-        <label>Monto Total Factura *</label>
-        <div class="input-money-wrapper">
-          <input type="text" class="money-input" id="purAmountMasked" placeholder="0,00" required autocomplete="off" />
-          <input type="hidden" name="amount" id="purAmountReal" />
-        </div>
-      </div>
-      <div class="field"><label>De qué caja sale el dinero? *</label><select name="paymentMethod" required><option value="Transferencia">Banco (Transferencia)</option><option value="Efectivo">Caja Efectivo</option><option value="Tarjeta">Tarjeta de Crédito</option><option value="Cuenta corriente">Cuenta Corriente (Deuda)</option></select></div>
-      <div class="field full"><label>Detalle de la compra *</label><input type="text" name="concept" placeholder="Ej: Lote de 50 clippers Volt" required /></div>
+      <div class="field"><label>Fecha</label><input type="date" name="date" required /></div>
+      <div class="field"><label>Tipo</label><select name="movementType" required><option value="debt">Nueva deuda / compra</option><option value="payment">Pago a proveedor</option></select></div>
+      <div class="field full"><label>Proveedor</label><input type="text" name="supplierName" placeholder="Nombre del proveedor" required /></div>
+      <div class="field"><label>Monto</label><input type="number" step="0.01" name="amount" placeholder="0" required /></div>
+      <div class="field"><label>Vencimiento</label><input type="date" name="dueDate" /></div>
+      <div class="field full"><label>Concepto</label><input type="text" name="concept" placeholder="Ej: compra de mercadería" required /></div>
+      <div class="field"><label>Estado</label><select name="status" required><option value="pendiente">Pendiente</option><option value="pagado">Pagado</option></select></div>
+      <div class="field"><label>Medio de pago</label><select name="paymentMethod"><option value="Transferencia">Transferencia</option><option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Cuenta corriente">Cuenta corriente</option></select></div>
+      <div class="field full"><label>Observación</label><textarea name="notes" placeholder="Opcional"></textarea></div>
     </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-light" onclick="cerrarModalProveedor()">Cancelar</button>
-      <button type="submit" class="btn btn-success">Guardar Factura</button>
+      <button type="submit" class="btn btn-success">Guardar movimiento</button>
     </div>
   </form>
 </dialog>
 
 <script src="core.js"></script>
 <script>
+let currentRecentFilter = 'all';
 let editingExpenseId = null;
-let editingPurchaseId = null;
+let editingSupplierMoveId = null;
 
-// --- MÁSCARA DE MONEDA ---
-function aplicarMascaraMoneda() {
-  document.querySelectorAll('.money-input').forEach(inp => {
-    inp.addEventListener('input', function(e) {
-      let val = this.value.replace(/[^0-9,]/g, '');
-      const parts = val.split(',');
-      if(parts.length > 2) val = parts[0] + ',' + parts.slice(1).join('');
-      if(val === '') { this.value = ''; return; }
-      let [intStr, decStr] = val.split(',');
-      if(intStr) intStr = parseInt(intStr, 10).toLocaleString('es-AR');
-      if(decStr !== undefined) this.value = `${intStr},${decStr.substring(0, 2)}`;
-      else this.value = val.endsWith(',') ? `${intStr},` : intStr;
-    });
-  });
+// Función para abrir y cerrar el menú hamburguesa
+function toggleMenu() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
 }
 
-function parseMascaraMoneda(valStr) {
-  if(!valStr) return 0;
-  return parseFloat(valStr.replace(/\./g, '').replace(',', '.'));
-}
-
-function formatNumberToMask(num) {
-  if(!num && num !== 0) return '';
-  let str = Number(num).toFixed(2).replace('.', ',');
-  let [intStr, decStr] = str.split(',');
-  intStr = parseInt(intStr, 10).toLocaleString('es-AR');
-  return `${intStr},${decStr}`;
-}
-
-// --- GESTIÓN DE PROVEEDORES ---
-function cargarSelectProveedores() {
-  const select = document.getElementById('supplierSelect');
-  const proveedores = getData('saas_suppliers_list', []);
-  select.innerHTML = '<option value="">Seleccione un proveedor...</option>';
-  proveedores.sort().forEach(prov => {
-    const opt = document.createElement('option');
-    opt.value = prov; opt.textContent = prov;
-    select.appendChild(opt);
-  });
-}
-
-function crearProveedor() {
-  const nombre = prompt("Ingrese el nombre del nuevo proveedor o marca:");
-  if (!nombre || !nombre.trim()) return;
-  const provs = getData('saas_suppliers_list', []);
-  const nuevoNom = nombre.trim();
-  if (!provs.includes(nuevoNom)) { provs.push(nuevoNom); localStorage.setItem('saas_suppliers_list', JSON.stringify(provs)); }
-  cargarSelectProveedores(); document.getElementById('supplierSelect').value = nuevoNom;
-}
-
-window.gestionarProveedor = function() {
-  const select = document.getElementById('supplierSelect');
-  const seleccionado = select.value;
-  if (!seleccionado) return alert("Seleccione un proveedor de la lista desplegable.");
-  const accion = prompt(`Estás modificando a: "${seleccionado}"\n\n- Escribí el NUEVO NOMBRE para corregirlo.\n- Escribí BORRAR para eliminarlo de la lista.`, seleccionado);
-  if (accion === null || accion.trim() === '') return;
-  let provs = getData('saas_suppliers_list', []);
-
-  if (accion.trim().toUpperCase() === 'BORRAR') {
-    if (confirm(`¿Quitar a "${seleccionado}"? (No borra sus facturas pasadas)`)) {
-      provs = provs.filter(p => p !== seleccionado);
-      localStorage.setItem('saas_suppliers_list', JSON.stringify(provs));
-      cargarSelectProveedores();
-    }
-  } else {
-    const nuevoNombre = accion.trim();
-    if (nuevoNombre !== seleccionado) {
-      const index = provs.indexOf(seleccionado);
-      if (index !== -1) provs[index] = nuevoNombre; else provs.push(nuevoNombre); 
-      localStorage.setItem('saas_suppliers_list', JSON.stringify(provs));
-      let purchases = getData(KEYS.purchases, []);
-      let changed = false;
-      purchases.forEach(p => { if (p.supplierName === seleccionado) { p.supplierName = nuevoNombre; changed = true; } });
-      if (changed) { setData(KEYS.purchases, purchases); render(); }
-      cargarSelectProveedores(); select.value = nuevoNombre;
-    }
-  }
-};
-
-// --- CORE DEL FLUJO DE CAJA ---
 function computeState() {
-  const expenses = getData(KEYS.expenses, []);
-  const purchases = getData(KEYS.purchases, []); 
-  const sales = getData(KEYS.sales, []);
-  
-  const saldos = { efectivo: 0, bancos: 0, tarjetas: 0, total: 0 };
-  
-  // Calcular Ingresos (Ventas)
-  sales.forEach(s => {
-    const amt = toNum(s.total);
-    const method = (s.paymentMethod || '').toLowerCase();
-    if (method.includes('efectivo')) saldos.efectivo += amt;
-    else if (method.includes('transferencia') || method.includes('banco')) saldos.bancos += amt;
-    else if (method.includes('tarjeta')) saldos.tarjetas += amt;
-    saldos.total += amt;
-  });
+  const expenses        = getData(KEYS.expenses, []);
+  const debts           = getData(KEYS.supplierDebts, []);
+  const payments        = getData(KEYS.supplierPayments, []);
+  const sales           = getData(KEYS.sales, []);
+  const today = todayISO(), cm = monthKey(today);
 
-  // Calcular Egresos (Gastos y Compras)
-  [...expenses, ...purchases].forEach(e => {
-    const amt = toNum(e.amount);
-    const method = (e.paymentMethod || '').toLowerCase();
-    if (method.includes('efectivo')) saldos.efectivo -= amt;
-    else if (method.includes('transferencia') || method.includes('banco')) saldos.bancos -= amt;
-    else if (method.includes('tarjeta')) saldos.tarjetas -= amt;
-    saldos.total -= amt;
-  });
+  const totalIncomeMonth = sales.filter(s => monthKey(s.date || s.createdAt || today) === cm).reduce((a,s) => a + saleTotal(s), 0);
+  const expenseToday     = expenses.filter(e => e.date === today && e.status === 'pagado').reduce((a,e) => a + toNum(e.amount), 0);
+  const expenseCountToday = expenses.filter(e => e.date === today).length;
+  const paidExpensesMonth = expenses.filter(e => monthKey(e.date) === cm && e.status === 'pagado').reduce((a,e) => a + toNum(e.amount), 0);
+  const pendingExpenses   = expenses.filter(e => e.status === 'pendiente').reduce((a,e) => a + toNum(e.amount), 0);
+  const paymentsMonth     = payments.filter(p => monthKey(p.date) === cm).reduce((a,p) => a + toNum(p.amount), 0);
+  const debtsTotal   = debts.reduce((a,d) => a + toNum(d.amount), 0);
+  const paymentsTotal= payments.reduce((a,p) => a + toNum(p.amount), 0);
+  const supplierDebtPending = Math.max(0, debtsTotal - paymentsTotal);
+  const monthExpense = paidExpensesMonth + paymentsMonth;
+  const net = totalIncomeMonth - monthExpense;
 
-  // Armar el Libro Mayor (Todas las operaciones)
-  const allMoves = [
-    ...sales.map(s => ({ id: s.id, date: (s.createdAt || s.date).slice(0,10), type: 'Ingreso', concept: `Venta ${s.code || ''}`, owner: 'Cliente', amount: toNum(s.total), source: 'sales', paymentMethod: s.paymentMethod || 'N/D' })),
-    ...expenses.map(e => ({ id: e.id, date: e.date, type: 'Gasto', concept: e.concept, owner: e.category, amount: toNum(e.amount), source: 'expenses', paymentMethod: e.paymentMethod || 'N/D' })),
-    ...purchases.map(p => ({ id: p.id, date: p.date, type: 'Compra', concept: `${p.invoiceType} ${p.invoiceNumber}`, owner: p.supplierName, amount: toNum(p.amount), source: 'purchases', paymentMethod: p.paymentMethod || 'N/D' }))
-  ].sort((a,b) => (b.date||'').localeCompare(a.date||''));
+  // Proveedores pendientes
+  const debtsBySupplier = debts.reduce((acc,d) => {
+    const k = d.supplierName.trim().toLowerCase();
+    if (!acc[k]) acc[k] = { supplierName:d.supplierName, debt:0, nearestDue:d.dueDate||'' };
+    acc[k].debt += toNum(d.amount);
+    if (d.dueDate && (!acc[k].nearestDue || d.dueDate < acc[k].nearestDue)) acc[k].nearestDue = d.dueDate;
+    return acc;
+  }, {});
+  const paymentsBySupplier = payments.reduce((acc,p) => { const k=p.supplierName.trim().toLowerCase(); acc[k]=(acc[k]||0)+toNum(p.amount); return acc; }, {});
+  const suppliersPending = Object.values(debtsBySupplier).map(it => {
+    const paid = paymentsBySupplier[it.supplierName.trim().toLowerCase()] || 0;
+    const balance = Math.max(0, it.debt - paid);
+    const due = it.nearestDue || '';
+    const overdue = due && due < today;
+    return { supplierName:it.supplierName, dueDate:due, balance, status:balance<=0?'paid':overdue?'overdue':'pending' };
+  }).filter(x => x.balance > 0).sort((a,b) => (a.dueDate||'9999').localeCompare(b.dueDate||'9999'));
 
-  // Gráfico Egresos del mes
-  const cm = monthKey(todayISO());
+  // Categorías
   const categoryTotals = {};
-  expenses.filter(e => monthKey(e.date)===cm).forEach(e => { const c=e.category||'Otros'; categoryTotals[c]=(categoryTotals[c]||0)+toNum(e.amount); });
-  const purchasesMonth = purchases.filter(p => monthKey(p.date)===cm).reduce((a,p) => a + toNum(p.amount), 0);
-  if (purchasesMonth > 0) categoryTotals['Mercadería/Proveedores'] = purchasesMonth;
+  expenses.filter(e => e.status==='pagado' && monthKey(e.date)===cm).forEach(e => { const c=e.category||'Otros'; categoryTotals[c]=(categoryTotals[c]||0)+toNum(e.amount); });
+  payments.filter(p => monthKey(p.date)===cm).forEach(p => { categoryTotals['Proveedores']=(categoryTotals['Proveedores']||0)+toNum(p.amount); });
 
-  return { saldos, allMoves, categoryTotals, recentPurchases: purchases.sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0, 8) };
+  // Movimientos recientes (incluyendo ID original)
+  const recentMoves = [
+    ...expenses.map(e => ({ id: e.id, date:e.date, type:'Gasto', concept:e.concept, owner:e.category, status:e.status, amount:toNum(e.amount), source:'expenses' })),
+    ...payments.map(p => ({ id: p.id, date:p.date, type:'Pago proveedor', concept:p.concept, owner:p.supplierName, status:'pagado', amount:toNum(p.amount), source:'payments' }))
+  ].sort((a,b) => (b.date||'').localeCompare(a.date||'')).slice(0,15);
+
+  return { totalIncomeMonth, expenseToday, expenseCountToday, paidExpensesMonth, pendingExpenses, paymentsMonth, supplierDebtPending, monthExpense, net, suppliersPending, categoryTotals, recentMoves };
 }
 
 function render() {
   const s = computeState();
+  document.getElementById('kpiTodayExpense').textContent   = currency(s.expenseToday);
+  document.getElementById('subTodayExpense').textContent   = s.expenseCountToday + ' movimientos registrados hoy';
+  document.getElementById('kpiMonthExpense').textContent   = currency(s.monthExpense);
+  document.getElementById('subMonthExpense').textContent   = `Gastos: ${currency(s.paidExpensesMonth)} · Proveedores: ${currency(s.paymentsMonth)}`;
+  document.getElementById('kpiPending').textContent        = currency(s.pendingExpenses + s.supplierDebtPending);
+  document.getElementById('subPending').textContent        = s.suppliersPending.length + ' vencimientos o saldos activos';
+  document.getElementById('kpiNet').textContent            = currency(s.net);
+  document.getElementById('subNet').textContent            = s.net >= 0 ? 'El negocio sigue en positivo' : 'Los egresos superan los ingresos';
+  document.getElementById('metricPaidExpenses').textContent    = currency(s.paidExpensesMonth);
+  document.getElementById('metricPendingExpenses').textContent = currency(s.pendingExpenses);
+  document.getElementById('metricSupplierDebt').textContent    = currency(s.supplierDebtPending);
+  document.getElementById('metricSupplierPaid').textContent    = currency(s.paymentsMonth);
+  document.getElementById('metricIncome').textContent         = currency(s.totalIncomeMonth);
+  document.getElementById('metricNet').textContent            = currency(s.net);
+  document.getElementById('lastUpdate').textContent           = nowReadable();
+  document.getElementById('smartMessage').textContent         = s.net < 0 ? `Tus gastos superan ingresos por ${currency(Math.abs(s.net))}` : s.supplierDebtPending > 0 ? `Debés ${currency(s.supplierDebtPending)} a proveedores` : s.expenseToday > 0 ? `Hoy gastaste ${currency(s.expenseToday)}` : 'Todavía no registraste egresos pagados hoy';
 
-  // KPIs
-  document.getElementById('kpiEfectivo').textContent = currency(s.saldos.efectivo);
-  document.getElementById('kpiBancos').textContent   = currency(s.saldos.bancos);
-  document.getElementById('kpiTarjetas').textContent = currency(s.saldos.tarjetas);
-  document.getElementById('kpiTotalLiquido').textContent = currency(s.saldos.total);
-  document.getElementById('lastUpdate').textContent  = nowReadable();
+  // Alertas
+  const alerts = [
+    { type:'info', text:`Hoy gastaste ${currency(s.expenseToday)}.` },
+    { type:'warning', text:`Debés ${currency(s.supplierDebtPending)} a proveedores.` },
+    s.net < 0 ? { type:'danger', text:`Tus gastos superan ingresos por ${currency(Math.abs(s.net))}.` } : { type:'success', text:`Tu resultado neto actual es ${currency(s.net)}.` },
+  ];
+  if (s.pendingExpenses > 0) alerts.push({ type:'warning', text:`Tenés ${currency(s.pendingExpenses)} en gastos pendientes.` });
+  document.getElementById('alertsContainer').innerHTML = alerts.map(a => `<div class="alert-box alert-${a.type}">${a.text}</div>`).join('');
 
-  // Filtros
-  let filteredMoves = s.allMoves;
-  const fFrom = document.getElementById('filterFrom').value;
-  const fTo = document.getElementById('filterTo').value;
-  const fCaja = document.getElementById('filterCaja').value;
-  const fType = document.getElementById('filterType').value;
-
-  if (fFrom) filteredMoves = filteredMoves.filter(m => m.date >= fFrom);
-  if (fTo) filteredMoves = filteredMoves.filter(m => m.date <= fTo);
-  if (fCaja !== 'all') filteredMoves = filteredMoves.filter(m => (m.paymentMethod||'').toLowerCase().includes(fCaja));
-  if (fType === 'ingreso') filteredMoves = filteredMoves.filter(m => m.type === 'Ingreso');
-  if (fType === 'egreso') filteredMoves = filteredMoves.filter(m => m.type !== 'Ingreso');
-
-  // Renderizar Tabla Mayor
-  document.getElementById('ledgerTableBody').innerHTML = filteredMoves.length
-    ? filteredMoves.map(r => {
-        const isIngreso = r.type === 'Ingreso';
-        const colorClass = isIngreso ? 'amount-in' : 'amount-out';
-        const sign = isIngreso ? '+ ' : '- ';
-        const badgeColor = isIngreso ? 'badge-success' : (r.type === 'Compra' ? 'badge-warning' : 'badge-danger');
-        
-        // Las ventas solo se anulan desde el módulo ventas para cuidar el stock
-        const actionBtn = isIngreso 
-          ? `<span style="font-size:11px; color:var(--muted);">Administrar en Ventas</span>`
-          : `<button class="mini-btn" onclick="editarMovimiento('${r.source}', '${r.id}')">Editar</button> <button class="mini-btn" style="color:var(--danger); border-color:var(--danger-soft);" onclick="eliminarMovimiento('${r.source}', '${r.id}')">Borrar</button>`;
-
-        return `
-        <tr>
-          <td>${formatDate(r.date)}</td>
-          <td><span class="badge ${badgeColor}">${r.type}</span></td>
-          <td><strong>${escapeHtml(r.concept)}</strong><br><small>${escapeHtml(r.owner)}</small></td>
-          <td><span class="badge badge-neutral">${escapeHtml(r.paymentMethod)}</span></td>
-          <td class="${colorClass}">${sign}${currency(r.amount)}</td>
-          <td><div class="row-actions">${actionBtn}</div></td>
-        </tr>`;
-      }).join('')
-    : `<tr><td colspan="6"><div class="empty">No hay movimientos con los filtros actuales.</div></td></tr>`;
-
-  // Últimas Compras y Gráfico
-  document.getElementById('purchasesTableBody').innerHTML = s.recentPurchases.length
-    ? s.recentPurchases.map(r => `<tr><td><strong>${escapeHtml(r.supplierName)}</strong><br><small>${formatDate(r.date)}</small></td><td>${escapeHtml(r.invoiceType)} ${escapeHtml(r.invoiceNumber)}</td><td><strong>${currency(r.amount)}</strong></td></tr>`).join('')
-    : `<tr><td colspan="3"><div class="empty">Sin registros.</div></td></tr>`;
-
+  // Categorías
   const entries = Object.entries(s.categoryTotals).sort((a,b)=>b[1]-a[1]), maxV = entries.length ? entries[0][1] : 0;
   document.getElementById('categoryChart').innerHTML = entries.length
     ? entries.map(([n,v]) => `<div class="bar-row"><div>${n}</div><div class="bar-track"><div class="bar-fill" style="width:${maxV?(v/maxV)*100:0}%"></div></div><strong>${currency(v)}</strong></div>`).join('')
-    : '<div class="empty">Sin egresos en el mes actual.</div>';
+    : '<div class="empty">Sin egresos pagados para mostrar.</div>';
+
+  // Tabla recientes con filtrado y botón de edición
+  const filtered = s.recentMoves.filter(m => currentRecentFilter === 'all' || m.source === currentRecentFilter);
+  document.getElementById('recentTableBody').innerHTML = filtered.length
+    ? filtered.map(r => `
+        <tr>
+          <td>${r.date||'-'}</td>
+          <td>${r.type}</td>
+          <td>${r.concept}</td>
+          <td>${r.owner}</td>
+          <td><span class="badge ${r.status==='pagado'?'badge-success':'badge-warning'}">${r.status}</span></td>
+          <td><strong>${currency(r.amount)}</strong></td>
+          <td><button class="mini-btn" onclick="editarMovimiento('${r.source}', '${r.id}')">Editar</button></td>
+        </tr>
+      `).join('')
+    : `<tr><td colspan="7"><div class="empty">Sin movimientos.</div></td></tr>`;
+
+  // Proveedores
+  document.getElementById('suppliersTableBody').innerHTML = s.suppliersPending.length
+    ? s.suppliersPending.map(r => `<tr><td>${escapeHtml(r.supplierName)}</td><td>${r.dueDate||'-'}</td><td><strong>${currency(r.balance)}</strong></td><td><span class="badge ${r.status==='overdue'?'badge-danger':r.status==='pending'?'badge-warning':'badge-success'}">${r.status==='overdue'?'Vencido':r.status==='pending'?'Pendiente':'Pagado'}</span></td></tr>`).join('')
+    : `<tr><td colspan="4"><div class="empty">Sin saldos pendientes.</div></td></tr>`;
+
+  syncDashboard(s);
 }
 
-// Eventos de los filtros
-document.querySelectorAll('.filters-bar input, .filters-bar select').forEach(el => el.addEventListener('change', render));
+function syncDashboard(s, feedback=false) {
+  const summary = { updatedAt:new Date().toISOString(), accounting:{ expenseToday:s.expenseToday, monthExpense:s.monthExpense, pendingTotal:s.pendingExpenses+s.supplierDebtPending, supplierDebtPending:s.supplierDebtPending, netResult:s.net, totalIncomeMonth:s.totalIncomeMonth } };
+  setData(KEYS.dashboard, { ...getData(KEYS.dashboard,{}), ...summary });
+  if (feedback) { document.getElementById('dashboardStatus').textContent='Sincronizado recién'; document.getElementById('systemStatus').textContent='Conectado'; }
+}
 
-window.limpiarFiltros = function() {
-  document.getElementById('filterFrom').value = '';
-  document.getElementById('filterTo').value = '';
-  document.getElementById('filterCaja').value = 'all';
-  document.getElementById('filterType').value = 'all';
-  render();
-};
+function seedIfEmpty() {
+  if (!getData(KEYS.expenses,[]).length && !getData(KEYS.supplierDebts,[]).length) {
+    setData(KEYS.expenses,[{id:uid('exp'),date:todayISO(),concept:'Combustible',category:'Transporte',amount:18500,status:'pagado',paymentMethod:'Efectivo',dueDate:'',notes:''},{id:uid('exp'),date:todayISO(),concept:'Internet local',category:'Servicios',amount:32000,status:'pendiente',paymentMethod:'Transferencia',dueDate:todayISO(),notes:''}]);
+    setData(KEYS.supplierDebts,[{id:uid('debt'),date:todayISO(),supplierName:'Proveedor Centro',concept:'Compra de mercadería',amount:240000,dueDate:todayISO(),status:'pendiente',paymentMethod:'Cuenta corriente',notes:''}]);
+    setData(KEYS.supplierPayments,[{id:uid('pay'),date:todayISO(),supplierName:'Proveedor Norte',concept:'Pago parcial',amount:80000,dueDate:'',status:'pagado',paymentMethod:'Transferencia',notes:''}]);
+  }
+}
 
-// ── Control de Modales y Guardado ───────────────────────────
+function saveSupplierMovement(payload) {
+  if (payload.movementType==='debt') {
+    const debts=getData(KEYS.supplierDebts,[]); debts.unshift({id:uid('debt'),date:payload.date,supplierName:payload.supplierName,concept:payload.concept,amount:toNum(payload.amount),dueDate:payload.dueDate,status:payload.status,paymentMethod:payload.paymentMethod,notes:payload.notes}); setData(KEYS.supplierDebts,debts);
+    if (payload.status==='pagado') { const pms=getData(KEYS.supplierPayments,[]); pms.unshift({id:uid('pay'),date:payload.date,supplierName:payload.supplierName,concept:'Pago automático',amount:toNum(payload.amount),dueDate:'',status:'pagado',paymentMethod:payload.paymentMethod,notes:payload.notes}); setData(KEYS.supplierPayments,pms); }
+  } else {
+    const pms=getData(KEYS.supplierPayments,[]); pms.unshift({id:uid('pay'),date:payload.date,supplierName:payload.supplierName,concept:payload.concept,amount:toNum(payload.amount),dueDate:'',status:'pagado',paymentMethod:payload.paymentMethod,notes:payload.notes}); setData(KEYS.supplierPayments,pms);
+  }
+}
+
+// ── Control de Interfaz y Filtros ───────────────────────────
 document.getElementById('btnOpenExpense').addEventListener('click', () => {
-  editingExpenseId = null; document.getElementById('expenseModalTitle').textContent = 'Registrar Gasto Operativo';
-  document.getElementById('expenseForm').reset(); document.getElementById('expenseForm').date.value = todayISO();
+  cerrarModalGasto(); 
   document.getElementById('expenseDialog').showModal();
 });
 
 document.getElementById('btnOpenSupplier').addEventListener('click', () => {
-  editingPurchaseId = null; document.getElementById('supplierModalTitle').textContent = 'Cargar Compra (Factura)';
-  document.getElementById('supplierForm').reset(); document.getElementById('supplierForm').date.value = todayISO();
-  cargarSelectProveedores(); document.getElementById('supplierDialog').showModal();
+  cerrarModalProveedor(); 
+  document.getElementById('supplierDialog').showModal();
 });
 
-window.cerrarModalGasto = function() { document.getElementById('expenseDialog').close(); editingExpenseId = null; };
-window.cerrarModalProveedor = function() { document.getElementById('supplierDialog').close(); editingPurchaseId = null; };
+document.getElementById('btnSync').addEventListener('click', () => { syncDashboard(computeState(),true); render(); });
 
-window.eliminarMovimiento = async function(source, id) {
-  if(!confirm('¿Estás seguro de que querés ELIMINAR este registro? Afectará los saldos de caja.')) return;
-  if (source === 'expenses') { let e = getData(KEYS.expenses, []); setData(KEYS.expenses, e.filter(x => x.id !== id)); } 
-  else if (source === 'purchases') { let p = getData(KEYS.purchases, []); setData(KEYS.purchases, p.filter(x => x.id !== id)); }
-  render();
-};
+document.querySelectorAll('.tab').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); currentRecentFilter=btn.dataset.view; render();
+}));
 
+// ── Funciones de Edición y Persistencia ─────────────────────
 window.editarMovimiento = function(source, id) {
   if (source === 'expenses') {
-    const exp = getData(KEYS.expenses, []).find(e => e.id === id); if (!exp) return;
-    editingExpenseId = id; const ef = document.getElementById('expenseForm');
-    document.getElementById('expenseModalTitle').textContent = 'Editar Gasto Operativo';
-    ef.date.value = exp.date || ''; document.getElementById('expAmountMasked').value = formatNumberToMask(exp.amount);
-    ef.concept.value = exp.concept || ''; ef.category.value = exp.category || ''; ef.paymentMethod.value = exp.paymentMethod || ''; ef.notes.value = exp.notes || '';
+    const expenses = getData(KEYS.expenses, []);
+    const exp = expenses.find(e => e.id === id);
+    if (!exp) return;
+    
+    editingExpenseId = id;
+    const ef = document.getElementById('expenseForm');
+    ef.date.value = exp.date || '';
+    ef.amount.value = exp.amount || '';
+    ef.concept.value = exp.concept || '';
+    ef.category.value = exp.category || '';
+    ef.status.value = exp.status || '';
+    ef.paymentMethod.value = exp.paymentMethod || '';
+    ef.dueDate.value = exp.dueDate || '';
+    ef.notes.value = exp.notes || '';
+    
+    document.querySelector('#expenseDialog h3').textContent = 'Editar gasto';
     document.getElementById('expenseDialog').showModal();
-  } else if (source === 'purchases') {
-    const pur = getData(KEYS.purchases, []).find(p => p.id === id); if (!pur) return;
-    editingPurchaseId = id; cargarSelectProveedores(); const sf = document.getElementById('supplierForm');
-    document.getElementById('supplierModalTitle').textContent = 'Editar Compra (Factura)';
-    sf.date.value = pur.date || ''; sf.supplierName.value = pur.supplierName || ''; sf.invoiceType.value = pur.invoiceType || ''; sf.invoiceNumber.value = pur.invoiceNumber || '';
-    document.getElementById('purAmountMasked').value = formatNumberToMask(pur.amount); sf.paymentMethod.value = pur.paymentMethod || ''; sf.concept.value = pur.concept || '';
+    
+  } else if (source === 'payments') {
+    const payments = getData(KEYS.supplierPayments, []);
+    const pay = payments.find(p => p.id === id);
+    if (!pay) return;
+    
+    editingSupplierMoveId = id;
+    const sf = document.getElementById('supplierForm');
+    sf.date.value = pay.date || '';
+    sf.movementType.value = 'payment'; 
+    sf.supplierName.value = pay.supplierName || '';
+    sf.amount.value = pay.amount || '';
+    sf.dueDate.value = pay.dueDate || '';
+    sf.concept.value = pay.concept || '';
+    sf.status.value = pay.status || 'pagado';
+    sf.paymentMethod.value = pay.paymentMethod || '';
+    sf.notes.value = pay.notes || '';
+    
+    document.querySelector('#supplierDialog h3').textContent = 'Editar pago a proveedor';
     document.getElementById('supplierDialog').showModal();
   }
 };
 
-document.getElementById('expenseForm').addEventListener('submit', e => {
-  e.preventDefault(); const p = Object.fromEntries(new FormData(e.target).entries()); 
-  p.amount = parseMascaraMoneda(document.getElementById('expAmountMasked').value);
-  if (p.amount <= 0) return alert('Monto inválido.');
+window.cerrarModalGasto = function() {
+  editingExpenseId = null;
+  document.querySelector('#expenseDialog h3').textContent = 'Registrar gasto';
+  document.getElementById('expenseForm').reset();
+  document.getElementById('expenseForm').date.value = todayISO();
+  document.getElementById('expenseDialog').close();
+};
+
+window.cerrarModalProveedor = function() {
+  editingSupplierMoveId = null;
+  document.querySelector('#supplierDialog h3').textContent = 'Registrar proveedor / deuda';
+  document.getElementById('supplierForm').reset();
+  document.getElementById('supplierForm').date.value = todayISO();
+  document.getElementById('supplierDialog').close();
+};
+
+const ef = document.getElementById('expenseForm');
+ef.addEventListener('submit', e => {
+  e.preventDefault();
+  const p = Object.fromEntries(new FormData(ef).entries()); 
+  p.amount = toNum(p.amount);
+  
   let expenses = getData(KEYS.expenses, []);
-  if (editingExpenseId) { p.id = editingExpenseId; expenses = expenses.map(ex => ex.id === editingExpenseId ? p : ex); } 
-  else { p.id = uid('exp'); expenses.unshift(p); }
-  setData(KEYS.expenses, expenses); cerrarModalGasto(); render();
+  if (editingExpenseId) {
+    p.id = editingExpenseId;
+    expenses = expenses.map(ex => ex.id === editingExpenseId ? p : ex);
+  } else {
+    p.id = uid('exp');
+    expenses.unshift(p);
+  }
+  
+  setData(KEYS.expenses, expenses); 
+  cerrarModalGasto();
+  render();
 });
 
-document.getElementById('supplierForm').addEventListener('submit', e => {
-  e.preventDefault(); const p = Object.fromEntries(new FormData(e.target).entries()); 
-  p.amount = parseMascaraMoneda(document.getElementById('purAmountMasked').value);
-  if (p.amount <= 0) return alert('Monto inválido.');
-  let purchases = getData(KEYS.purchases, []);
-  if (editingPurchaseId) { p.id = editingPurchaseId; purchases = purchases.map(pur => pur.id === editingPurchaseId ? p : pur); } 
-  else { p.id = uid('pur'); purchases.unshift(p); }
-  setData(KEYS.purchases, purchases); cerrarModalProveedor(); render();
+const sf = document.getElementById('supplierForm');
+sf.addEventListener('submit', e => {
+  e.preventDefault();
+  const p = Object.fromEntries(new FormData(sf).entries()); 
+  p.amount = toNum(p.amount);
+  
+  if (editingSupplierMoveId) {
+    let payments = getData(KEYS.supplierPayments, []);
+    p.id = editingSupplierMoveId;
+    payments = payments.map(pay => pay.id === editingSupplierMoveId ? p : pay);
+    setData(KEYS.supplierPayments, payments);
+    cerrarModalProveedor();
+  } else {
+    saveSupplierMovement(p);
+    cerrarModalProveedor();
+  }
+  
+  render();
 });
 
+// ── Exportación a Excel ─────────────────────────────────────
 document.getElementById('btnExportExcel').addEventListener('click', () => {
-  const s = computeState();
-  if (!s.allMoves.length) return alert("No hay movimientos para exportar.");
-  exportarAExcel(s.allMoves, 'Libro_Mayor_Fondos');
+  const expenses = getData(KEYS.expenses, []);
+  const payments = getData(KEYS.supplierPayments, []);
+
+  const datosPlanos = [
+    ...expenses.map(e => ({
+      "Fecha": e.date || '-',
+      "Tipo Operación": "Gasto Operativo",
+      "Concepto": e.concept || '-',
+      "Categoría / Proveedor": e.category || '-',
+      "Estado": e.status || '-',
+      "Medio de Pago": e.paymentMethod || '-',
+      "Vencimiento": e.dueDate || '-',
+      "Monto": e.amount || 0
+    })),
+    ...payments.map(p => ({
+      "Fecha": p.date || '-',
+      "Tipo Operación": "Pago a Proveedor",
+      "Concepto": p.concept || '-',
+      "Categoría / Proveedor": p.supplierName || '-',
+      "Estado": p.status || '-',
+      "Medio de Pago": p.paymentMethod || '-',
+      "Vencimiento": p.dueDate || '-',
+      "Monto": p.amount || 0
+    }))
+  ].sort((a, b) => new Date(b.Fecha) - new Date(a.Fecha));
+
+  if (!datosPlanos.length) {
+    alert("No hay movimientos contables registrados para exportar.");
+    return;
+  }
+
+  // Usa la funcion exportarAExcel que asumo tenes en core.js
+  if (typeof exportarAExcel === 'function') {
+    exportarAExcel(datosPlanos, 'Libro_Mayor_Contable');
+  } else {
+    alert("Función de exportación no encontrada en core.js");
+  }
 });
 
-window.addEventListener('saas:data-updated', (e) => { if (e.detail && e.detail.key === KEYS.dashboard) return; render(); });
-
-// Inicio
-aplicarMascaraMoneda();
+window.addEventListener('storage', render);
+window.addEventListener('saas:data-updated', render);
+seedIfEmpty(); 
 render();
 </script>
 </body>
