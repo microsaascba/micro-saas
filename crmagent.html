@@ -88,10 +88,10 @@
                         <table class="w-full text-left text-sm">
                             <thead class="bg-slate-50 border-b text-slate-400 uppercase text-[10px] font-bold">
                                 <tr>
-                                    <th class="p-4 w-1/4">Cliente / Ingreso</th>
+                                    <th class="p-4 w-1/4">Cliente / Fecha de Ingreso</th>
                                     <th class="p-4 w-1/4">Inmueble Solicitado</th>
                                     <th class="p-4 w-1/4">SLA (Alerta > 5m)</th>
-                                    <th class="p-4 text-right">Acción</th>
+                                    <th class="p-4 text-center">Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="leads-list">
@@ -118,12 +118,11 @@
         // CONFIGURACIÓN API (Cloudflare Pages)
         // ==========================================
         const API_URLS = {
-            leads: '/api/leads',           // GET, POST, PUT
-            propiedades: '/api/propiedades',// GET
-            notas: '/api/notas'            // POST
+            leads: '/api/leads',           
+            propiedades: '/api/propiedades',
+            notas: '/api/notas'            
         };
 
-        // Estado Global del Agente
         let currentAgentId = null;
         let misLeads = [];
         let miCartera = [];
@@ -151,14 +150,12 @@
             const u = document.getElementById('login-user').value;
             const p = document.getElementById('login-pass').value;
             
-            // Simulación: En un entorno real, harías un POST a /api/login
             if ((u === 'agente_juan' || u === 'agente_maria') && p === '1234') {
                 currentAgentId = u;
                 document.getElementById('agent-name-display').innerText = u === 'agente_juan' ? 'Juan Pérez' : 'María Gómez';
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-container').classList.remove('hidden');
                 
-                // Iniciar la carga masiva de datos desde D1
                 initAppAsync();
             } else {
                 document.getElementById('login-error').classList.remove('hidden');
@@ -177,8 +174,6 @@
         async function initAppAsync() {
             await cargarPropiedadesAsync();
             await cargarDatosAgenteAsync();
-            
-            // Auto-refresh cada 30 segundos
             setInterval(() => { cargarDatosAgenteAsync(); }, 30000);
         }
 
@@ -189,7 +184,6 @@
                 renderCatalogo();
             } catch (e) {
                 console.error("Error catálogo:", e);
-                // Fallback para pruebas locales si la API falla
                 catalogoPropiedades = [
                     { id: 'p1', nombre: 'Edificio KAIZEN', script_wa: 'Hola! Soy asesor inmobiliario. Vi tu interés en el Edificio KAIZEN...' }
                 ];
@@ -215,7 +209,6 @@
             }
         }
 
-        // POST: Ingresar nuevo lead a la base de datos
         async function simularLeadAsync() {
             const nuevoLead = {
                 id: crypto.randomUUID(),
@@ -227,7 +220,6 @@
                 fecha_ingreso: new Date().toISOString()
             };
 
-            // Simulación visual inmediata (Optimistic UI)
             misLeads.push(nuevoLead);
             renderVistas();
             if(document.getElementById('view-leads').classList.contains('hidden')) switchTab('leads');
@@ -241,34 +233,27 @@
             } catch (e) { console.error("No se pudo guardar lead en DB", e); }
         }
 
-        // PUT: Actualizar estado y POST: Guardar nota
         async function contactarYA(id) {
             const lead = misLeads.find(l => l.id === id);
             const prop = catalogoPropiedades.find(p => p.id === lead.prop_id) || { script_wa: 'Hola!' };
 
-            // 1. Abrir WhatsApp
             window.open(`https://wa.me/${lead.telefono}?text=${encodeURIComponent(prop.script_wa)}`, '_blank');
             
-            // 2. Modificar Estado Visualmente
             lead.estado = 'Contactado';
             lead.notas = [{ text: "Primer contacto realizado vía WhatsApp.", time: new Date().toLocaleString() }];
             
-            // Mover a cartera
             miCartera.unshift(lead);
             misLeads = misLeads.filter(l => l.id !== id);
             renderVistas();
             switchTab('cartera');
 
-            // 3. Impactar en D1 (Asíncrono)
             try {
-                // Actualizar Lead
                 await fetch(`${API_URLS.leads}?id=${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ estado: 'Contactado' })
                 });
 
-                // Insertar Nota
                 await fetch(API_URLS.notas, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -277,7 +262,6 @@
             } catch (e) { console.error("Error al actualizar estado en BD", e); }
         }
 
-        // PUT: Cambiar estado desde la ficha
         async function cambiarEstadoAsync(id, nuevoEstado) {
             if(!confirm(`¿Pasar este cliente a estado: "${nuevoEstado}"?`)) { renderVistas(); return; }
             
@@ -303,7 +287,6 @@
             } catch (e) { console.error("Error", e); }
         }
 
-        // POST: Agregar nota manual
         async function addNotaAsync(contactId) {
             const input = document.getElementById(`input-note-${contactId}`);
             const texto = input.value.trim();
@@ -315,12 +298,10 @@
             const contacto = miCartera.find(c => c.id === contactId);
             if(!contacto.notas) contacto.notas = [];
             
-            // Update UI
             contacto.notas.unshift({ text: texto, time: new Date().toLocaleString() });
             input.value = '';
-            renderVistas(); // Re-render
+            renderVistas(); 
 
-            // Mandar a D1
             try {
                 await fetch(API_URLS.notas, {
                     method: 'POST',
@@ -350,7 +331,11 @@
             misLeads.forEach(l => {
                 const prop = catalogoPropiedades.find(p => p.id === l.prop_id) || { nombre: 'Consulta General' };
                 const dateObj = new Date(l.fecha_ingreso);
-                const fechaFormat = isNaN(dateObj) ? 'Ahora' : dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                // Formateo de fecha y hora completos (Ej: 09/04/2026, 10:15)
+                const opcionesFecha = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit' };
+                const fechaFormat = isNaN(dateObj) ? 'Ahora' : dateObj.toLocaleString('es-AR', opcionesFecha);
+                
                 const minutos = isNaN(dateObj) ? 0 : Math.floor((new Date() - dateObj)/60000);
                 
                 const isAlert = minutos >= 5;
@@ -363,13 +348,13 @@
                     <tr class="${rowClass} transition-colors">
                         <td class="p-4">
                             <div class="font-bold text-slate-800 text-base">${l.nombre}</div>
-                            <div class="text-[10px] text-slate-500 mt-1"><i class="far fa-calendar-alt"></i> ${fechaFormat}</div>
+                            <div class="text-[11px] text-slate-500 mt-1 font-semibold"><i class="far fa-calendar-alt"></i> ${fechaFormat}</div>
                         </td>
                         <td class="p-4"><span class="bg-blue-50 border border-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm">${prop.nombre}</span></td>
                         <td class="p-4 text-sm">${timeHtml}</td>
-                        <td class="p-4 text-right">
-                            <button onclick="contactarYA('${l.id}')" class="bg-[#25D366] hover:bg-[#1DA851] text-white px-5 py-2.5 rounded-lg text-xs font-bold shadow-md transition transform hover:scale-105">
-                                <i class="fab fa-whatsapp mr-1 text-sm"></i> ATENDER
+                        <td class="p-4 text-center">
+                            <button onclick="contactarYA('${l.id}')" title="Contactar" class="inline-flex items-center justify-center w-10 h-10 bg-[#25D366] hover:bg-[#1DA851] text-white rounded-full shadow-md transition-all transform hover:scale-110">
+                                <i class="fab fa-whatsapp text-xl"></i>
                             </button>
                         </td>
                     </tr>
