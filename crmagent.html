@@ -262,7 +262,7 @@
             // 3. Impactar en D1 (Asíncrono)
             try {
                 // Actualizar Lead
-                await fetch(`${API_URLS.leads}/${id}`, {
+                await fetch(`${API_URLS.leads}?id=${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ estado: 'Contactado' })
@@ -290,7 +290,7 @@
             renderVistas();
 
             try {
-                await fetch(`${API_URLS.leads}/${id}`, {
+                await fetch(`${API_URLS.leads}?id=${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ estado: nuevoEstado })
