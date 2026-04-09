@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InmoCRM - Gestión de Agentes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; }
+        .status-no-contactado { background-color: #fee2e2; color: #991b1b; }
+        .status-contactado { background-color: #fef3c7; color: #92400e; }
+        .status-interesado { background-color: #d1fae5; color: #065f46; }
+        .status-no-interesado { background-color: #e5e7eb; color: #374151; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <aside class="w-64 bg-gray-900 text-white flex flex-col">
+        <div class="h-16 flex items-center justify-center border-b border-gray-800">
+            <h1 class="text-2xl font-bold text-blue-400"><i class="fas fa-building mr-2"></i>InmoCRM</h1>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <a href="#" class="block px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 transition"><i class="fas fa-chart-line mr-2"></i> Dashboard</a>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-700 rounded transition"><i class="fas fa-users mr-2"></i> Mis Leads</a>
+            <a href="#" class="block px-4 py-2 hover:bg-gray-700 rounded transition"><i class="fas fa-home mr-2"></i> Propiedades</a>
+        </nav>
+        <div class="p-4 border-t border-gray-800 text-sm">
+            <p>Agente: <span class="font-semibold text-blue-400">Juan Pérez</span></p>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto">
+        <header class="h-16 bg-white shadow flex items-center justify-between px-8">
+            <h2 class="text-xl font-semibold text-gray-800">Panel de Control General</h2>
+            <button onclick="simularIngresoLead()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition shadow-sm">
+                <i class="fas fa-plus mr-2"></i> Simular Lead desde Landing
+            </button>
+        </header>
+
+        <div class="p-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
+                    <h3 class="text-gray-500 text-sm font-medium">Total Leads Hoy</h3>
+                    <p class="text-3xl font-bold text-gray-800" id="kpi-total">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-500">
+                    <h3 class="text-gray-500 text-sm font-medium">Sin Contactar (¡Urgente!)</h3>
+                    <p class="text-3xl font-bold text-red-600" id="kpi-nocontact">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-yellow-500">
+                    <h3 class="text-gray-500 text-sm font-medium">En Gestión (Contactados)</h3>
+                    <p class="text-3xl font-bold text-yellow-600" id="kpi-contact">0</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-green-500">
+                    <h3 class="text-gray-500 text-sm font-medium">Interesados (Pipeline)</h3>
+                    <p class="text-3xl font-bold text-green-600" id="kpi-interested">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold text-gray-800">Bandeja de Entrada de Leads</h3>
+                    <input type="text" placeholder="Buscar lead..." class="border rounded px-3 py-1 text-sm outline-none focus:border-blue-500">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-600 text-sm uppercase tracking-wider">
+                                <th class="px-6 py-3 border-b">Cliente</th>
+                                <th class="px-6 py-3 border-b">Propiedad de Interés</th>
+                                <th class="px-6 py-3 border-b">Origen</th>
+                                <th class="px-6 py-3 border-b">Estado</th>
+                                <th class="px-6 py-3 border-b">Acciones Rápidas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leads-body" class="text-gray-700 text-sm">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Estructura de Datos (Simulando una Base de Datos)
+        let leads = [
+            { id: 1, nombre: "María González", telefono: "5491123456789", propiedad: "Depto 2 Amb - Palermo", origen: "Facebook Ads", estado: "No Contactado", fecha: new Date() },
+            { id: 2, nombre: "Carlos Rodríguez", telefono: "5491198765432", propiedad: "Casa 4 Dorm - Nordelta", origen: "Landing Page SEO", estado: "Contactado", fecha: new Date() }
+        ];
+
+        const estadosDisponibles = ["No Contactado", "Contactado", "Interesado", "No Interesado"];
+
+        // Función Principal de Renderizado
+        function renderizarCRM() {
+            renderizarTabla();
+            actualizarDashboard();
+        }
+
+        // Renderizar Tabla de Leads
+        function renderizarTabla() {
+            const tbody = document.getElementById('leads-body');
+            tbody.innerHTML = '';
+
+            leads.sort((a, b) => b.id - a.id).forEach(lead => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 border-b";
+                
+                // Formatear clase del badge según estado
+                let badgeClass = `status-${lead.estado.toLowerCase().replace(' ', '-')}`;
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-gray-900">${lead.nombre}</div>
+                        <div class="text-xs text-gray-500">${lead.telefono}</div>
+                    </td>
+                    <td class="px-6 py-4">${lead.propiedad}</td>
+                    <td class="px-6 py-4"><span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">${lead.origen}</span></td>
+                    <td class="px-6 py-4">
+                        <select onchange="cambiarEstado(${lead.id}, this.value)" class="status-badge ${badgeClass} outline-none cursor-pointer border-none appearance-none text-center">
+                            ${estadosDisponibles.map(est => `<option value="${est}" ${lead.estado === est ? 'selected' : ''}>${est}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td class="px-6 py-4">
+                        <button onclick="enviarWhatsApp('${lead.telefono}', '${lead.nombre}', '${lead.propiedad}')" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition text-xs font-semibold mr-2">
+                            <i class="fab fa-whatsapp mr-1"></i> Contactar
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Calcular y Actualizar Dashboard
+        function actualizarDashboard() {
+            document.getElementById('kpi-total').innerText = leads.length;
+            document.getElementById('kpi-nocontact').innerText = leads.filter(l => l.estado === "No Contactado").length;
+            document.getElementById('kpi-contact').innerText = leads.filter(l => l.estado === "Contactado").length;
+            document.getElementById('kpi-interested').innerText = leads.filter(l => l.estado === "Interesado").length;
+        }
+
+        // Cambiar Estado (Al cambiar el Select)
+        function cambiarEstado(id, nuevoEstado) {
+            const leadIndex = leads.findIndex(l => l.id === id);
+            if (leadIndex !== -1) {
+                leads[leadIndex].estado = nuevoEstado;
+                renderizarCRM(); // Re-renderizar para actualizar KPIs y colores
+            }
+        }
+
+        // Lógica de WhatsApp
+        function enviarWhatsApp(telefono, nombre, propiedad) {
+            // Mensaje predeterminado altamente vendedor
+            const mensaje = `Hola ${nombre}! Soy Juan de InmoCRM. Vi que dejaste tus datos interesados en la propiedad: ${propiedad}. ¿Tenés 5 minutos hoy para que te cuente los detalles?`;
+            const url = `https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`;
+            window.open(url, '_blank');
+        }
+
+        // Simulación de Webhook de Landing Page
+        function simularIngresoLead() {
+            const nuevoId = leads.length > 0 ? Math.max(...leads.map(l => l.id)) + 1 : 1;
+            leads.push({
+                id: nuevoId,
+                nombre: `Lead Web #${nuevoId}`,
+                telefono: "5491100000000",
+                propiedad: "Consulta General Web",
+                origen: "Landing Page",
+                estado: "No Contactado",
+                fecha: new Date()
+            });
+            renderizarCRM();
+            
+            // Alerta visual de nuevo lead
+            alert("¡Nuevo Lead ingresado desde la Landing Page! Atiéndelo rápido.");
+        }
+
+        // Inicializar
+        renderizarCRM();
+    </script>
+</body>
+</html>
