@@ -1,6 +1,5 @@
 export async function onRequestGet(context) {
     try {
-        // En un GET general no devolvemos contraseñas por seguridad
         const { results } = await context.env.DB.prepare("SELECT id, nombre, usuario, telefono, email FROM Agentes").all();
         return new Response(JSON.stringify(results), { headers: { "Content-Type": "application/json" } });
     } catch (e) {
