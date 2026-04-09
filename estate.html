@@ -3,216 +3,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InmoCRM - Gestión de Agentes</title>
+    <title>InmoCRM Pro - Control Total</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
-        .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; }
         .status-no-contactado { background-color: #fee2e2; color: #991b1b; }
         .status-contactado { background-color: #fef3c7; color: #92400e; }
         .status-interesado { background-color: #d1fae5; color: #065f46; }
         .status-no-interesado { background-color: #e5e7eb; color: #374151; }
+        .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; font-weight: bold; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="bg-gray-100 h-screen flex overflow-hidden">
 
-    <aside class="w-64 bg-gray-900 text-white flex flex-col">
-        <div class="h-16 flex items-center justify-center border-b border-gray-800">
-            <h1 class="text-2xl font-bold text-blue-400"><i class="fas fa-building mr-2"></i>InmoCRM</h1>
+    <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-xl">
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-xl font-bold tracking-tighter text-blue-400">INMOCRM <span class="text-xs text-white bg-blue-600 px-1 rounded">PRO</span></h1>
         </div>
-        <nav class="flex-1 px-4 py-6 space-y-2">
-            <a href="#" class="block px-4 py-2 bg-gray-800 rounded hover:bg-gray-700 transition"><i class="fas fa-chart-line mr-2"></i> Dashboard</a>
-            <a href="#" class="block px-4 py-2 hover:bg-gray-700 rounded transition"><i class="fas fa-users mr-2"></i> Mis Leads</a>
+        <nav class="flex-1 p-4 space-y-2">
+            <button onclick="showSection('leads')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex items-center"><i class="fas fa-user-tie mr-3"></i> Gestión de Leads</button>
+            <button onclick="showSection('propiedades')" class="w-full text-left p-3 rounded hover:bg-slate-800 flex items-center"><i class="fas fa-home mr-3"></i> Propiedades</button>
         </nav>
-        <div class="p-4 border-t border-gray-800 text-sm">
-            <p>Agente: <span class="font-semibold text-blue-400">Juan Pérez</span></p>
-        </div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-screen overflow-y-auto">
-        <header class="h-16 bg-white shadow flex items-center justify-between px-8">
-            <h2 class="text-xl font-semibold text-gray-800">Panel de Control General</h2>
-            <button onclick="simularIngresoLead()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition shadow-sm">
-                <i class="fas fa-plus mr-2"></i> Simular Lead
-            </button>
+    <main class="flex-1 flex flex-col overflow-hidden">
+        <header class="h-16 bg-white border-b flex items-center justify-between px-8 shadow-sm">
+            <h2 id="section-title" class="text-lg font-semibold">Panel de Control</h2>
+            <div class="flex space-x-3">
+                <button onclick="limpiarDatos()" class="text-xs text-red-500 hover:underline">Resetear Sistema</button>
+                <div id="reloj" class="text-sm font-mono bg-gray-100 px-3 py-1 rounded"></div>
+            </div>
         </header>
 
-        <div class="p-8">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
-                    <h3 class="text-gray-500 text-sm font-medium">Total Leads Hoy</h3>
-                    <p class="text-3xl font-bold text-gray-800" id="kpi-total">0</p>
+        <div class="p-8 overflow-y-auto flex-1">
+            
+            <section id="sec-leads">
+                <div class="flex justify-between items-end mb-6">
+                    <div class="grid grid-cols-4 gap-4 flex-1 mr-4">
+                        <div class="bg-white p-4 rounded shadow-sm border-t-4 border-blue-500">
+                            <p class="text-xs text-gray-500">Total Leads</p>
+                            <p id="kpi-total" class="text-2xl font-bold">0</p>
+                        </div>
+                        <div class="bg-white p-4 rounded shadow-sm border-t-4 border-red-500">
+                            <p class="text-xs text-gray-500">Pendientes</p>
+                            <p id="kpi-pendientes" class="text-2xl font-bold">0</p>
+                        </div>
+                    </div>
+                    <button onclick="nuevoLeadManual()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">Simular Entrada Web</button>
                 </div>
-                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-500">
-                    <h3 class="text-gray-500 text-sm font-medium">Sin Contactar</h3>
-                    <p class="text-3xl font-bold text-red-600" id="kpi-nocontact">0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-yellow-500">
-                    <h3 class="text-gray-500 text-sm font-medium">En Gestión</h3>
-                    <p class="text-3xl font-bold text-yellow-600" id="kpi-contact">0</p>
-                </div>
-                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-green-500">
-                    <h3 class="text-gray-500 text-sm font-medium">Interesados</h3>
-                    <p class="text-3xl font-bold text-green-600" id="kpi-interested">0</p>
-                </div>
-            </div>
 
-            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800">Bandeja de Entrada de Leads</h3>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-50 text-gray-600 text-sm uppercase tracking-wider">
-                                <th class="px-6 py-3 border-b">Cliente</th>
-                                <th class="px-6 py-3 border-b">Propiedad Asignada</th>
-                                <th class="px-6 py-3 border-b">Origen</th>
-                                <th class="px-6 py-3 border-b">Estado</th>
-                                <th class="px-6 py-3 border-b text-right">Acción</th>
+                <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-gray-50 border-b text-gray-500 uppercase text-xs">
+                            <tr>
+                                <th class="p-4">Cliente / Ingreso</th>
+                                <th class="p-4">Propiedad</th>
+                                <th class="p-4">Estado / Auditoría</th>
+                                <th class="p-4">Tiempos</th>
+                                <th class="p-4 text-right">Acción</th>
                             </tr>
                         </thead>
-                        <tbody id="leads-body" class="text-gray-700 text-sm">
-                            </tbody>
+                        <tbody id="leads-list"></tbody>
                     </table>
                 </div>
-            </div>
+            </section>
+
+            <section id="sec-propiedades" class="hidden">
+                <div class="bg-white p-6 rounded-xl shadow-sm border mb-8">
+                    <h3 class="font-bold mb-4">Registrar Nueva Propiedad</h3>
+                    <div class="grid grid-cols-3 gap-4">
+                        <input id="prop-nombre" type="text" placeholder="Nombre (Ej: Edificio Faro)" class="border p-2 rounded">
+                        <input id="prop-direccion" type="text" placeholder="Dirección" class="border p-2 rounded">
+                        <input id="prop-precio" type="text" placeholder="Precio (USD)" class="border p-2 rounded">
+                        <input id="prop-link" type="text" placeholder="URL Ficha Técnica" class="border p-2 rounded col-span-2">
+                        <button onclick="guardarPropiedad()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Guardar Propiedad</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-6" id="prop-grid"></div>
+            </section>
         </div>
     </main>
 
     <script>
-        // 1. Base de Datos de Propiedades (Catálogo)
-        const catalogoPropiedades = {
-            "prop_01": { 
-                nombre: "Depto 2 Amb - Nueva Córdoba", 
-                descripcion: "Excelente unidad al frente con balcón, a metros del Buen Pastor. Ideal para inversión o estudiantes.", 
-                link: "https://inmocrm.com/prop/nvacba-2amb" 
-            },
-            "prop_02": { 
-                nombre: "Casa 4 Dorm - Valle Escondido", 
-                descripcion: "Propiedad premium con piscina, quincho techado y seguridad 24hs. Lista para mudarse.", 
-                link: "https://inmocrm.com/prop/valle-escondido-casa" 
-            },
-            "prop_03": { 
-                nombre: "Lote 800m2 - Manantiales", 
-                descripcion: "Lote central en etapa consolidada. Excelente entorno y accesos directos de circunvalación.", 
-                link: "https://inmocrm.com/prop/manantiales-lote" 
-            },
-            "general": { 
-                nombre: "Consulta General de Catálogo", 
-                descripcion: "nuestra cartera de propiedades destacadas de este mes.", 
-                link: "https://inmocrm.com/catalogo-completo" 
-            }
-        };
-
-        // 2. Base de Datos de Leads (Ahora referencian el ID de la propiedad)
-        let leads = [
-            { id: 1, nombre: "María González", telefono: "5493512345678", propiedadId: "prop_01", origen: "Facebook Ads", estado: "No Contactado", fecha: new Date() },
-            { id: 2, nombre: "Carlos Rodríguez", telefono: "5493519876543", propiedadId: "prop_02", origen: "Google Search", estado: "Contactado", fecha: new Date() }
+        // CONFIGURACIÓN INICIAL Y PERSISTENCIA
+        let leads = JSON.parse(localStorage.getItem('inmo_leads')) || [];
+        let propiedades = JSON.parse(localStorage.getItem('inmo_props')) || [
+            { id: 'p1', nombre: 'Depto Nueva Córdoba', direccion: 'Estrada 123', precio: '85.000', link: '#' }
         ];
 
-        const estadosDisponibles = ["No Contactado", "Contactado", "Interesado", "No Interesado"];
-
-        function renderizarCRM() {
-            const tbody = document.getElementById('leads-body');
-            tbody.innerHTML = '';
-
-            leads.sort((a, b) => b.id - a.id).forEach(lead => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 border-b";
-                let badgeClass = `status-${lead.estado.toLowerCase().replace(' ', '-')}`;
-
-                // Generar opciones del selector de propiedades dinámicamente
-                const opcionesPropiedades = Object.entries(catalogoPropiedades).map(([id, prop]) => {
-                    const selected = lead.propiedadId === id ? 'selected' : '';
-                    return `<option value="${id}" ${selected}>${prop.nombre}</option>`;
-                }).join('');
-
-                tr.innerHTML = `
-                    <td class="px-6 py-4">
-                        <div class="font-medium text-gray-900">${lead.nombre}</div>
-                        <div class="text-xs text-gray-500">${lead.telefono}</div>
-                    </td>
-                    <td class="px-6 py-4 w-64">
-                        <select onchange="cambiarPropiedad(${lead.id}, this.value)" class="w-full border border-gray-300 rounded px-2 py-1 text-sm outline-none focus:border-blue-500 bg-white cursor-pointer shadow-sm">
-                            <option value="">Seleccionar propiedad...</option>
-                            ${opcionesPropiedades}
-                        </select>
-                    </td>
-                    <td class="px-6 py-4"><span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs border border-gray-200">${lead.origen}</span></td>
-                    <td class="px-6 py-4">
-                        <select onchange="cambiarEstado(${lead.id}, this.value)" class="status-badge ${badgeClass} outline-none cursor-pointer border-none appearance-none text-center shadow-sm">
-                            ${estadosDisponibles.map(est => `<option value="${est}" ${lead.estado === est ? 'selected' : ''}>${est}</option>`).join('')}
-                        </select>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <button onclick="enviarWhatsApp(${lead.id})" class="bg-[#25D366] text-white px-4 py-2 rounded-md hover:bg-[#1ebe5d] transition text-sm font-semibold shadow flex items-center justify-end ml-auto">
-                            <i class="fab fa-whatsapp mr-2 text-lg"></i> Contactar
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            actualizarDashboard();
+        function save() {
+            localStorage.setItem('inmo_leads', JSON.stringify(leads));
+            localStorage.setItem('inmo_props', JSON.stringify(propiedades));
+            render();
         }
 
-        function actualizarDashboard() {
-            document.getElementById('kpi-total').innerText = leads.length;
-            document.getElementById('kpi-nocontact').innerText = leads.filter(l => l.estado === "No Contactado").length;
-            document.getElementById('kpi-contact').innerText = leads.filter(l => l.estado === "Contactado").length;
-            document.getElementById('kpi-interested').innerText = leads.filter(l => l.estado === "Interesado").length;
+        // GESTIÓN DE SECCIONES
+        function showSection(sec) {
+            document.getElementById('sec-leads').classList.add('hidden');
+            document.getElementById('sec-propiedades').classList.add('hidden');
+            document.getElementById('sec-' + sec).classList.remove('hidden');
+            document.getElementById('section-title').innerText = sec === 'leads' ? 'Gestión Comercial de Leads' : 'Catálogo de Propiedades';
         }
 
-        function cambiarEstado(id, nuevoEstado) {
+        // LÓGICA DE PROPIEDADES
+        function guardarPropiedad() {
+            const prop = {
+                id: 'prop_' + Date.now(),
+                nombre: document.getElementById('prop-nombre').value,
+                direccion: document.getElementById('prop-direccion').value,
+                precio: document.getElementById('prop-precio').value,
+                link: document.getElementById('prop-link').value
+            };
+            if(!prop.nombre) return alert("Mínimo nombre");
+            propiedades.push(prop);
+            save();
+            // Limpiar campos
+            ['prop-nombre', 'prop-direccion', 'prop-precio', 'prop-link'].forEach(id => document.getElementById(id).value = '');
+        }
+
+        function eliminarProp(id) {
+            propiedades = propiedades.filter(p => p.id !== id);
+            save();
+        }
+
+        // LÓGICA DE LEADS
+        function nuevoLeadManual() {
+            const lead = {
+                id: Date.now(),
+                nombre: "Lead " + (leads.length + 1),
+                telefono: "549351" + Math.floor(Math.random() * 9000000),
+                propId: propiedades[0]?.id || '',
+                estado: 'No Contactado',
+                fechaIngreso: new Date().toISOString(),
+                fechaContacto: null,
+                historial: [`Lead creado automáticamente desde Web a las ${new Date().toLocaleTimeString()}`]
+            };
+            leads.push(lead);
+            save();
+        }
+
+        function cambiarEstadoLead(id, nuevoEstado) {
             const lead = leads.find(l => l.id === id);
-            if (lead) { lead.estado = nuevoEstado; renderizarCRM(); }
+            if(lead) {
+                const log = `Estado cambiado de ${lead.estado} a ${nuevoEstado} el ${new Date().toLocaleString()}`;
+                lead.estado = nuevoEstado;
+                lead.historial.push(log);
+                save();
+            }
         }
 
-        // Nueva función: Actualiza la propiedad asignada al lead
-        function cambiarPropiedad(id, nuevaPropiedadId) {
+        function cambiarPropiedadLead(id, pId) {
             const lead = leads.find(l => l.id === id);
-            if (lead) { lead.propiedadId = nuevaPropiedadId; }
+            if(lead) {
+                lead.propId = pId;
+                save();
+            }
         }
 
-        // Lógica de WhatsApp mejorada con inyección de datos de la propiedad
-        function enviarWhatsApp(leadId) {
-            const lead = leads.find(l => l.id === leadId);
+        function contactarWA(id) {
+            const lead = leads.find(l => l.id === id);
+            const prop = propiedades.find(p => p.id === lead.propId) || { nombre: 'Consulta', link: '' };
             
-            if (!lead.propiedadId || !catalogoPropiedades[lead.propiedadId]) {
-                alert("Por favor, asigná una propiedad a este lead antes de contactarlo.");
-                return;
+            if(!lead.fechaContacto) {
+                lead.fechaContacto = new Date().toISOString();
+                lead.historial.push(`Primer contacto realizado via WhatsApp a las ${new Date().toLocaleTimeString()}`);
+                lead.estado = 'Contactado';
             }
 
-            const propiedad = catalogoPropiedades[lead.propiedadId];
-            
-            // Armado del mensaje estructurado
-            const mensaje = `¡Hola ${lead.nombre}! 👋 Soy Juan de InmoCRM.\n\nVi que te contactaste interesado/a en: *${propiedad.nombre}*.\n\nTe cuento un poco sobre el inmueble:\n${propiedad.descripcion}\n\nPodés ver todas las fotos y detalles técnicos acá:\n📍 ${propiedad.link}\n\n¿Tenés 5 minutos hoy para que charlemos y te saque las dudas?`;
-            
-            const url = `https://wa.me/${lead.telefono}?text=${encodeURIComponent(mensaje)}`;
-            
-            // Opcional: Cambiar estado automáticamente a "Contactado" al abrir WhatsApp
-            cambiarEstado(lead.id, "Contactado");
-            
-            window.open(url, '_blank');
+            const msj = `Hola ${lead.nombre}, un gusto saludarte. Te escribo por tu consulta sobre *${prop.nombre}*.\n\nUbicación: ${prop.direccion || 'Consultar'}\nLink: ${prop.link}\n\n¿Te gustaría coordinar una visita?`;
+            window.open(`https://wa.me/${lead.telefono}?text=${encodeURIComponent(msj)}`, '_blank');
+            save();
         }
 
-        function simularIngresoLead() {
-            const nuevoId = leads.length > 0 ? Math.max(...leads.map(l => l.id)) + 1 : 1;
-            leads.push({
-                id: nuevoId,
-                nombre: `Lead Web #${nuevoId}`,
-                telefono: "5493510000000",
-                propiedadId: "general", // Entra por defecto con consulta general
-                origen: "Instagram",
-                estado: "No Contactado",
-                fecha: new Date()
+        // RENDERIZADO
+        function render() {
+            // Render Leads
+            const list = document.getElementById('leads-list');
+            list.innerHTML = '';
+            leads.sort((a,b) => new Date(b.fechaIngreso) - new Date(a.fechaIngreso)).forEach(l => {
+                const prop = propiedades.find(p => p.id === l.propId);
+                const timeDiff = l.fechaContacto ? 
+                    Math.floor((new Date(l.fechaContacto) - new Date(l.fechaIngreso))/60000) + ' min' : 
+                    'Pendiente';
+
+                list.innerHTML += `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="p-4">
+                            <div class="font-bold">${l.nombre}</div>
+                            <div class="text-[10px] text-gray-400">${new Date(l.fechaIngreso).toLocaleString()}</div>
+                        </td>
+                        <td class="p-4">
+                            <select onchange="cambiarPropiedadLead(${l.id}, this.value)" class="text-xs border p-1 rounded w-full">
+                                ${propiedades.map(p => `<option value="${p.id}" ${l.propId === p.id ? 'selected':''}>${p.nombre}</option>`).join('')}
+                            </select>
+                        </td>
+                        <td class="p-4">
+                            <select onchange="cambiarEstadoLead(${l.id}, this.value)" class="text-xs p-1 rounded border font-semibold status-${l.estado.toLowerCase().replace(' ','-')}">
+                                <option ${l.estado === 'No Contactado' ? 'selected':''}>No Contactado</option>
+                                <option ${l.estado === 'Contactado' ? 'selected':''}>Contactado</option>
+                                <option ${l.estado === 'Interesado' ? 'selected':''}>Interesado</option>
+                                <option ${l.estado === 'No Interesado' ? 'selected':''}>No Interesado</option>
+                            </select>
+                            <div class="mt-1">
+                                <details class="text-[9px] text-gray-400 cursor-pointer">
+                                    <summary>Ver Auditoría (${l.historial.length})</summary>
+                                    <ul class="bg-gray-100 p-1 rounded">
+                                        ${l.historial.map(h => `<li>• ${h}</li>`).join('')}
+                                    </ul>
+                                </details>
+                            </div>
+                        </td>
+                        <td class="p-4">
+                            <span class="text-xs font-mono ${l.fechaContacto ? 'text-green-600':'text-red-600 animate-pulse'}">
+                                <i class="far fa-clock"></i> Resp: ${timeDiff}
+                            </span>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button onclick="contactarWA(${l.id})" class="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 shadow">
+                                <i class="fab fa-whatsapp px-1"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
             });
-            renderizarCRM();
+
+            // Render Propiedades
+            const grid = document.getElementById('prop-grid');
+            grid.innerHTML = '';
+            propiedades.forEach(p => {
+                grid.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl shadow-sm border group">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg">${p.nombre}</h4>
+                            <button onclick="eliminarProp('${p.id}')" class="text-red-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <p class="text-sm text-gray-500 italic">${p.direccion}</p>
+                        <div class="mt-4 flex justify-between items-center border-t pt-2">
+                            <span class="text-blue-600 font-bold">USD ${p.precio}</span>
+                            <a href="${p.link}" target="_blank" class="text-xs text-gray-400 underline">Ficha pública</a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // KPIs
+            document.getElementById('kpi-total').innerText = leads.length;
+            document.getElementById('kpi-pendientes').innerText = leads.filter(l => l.estado === 'No Contactado').length;
         }
 
-        renderizarCRM();
+        function limpiarDatos() {
+            if(confirm("¿Borrar todo?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // Reloj tiempo real para control de agentes
+        setInterval(() => {
+            document.getElementById('reloj').innerText = new Date().toLocaleTimeString();
+        }, 1000);
+
+        render();
     </script>
 </body>
 </html>
