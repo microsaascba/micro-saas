@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Gerencia - CRM Inmobiliario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .status-badge { padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex overflow-hidden font-sans">
+
+    <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20">
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-2xl font-black tracking-tighter text-purple-400">INMO<span class="text-white">ADMIN</span></h1>
+            <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Control Central</p>
+        </div>
+        <nav class="flex-1 p-4 space-y-2">
+            <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full flex items-center p-3 rounded-lg bg-slate-800 text-purple-400 transition font-bold">
+                <i class="fas fa-chart-line w-6 text-center"></i> Control de Agentes
+            </button>
+            <button onclick="switchTab('propiedades')" id="tab-propiedades" class="w-full flex items-center p-3 rounded-lg hover:bg-slate-800 transition text-white">
+                <i class="fas fa-city w-6 text-center"></i> Alta Inmuebles
+            </button>
+        </nav>
+        <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+            Cloudflare Pages / DB Status: <span class="text-green-400 font-bold">Online</span>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+        <header class="h-16 bg-white border-b flex items-center justify-between px-8 shadow-sm z-10">
+            <h2 id="view-title" class="text-lg font-bold text-slate-800 uppercase tracking-wide">Monitor de Rendimiento</h2>
+            <div class="flex items-center gap-4">
+                <button onclick="limpiarDB()" class="text-xs text-red-500 hover:underline font-bold">Resetear BD</button>
+                <div class="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold text-sm">G</div>
+            </div>
+        </header>
+
+        <div class="p-8 overflow-y-auto flex-1 pb-20">
+            
+            <section id="view-dashboard" class="space-y-6">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                    <label class="font-bold text-slate-700 text-sm">Auditar Agente:</label>
+                    <select id="agent-selector" onchange="renderDashboard()" class="border-2 border-slate-200 p-2 rounded-lg text-sm font-bold text-slate-700 focus:border-purple-500 outline-none w-64 bg-slate-50 cursor-pointer">
+                        <option value="todos">Todos los Agentes (Global)</option>
+                        <option value="agente_juan">Agente: Juan Pérez</option>
+                        <option value="agente_maria">Agente: María Gómez</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-l-4 border-l-blue-500">
+                        <p class="text-xs font-bold text-slate-400 uppercase">Total Asignados</p>
+                        <h3 id="kpi-total" class="text-3xl font-black text-slate-800 mt-1">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-l-4 border-l-red-500">
+                        <p class="text-xs font-bold text-slate-400 uppercase">Leads Sin Atender</p>
+                        <h3 id="kpi-pendientes" class="text-3xl font-black text-red-600 mt-1">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-l-4 border-l-green-500">
+                        <p class="text-xs font-bold text-slate-400 uppercase">Contactados (Cartera)</p>
+                        <h3 id="kpi-contactados" class="text-3xl font-black text-green-600 mt-1">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-l-4 border-l-purple-500">
+                        <p class="text-xs font-bold text-slate-400 uppercase">Tasa de Conversión</p>
+                        <h3 id="kpi-conversion" class="text-3xl font-black text-purple-600 mt-1">0%</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-xl shadow-sm border flex flex-col">
+                        <div class="p-4 border-b bg-slate-50 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-700"><i class="fas fa-inbox text-red-400 mr-2"></i>Leads Entrantes (Atrasos)</h3>
+                        </div>
+                        <div class="overflow-y-auto max-h-[400px]">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-white sticky top-0 border-b text-[10px] text-slate-400 uppercase">
+                                    <tr>
+                                        <th class="p-3">Cliente</th>
+                                        <th class="p-3">Asignado a</th>
+                                        <th class="p-3 text-right">Tiempo Espera</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-leads"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border flex flex-col">
+                        <div class="p-4 border-b bg-slate-50 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-700"><i class="fas fa-users text-green-500 mr-2"></i>Cartera en Gestión</h3>
+                        </div>
+                        <div class="overflow-y-auto max-h-[400px]">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-white sticky top-0 border-b text-[10px] text-slate-400 uppercase">
+                                    <tr>
+                                        <th class="p-3">Cliente</th>
+                                        <th class="p-3">Estado</th>
+                                        <th class="p-3 text-right">Última Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-contactos"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-propiedades" class="hidden">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border mb-8">
+                    <h3 class="text-xl font-bold text-slate-800 mb-6 border-b pb-4">Alta de Nuevo Inmueble Maestro</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase">Nombre del Desarrollo/Inmueble</label>
+                                <input id="p-nombre" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-purple-500" placeholder="Ej: Edificio KAIZEN">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-500 uppercase">Precio</label>
+                                    <input id="p-precio" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-purple-500" placeholder="USD / ARS">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-bold text-slate-500 uppercase">Ubicación (Texto)</label>
+                                    <input id="p-ubicacion" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-purple-500" placeholder="Barrio, Ciudad">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase">Link Google Maps</label>
+                                <input id="p-maps" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-purple-500" placeholder="https://maps.app.goo.gl/...">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase">Link Galería de Fotos (Drive/Cloudflare R2)</label>
+                                <input id="p-fotos" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-purple-500" placeholder="URL carpeta de imágenes">
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase">Descripción Comercial (Ficha)</label>
+                                <textarea id="p-desc" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-purple-500 h-24" placeholder="Metros, amenities, detalles técnicos..."></textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-500 uppercase">Speech de Venta (Para el Agente)</label>
+                                <textarea id="p-speech" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-purple-500 h-24" placeholder="Tips de venta: Destacar financiación, ideal inversión, etc."></textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-purple-600 uppercase"><i class="fab fa-whatsapp"></i> Script Predeterminado WhatsApp</label>
+                                <textarea id="p-script" class="w-full mt-1 p-3 rounded-lg bg-purple-50 border border-purple-200 outline-none focus:border-purple-500 h-24 font-medium" placeholder="Hola! Te contacto por..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-end pt-6 border-t">
+                        <button onclick="guardarPropiedad()" class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition">
+                            <i class="fas fa-database mr-2"></i> PUBLICAR INMUEBLE
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <h3 class="text-sm font-bold text-slate-500 uppercase mb-4">Base de Datos de Inmuebles Activos</h3>
+                    <div id="grid-propiedades" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        // --- BASE DE DATOS COMPARTIDA (Simula Cloudflare D1/KV) ---
+        // Al usar la misma key 'v4_leads', lee los datos que generó el Agente en el HTML anterior.
+        let leads = JSON.parse(localStorage.getItem('v4_leads')) || [];
+        let contactos = JSON.parse(localStorage.getItem('v4_contacts')) || [];
+        
+        // Nueva estructura de Propiedades enriquecida
+        let propiedades = JSON.parse(localStorage.getItem('v4_props')) || [
+            { 
+                id: 'p1', nombre: 'Edificio KAIZEN (Nva Cba)', precio: 'USD 85.000', 
+                ubicacion: 'Nueva Córdoba', maps: 'https://maps.google.com', fotos: '#',
+                desc: '1 y 2 Dormitorios. Posesión Inmediata.', 
+                speech: 'Enfocarse en rentabilidad para alquiler a estudiantes.',
+                script: 'Hola! Soy asesor inmobiliario. Vi tu interés en el Edificio KAIZEN...'
+            }
+        ];
+
+        function syncProps() {
+            localStorage.setItem('v4_props', JSON.stringify(propiedades));
+            renderPropiedades();
+        }
+
+        // --- NAVEGACIÓN ---
+        function switchTab(tab) {
+            document.getElementById('view-dashboard').classList.toggle('hidden', tab !== 'dashboard');
+            document.getElementById('view-propiedades').classList.toggle('hidden', tab !== 'propiedades');
+            
+            document.getElementById('tab-dashboard').className = `w-full flex items-center p-3 rounded-lg transition font-bold ${tab === 'dashboard' ? 'bg-slate-800 text-purple-400' : 'hover:bg-slate-800 text-white'}`;
+            document.getElementById('tab-propiedades').className = `w-full flex items-center p-3 rounded-lg transition font-bold ${tab === 'propiedades' ? 'bg-slate-800 text-purple-400' : 'hover:bg-slate-800 text-white'}`;
+            
+            document.getElementById('view-title').innerText = tab === 'dashboard' ? 'Monitor de Rendimiento' : 'Gestor de Activos Inmobiliarios';
+            
+            if(tab === 'dashboard') renderDashboard();
+        }
+
+        // --- LÓGICA DE PROPIEDADES (CRUD) ---
+        function guardarPropiedad() {
+            const p = {
+                id: 'p_' + Date.now(),
+                nombre: document.getElementById('p-nombre').value,
+                precio: document.getElementById('p-precio').value,
+                ubicacion: document.getElementById('p-ubicacion').value,
+                maps: document.getElementById('p-maps').value,
+                fotos: document.getElementById('p-fotos').value,
+                desc: document.getElementById('p-desc').value,
+                speech: document.getElementById('p-speech').value,
+                script: document.getElementById('p-script').value
+            };
+
+            if(!p.nombre) return alert("El nombre es obligatorio");
+            
+            propiedades.push(p);
+            syncProps();
+            
+            // Limpiar form
+            ['p-nombre', 'p-precio', 'p-ubicacion', 'p-maps', 'p-fotos', 'p-desc', 'p-speech', 'p-script'].forEach(id => document.getElementById(id).value = '');
+            alert("Inmueble sincronizado a la base de datos.");
+        }
+
+        function renderPropiedades() {
+            const grid = document.getElementById('grid-propiedades');
+            grid.innerHTML = '';
+            propiedades.forEach(p => {
+                grid.innerHTML += `
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative">
+                        <span class="absolute top-4 right-4 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded">Activo</span>
+                        <h4 class="font-black text-slate-800 text-lg pr-12">${p.nombre}</h4>
+                        <p class="text-purple-600 font-bold mt-1">${p.precio}</p>
+                        <div class="mt-4 space-y-2 text-xs">
+                            <p class="text-slate-600"><i class="fas fa-map-marker-alt w-4"></i> ${p.ubicacion}</p>
+                            <p class="text-slate-500 line-clamp-2"><i class="fas fa-info-circle w-4"></i> ${p.desc}</p>
+                            <div class="mt-3 bg-slate-50 p-2 rounded border border-slate-100">
+                                <span class="font-bold text-slate-400 block mb-1">Speech Interno:</span>
+                                <span class="italic text-slate-600">${p.speech || 'Sin definir'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- LÓGICA DEL DASHBOARD GERENCIAL ---
+        function renderDashboard() {
+            const agentFilter = document.getElementById('agent-selector').value;
+            
+            // En un sistema real, los leads tendrían una propiedad 'agente_id'. 
+            // Para esta demo simulamos asignaciones aleatorias si no la tienen.
+            let leadsFiltrados = leads;
+            let contactosFiltrados = contactos;
+
+            // Simulación: Asignar agente aleatorio a datos viejos para probar el filtro
+            leads.forEach(l => { if(!l.agente_id) l.agente_id = Math.random() > 0.5 ? 'agente_juan' : 'agente_maria'; });
+            contactos.forEach(c => { if(!c.agente_id) c.agente_id = Math.random() > 0.5 ? 'agente_juan' : 'agente_maria'; });
+
+            if(agentFilter !== 'todos') {
+                leadsFiltrados = leads.filter(l => l.agente_id === agentFilter);
+                contactosFiltrados = contactos.filter(c => c.agente_id === agentFilter);
+            }
+
+            // KPIs
+            const total = leadsFiltrados.length + contactosFiltrados.length;
+            document.getElementById('kpi-total').innerText = total;
+            document.getElementById('kpi-pendientes').innerText = leadsFiltrados.length;
+            document.getElementById('kpi-contactados').innerText = contactosFiltrados.length;
+            
+            const conv = total > 0 ? Math.round((contactosFiltrados.length / total) * 100) : 0;
+            document.getElementById('kpi-conversion').innerText = conv + '%';
+
+            // Tabla Leads Entrantes
+            const tLeads = document.getElementById('table-leads');
+            tLeads.innerHTML = '';
+            leadsFiltrados.forEach(l => {
+                const min = Math.floor((new Date() - new Date(l.fechaIngreso))/60000);
+                const nombreAgente = l.agente_id === 'agente_juan' ? 'Juan Pérez' : 'María Gómez';
+                tLeads.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3 font-bold text-slate-700">${l.nombre}</td>
+                        <td class="p-3 text-xs text-slate-500">${nombreAgente}</td>
+                        <td class="p-3 text-right">
+                            <span class="status-badge ${min > 15 ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-slate-100 text-slate-600'}">
+                                ${min} min
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Tabla Cartera Trabajada
+            const tContactos = document.getElementById('table-contactos');
+            tContactos.innerHTML = '';
+            contactosFiltrados.slice().reverse().forEach(c => {
+                const bgStatus = c.estado === 'Contactado' ? 'bg-yellow-100 text-yellow-700' : 
+                                 c.estado === 'Interesado' ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-700';
+                tContactos.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="p-3">
+                            <div class="font-bold text-slate-700">${c.nombre}</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">${c.telefono}</div>
+                        </td>
+                        <td class="p-3">
+                            <span class="status-badge ${bgStatus}">${c.estado}</span>
+                        </td>
+                        <td class="p-3 text-right text-[10px] text-slate-500">
+                            ${c.notas[0] ? c.notas[0].time.split(',')[0] : 'Sin notas'}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function limpiarDB() {
+            if(confirm("¿Estás seguro de borrar toda la base de datos de prueba?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // Inicialización
+        renderPropiedades();
+        renderDashboard();
+        
+        // Auto-refresh del dashboard
+        setInterval(() => {
+            if(!document.getElementById('view-dashboard').classList.contains('hidden')) renderDashboard();
+        }, 30000);
+
+    </script>
+</body>
+</html>
