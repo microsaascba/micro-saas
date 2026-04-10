@@ -3,486 +3,288 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Gerencia - CRM Inmobiliario</title>
+    <title>Admin LM Desarrollos - Gestión Integral</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        .status-badge { padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-        .loading-spinner { border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 2px solid #fff; width: 14px; height: 14px; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; }
+        .loading-spinner { border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 2px solid #fff; width: 14px; height: 14px; animation: spin 1s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .modal-active { display: flex !important; }
     </style>
 </head>
 <body class="bg-slate-100 h-screen flex overflow-hidden font-sans">
 
     <aside class="w-64 bg-slate-900 text-white flex flex-col shadow-2xl z-20">
         <div class="p-6 border-b border-slate-800">
-            <h1 class="text-2xl font-black tracking-tighter text-purple-400">INMO<span class="text-white">ADMIN</span></h1>
-            <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Cloudflare Edge App</p>
+            <h1 class="text-2xl font-black tracking-tighter text-purple-400">LM<span class="text-white">ADMIN</span></h1>
+            <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Gestión Centralizada</p>
         </div>
         <nav class="flex-1 p-4 space-y-2">
             <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full flex items-center p-3 rounded-lg bg-slate-800 text-purple-400 transition font-bold">
                 <i class="fas fa-chart-line w-6 text-center"></i> Control General
             </button>
-            
             <button onclick="switchTab('web')" id="tab-web" class="w-full flex items-center p-3 rounded-lg hover:bg-slate-800 transition text-white relative">
                 <i class="fas fa-inbox w-6 text-center"></i> Bandeja Web
                 <span id="badge-web" class="absolute right-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
             </button>
-
             <button onclick="switchTab('agentes')" id="tab-agentes" class="w-full flex items-center p-3 rounded-lg hover:bg-slate-800 transition text-white">
-                <i class="fas fa-user-tie w-6 text-center"></i> Equipo Comercial
+                <i class="fas fa-user-tie w-6 text-center"></i> Gestión Agentes
             </button>
             <button onclick="switchTab('propiedades')" id="tab-propiedades" class="w-full flex items-center p-3 rounded-lg hover:bg-slate-800 transition text-white">
-                <i class="fas fa-city w-6 text-center"></i> Alta Inmuebles
+                <i class="fas fa-city w-6 text-center"></i> Gestión Catálogo
             </button>
         </nav>
         <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center flex items-center justify-center gap-2">
             <div id="db-status-dot" class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
-            <span id="db-status-text">Conectando a D1...</span>
+            <span id="db-status-text">Cloudflare D1</span>
         </div>
     </aside>
 
     <main class="flex-1 flex flex-col overflow-hidden relative">
-        <header class="h-16 bg-white border-b flex items-center justify-between px-8 shadow-sm z-10">
-            <h2 id="view-title" class="text-lg font-bold text-slate-800 uppercase tracking-wide">Monitor de Rendimiento</h2>
-            <div class="flex items-center gap-4">
-                <button onclick="initGerenciaAsync()" class="text-xs text-blue-500 hover:underline font-bold flex items-center gap-1">
-                    <i class="fas fa-sync-alt"></i> Refrescar Datos
-                </button>
-                <div class="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center font-bold text-sm">G</div>
-            </div>
+        <header class="h-16 bg-white border-b flex items-center justify-between px-8 z-10">
+            <h2 id="view-title" class="text-lg font-bold text-slate-800 uppercase tracking-wide">Panel de Control</h2>
+            <button onclick="initAdminAsync()" class="text-xs text-blue-500 hover:underline font-bold flex items-center gap-1">
+                <i class="fas fa-sync-alt"></i> Actualizar Todo
+            </button>
         </header>
 
         <div class="p-8 overflow-y-auto flex-1 pb-20">
             
-            <section id="view-dashboard" class="space-y-6">
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                    <label class="font-bold text-slate-700 text-sm">Auditar Agente:</label>
-                    <select id="agent-selector" onchange="cargarLeadsDashboard()" class="border-2 border-slate-200 p-2 rounded-lg text-sm font-bold text-slate-700 focus:border-purple-500 outline-none w-64 bg-slate-50 cursor-pointer">
-                        <option value="todos">Todos los Agentes (Global)</option>
-                    </select>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-l-4 border-l-blue-500">
-                        <p class="text-xs font-bold text-slate-400 uppercase">Total Asignados</p>
-                        <h3 id="kpi-total" class="text-3xl font-black text-slate-800 mt-1">-</h3>
+            <section id="view-agentes" class="hidden space-y-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border">
+                    <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">Alta de Nuevo Agente</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <input id="a-nombre" type="text" placeholder="Nombre completo" class="border p-2 rounded-lg bg-slate-50 outline-none focus:ring-2 ring-blue-500">
+                        <input id="a-usuario" type="text" placeholder="Usuario login" class="border p-2 rounded-lg bg-slate-50">
+                        <input id="a-pass" type="password" placeholder="Contraseña" class="border p-2 rounded-lg bg-slate-50">
+                        <button onclick="guardarAgente()" class="bg-blue-600 text-white font-bold rounded-lg py-2 px-4 hover:bg-blue-700 transition">Registrar</button>
                     </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-l-4 border-l-red-500">
-                        <p class="text-xs font-bold text-slate-400 uppercase">Leads Sin Atender</p>
-                        <h3 id="kpi-pendientes" class="text-3xl font-black text-red-600 mt-1">-</h3>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-l-4 border-l-green-500">
-                        <p class="text-xs font-bold text-slate-400 uppercase">Contactados (Cartera)</p>
-                        <h3 id="kpi-contactados" class="text-3xl font-black text-green-600 mt-1">-</h3>
-                    </div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-l-4 border-l-purple-500">
-                        <p class="text-xs font-bold text-slate-400 uppercase">Tasa de Conversión</p>
-                        <h3 id="kpi-conversion" class="text-3xl font-black text-purple-600 mt-1">-%</h3>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-sm border overflow-hidden mt-6">
-                    <div class="p-4 border-b bg-slate-50">
-                        <h3 class="font-bold text-slate-700"><i class="fas fa-trophy text-yellow-500 mr-2"></i>Rendimiento del Equipo Activo</h3>
-                    </div>
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-white border-b text-[10px] text-slate-400 uppercase">
-                            <tr>
-                                <th class="p-4">Agente Comercial</th>
-                                <th class="p-4 text-center">En Espera (Riesgo)</th>
-                                <th class="p-4 text-center">Contactados</th>
-                                <th class="p-4 text-right">Tasa Conversión</th>
-                            </tr>
-                        </thead>
-                        <tbody id="table-kpi-agentes">
-                            <tr><td colspan="4" class="text-center p-4 text-slate-400 text-xs">Calculando métricas...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section id="view-web" class="hidden">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border mb-8 flex justify-between items-center border-l-4 border-l-purple-500">
-                    <div>
-                        <h3 class="text-xl font-bold text-slate-800">Bandeja de Entrada Web</h3>
-                        <p class="text-sm text-slate-500">Leads captados desde la Landing Page esperando asignación manual.</p>
-                    </div>
-                    <button onclick="cargarBandejaWeb()" class="bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-sm font-bold transition">
-                        <i class="fas fa-sync-alt mr-1"></i> Actualizar
-                    </button>
                 </div>
 
                 <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b font-bold text-slate-700">Listado de Agentes Activos</div>
                     <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-50 border-b text-[10px] text-slate-500 uppercase font-bold">
+                        <thead class="bg-white border-b text-[10px] text-slate-400 uppercase">
                             <tr>
-                                <th class="p-4">Lead Entrante</th>
-                                <th class="p-4">Emprendimiento Solicitado</th>
-                                <th class="p-4">Asignar a Agente</th>
-                                <th class="p-4 text-right">Acción</th>
+                                <th class="p-4">Agente</th>
+                                <th class="p-4">Usuario</th>
+                                <th class="p-4">Contacto</th>
+                                <th class="p-4 text-right">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="table-inbox-web">
-                            </tbody>
+                        <tbody id="list-agentes-admin"></tbody>
                     </table>
                 </div>
             </section>
 
-            <section id="view-agentes" class="hidden">
-                <div class="bg-white p-8 rounded-2xl shadow-sm border mb-8">
-                    <h3 class="text-xl font-bold text-slate-800 mb-6 border-b pb-4">Alta de Nuevo Agente Comercial</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div><label class="text-xs font-bold text-slate-500 uppercase">Nombre Completo</label><input id="a-nombre" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500"></div>
-                        <div><label class="text-xs font-bold text-slate-500 uppercase">Usuario de Acceso</label><input id="a-usuario" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500"></div>
-                        <div><label class="text-xs font-bold text-slate-500 uppercase">Contraseña</label><input id="a-pass" type="password" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500"></div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div><label class="text-xs font-bold text-slate-500 uppercase">Teléfono Móvil</label><input id="a-tel" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500"></div>
-                            <div><label class="text-xs font-bold text-slate-500 uppercase">Email</label><input id="a-email" type="email" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500"></div>
-                        </div>
+            <section id="view-propiedades" class="hidden space-y-8">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border">
+                    <h3 class="font-bold text-slate-800 mb-4">Alta Rápida de Propiedad</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input id="p-nombre" type="text" placeholder="Nombre del emprendimiento" class="border p-2 rounded-lg bg-slate-50 outline-none focus:ring-2 ring-purple-500">
+                        <input id="p-precio" type="text" placeholder="Precio (USD)" class="border p-2 rounded-lg bg-slate-50">
+                        <button onclick="guardarPropiedad()" class="bg-purple-600 text-white font-bold rounded-lg py-2 hover:bg-purple-700 transition">Publicar</button>
                     </div>
-                    <div class="mt-6 flex justify-end">
-                        <button id="btn-guardar-agente" onclick="guardarAgenteAsync()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition flex items-center gap-2"><i class="fas fa-user-plus"></i> REGISTRAR AGENTE</button>
-                    </div>
+                    <p class="text-[10px] text-slate-400 mt-2 italic">* Podrás completar el resto de los datos (Maps, Scripts, Descripciones) editando la propiedad en la lista inferior.</p>
                 </div>
-                <div class="mt-8"><div id="grid-agentes" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div></div>
+
+                <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b font-bold text-slate-700">Catálogo General de LM Desarrollos</div>
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-white border-b text-[10px] text-slate-400 uppercase">
+                            <tr>
+                                <th class="p-4">Inmueble</th>
+                                <th class="p-4">Ubicación</th>
+                                <th class="p-4">Precio</th>
+                                <th class="p-4 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="list-props-admin"></tbody>
+                    </table>
+                </div>
             </section>
 
-            <section id="view-propiedades" class="hidden">
-                <div class="bg-white p-8 rounded-2xl shadow-sm border mb-8">
-                    <h3 class="text-xl font-bold text-slate-800 mb-6 border-b pb-4">Alta de Nuevo Inmueble Maestro</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div class="space-y-4">
-                            <div><label class="text-xs font-bold text-slate-500 uppercase">Nombre del Desarrollo</label><input id="p-nombre" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border"></div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div><label class="text-xs font-bold text-slate-500 uppercase">Precio</label><input id="p-precio" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border"></div>
-                                <div><label class="text-xs font-bold text-slate-500 uppercase">Ubicación</label><input id="p-ubicacion" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border"></div>
-                            </div>
-                            <div><label class="text-xs font-bold text-slate-500 uppercase">Link Maps</label><input id="p-maps" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border"></div>
-                            <div><label class="text-xs font-bold text-slate-500 uppercase">Link Fotos</label><input id="p-fotos" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border"></div>
-                        </div>
-                        <div class="space-y-4">
-                            <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label><textarea id="p-desc" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border h-16"></textarea></div>
-                            <div><label class="text-xs font-bold text-slate-500 uppercase">Speech Venta</label><textarea id="p-speech" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border h-16"></textarea></div>
-                            <div class="bg-purple-50 p-4 rounded-xl border border-purple-200">
-                                <label class="text-xs font-black text-purple-700 uppercase flex justify-between"><span><i class="fab fa-whatsapp"></i> Script Dinámico WhatsApp</span></label>
-                                <textarea id="p-script" class="w-full p-3 rounded-lg bg-white border border-purple-300 outline-none focus:border-purple-500 h-24 font-medium text-sm" placeholder="¡Hola [NOMBRE]! Te contacto desde LM Desarrollos por tu consulta..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-8 flex justify-end pt-6 border-t">
-                        <button id="btn-guardar-prop" onclick="guardarPropiedadAsync()" class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition"><i class="fas fa-database mr-2"></i> PUBLICAR INMUEBLE</button>
-                    </div>
-                </div>
-            </section>
+            <section id="view-dashboard" class="space-y-6">
+                </section>
+            <section id="view-web" class="hidden">
+                </section>
 
         </div>
     </main>
 
+    <div id="modal-edit" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden">
+            <div class="p-6 border-b flex justify-between items-center bg-slate-50">
+                <h3 id="modal-title" class="font-bold text-lg text-slate-800 uppercase tracking-tight">Editar</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="modal-body" class="p-8 space-y-4 max-h-[70vh] overflow-y-auto">
+                </div>
+            <div class="p-6 border-t bg-slate-50 flex justify-end gap-3">
+                <button onclick="closeModal()" class="px-6 py-2 text-sm font-bold text-slate-500 hover:underline">Cancelar</button>
+                <button id="modal-save-btn" class="px-8 py-2 bg-blue-600 text-white rounded-lg font-bold shadow-lg hover:bg-blue-700 transition">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // ==========================================
-        // CONFIGURACIÓN API CLOUDFLARE
-        // ==========================================
-        const API_URLS = {
-            leads: '/api/leads',
-            propiedades: '/api/propiedades',
-            agentes: '/api/agentes' 
-        };
+        // CONFIGURACIÓN API
+        const API = { leads: '/api/leads', props: '/api/propiedades', agentes: '/api/agentes' };
 
-        let leadsData = [];
-        let contactosData = [];
-        let propiedadesData = [];
-        let agentesData = [];
-        
-        // Leads temporales desde la Landing Page
-        let leadsWebInbox = [];
+        let data = { agentes: [], props: [], leads: [], contactos: [] };
 
-        function setDbStatus(status) {
-            const dot = document.getElementById('db-status-dot');
-            const txt = document.getElementById('db-status-text');
-            if(status === 'ok') { dot.className = "w-2 h-2 rounded-full bg-green-500"; txt.innerText = "D1 Sincronizado"; txt.className = "text-green-400 font-bold"; } 
-            else if (status === 'error') { dot.className = "w-2 h-2 rounded-full bg-red-500"; txt.innerText = "Error API"; txt.className = "text-red-400 font-bold"; } 
-            else { dot.className = "w-2 h-2 rounded-full bg-yellow-400 animate-pulse"; txt.innerText = "Cargando..."; txt.className = "text-slate-500"; }
-        }
-
-        // ==========================================
-        // 1. INICIALIZACIÓN
-        // ==========================================
-        async function initGerenciaAsync() {
+        async function initAdminAsync() {
             setDbStatus('loading');
             try {
-                await cargarPropiedadesAPI();
-                await Promise.all([
-                    cargarAgentesAPI(),
-                    cargarLeadsAPI()
+                const [rA, rP, rL] = await Promise.all([
+                    fetch(API.agentes).then(r => r.json()),
+                    fetch(API.props).then(r => r.json()),
+                    fetch(API.leads).then(r => r.json())
                 ]);
-                cargarBandejaWeb(); // Cargar inbox temporal
+                data.agentes = rA; data.props = rP; data.leads = rL.leads; data.contactos = rL.contactos;
+                renderAll();
                 setDbStatus('ok');
-            } catch (e) {
-                console.error(e);
-                setDbStatus('error');
-            }
+            } catch (e) { setDbStatus('error'); }
         }
 
-        async function cargarPropiedadesAPI() {
-            try {
-                const res = await fetch(API_URLS.propiedades);
-                if(res.ok) propiedadesData = await res.json();
-            } catch (e) { console.warn("Error props", e); }
-        }
-
-        async function cargarAgentesAPI() {
-            try {
-                const res = await fetch(API_URLS.agentes);
-                if(res.ok) agentesData = await res.json();
-                renderSelectorAgentes();
-                renderAgentesGrid();
-            } catch (e) { console.warn("Error agentes", e); }
-        }
-
-        async function cargarLeadsAPI() {
-            try {
-                const res = await fetch(API_URLS.leads);
-                if(res.ok) {
-                    const data = await res.json();
-                    leadsData = data.leads || [];
-                    contactosData = data.contactos || [];
-                    renderizarDashboard();
-                    calcularKPIsEquipo();
-                }
-            } catch (e) { console.warn("Error leads", e); }
-        }
-
-        // ==========================================
-        // 2. BANDEJA WEB (NUEVO MÓDULO)
-        // ==========================================
-        function cargarBandejaWeb() {
-            // Leemos del localStorage temporal de la Landing Page
-            leadsWebInbox = JSON.parse(localStorage.getItem('inmobiliaria_leads')) || [];
-            
-            // Actualizar Badge en el menú
-            const badge = document.getElementById('badge-web');
-            if (leadsWebInbox.length > 0) {
-                badge.innerText = leadsWebInbox.length;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-
-            const tbody = document.getElementById('table-inbox-web');
-            tbody.innerHTML = '';
-
-            if (leadsWebInbox.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-slate-400 font-bold bg-slate-50">No hay nuevos leads web por asignar.</td></tr>';
-                return;
-            }
-
-            // Opciones del selector de agentes
-            const agentesOptions = agentesData.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
-
-            leadsWebInbox.forEach(lead => {
-                tbody.innerHTML += `
-                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
-                        <td class="p-4">
-                            <div class="font-bold text-slate-800">${lead.nombre}</div>
-                            <div class="text-[10px] text-slate-500 mt-1"><i class="fas fa-envelope"></i> ${lead.email} | <i class="fas fa-phone"></i> ${lead.telefono}</div>
-                            <div class="text-[9px] text-slate-400 mt-1">Ingreso: ${lead.fecha}</div>
-                        </td>
-                        <td class="p-4">
-                            <span class="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-lg text-xs font-bold">${lead.emprendimiento}</span>
-                        </td>
-                        <td class="p-4 w-64">
-                            <select id="select-agent-${lead.id}" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:border-purple-500 bg-white">
-                                <option value="">-- Seleccionar Agente --</option>
-                                ${agentesOptions}
-                            </select>
-                        </td>
-                        <td class="p-4 text-right">
-                            <button onclick="asignarLeadALaBase('${lead.id}')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md transition">
-                                Asignar
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        async function asignarLeadALaBase(webLeadId) {
-            const selector = document.getElementById(`select-agent-${webLeadId}`);
-            const agenteAsignadoId = selector.value;
-            
-            if (!agenteAsignadoId) {
-                return alert("Por favor, selecciona un agente de la lista para asignarle el lead.");
-            }
-
-            // 1. Encontrar el lead en el array temporal
-            const leadRaw = leadsWebInbox.find(l => l.id == webLeadId);
-            
-            // 2. Intentar cruzar el nombre del emprendimiento con un ID real de la base de D1
-            // Si no encuentra el exacto, lo asigna a la primera propiedad de la base por defecto.
-            const propiedadVinculada = propiedadesData.find(p => p.nombre.toLowerCase().includes(leadRaw.emprendimiento.toLowerCase())) || propiedadesData[0];
-            const prop_id_final = propiedadVinculada ? propiedadVinculada.id : 'p1';
-
-            // 3. Crear el objeto listo para D1
-            const nuevoLeadParaD1 = {
-                id: crypto.randomUUID(), // ID único de base de datos
-                nombre: leadRaw.nombre,
-                telefono: leadRaw.telefono,
-                origen: 'Landing Page Web',
-                prop_id: prop_id_final,
-                agente_id: agenteAsignadoId,
-                estado: 'No Contactado',
-                fecha_ingreso: new Date().toISOString()
-            };
-
-            // Cambiar UI del botón
-            event.target.innerText = "Procesando...";
-            event.target.disabled = true;
-
-            try {
-                // 4. Hacer POST a Cloudflare D1
-                await fetch(API_URLS.leads, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(nuevoLeadParaD1)
-                });
-
-                // 5. Eliminar el lead del localStorage temporal (Landing Page)
-                leadsWebInbox = leadsWebInbox.filter(l => l.id != webLeadId);
-                localStorage.setItem('inmobiliaria_leads', JSON.stringify(leadsWebInbox));
-
-                // 6. Refrescar Vistas
-                cargarBandejaWeb();
-                cargarLeadsAPI(); // Actualiza el dashboard
-
-            } catch (error) {
-                alert("Error al asignar el lead a D1. Verifica tu conexión.");
-                event.target.innerText = "Asignar";
-                event.target.disabled = false;
-            }
-        }
-
-
-        // ==========================================
-        // RESTO DEL CÓDIGO (Agentes, Propiedades, Dashboard)
-        // Permanece igual a la versión V6
-        // ==========================================
-
-        function cargarLeadsDashboard() { renderizarDashboard(); }
-
-        async function guardarAgenteAsync() {
-            const btn = document.getElementById('btn-guardar-agente');
-            const nuevoAgente = {
-                id: document.getElementById('a-usuario').value, 
+        // --- GESTIÓN DE AGENTES ---
+        async function guardarAgente() {
+            const ag = {
+                id: document.getElementById('a-usuario').value,
                 nombre: document.getElementById('a-nombre').value,
                 usuario: document.getElementById('a-usuario').value,
-                password_hash: document.getElementById('a-pass').value,
-                telefono: document.getElementById('a-tel').value,
-                email: document.getElementById('a-email').value
+                password_hash: document.getElementById('a-pass').value
             };
-
-            if(!nuevoAgente.nombre || !nuevoAgente.usuario || !nuevoAgente.password_hash) return alert("Nombre, Usuario y Contraseña son obligatorios.");
-
-            btn.innerHTML = '<span class="loading-spinner"></span> Guardando...';
-            btn.disabled = true;
-
-            try {
-                await fetch(API_URLS.agentes, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nuevoAgente) });
-                ['a-nombre', 'a-usuario', 'a-pass', 'a-tel', 'a-email'].forEach(id => document.getElementById(id).value = '');
-                await cargarAgentesAPI();
-            } catch (e) { alert("Error al guardar agente."); } 
-            finally { btn.innerHTML = '<i class="fas fa-user-plus"></i> REGISTRAR AGENTE'; btn.disabled = false; }
+            await fetch(API.agentes, { method: 'POST', body: JSON.stringify(ag) });
+            initAdminAsync();
         }
 
-        function renderSelectorAgentes() {
-            const sel = document.getElementById('agent-selector');
-            sel.innerHTML = '<option value="todos">Todos los Agentes (Global)</option>';
-            agentesData.forEach(a => { sel.innerHTML += `<option value="${a.id}">${a.nombre} (${a.usuario})</option>`; });
+        async function eliminarAgente(id) {
+            if(!confirm("¿Borrar agente definitivamente? Se perderán sus estadísticas.")) return;
+            await fetch(`${API.agentes}?id=${id}`, { method: 'DELETE' });
+            initAdminAsync();
         }
 
-        function renderAgentesGrid() {
-            const grid = document.getElementById('grid-agentes');
-            grid.innerHTML = '';
-            agentesData.forEach(a => {
-                grid.innerHTML += `
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-black text-xl">${a.nombre.charAt(0)}</div>
-                        <div>
-                            <h4 class="font-bold text-slate-800 leading-tight">${a.nombre}</h4>
-                            <p class="text-xs text-slate-500 font-mono mt-1"><i class="fas fa-user-circle"></i> ${a.usuario}</p>
-                        </div>
-                    </div>`;
-            });
+        function openEditAgente(id) {
+            const ag = data.agentes.find(a => a.id === id);
+            document.getElementById('modal-title').innerText = `Editar Agente: ${ag.nombre}`;
+            document.getElementById('modal-body').innerHTML = `
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Nombre Completo</label>
+                        <input id="edit-ag-nombre" type="text" value="${ag.nombre}" class="w-full border p-2 rounded bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Teléfono</label>
+                        <input id="edit-ag-tel" type="text" value="${ag.telefono || ''}" class="w-full border p-2 rounded bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase">Email</label>
+                        <input id="edit-ag-email" type="email" value="${ag.email || ''}" class="w-full border p-2 rounded bg-slate-50">
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-save-btn').onclick = () => salvarAgente(id);
+            document.getElementById('modal-edit').classList.add('modal-active');
         }
 
-        function renderizarDashboard() {
-            const agenteFiltro = document.getElementById('agent-selector').value;
-            let fLeads = leadsData; let fContactos = contactosData;
-            if(agenteFiltro !== 'todos') {
-                fLeads = leadsData.filter(l => l.agente_id === agenteFiltro);
-                fContactos = contactosData.filter(c => c.agente_id === agenteFiltro);
-            }
-            const total = fLeads.length + fContactos.length;
-            document.getElementById('kpi-total').innerText = total;
-            document.getElementById('kpi-pendientes').innerText = fLeads.length;
-            document.getElementById('kpi-contactados').innerText = fContactos.length;
-            const conv = total > 0 ? Math.round((fContactos.length / total) * 100) : 0;
-            document.getElementById('kpi-conversion').innerText = conv + '%';
-        }
-
-        function calcularKPIsEquipo() {
-            const tabla = document.getElementById('table-kpi-agentes');
-            tabla.innerHTML = '';
-            if(agentesData.length === 0) { tabla.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-slate-400 text-xs">No hay agentes registrados.</td></tr>'; return; }
-            agentesData.forEach(agente => {
-                const leadsAgente = leadsData.filter(l => l.agente_id === agente.id).length;
-                const contAgente = contactosData.filter(c => c.agente_id === agente.id).length;
-                const total = leadsAgente + contAgente;
-                const conv = total > 0 ? Math.round((contAgente / total) * 100) : 0;
-                const colorRiesgo = leadsAgente > 5 ? 'text-red-600 font-bold' : 'text-slate-600';
-                tabla.innerHTML += `
-                    <tr class="border-b border-slate-50 hover:bg-slate-50">
-                        <td class="p-4 font-bold text-slate-700">${agente.nombre}</td>
-                        <td class="p-4 text-center ${colorRiesgo}">${leadsAgente}</td>
-                        <td class="p-4 text-center text-green-600 font-bold">${contAgente}</td>
-                        <td class="p-4 text-right"><span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-black">${conv}%</span></td>
-                    </tr>`;
-            });
-        }
-
-        async function guardarPropiedadAsync() {
-            const btn = document.getElementById('btn-guardar-prop');
-            const p = {
-                id: crypto.randomUUID(), nombre: document.getElementById('p-nombre').value,
-                precio: document.getElementById('p-precio').value, ubicacion: document.getElementById('p-ubicacion').value,
-                maps: document.getElementById('p-maps').value, fotos: document.getElementById('p-fotos').value,
-                descripcion: document.getElementById('p-desc').value, speech: document.getElementById('p-speech').value,
-                script_wa: document.getElementById('p-script').value
+        async function salvarAgente(id) {
+            const update = {
+                nombre: document.getElementById('edit-ag-nombre').value,
+                telefono: document.getElementById('edit-ag-tel').value,
+                email: document.getElementById('edit-ag-email').value
             };
-            if(!p.nombre) return alert("Falta el nombre.");
-            btn.innerHTML = '<span class="loading-spinner"></span> Guardando...'; btn.disabled = true;
-            try {
-                await fetch(API_URLS.propiedades, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
-                ['p-nombre','p-precio','p-ubicacion','p-maps','p-fotos','p-desc','p-speech','p-script'].forEach(i => document.getElementById(i).value='');
-                alert("Inmueble publicado.");
-            } catch (e) { alert("Error"); } finally { btn.innerHTML = '<i class="fas fa-database mr-2"></i> PUBLICAR INMUEBLE'; btn.disabled = false; }
+            await fetch(`${API.agentes}?id=${id}`, { method: 'PUT', body: JSON.stringify(update) });
+            closeModal();
+            initAdminAsync();
         }
 
-        function switchTab(tab) {
-            document.getElementById('view-dashboard').classList.toggle('hidden', tab !== 'dashboard');
-            document.getElementById('view-web').classList.toggle('hidden', tab !== 'web');
-            document.getElementById('view-agentes').classList.toggle('hidden', tab !== 'agentes');
-            document.getElementById('view-propiedades').classList.toggle('hidden', tab !== 'propiedades');
-            
-            document.querySelectorAll('nav button').forEach(b => { b.classList.remove('bg-slate-800', 'text-purple-400'); b.classList.add('text-white'); });
-            document.getElementById(`tab-${tab}`).classList.add('bg-slate-800', 'text-purple-400');
-            document.getElementById(`tab-${tab}`).classList.remove('text-white');
-
-            const titles = { dashboard: 'Monitor de Rendimiento', web: 'Asignación de Leads Web', agentes: 'Gestión de Recursos Humanos', propiedades: 'Alta de Activos Inmobiliarios' };
-            document.getElementById('view-title').innerText = titles[tab];
+        // --- GESTIÓN DE PROPIEDADES ---
+        async function guardarPropiedad() {
+            const p = { id: crypto.randomUUID(), nombre: document.getElementById('p-nombre').value, precio: document.getElementById('p-precio').value };
+            await fetch(API.props, { method: 'POST', body: JSON.stringify(p) });
+            initAdminAsync();
         }
 
-        window.addEventListener('DOMContentLoaded', initGerenciaAsync);
+        async function eliminarProp(id) {
+            if(!confirm("¿Borrar inmueble del catálogo?")) return;
+            await fetch(`${API.props}?id=${id}`, { method: 'DELETE' });
+            initAdminAsync();
+        }
+
+        function openEditProp(id) {
+            const p = data.props.find(x => x.id === id);
+            document.getElementById('modal-title').innerText = `Editar Catálogo: ${p.nombre}`;
+            document.getElementById('modal-body').innerHTML = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2"><label class="text-[10px] font-bold text-slate-400 uppercase">Nombre</label><input id="ep-nombre" type="text" value="${p.nombre}" class="w-full border p-2 rounded bg-slate-50"></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase">Precio</label><input id="ep-precio" type="text" value="${p.precio || ''}" class="w-full border p-2 rounded bg-slate-50"></div>
+                        <div><label class="text-[10px] font-bold text-slate-400 uppercase">Ubicación</label><input id="ep-ubi" type="text" value="${p.ubicacion || ''}" class="w-full border p-2 rounded bg-slate-50"></div>
+                        <div class="col-span-2"><label class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Script WhatsApp (Usa [NOMBRE] para personalizar)</label><textarea id="ep-script" class="w-full border p-2 rounded bg-purple-50 h-24 text-sm font-medium">${p.script_wa || ''}</textarea></div>
+                        <div class="col-span-2"><label class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Descripción Comercial</label><textarea id="ep-desc" class="w-full border p-2 rounded bg-slate-50 h-20 text-xs">${p.descripcion || ''}</textarea></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal-save-btn').onclick = () => salvarProp(id);
+            document.getElementById('modal-edit').classList.add('modal-active');
+        }
+
+        async function salvarProp(id) {
+            const up = {
+                nombre: document.getElementById('ep-nombre').value,
+                precio: document.getElementById('ep-precio').value,
+                ubicacion: document.getElementById('ep-ubi').value,
+                script_wa: document.getElementById('ep-script').value,
+                descripcion: document.getElementById('ep-desc').value
+            };
+            await fetch(`${API.props}?id=${id}`, { method: 'PUT', body: JSON.stringify(up) });
+            closeModal();
+            initAdminAsync();
+        }
+
+        // --- RENDERIZADOS ---
+        function renderAll() {
+            // Tabla Agentes
+            const tAg = document.getElementById('list-agentes-admin');
+            tAg.innerHTML = data.agentes.map(a => `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-4 font-bold text-slate-700">${a.nombre}</td>
+                    <td class="p-4 text-xs text-slate-500">${a.usuario}</td>
+                    <td class="p-4 text-[10px] text-slate-400">${a.telefono || '-'}<br>${a.email || '-'}</td>
+                    <td class="p-4 text-right space-x-2">
+                        <button onclick="openEditAgente('${a.id}')" class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+                        <button onclick="eliminarAgente('${a.id}')" class="text-red-300 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Tabla Propiedades
+            const tPr = document.getElementById('list-props-admin');
+            tPr.innerHTML = data.props.map(p => `
+                <tr class="border-b hover:bg-slate-50 transition">
+                    <td class="p-4 font-bold text-slate-800">${p.nombre}</td>
+                    <td class="p-4 text-xs text-slate-500">${p.ubicacion || 'No definida'}</td>
+                    <td class="p-4 text-xs text-green-600 font-bold">${p.precio || '-'}</td>
+                    <td class="p-4 text-right space-x-2">
+                        <button onclick="openEditProp('${p.id}')" class="text-purple-500 hover:text-purple-700"><i class="fas fa-edit"></i></button>
+                        <button onclick="eliminarProp('${p.id}')" class="text-red-300 hover:text-red-500"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function closeModal() { document.getElementById('modal-edit').classList.remove('modal-active'); }
+        function setDbStatus(s) { 
+            const d = document.getElementById('db-status-dot');
+            d.className = `w-2 h-2 rounded-full ${s === 'ok' ? 'bg-green-500' : s === 'loading' ? 'bg-yellow-400 animate-pulse' : 'bg-red-500'}`;
+        }
+        function switchTab(t) {
+            ['dashboard', 'web', 'agentes', 'propiedades'].forEach(x => document.getElementById(`view-${x}`).classList.add('hidden'));
+            document.getElementById(`view-${t}`).classList.remove('hidden');
+        }
+
+        window.addEventListener('DOMContentLoaded', initAdminAsync);
     </script>
 </body>
 </html>
