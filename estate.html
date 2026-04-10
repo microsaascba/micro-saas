@@ -23,15 +23,10 @@
         }
         
         .fade-in { animation: fadeIn 0.8s ease-in-out forwards; }
-        .fade-out { animation: fadeOut 0.5s ease-in-out forwards; }
         
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px) scale(0.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; transform: scale(1); }
-            to { opacity: 0; transform: scale(0.95); display: none; }
         }
     </style>
 </head>
@@ -135,7 +130,7 @@
                 }
             }
 
-            // 1. Crear el Lead
+            // 1. Crear el Lead temporal
             const nuevoLead = {
                 id: 'web_' + Date.now(), 
                 nombre: nombre,
@@ -145,7 +140,7 @@
                 fecha: new Date().toLocaleString()
             };
 
-            // 2. Guardar en Bandeja Web Temporal (Asegurando que funcione entre pestañas)
+            // 2. Guardar en Bandeja Web Temporal (Asegurando la conexión entre pestañas)
             let leadsInbox = JSON.parse(localStorage.getItem('inmobiliaria_leads')) || [];
             leadsInbox.push(nuevoLead);
             localStorage.setItem('inmobiliaria_leads', JSON.stringify(leadsInbox));
@@ -153,23 +148,22 @@
             // Forzar un evento de storage para que otras pestañas (como el CRM Admin) se enteren al instante
             window.dispatchEvent(new Event('storage'));
 
-            // 3. Transición visual (Cambiar formulario por Agradecimiento)
+            // 3. Transición visual: Feedback rápido en el botón
             const btn = document.getElementById('submitBtn');
             btn.innerHTML = '<span class="animate-spin mr-2"><i class="fas fa-circle-notch"></i></span> Procesando...';
             btn.disabled = true;
 
+            // 4. Simulamos el procesamiento (just one timer) y cambiamos el estado
             setTimeout(() => {
-                // Ocultar formulario
-                document.getElementById('form-state').classList.add('fade-out');
+                // AQUÍ ESTÁ EL ARREGLO: Ocultamos explícitamente el formulario de inmediato
+                document.getElementById('form-state').classList.add('hidden');
                 
-                // Mostrar pantalla de éxito
-                setTimeout(() => {
-                    const successState = document.getElementById('success-state');
-                    successState.classList.remove('hidden');
-                    successState.classList.add('fade-in');
-                }, 400); // Esperar a que el fade-out termine
+                // Y mostramos la pantalla de éxito con su animación
+                const successState = document.getElementById('success-state');
+                successState.classList.remove('hidden');
+                successState.classList.add('fade-in');
 
-            }, 1000); 
+            }, 1000); // Simulamos 1 segundo de "envío"
         });
 
         function reiniciarFormulario() {
@@ -178,11 +172,11 @@
             btn.innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar Información';
             btn.disabled = false;
             
+            // Revertimos el estado visual
             document.getElementById('success-state').classList.add('hidden');
             document.getElementById('success-state').classList.remove('fade-in');
             
-            document.getElementById('form-state').classList.remove('fade-out');
-            document.getElementById('form-state').classList.add('fade-in');
+            document.getElementById('form-state').classList.remove('hidden');
         }
     </script>
 </body>
