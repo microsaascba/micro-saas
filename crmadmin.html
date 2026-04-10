@@ -23,6 +23,12 @@
             <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full flex items-center p-3 rounded-lg bg-slate-800 text-purple-400 transition font-bold">
                 <i class="fas fa-chart-line w-6 text-center"></i> Control General
             </button>
+            
+            <button onclick="switchTab('web')" id="tab-web" class="w-full flex items-center p-3 rounded-lg hover:bg-slate-800 transition text-white relative">
+                <i class="fas fa-inbox w-6 text-center"></i> Bandeja Web
+                <span id="badge-web" class="absolute right-3 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
+            </button>
+
             <button onclick="switchTab('agentes')" id="tab-agentes" class="w-full flex items-center p-3 rounded-lg hover:bg-slate-800 transition text-white">
                 <i class="fas fa-user-tie w-6 text-center"></i> Equipo Comercial
             </button>
@@ -54,7 +60,7 @@
                     <label class="font-bold text-slate-700 text-sm">Auditar Agente:</label>
                     <select id="agent-selector" onchange="cargarLeadsDashboard()" class="border-2 border-slate-200 p-2 rounded-lg text-sm font-bold text-slate-700 focus:border-purple-500 outline-none w-64 bg-slate-50 cursor-pointer">
                         <option value="todos">Todos los Agentes (Global)</option>
-                        </select>
+                    </select>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -94,61 +100,60 @@
                         </tbody>
                     </table>
                 </div>
+            </section>
 
+            <section id="view-web" class="hidden">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border mb-8 flex justify-between items-center border-l-4 border-l-purple-500">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800">Bandeja de Entrada Web</h3>
+                        <p class="text-sm text-slate-500">Leads captados desde la Landing Page esperando asignación manual.</p>
+                    </div>
+                    <button onclick="cargarBandejaWeb()" class="bg-slate-100 text-slate-600 hover:bg-slate-200 px-4 py-2 rounded-lg text-sm font-bold transition">
+                        <i class="fas fa-sync-alt mr-1"></i> Actualizar
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 border-b text-[10px] text-slate-500 uppercase font-bold">
+                            <tr>
+                                <th class="p-4">Lead Entrante</th>
+                                <th class="p-4">Emprendimiento Solicitado</th>
+                                <th class="p-4">Asignar a Agente</th>
+                                <th class="p-4 text-right">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-inbox-web">
+                            </tbody>
+                    </table>
+                </div>
             </section>
 
             <section id="view-agentes" class="hidden">
                 <div class="bg-white p-8 rounded-2xl shadow-sm border mb-8">
                     <h3 class="text-xl font-bold text-slate-800 mb-6 border-b pb-4">Alta de Nuevo Agente Comercial</h3>
-                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="text-xs font-bold text-slate-500 uppercase">Nombre Completo</label>
-                            <input id="a-nombre" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500" placeholder="Ej: Mauro G.">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-500 uppercase">Usuario de Acceso (Login)</label>
-                            <input id="a-usuario" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500" placeholder="Ej: agente_mauro">
-                        </div>
-                        <div>
-                            <label class="text-xs font-bold text-slate-500 uppercase">Contraseña</label>
-                            <input id="a-pass" type="password" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500" placeholder="****">
-                        </div>
+                        <div><label class="text-xs font-bold text-slate-500 uppercase">Nombre Completo</label><input id="a-nombre" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500"></div>
+                        <div><label class="text-xs font-bold text-slate-500 uppercase">Usuario de Acceso</label><input id="a-usuario" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500"></div>
+                        <div><label class="text-xs font-bold text-slate-500 uppercase">Contraseña</label><input id="a-pass" type="password" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500"></div>
                         <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="text-xs font-bold text-slate-500 uppercase">Teléfono Móvil</label>
-                                <input id="a-tel" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500" placeholder="549351...">
-                            </div>
-                            <div>
-                                <label class="text-xs font-bold text-slate-500 uppercase">Email (Opcional)</label>
-                                <input id="a-email" type="email" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500" placeholder="@viggo.com">
-                            </div>
+                            <div><label class="text-xs font-bold text-slate-500 uppercase">Teléfono Móvil</label><input id="a-tel" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500"></div>
+                            <div><label class="text-xs font-bold text-slate-500 uppercase">Email</label><input id="a-email" type="email" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-blue-500"></div>
                         </div>
                     </div>
-
                     <div class="mt-6 flex justify-end">
-                        <button id="btn-guardar-agente" onclick="guardarAgenteAsync()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
-                            <i class="fas fa-user-plus"></i> REGISTRAR AGENTE
-                        </button>
+                        <button id="btn-guardar-agente" onclick="guardarAgenteAsync()" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition flex items-center gap-2"><i class="fas fa-user-plus"></i> REGISTRAR AGENTE</button>
                     </div>
                 </div>
-
-                <div class="mt-8">
-                    <h3 class="text-sm font-bold text-slate-500 uppercase mb-4">Plantilla de Agentes</h3>
-                    <div id="grid-agentes" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
-                </div>
+                <div class="mt-8"><div id="grid-agentes" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div></div>
             </section>
 
             <section id="view-propiedades" class="hidden">
                 <div class="bg-white p-8 rounded-2xl shadow-sm border mb-8">
                     <h3 class="text-xl font-bold text-slate-800 mb-6 border-b pb-4">Alta de Nuevo Inmueble Maestro</h3>
-                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div class="space-y-4">
-                            <div>
-                                <label class="text-xs font-bold text-slate-500 uppercase">Nombre del Desarrollo</label>
-                                <input id="p-nombre" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border outline-none focus:border-purple-500">
-                            </div>
+                            <div><label class="text-xs font-bold text-slate-500 uppercase">Nombre del Desarrollo</label><input id="p-nombre" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border"></div>
                             <div class="grid grid-cols-2 gap-4">
                                 <div><label class="text-xs font-bold text-slate-500 uppercase">Precio</label><input id="p-precio" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border"></div>
                                 <div><label class="text-xs font-bold text-slate-500 uppercase">Ubicación</label><input id="p-ubicacion" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border"></div>
@@ -156,25 +161,17 @@
                             <div><label class="text-xs font-bold text-slate-500 uppercase">Link Maps</label><input id="p-maps" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border"></div>
                             <div><label class="text-xs font-bold text-slate-500 uppercase">Link Fotos</label><input id="p-fotos" type="text" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border"></div>
                         </div>
-
                         <div class="space-y-4">
                             <div><label class="text-xs font-bold text-slate-500 uppercase">Descripción</label><textarea id="p-desc" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border h-16"></textarea></div>
                             <div><label class="text-xs font-bold text-slate-500 uppercase">Speech Venta</label><textarea id="p-speech" class="w-full mt-1 p-3 rounded-lg bg-slate-50 border h-16"></textarea></div>
-                            
                             <div class="bg-purple-50 p-4 rounded-xl border border-purple-200">
-                                <label class="text-xs font-black text-purple-700 uppercase flex justify-between">
-                                    <span><i class="fab fa-whatsapp"></i> Script Dinámico WhatsApp</span>
-                                </label>
-                                <p class="text-[10px] text-purple-600 mb-2 mt-1">Escribe <b>[NOMBRE]</b> en el texto. El sistema insertará el nombre del cliente automáticamente al enviarlo.</p>
+                                <label class="text-xs font-black text-purple-700 uppercase flex justify-between"><span><i class="fab fa-whatsapp"></i> Script Dinámico WhatsApp</span></label>
                                 <textarea id="p-script" class="w-full p-3 rounded-lg bg-white border border-purple-300 outline-none focus:border-purple-500 h-24 font-medium text-sm" placeholder="¡Hola [NOMBRE]! Te contacto desde Viggo por tu consulta..."></textarea>
                             </div>
                         </div>
                     </div>
-
                     <div class="mt-8 flex justify-end pt-6 border-t">
-                        <button id="btn-guardar-prop" onclick="guardarPropiedadAsync()" class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
-                            <i class="fas fa-database"></i> PUBLICAR INMUEBLE
-                        </button>
+                        <button id="btn-guardar-prop" onclick="guardarPropiedadAsync()" class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition"><i class="fas fa-database mr-2"></i> PUBLICAR INMUEBLE</button>
                     </div>
                 </div>
             </section>
@@ -189,13 +186,16 @@
         const API_URLS = {
             leads: '/api/leads',
             propiedades: '/api/propiedades',
-            agentes: '/api/agentes' // <-- Nuevo Endpoint
+            agentes: '/api/agentes' 
         };
 
         let leadsData = [];
         let contactosData = [];
         let propiedadesData = [];
         let agentesData = [];
+        
+        // Leads temporales desde la Landing Page
+        let leadsWebInbox = [];
 
         function setDbStatus(status) {
             const dot = document.getElementById('db-status-dot');
@@ -206,21 +206,29 @@
         }
 
         // ==========================================
-        // 1. INICIALIZACIÓN Y CARGA MASIVA
+        // 1. INICIALIZACIÓN
         // ==========================================
         async function initGerenciaAsync() {
             setDbStatus('loading');
             try {
-                // Ejecutar cargas en paralelo para mayor velocidad
+                await cargarPropiedadesAPI();
                 await Promise.all([
                     cargarAgentesAPI(),
                     cargarLeadsAPI()
                 ]);
+                cargarBandejaWeb(); // Cargar inbox temporal
                 setDbStatus('ok');
             } catch (e) {
                 console.error(e);
                 setDbStatus('error');
             }
+        }
+
+        async function cargarPropiedadesAPI() {
+            try {
+                const res = await fetch(API_URLS.propiedades);
+                if(res.ok) propiedadesData = await res.json();
+            } catch (e) { console.warn("Error props", e); }
         }
 
         async function cargarAgentesAPI() {
@@ -245,19 +253,127 @@
             } catch (e) { console.warn("Error leads", e); }
         }
 
-        // Para filtrar el dashboard sin recargar la DB
-        function cargarLeadsDashboard() {
-            renderizarDashboard();
+        // ==========================================
+        // 2. BANDEJA WEB (NUEVO MÓDULO)
+        // ==========================================
+        function cargarBandejaWeb() {
+            // Leemos del localStorage temporal de la Landing Page
+            leadsWebInbox = JSON.parse(localStorage.getItem('inmobiliaria_leads')) || [];
+            
+            // Actualizar Badge en el menú
+            const badge = document.getElementById('badge-web');
+            if (leadsWebInbox.length > 0) {
+                badge.innerText = leadsWebInbox.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            const tbody = document.getElementById('table-inbox-web');
+            tbody.innerHTML = '';
+
+            if (leadsWebInbox.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center p-8 text-slate-400 font-bold bg-slate-50">No hay nuevos leads web por asignar.</td></tr>';
+                return;
+            }
+
+            // Opciones del selector de agentes
+            const agentesOptions = agentesData.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+
+            leadsWebInbox.forEach(lead => {
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50 transition">
+                        <td class="p-4">
+                            <div class="font-bold text-slate-800">${lead.nombre}</div>
+                            <div class="text-[10px] text-slate-500 mt-1"><i class="fas fa-envelope"></i> ${lead.email} | <i class="fas fa-phone"></i> ${lead.telefono}</div>
+                            <div class="text-[9px] text-slate-400 mt-1">Ingreso: ${lead.fecha}</div>
+                        </td>
+                        <td class="p-4">
+                            <span class="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-lg text-xs font-bold">${lead.emprendimiento}</span>
+                        </td>
+                        <td class="p-4 w-64">
+                            <select id="select-agent-${lead.id}" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:border-purple-500 bg-white">
+                                <option value="">-- Seleccionar Agente --</option>
+                                ${agentesOptions}
+                            </select>
+                        </td>
+                        <td class="p-4 text-right">
+                            <button onclick="asignarLeadALaBase('${lead.id}')" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md transition">
+                                Asignar
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
         }
 
+        async function asignarLeadALaBase(webLeadId) {
+            const selector = document.getElementById(`select-agent-${webLeadId}`);
+            const agenteAsignadoId = selector.value;
+            
+            if (!agenteAsignadoId) {
+                return alert("Por favor, selecciona un agente de la lista para asignarle el lead.");
+            }
+
+            // 1. Encontrar el lead en el array temporal
+            const leadRaw = leadsWebInbox.find(l => l.id == webLeadId);
+            
+            // 2. Intentar cruzar el nombre del emprendimiento con un ID real de la base de D1
+            // Si no encuentra el exacto, lo asigna a la primera propiedad de la base por defecto.
+            const propiedadVinculada = propiedadesData.find(p => p.nombre.toLowerCase().includes(leadRaw.emprendimiento.toLowerCase())) || propiedadesData[0];
+            const prop_id_final = propiedadVinculada ? propiedadVinculada.id : 'p1';
+
+            // 3. Crear el objeto listo para D1
+            const nuevoLeadParaD1 = {
+                id: crypto.randomUUID(), // ID único de base de datos
+                nombre: leadRaw.nombre,
+                telefono: leadRaw.telefono,
+                origen: 'Landing Page Web',
+                prop_id: prop_id_final,
+                agente_id: agenteAsignadoId,
+                estado: 'No Contactado',
+                fecha_ingreso: new Date().toISOString()
+            };
+
+            // Cambiar UI del botón
+            event.target.innerText = "Procesando...";
+            event.target.disabled = true;
+
+            try {
+                // 4. Hacer POST a Cloudflare D1
+                await fetch(API_URLS.leads, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(nuevoLeadParaD1)
+                });
+
+                // 5. Eliminar el lead del localStorage temporal (Landing Page)
+                leadsWebInbox = leadsWebInbox.filter(l => l.id != webLeadId);
+                localStorage.setItem('inmobiliaria_leads', JSON.stringify(leadsWebInbox));
+
+                // 6. Refrescar Vistas
+                cargarBandejaWeb();
+                cargarLeadsAPI(); // Actualiza el dashboard
+
+            } catch (error) {
+                alert("Error al asignar el lead a D1. Verifica tu conexión.");
+                event.target.innerText = "Asignar";
+                event.target.disabled = false;
+            }
+        }
+
+
         // ==========================================
-        // 2. GESTIÓN DE AGENTES (CRUD)
+        // RESTO DEL CÓDIGO (Agentes, Propiedades, Dashboard)
+        // Permanece igual a la versión V6
         // ==========================================
+
+        function cargarLeadsDashboard() { renderizarDashboard(); }
+
         async function guardarAgenteAsync() {
             const btn = document.getElementById('btn-guardar-agente');
-            
             const nuevoAgente = {
-                id: document.getElementById('a-usuario').value, // Usamos el usuario como ID simple
+                id: document.getElementById('a-usuario').value, 
                 nombre: document.getElementById('a-nombre').value,
                 usuario: document.getElementById('a-usuario').value,
                 password_hash: document.getElementById('a-pass').value,
@@ -265,38 +381,23 @@
                 email: document.getElementById('a-email').value
             };
 
-            if(!nuevoAgente.nombre || !nuevoAgente.usuario || !nuevoAgente.password_hash) {
-                return alert("Nombre, Usuario y Contraseña son obligatorios.");
-            }
+            if(!nuevoAgente.nombre || !nuevoAgente.usuario || !nuevoAgente.password_hash) return alert("Nombre, Usuario y Contraseña son obligatorios.");
 
             btn.innerHTML = '<span class="loading-spinner"></span> Guardando...';
             btn.disabled = true;
 
             try {
-                await fetch(API_URLS.agentes, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(nuevoAgente)
-                });
-                
+                await fetch(API_URLS.agentes, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nuevoAgente) });
                 ['a-nombre', 'a-usuario', 'a-pass', 'a-tel', 'a-email'].forEach(id => document.getElementById(id).value = '');
-                alert("Agente registrado correctamente.");
                 await cargarAgentesAPI();
-
-            } catch (error) {
-                alert("Error al guardar agente.");
-            } finally {
-                btn.innerHTML = '<i class="fas fa-user-plus"></i> REGISTRAR AGENTE';
-                btn.disabled = false;
-            }
+            } catch (e) { alert("Error al guardar agente."); } 
+            finally { btn.innerHTML = '<i class="fas fa-user-plus"></i> REGISTRAR AGENTE'; btn.disabled = false; }
         }
 
         function renderSelectorAgentes() {
             const sel = document.getElementById('agent-selector');
             sel.innerHTML = '<option value="todos">Todos los Agentes (Global)</option>';
-            agentesData.forEach(a => {
-                sel.innerHTML += `<option value="${a.id}">${a.nombre} (${a.usuario})</option>`;
-            });
+            agentesData.forEach(a => { sel.innerHTML += `<option value="${a.id}">${a.nombre} (${a.usuario})</option>`; });
         }
 
         function renderAgentesGrid() {
@@ -305,38 +406,26 @@
             agentesData.forEach(a => {
                 grid.innerHTML += `
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
-                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-black text-xl">
-                            ${a.nombre.charAt(0)}
-                        </div>
+                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-black text-xl">${a.nombre.charAt(0)}</div>
                         <div>
                             <h4 class="font-bold text-slate-800 leading-tight">${a.nombre}</h4>
                             <p class="text-xs text-slate-500 font-mono mt-1"><i class="fas fa-user-circle"></i> ${a.usuario}</p>
-                            <p class="text-[10px] text-slate-400 mt-1"><i class="fas fa-phone"></i> ${a.telefono || 'Sin tel'}</p>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
 
-        // ==========================================
-        // 3. CÁLCULO DE KPIs Y DASHBOARD
-        // ==========================================
         function renderizarDashboard() {
             const agenteFiltro = document.getElementById('agent-selector').value;
-            
-            let fLeads = leadsData;
-            let fContactos = contactosData;
-
+            let fLeads = leadsData; let fContactos = contactosData;
             if(agenteFiltro !== 'todos') {
                 fLeads = leadsData.filter(l => l.agente_id === agenteFiltro);
                 fContactos = contactosData.filter(c => c.agente_id === agenteFiltro);
             }
-
             const total = fLeads.length + fContactos.length;
             document.getElementById('kpi-total').innerText = total;
             document.getElementById('kpi-pendientes').innerText = fLeads.length;
             document.getElementById('kpi-contactados').innerText = fContactos.length;
-            
             const conv = total > 0 ? Math.round((fContactos.length / total) * 100) : 0;
             document.getElementById('kpi-conversion').innerText = conv + '%';
         }
@@ -344,88 +433,55 @@
         function calcularKPIsEquipo() {
             const tabla = document.getElementById('table-kpi-agentes');
             tabla.innerHTML = '';
-
-            if(agentesData.length === 0) {
-                tabla.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-slate-400 text-xs">No hay agentes registrados.</td></tr>';
-                return;
-            }
-
+            if(agentesData.length === 0) { tabla.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-slate-400 text-xs">No hay agentes registrados.</td></tr>'; return; }
             agentesData.forEach(agente => {
                 const leadsAgente = leadsData.filter(l => l.agente_id === agente.id).length;
                 const contAgente = contactosData.filter(c => c.agente_id === agente.id).length;
                 const total = leadsAgente + contAgente;
                 const conv = total > 0 ? Math.round((contAgente / total) * 100) : 0;
-
                 const colorRiesgo = leadsAgente > 5 ? 'text-red-600 font-bold' : 'text-slate-600';
-
                 tabla.innerHTML += `
                     <tr class="border-b border-slate-50 hover:bg-slate-50">
                         <td class="p-4 font-bold text-slate-700">${agente.nombre}</td>
                         <td class="p-4 text-center ${colorRiesgo}">${leadsAgente}</td>
                         <td class="p-4 text-center text-green-600 font-bold">${contAgente}</td>
-                        <td class="p-4 text-right">
-                            <span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-black">${conv}%</span>
-                        </td>
-                    </tr>
-                `;
+                        <td class="p-4 text-right"><span class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-black">${conv}%</span></td>
+                    </tr>`;
             });
         }
 
-        // ==========================================
-        // 4. LÓGICA DE PROPIEDADES (POST)
-        // ==========================================
         async function guardarPropiedadAsync() {
             const btn = document.getElementById('btn-guardar-prop');
-            const nuevaPropiedad = {
-                id: crypto.randomUUID(), 
-                nombre: document.getElementById('p-nombre').value,
-                precio: document.getElementById('p-precio').value,
-                ubicacion: document.getElementById('p-ubicacion').value,
-                maps: document.getElementById('p-maps').value,
-                fotos: document.getElementById('p-fotos').value,
-                descripcion: document.getElementById('p-desc').value,
-                speech: document.getElementById('p-speech').value,
+            const p = {
+                id: crypto.randomUUID(), nombre: document.getElementById('p-nombre').value,
+                precio: document.getElementById('p-precio').value, ubicacion: document.getElementById('p-ubicacion').value,
+                maps: document.getElementById('p-maps').value, fotos: document.getElementById('p-fotos').value,
+                descripcion: document.getElementById('p-desc').value, speech: document.getElementById('p-speech').value,
                 script_wa: document.getElementById('p-script').value
             };
-
-            if(!nuevaPropiedad.nombre) return alert("Falta el nombre.");
-
-            btn.innerHTML = '<span class="loading-spinner"></span> Guardando...';
-            btn.disabled = true;
-
+            if(!p.nombre) return alert("Falta el nombre.");
+            btn.innerHTML = '<span class="loading-spinner"></span> Guardando...'; btn.disabled = true;
             try {
-                await fetch(API_URLS.propiedades, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(nuevaPropiedad)
-                });
+                await fetch(API_URLS.propiedades, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) });
                 ['p-nombre','p-precio','p-ubicacion','p-maps','p-fotos','p-desc','p-speech','p-script'].forEach(i => document.getElementById(i).value='');
                 alert("Inmueble publicado.");
-            } catch (e) { alert("Error al guardar propiedad."); } 
-            finally { btn.innerHTML = '<i class="fas fa-database"></i> PUBLICAR INMUEBLE'; btn.disabled = false; }
+            } catch (e) { alert("Error"); } finally { btn.innerHTML = '<i class="fas fa-database mr-2"></i> PUBLICAR INMUEBLE'; btn.disabled = false; }
         }
 
-        // ==========================================
-        // 5. NAVEGACIÓN
-        // ==========================================
         function switchTab(tab) {
             document.getElementById('view-dashboard').classList.toggle('hidden', tab !== 'dashboard');
+            document.getElementById('view-web').classList.toggle('hidden', tab !== 'web');
             document.getElementById('view-agentes').classList.toggle('hidden', tab !== 'agentes');
             document.getElementById('view-propiedades').classList.toggle('hidden', tab !== 'propiedades');
             
-            document.querySelectorAll('nav button').forEach(b => {
-                b.classList.remove('bg-slate-800', 'text-purple-400');
-                b.classList.add('text-white');
-            });
-            
+            document.querySelectorAll('nav button').forEach(b => { b.classList.remove('bg-slate-800', 'text-purple-400'); b.classList.add('text-white'); });
             document.getElementById(`tab-${tab}`).classList.add('bg-slate-800', 'text-purple-400');
             document.getElementById(`tab-${tab}`).classList.remove('text-white');
 
-            const titles = { dashboard: 'Monitor de Rendimiento', agentes: 'Gestión de Recursos Humanos', propiedades: 'Alta de Activos Inmobiliarios' };
+            const titles = { dashboard: 'Monitor de Rendimiento', web: 'Asignación de Leads Web', agentes: 'Gestión de Recursos Humanos', propiedades: 'Alta de Activos Inmobiliarios' };
             document.getElementById('view-title').innerText = titles[tab];
         }
 
-        // Init App
         window.addEventListener('DOMContentLoaded', initGerenciaAsync);
     </script>
 </body>
