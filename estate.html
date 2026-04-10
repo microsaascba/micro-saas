@@ -9,7 +9,7 @@
     <style>
         body {
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-image: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), url('/img10.jpg');
+            background-image: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), url('/img/img10.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -97,7 +97,7 @@
             </form>
         </div>
 
-        <div id="success-state" class="hidden absolute inset-0 bg-slate-900/95 backdrop-blur-xl flex flex-col items-center justify-center p-8 text-center z-10">
+        <div id="success-state" class="hidden flex flex-col items-center justify-center py-8 text-center">
             <div class="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
                 <i class="fas fa-check text-4xl text-green-400"></i>
             </div>
@@ -130,7 +130,6 @@
                 }
             }
 
-            // 1. Crear el Lead temporal
             const nuevoLead = {
                 id: 'web_' + Date.now(), 
                 nombre: nombre,
@@ -140,30 +139,26 @@
                 fecha: new Date().toLocaleString()
             };
 
-            // 2. Guardar en Bandeja Web Temporal (Asegurando la conexión entre pestañas)
             let leadsInbox = JSON.parse(localStorage.getItem('inmobiliaria_leads')) || [];
             leadsInbox.push(nuevoLead);
             localStorage.setItem('inmobiliaria_leads', JSON.stringify(leadsInbox));
             
-            // Forzar un evento de storage para que otras pestañas (como el CRM Admin) se enteren al instante
             window.dispatchEvent(new Event('storage'));
 
-            // 3. Transición visual: Feedback rápido en el botón
             const btn = document.getElementById('submitBtn');
             btn.innerHTML = '<span class="animate-spin mr-2"><i class="fas fa-circle-notch"></i></span> Procesando...';
             btn.disabled = true;
 
-            // 4. Simulamos el procesamiento (just one timer) y cambiamos el estado
             setTimeout(() => {
-                // AQUÍ ESTÁ EL ARREGLO: Ocultamos explícitamente el formulario de inmediato
+                // Ocultar formulario
                 document.getElementById('form-state').classList.add('hidden');
                 
-                // Y mostramos la pantalla de éxito con su animación
+                // Mostrar pantalla de éxito
                 const successState = document.getElementById('success-state');
                 successState.classList.remove('hidden');
                 successState.classList.add('fade-in');
 
-            }, 1000); // Simulamos 1 segundo de "envío"
+            }, 1000); 
         });
 
         function reiniciarFormulario() {
@@ -172,7 +167,6 @@
             btn.innerHTML = '<i class="fas fa-paper-plane"></i> Solicitar Información';
             btn.disabled = false;
             
-            // Revertimos el estado visual
             document.getElementById('success-state').classList.add('hidden');
             document.getElementById('success-state').classList.remove('fade-in');
             
