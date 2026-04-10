@@ -19,3 +19,29 @@ export async function onRequestPost(context) {
         return new Response(e.message, { status: 500 });
     }
 }
+
+// NUEVO: Para poder editar propiedades desde el Admin
+export async function onRequestPut(context) {
+    try {
+        const id = new URL(context.request.url).searchParams.get('id');
+        const data = await context.request.json();
+        await context.env.DB.prepare(
+            "UPDATE Propiedades SET nombre=?, precio=?, ubicacion=?, script_wa=?, descripcion=? WHERE id=?"
+        ).bind(data.nombre, data.precio, data.ubicacion, data.script_wa, data.descripcion, id).run();
+        
+        return new Response(JSON.stringify({ok: true}));
+    } catch (e) {
+        return new Response(e.message, { status: 500 });
+    }
+}
+
+// NUEVO: Para poder borrar propiedades desde el Admin
+export async function onRequestDelete(context) {
+    try {
+        const id = new URL(context.request.url).searchParams.get('id');
+        await context.env.DB.prepare("DELETE FROM Propiedades WHERE id=?").bind(id).run();
+        return new Response(JSON.stringify({ok: true}));
+    } catch (e) {
+        return new Response(e.message, { status: 500 });
+    }
+}
