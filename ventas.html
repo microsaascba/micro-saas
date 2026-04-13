@@ -6,7 +6,30 @@
   <title>Punto de Venta | Micro SaaS</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    /* ── ESTILOS BLINDADOS DEL POS (A prueba de colapsos) ── */
+    /* ── FORZAMOS LA ESTRUCTURA PRINCIPAL PARA EVITAR COLAPSOS ── */
+    .app {
+      display: grid !important;
+      grid-template-columns: 260px 1fr !important;
+      min-height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+    }
+    
+    .sidebar {
+      width: 260px !important;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+    }
+
+    /* La capa oscura para celulares (Aseguramos que esté oculta en PC) */
+    .sidebar-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px);
+    }
+    .sidebar-overlay.open { display: block; }
+
+    /* ── ESTILOS DEL POS ── */
     .pos-wrapper {
       display: grid;
       grid-template-columns: 1.6fr 1fr;
@@ -15,7 +38,6 @@
       margin-top: 10px;
     }
 
-    /* Panel Izquierdo: Buscador y Carrito */
     .pos-cart-panel {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -23,7 +45,6 @@
       display: flex;
       flex-direction: column;
       min-height: 65vh; 
-      overflow: hidden;
     }
 
     .pos-search-box {
@@ -34,19 +55,12 @@
     }
 
     .pos-search-input {
-      width: 100%;
-      padding: 16px 20px;
-      font-size: 16px;
-      font-weight: 600;
-      border: 2px solid var(--primary-soft);
-      border-radius: 12px;
-      outline: none;
-      background: #fff;
-      transition: 0.2s;
+      width: 100%; padding: 16px 20px; font-size: 16px; font-weight: 600;
+      border: 2px solid var(--primary-soft); border-radius: 12px; outline: none;
+      background: #fff; transition: 0.2s;
     }
     .pos-search-input:focus { border-color: var(--primary); box-shadow: 0 4px 15px rgba(37,99,235,0.15); }
 
-    /* Autocompletado del buscador */
     .autocomplete-list {
       position: absolute; top: 100%; left: 20px; right: 20px;
       background: #fff; border: 1px solid var(--line); border-radius: 12px;
@@ -58,20 +72,14 @@
     .autocomplete-item.selected, .autocomplete-item:hover { background: var(--primary-soft); }
     .prod-promo { font-size: 11px; background: var(--warning-soft); color: var(--warning); padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 8px; }
 
-    /* Tabla Carrito */
-    .pos-table-container { flex: 1; overflow-y: auto; background: #fff; min-height: 200px; }
+    .pos-table-container { flex: 1; overflow-y: auto; background: #fff; min-height: 250px; }
     .pos-table { width: 100%; border-collapse: collapse; text-align: left; }
     .pos-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; position: sticky; top: 0; z-index: 10; }
     .pos-table td { padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 
-    /* Panel Derecho: Cobro */
     .pos-checkout-panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
+      background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 24px; display: flex; flex-direction: column;
     }
 
     .totals-row { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 12px; color: var(--muted); }
@@ -86,25 +94,25 @@
     .btn-discount { width: 100%; background: transparent; border: 1px dashed var(--muted); color: var(--muted); padding: 10px; font-weight: bold; border-radius: 8px; margin-bottom: 15px; cursor: pointer; }
     .btn-discount:hover { border-color: var(--text); color: var(--text); }
 
-    /* Controladores de cantidad */
     .qty-control { display: flex; align-items: center; gap: 6px; }
     .qty-btn { background: var(--line); border: none; width: 28px; height: 28px; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .qty-input { width: 40px; text-align: center; border: 1px solid var(--line); border-radius: 6px; padding: 4px; font-weight: bold; }
 
     /* Responsive Móvil */
     @media (max-width: 950px) {
+      .app { grid-template-columns: 1fr !important; }
       .pos-wrapper { grid-template-columns: 1fr; }
-      .pos-cart-panel { min-height: 400px; }
-      .mobile-toggle { display: block; }
-      .sidebar { position: fixed; left: -300px; top: 0; height: 100vh; z-index: 999; transition: 0.3s; }
+      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh; z-index: 999; transition: 0.3s; width: 260px !important; }
       .sidebar.open { left: 0; }
+      .mobile-toggle { display: block !important; }
     }
   </style>
 </head>
 <body>
+
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
+
 <div class="app">
-  
-  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
   
   <aside class="sidebar">
     <div class="brand">
@@ -117,6 +125,7 @@
       <a href="login.html" style="color: var(--danger);"><span class="nav-icon">🚪</span> Cerrar sesión</a>
     </nav>
   </aside>
+
   <main class="content">
     <header class="topbar">
       <div class="topbar-left" style="display:flex; align-items:center;">
@@ -179,7 +188,7 @@
           <span id="txtTotal" style="color: var(--primary);">$0</span>
         </div>
 
-        <button class="btn-discount" onclick="abrirModalDescuento()">% Aplicar Descuento Especial</button>
+        <button class="btn-discount" onclick="abrirModalDescuento()">% Aplicar Descuento de Encargado</button>
 
         <label style="display:block; margin-bottom:10px; font-size:13px; font-weight:bold; color:var(--muted);">Método de Pago</label>
         <div class="pay-methods">
@@ -192,7 +201,7 @@
       </div>
     </div>
   </main>
-  </div>
+</div>
 
 <dialog id="discountDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%;">
   <div class="modal-head" style="padding: 15px 20px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
@@ -244,7 +253,6 @@
   function todayISO() { return new Date().toISOString().split('T')[0]; }
 
   function initPOS() {
-    // Ejemplo de productos con promociones configuradas
     dbProducts = [
       { id: 'p1', code: '1001', name: 'Pomada Matte', price: 8500, stock: 20, promoType: 'none' },
       { id: 'p2', code: '1002', name: 'Shampoo (2x1)', price: 12000, stock: 15, promoType: '2x1' },
