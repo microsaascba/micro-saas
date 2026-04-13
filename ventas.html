@@ -11,7 +11,7 @@
       display: grid;
       grid-template-columns: 1.6fr 1fr;
       gap: 20px;
-      align-items: start; /* Evita que las cajas se estiren o aplasten raro */
+      align-items: start;
       margin-top: 10px;
     }
 
@@ -22,7 +22,7 @@
       border-radius: var(--radius);
       display: flex;
       flex-direction: column;
-      min-height: 65vh; /* Garantiza que el carrito NUNCA desaparezca */
+      min-height: 65vh; 
       overflow: hidden;
     }
 
@@ -82,7 +82,7 @@
     .pay-btn { border: 2px solid var(--line); background: #fff; padding: 12px 8px; border-radius: 12px; font-weight: 700; color: var(--muted); cursor: pointer; text-align: center; font-size: 13px; }
     .pay-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
 
-    .btn-charge { width: 100%; padding: 18px; font-size: 18px; font-weight: 800; border-radius: 12px; margin-top: 10px; }
+    .btn-charge { width: 100%; padding: 18px; font-size: 18px; font-weight: 800; border-radius: 12px; margin-top: 10px; cursor: pointer;}
     .btn-discount { width: 100%; background: transparent; border: 1px dashed var(--muted); color: var(--muted); padding: 10px; font-weight: bold; border-radius: 8px; margin-bottom: 15px; cursor: pointer; }
     .btn-discount:hover { border-color: var(--text); color: var(--text); }
 
@@ -109,17 +109,14 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Micro SaaS</strong><small>Control del negocio</small></div>
+      <div class="brand-text"><strong>Micro SaaS</strong><small>Usuario: caja1</small></div>
     </div>
     <nav class="nav">
-      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
       <a href="ventas.html" class="active"><span class="nav-icon">🧾</span> Ventas</a>
-      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
-      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
+      <a href="login.html" style="color: var(--danger);"><span class="nav-icon">🚪</span> Cerrar sesión</a>
     </nav>
   </aside>
-
   <main class="content">
     <header class="topbar">
       <div class="topbar-left" style="display:flex; align-items:center;">
@@ -182,7 +179,7 @@
           <span id="txtTotal" style="color: var(--primary);">$0</span>
         </div>
 
-        <button class="btn-discount" onclick="abrirModalDescuento()">% Aplicar Descuento de Encargado</button>
+        <button class="btn-discount" onclick="abrirModalDescuento()">% Aplicar Descuento Especial</button>
 
         <label style="display:block; margin-bottom:10px; font-size:13px; font-weight:bold; color:var(--muted);">Método de Pago</label>
         <div class="pay-methods">
@@ -195,7 +192,7 @@
       </div>
     </div>
   </main>
-</div>
+  </div>
 
 <dialog id="discountDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%;">
   <div class="modal-head" style="padding: 15px 20px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
@@ -247,7 +244,7 @@
   function todayISO() { return new Date().toISOString().split('T')[0]; }
 
   function initPOS() {
-    // Ejemplo de productos con promociones configuradas (Acá iría el llamado a tu DB real)
+    // Ejemplo de productos con promociones configuradas
     dbProducts = [
       { id: 'p1', code: '1001', name: 'Pomada Matte', price: 8500, stock: 20, promoType: 'none' },
       { id: 'p2', code: '1002', name: 'Shampoo (2x1)', price: 12000, stock: 15, promoType: '2x1' },
