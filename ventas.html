@@ -3,70 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Punto de Venta | Micro SaaS</title>
+  <title>Ventas | Micro SaaS</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    /* ── FORZAMOS LA ESTRUCTURA PRINCIPAL PARA EVITAR COLAPSOS ── */
-    .app {
-      display: grid !important;
-      grid-template-columns: 260px 1fr !important;
-      min-height: 100vh;
-      width: 100vw;
-      overflow-x: hidden;
-    }
-    
-    .sidebar {
-      width: 260px !important;
-      height: 100vh;
-      position: sticky;
-      top: 0;
-    }
-
-    /* La capa oscura para celulares (Aseguramos que esté oculta en PC) */
-    .sidebar-overlay {
-      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px);
-    }
+    /* ── ESTRUCTURA PRINCIPAL ── */
+    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
     .sidebar-overlay.open { display: block; }
 
-    /* ── ESTILOS DEL POS ── */
-    .pos-wrapper {
-      display: grid;
-      grid-template-columns: 1.6fr 1fr;
-      gap: 20px;
-      align-items: start;
-      margin-top: 10px;
-    }
+    /* ── PESTAÑAS (TABS) ── */
+    .pos-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--line); padding-bottom: 10px; overflow-x: auto; }
+    .pos-tab { background: transparent; border: none; font-size: 15px; font-weight: 700; color: var(--muted); padding: 8px 16px; cursor: pointer; border-radius: 8px; transition: 0.2s; white-space: nowrap; }
+    .pos-tab:hover { background: var(--panel-hover); color: var(--text); }
+    .pos-tab.active { background: var(--primary-soft); color: var(--primary); }
 
-    .pos-cart-panel {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      display: flex;
-      flex-direction: column;
-      min-height: 65vh; 
-    }
+    .view-section { display: none; animation: fadeIn 0.3s ease; }
+    .view-section.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    .pos-search-box {
-      padding: 20px;
-      border-bottom: 1px solid var(--line);
-      background: var(--panel-2);
-      position: relative;
-    }
-
-    .pos-search-input {
-      width: 100%; padding: 16px 20px; font-size: 16px; font-weight: 600;
-      border: 2px solid var(--primary-soft); border-radius: 12px; outline: none;
-      background: #fff; transition: 0.2s;
-    }
+    /* ── ESTILOS DEL PUNTO DE VENTA (PDV) ── */
+    .pos-wrapper { display: grid; grid-template-columns: 1.8fr 1fr; gap: 20px; align-items: start; }
+    .pos-cart-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; min-height: 65vh; }
+    .pos-search-box { padding: 20px; border-bottom: 1px solid var(--line); background: var(--panel-2); position: relative; }
+    .pos-search-input { width: 100%; padding: 16px 20px; font-size: 16px; font-weight: 600; border: 2px solid var(--primary-soft); border-radius: 12px; outline: none; background: #fff; transition: 0.2s; }
     .pos-search-input:focus { border-color: var(--primary); box-shadow: 0 4px 15px rgba(37,99,235,0.15); }
 
-    .autocomplete-list {
-      position: absolute; top: 100%; left: 20px; right: 20px;
-      background: #fff; border: 1px solid var(--line); border-radius: 12px;
-      box-shadow: var(--shadow-lg); z-index: 999; max-height: 300px; overflow-y: auto;
-      display: none; margin-top: 5px;
-    }
+    .autocomplete-list { position: absolute; top: 100%; left: 20px; right: 20px; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 300px; overflow-y: auto; display: none; margin-top: 5px; }
     .autocomplete-list.active { display: block; }
     .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
     .autocomplete-item.selected, .autocomplete-item:hover { background: var(--primary-soft); }
@@ -77,27 +40,27 @@
     .pos-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; position: sticky; top: 0; z-index: 10; }
     .pos-table td { padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 
-    .pos-checkout-panel {
-      background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
-      padding: 24px; display: flex; flex-direction: column;
-    }
-
+    .pos-checkout-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: flex; flex-direction: column; }
     .totals-row { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 12px; color: var(--muted); }
     .totals-row.discount { color: var(--danger); font-weight: bold; }
-    .totals-row.grand-total { font-size: 32px; font-weight: 800; color: var(--text); border-top: 2px dashed var(--line); padding-top: 16px; margin-top: 8px; }
+    .totals-row.grand-total { font-size: 36px; font-weight: 800; color: var(--text); border-top: 2px dashed var(--line); padding-top: 16px; margin-top: 8px; }
 
     .pay-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-    .pay-btn { border: 2px solid var(--line); background: #fff; padding: 12px 8px; border-radius: 12px; font-weight: 700; color: var(--muted); cursor: pointer; text-align: center; font-size: 13px; }
+    .pay-btn { border: 2px solid var(--line); background: #fff; padding: 14px 8px; border-radius: 12px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; font-size: 14px; transition: 0.2s; }
     .pay-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
 
-    .btn-charge { width: 100%; padding: 18px; font-size: 18px; font-weight: 800; border-radius: 12px; margin-top: 10px; cursor: pointer;}
-    .btn-discount { width: 100%; background: transparent; border: 1px dashed var(--muted); color: var(--muted); padding: 10px; font-weight: bold; border-radius: 8px; margin-bottom: 15px; cursor: pointer; }
-    .btn-discount:hover { border-color: var(--text); color: var(--text); }
-
+    .btn-charge { width: 100%; padding: 20px; font-size: 20px; font-weight: 800; border-radius: 12px; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3);}
+    
     .qty-control { display: flex; align-items: center; gap: 6px; }
     .qty-btn { background: var(--line); border: none; width: 28px; height: 28px; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .qty-input { width: 40px; text-align: center; border: 1px solid var(--line); border-radius: 6px; padding: 4px; font-weight: bold; }
 
+    /* ── ESTILOS CIERRE DE CAJA ── */
+    .caja-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .caja-card { background: var(--panel); border: 1px solid var(--line); padding: 24px; border-radius: 16px; text-align: center; }
+    .caja-card h3 { margin: 0 0 10px 0; color: var(--muted); font-size: 14px; text-transform: uppercase; }
+    .caja-card .monto { font-size: 28px; font-weight: 800; color: var(--text); }
+    
     /* Responsive Móvil */
     @media (max-width: 950px) {
       .app { grid-template-columns: 1fr !important; }
@@ -120,9 +83,10 @@
       <div class="brand-text"><strong>Micro SaaS</strong><small>Usuario: caja1</small></div>
     </div>
     <nav class="nav">
-      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
-      <a href="ventas.html" class="active"><span class="nav-icon">🧾</span> Ventas</a>
-      <a href="login.html" style="color: var(--danger);"><span class="nav-icon">🚪</span> Cerrar sesión</a>
+      <a href="ventas.html" class="active"><span class="nav-icon">🧾</span> Ventas y Caja</a>
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      
+      <a href="login.html" style="color: var(--danger); margin-top: auto;"><span class="nav-icon">🚪</span> Cerrar sesión</a>
     </nav>
   </aside>
 
@@ -131,149 +95,181 @@
       <div class="topbar-left" style="display:flex; align-items:center;">
         <button class="mobile-toggle" onclick="toggleMenu()" style="display:none; background:none; border:none; font-size:24px; margin-right:15px; cursor:pointer;">☰</button>
         <div class="page-title">
-          <h1 style="margin:0; font-size: 24px;">Punto de Venta</h1>
-          <p style="margin:0; font-size: 13px; color:var(--muted);">Teclas rápidas: F2 (Buscar) | Flechas (Mover) | Enter (Agregar) | F12 (Cobrar)</p>
+          <h1 style="margin:0; font-size: 24px;">Terminal de Ventas</h1>
         </div>
-      </div>
-      <div class="topbar-actions">
-        <button class="btn btn-outline" onclick="cancelarVenta()">Vaciar Carrito</button>
       </div>
     </header>
 
-    <div class="pos-wrapper">
-      <div class="pos-cart-panel">
-        <div class="pos-search-box">
-          <input type="text" id="posSearch" class="pos-search-input" placeholder="Buscar producto o escanear código de barras..." autocomplete="off" autofocus>
-          <div id="searchResults" class="autocomplete-list"></div>
+    <div class="pos-tabs">
+      <button class="pos-tab active" onclick="switchTab('pos')">🛒 Punto de Venta</button>
+      <button class="pos-tab" onclick="switchTab('historial')">📋 Historial del Día</button>
+      <button class="pos-tab" onclick="switchTab('caja')">💰 Cierre de Caja</button>
+    </div>
+
+    <div id="view-pos" class="view-section active">
+      <div class="pos-wrapper">
+        <div class="pos-cart-panel">
+          <div class="pos-search-box">
+            <input type="text" id="posSearch" class="pos-search-input" placeholder="Empezá a escribir para buscar producto..." autocomplete="off" autofocus>
+            <div id="searchResults" class="autocomplete-list"></div>
+          </div>
+
+          <div class="pos-table-container">
+            <table class="pos-table">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th style="width: 100px;">Precio</th>
+                  <th style="width: 120px; text-align: center;">Cant.</th>
+                  <th style="width: 100px; text-align: right;">Total</th>
+                  <th style="width: 40px;"></th>
+                </tr>
+              </thead>
+              <tbody id="cartBody">
+                </tbody>
+            </table>
+          </div>
         </div>
 
-        <div class="pos-table-container">
-          <table class="pos-table">
+        <div class="pos-checkout-panel">
+          <div class="field" style="margin-bottom: 20px;">
+            <label style="font-size: 11px; color: var(--muted); text-transform: uppercase;">Cliente</label>
+            <input type="text" id="clientName" value="Consumidor Final" style="background: var(--panel-2); border: 1px solid var(--line); font-weight: 600; padding: 10px;">
+          </div>
+
+          <div style="flex: 1;">
+            <div class="totals-row">
+              <span>Subtotal</span>
+              <span id="txtSubtotal">$0</span>
+            </div>
+            <div class="totals-row discount" id="rowPromoDiscount" style="display: none;">
+              <span>Promociones aplicadas</span>
+              <span id="txtPromoDiscount">-$0</span>
+            </div>
+            
+            <div class="totals-row grand-total">
+              <span>Total</span>
+              <span id="txtTotal" style="color: var(--primary);">$0</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 20px;">
+            <label style="display:block; margin-bottom:10px; font-size:12px; font-weight:bold; color:var(--muted); text-transform: uppercase;">Método de Pago</label>
+            <div class="pay-methods">
+              <button class="pay-btn active" onclick="setPayment('Efectivo', this)">💵 Efectivo</button>
+              <button class="pay-btn" onclick="setPayment('Transferencia', this)">📱 Transf.</button>
+              <button class="pay-btn" onclick="setPayment('Tarjeta', this)">💳 Tarjeta</button>
+            </div>
+
+            <button class="btn btn-success btn-charge" onclick="procesarVenta()">Cobrar Venta (F12)</button>
+            <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="cancelarVenta()">Vaciar Carrito</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-historial" class="view-section">
+      <div class="card card-pad">
+        <h2 style="margin-top: 0;">Ventas de Hoy</h2>
+        <div class="table-wrap">
+          <table class="pos-table" style="width: 100%;">
             <thead>
               <tr>
-                <th>Producto</th>
-                <th style="width: 100px;">Precio</th>
-                <th style="width: 120px; text-align: center;">Cant.</th>
-                <th style="width: 100px; text-align: right;">Total</th>
-                <th style="width: 40px;"></th>
+                <th>Hora</th>
+                <th>Comprobante</th>
+                <th>Cliente</th>
+                <th>Método</th>
+                <th style="text-align: right;">Total</th>
+                <th style="text-align: center;">Acción</th>
               </tr>
             </thead>
-            <tbody id="cartBody">
+            <tbody id="historialBody">
               </tbody>
           </table>
         </div>
       </div>
+    </div>
 
-      <div class="pos-checkout-panel">
-        <div class="field" style="margin-bottom: 20px;">
-          <label>Cliente (Opcional)</label>
-          <input type="text" id="clientName" placeholder="Consumidor Final" style="background: var(--panel-2);">
+    <div id="view-caja" class="view-section">
+      <div class="caja-grid">
+        <div class="caja-card" style="border-top: 4px solid var(--success);">
+          <h3>Efectivo en Caja</h3>
+          <div class="monto" id="cajaEfectivo">$0</div>
         </div>
-
-        <div class="totals-row">
-          <span>Subtotal</span>
-          <span id="txtSubtotal">$0</span>
+        <div class="caja-card" style="border-top: 4px solid var(--primary);">
+          <h3>Transferencias</h3>
+          <div class="monto" id="cajaTransf">$0</div>
         </div>
-        <div class="totals-row discount" id="rowPromoDiscount" style="display: none;">
-          <span>Descuento Promos</span>
-          <span id="txtPromoDiscount">-$0</span>
+        <div class="caja-card" style="border-top: 4px solid var(--warning);">
+          <h3>Tarjetas / Posnet</h3>
+          <div class="monto" id="cajaTarjeta">$0</div>
         </div>
-        <div class="totals-row discount" id="rowManualDiscount" style="display: none;">
-          <span>Descuento Manual</span>
-          <span id="txtManualDiscount">-$0</span>
+        <div class="caja-card" style="background: var(--panel-2);">
+          <h3>Total Facturado Hoy</h3>
+          <div class="monto" id="cajaTotal" style="color: var(--primary);">$0</div>
         </div>
-        
-        <div class="totals-row grand-total">
-          <span>Total</span>
-          <span id="txtTotal" style="color: var(--primary);">$0</span>
-        </div>
-
-        <button class="btn-discount" onclick="abrirModalDescuento()">% Aplicar Descuento de Encargado</button>
-
-        <label style="display:block; margin-bottom:10px; font-size:13px; font-weight:bold; color:var(--muted);">Método de Pago</label>
-        <div class="pay-methods">
-          <button class="pay-btn active" onclick="setPayment('Efectivo', this)">💵 Efectivo</button>
-          <button class="pay-btn" onclick="setPayment('Transferencia', this)">📱 Transf.</button>
-          <button class="pay-btn" onclick="setPayment('Tarjeta', this)">💳 Tarjeta</button>
-        </div>
-
-        <button class="btn btn-success btn-charge" onclick="procesarVenta()">Cobrar (F12)</button>
+      </div>
+      
+      <div class="card card-pad" style="text-align: center;">
+        <h3 style="margin-top: 0;">Finalizar Turno</h3>
+        <p style="color: var(--muted); margin-bottom: 20px;">Al realizar el cierre, se guardará el registro del dinero esperado en caja.</p>
+        <button class="btn btn-primary" style="padding: 15px 30px; font-size: 16px;" onclick="imprimirCierre()">Imprimir Ticket de Cierre</button>
       </div>
     </div>
+
   </main>
 </div>
 
-<dialog id="discountDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%;">
-  <div class="modal-head" style="padding: 15px 20px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
-    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
-    <button class="btn btn-outline" style="padding: 4px 8px; border:none;" onclick="cerrarModalDescuento()">✕</button>
-  </div>
-  <form onsubmit="aplicarDescuentoManual(event)" style="padding: 20px;">
-    <p style="font-size: 13px; margin-top:0; margin-bottom: 20px; color:var(--muted);">Se requiere el PIN del encargado para aplicar un descuento global.</p>
-    
-    <div class="field" style="margin-bottom: 15px;">
-      <label>PIN de Autorización</label>
-      <input type="password" id="managerPin" required placeholder="****" autocomplete="off" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;">
-    </div>
-    
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
-      <div class="field">
-        <label>Tipo</label>
-        <select id="discountType" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;">
-          <option value="percent">Porcentaje (%)</option>
-          <option value="fixed">Monto Fijo ($)</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Valor</label>
-        <input type="number" id="discountValue" required placeholder="Ej: 10" min="1" step="0.01" style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;">
-      </div>
-    </div>
-
-    <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button type="button" class="btn btn-light" onclick="cerrarModalDescuento()">Cancelar</button>
-      <button type="submit" class="btn btn-danger-text" style="border: 1px solid var(--danger);">Autorizar</button>
-    </div>
-  </form>
-</dialog>
-
 <script src="core.js"></script>
 <script>
+  // ── ESTADO GLOBAL ──
   let dbProducts = [];
+  let dbSales = [];
   let cart = [];
-  let manualDiscount = 0; 
   let currentPaymentMethod = 'Efectivo';
   let filteredProducts = [];
   let selectedSearchIndex = -1;
-  const PIN_ENCARGADO = "1234";
 
+  // ── UTILIDADES ──
   function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
-
-  function initPOS() {
-    dbProducts = [
-      { id: 'p1', code: '1001', name: 'Pomada Matte', price: 8500, stock: 20, promoType: 'none' },
-      { id: 'p2', code: '1002', name: 'Shampoo (2x1)', price: 12000, stock: 15, promoType: '2x1' },
-      { id: 'p3', code: '1003', name: 'Aceite (50% en 2da)', price: 6500, stock: 10, promoType: '50_second' },
-      { id: 'p4', code: '1004', name: 'Gel (-10%)', price: 5000, stock: 30, promoType: 'desc_10' }
-    ];
-    document.getElementById('posSearch').focus();
-    renderCart();
+  
+  function switchTab(tabId) {
+    document.querySelectorAll('.pos-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById(`view-${tabId}`).classList.add('active');
+    
+    if(tabId === 'pos') document.getElementById('posSearch').focus();
   }
 
+  // ── INICIALIZACIÓN ──
+  function initPOS() {
+    // 1. CARGAMOS LA BASE DE DATOS REAL (No más datos falsos)
+    dbProducts = getData(KEYS.products, []); 
+    dbSales = getData(KEYS.sales, []);
+    
+    renderCart();
+    renderHistorialYcaja();
+    document.getElementById('posSearch').focus();
+  }
+
+  // ── BUSCADOR (Súper rápido) ──
   const searchInput = document.getElementById('posSearch');
   const searchResults = document.getElementById('searchResults');
 
   searchInput.addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
-    if (term.length < 2) { searchResults.classList.remove('active'); return; }
+    // Ahora busca desde la primera letra o número
+    if (term.length < 1) { searchResults.classList.remove('active'); return; }
 
-    filteredProducts = dbProducts.filter(p => (p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term)) && p.stock > 0).slice(0, 8);
+    filteredProducts = dbProducts.filter(p => (p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term)) && p.stock > 0).slice(0, 10);
     renderSearchResults();
   });
 
+  // NAVEGACIÓN CON TECLADO
   searchInput.addEventListener('keydown', (e) => {
     if (!searchResults.classList.contains('active')) return;
     const items = document.querySelectorAll('.autocomplete-item');
@@ -291,8 +287,8 @@
       e.preventDefault();
       if (selectedSearchIndex >= 0 && selectedSearchIndex < filteredProducts.length) {
         agregarAlCarrito(filteredProducts[selectedSearchIndex]);
-      } else if (filteredProducts.length === 1) {
-        agregarAlCarrito(filteredProducts[0]);
+      } else if (filteredProducts.length > 0) {
+        agregarAlCarrito(filteredProducts[0]); // Agrega el primero si no seleccionó nada
       }
     }
   });
@@ -304,17 +300,17 @@
 
   function renderSearchResults() {
     if (filteredProducts.length === 0) {
-      searchResults.innerHTML = '<div style="padding:15px; color:#94a3b8; text-align:center;">Sin resultados o sin stock</div>';
+      searchResults.innerHTML = '<div style="padding:15px; color:var(--danger); text-align:center; font-weight:bold;">Producto no encontrado o sin stock</div>';
     } else {
       searchResults.innerHTML = filteredProducts.map((p, idx) => `
         <div class="autocomplete-item" onclick="agregarAlCarrito(filteredProducts[${idx}])">
           <div>
-            <div style="font-weight:700; font-size:14px;">${escapeHtml(p.name)} <span style="font-weight:normal;font-size:12px;color:var(--muted);">(${p.code})</span></div>
-            <div style="font-size:12px; color:var(--muted);">Stock: ${p.stock}</div>
+            <div style="font-weight:700; font-size:14px;">${escapeHtml(p.name)}</div>
+            <div style="font-size:12px; color:var(--muted);">Código: ${p.code} | Stock: <strong>${p.stock}</strong></div>
           </div>
           <div style="text-align:right;">
-            <div style="font-weight:800; color:var(--success);">${currency(p.price)}</div>
-            ${getPromoBadge(p.promoType)}
+            <div style="font-weight:800; color:var(--success); font-size:15px;">${currency(p.price)}</div>
+            ${p.promoType && p.promoType !== 'none' ? `<div class="prod-promo">Promo Activa</div>` : ''}
           </div>
         </div>
       `).join('');
@@ -331,17 +327,11 @@
     }
   }
 
-  function getPromoBadge(pt) {
-    if (pt === '2x1') return '<div class="prod-promo">2x1</div>';
-    if (pt === '50_second') return '<div class="prod-promo">50% 2da un.</div>';
-    if (pt === 'desc_10') return '<div class="prod-promo">10% OFF</div>';
-    return '';
-  }
-
+  // ── CARRITO ──
   function agregarAlCarrito(prod) {
     const existe = cart.find(item => item.id === prod.id);
     if (existe) {
-      if (existe.qty < prod.stock) existe.qty++; else alert("Stock máximo alcanzado.");
+      if (existe.qty < prod.stock) existe.qty++; else alert("Llegaste al límite de stock de este producto.");
     } else {
       cart.unshift({ ...prod, qty: 1 });
     }
@@ -358,7 +348,7 @@
   }
 
   function quitarDelCarrito(id) { cart = cart.filter(x => x.id !== id); renderCart(); searchInput.focus(); }
-  function cancelarVenta() { if (cart.length > 0 && confirm("¿Vaciar carrito?")) { cart = []; manualDiscount = 0; renderCart(); searchInput.focus(); } }
+  function cancelarVenta() { if (cart.length > 0) { cart = []; renderCart(); searchInput.focus(); } }
 
   function calcularTotales() {
     let subtotal = 0, promoDiscountTotal = 0;
@@ -367,21 +357,22 @@
       subtotal += itemSub;
       item.promoApplied = 0;
 
+      // Descuentos automáticos si el producto lo tiene configurado
       if (item.promoType === '2x1') item.promoApplied = Math.floor(item.qty / 2) * item.price;
       else if (item.promoType === '50_second') item.promoApplied = Math.floor(item.qty / 2) * (item.price * 0.5);
       else if (item.promoType === 'desc_10') item.promoApplied = itemSub * 0.10;
 
       promoDiscountTotal += item.promoApplied;
     });
-    return { subtotal, promoDiscountTotal, manualDiscount, totalPagar: Math.max(0, subtotal - promoDiscountTotal - manualDiscount) };
+    return { subtotal, promoDiscountTotal, totalPagar: Math.max(0, subtotal - promoDiscountTotal) };
   }
 
   function renderCart() {
     const tbody = document.getElementById('cartBody');
-    const { subtotal, promoDiscountTotal, manualDiscount, totalPagar } = calcularTotales();
+    const { subtotal, promoDiscountTotal, totalPagar } = calcularTotales();
 
     if (cart.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5"><div style="text-align:center; color:var(--muted); padding:40px 10px;">El carrito está vacío.<br><small>Buscá un producto o presioná F2</small></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5"><div style="text-align:center; color:var(--muted); padding:40px 10px;">El carrito está vacío.<br><small>Tipeá el producto y apretá Enter.</small></div></td></tr>';
     } else {
       tbody.innerHTML = cart.map(item => `
         <tr>
@@ -407,34 +398,10 @@
     document.getElementById('rowPromoDiscount').style.display = promoDiscountTotal > 0 ? 'flex' : 'none';
     if(promoDiscountTotal > 0) document.getElementById('txtPromoDiscount').textContent = '-' + currency(promoDiscountTotal);
     
-    document.getElementById('rowManualDiscount').style.display = manualDiscount > 0 ? 'flex' : 'none';
-    if(manualDiscount > 0) document.getElementById('txtManualDiscount').textContent = '-' + currency(manualDiscount);
-
     document.getElementById('txtTotal').textContent = currency(totalPagar);
   }
 
-  function abrirModalDescuento() {
-    if (cart.length === 0) return alert("Agregá productos al carrito.");
-    document.getElementById('managerPin').value = ''; document.getElementById('discountValue').value = '';
-    document.getElementById('discountDialog').showModal(); document.getElementById('managerPin').focus();
-  }
-  function cerrarModalDescuento() { document.getElementById('discountDialog').close(); searchInput.focus(); }
-
-  function aplicarDescuentoManual(e) {
-    e.preventDefault();
-    if (document.getElementById('managerPin').value !== PIN_ENCARGADO) {
-      alert("❌ PIN Incorrecto."); document.getElementById('managerPin').value = ''; return;
-    }
-    const type = document.getElementById('discountType').value;
-    const value = parseFloat(document.getElementById('discountValue').value);
-    const { subtotal, promoDiscountTotal } = calcularTotales();
-    const base = subtotal - promoDiscountTotal;
-
-    manualDiscount = type === 'percent' ? base * (value / 100) : value;
-    if (manualDiscount > base) { alert("Descuento excesivo."); manualDiscount = 0; }
-    cerrarModalDescuento(); renderCart();
-  }
-
+  // ── COBRO ──
   function setPayment(method, btnElement) {
     currentPaymentMethod = method;
     document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
@@ -443,12 +410,112 @@
 
   function procesarVenta() {
     if (cart.length === 0) return;
-    const { totalPagar } = calcularTotales();
-    alert(`✅ ¡Venta cobrada con éxito!\nTotal: ${currency(totalPagar)} en ${currentPaymentMethod}`);
-    cart = []; manualDiscount = 0; document.getElementById('clientName').value = '';
-    renderCart(); searchInput.focus();
+    const { subtotal, promoDiscountTotal, totalPagar } = calcularTotales();
+    const cliente = document.getElementById('clientName').value.trim() || 'Consumidor Final';
+
+    const nuevaVenta = {
+      id: 'vta_' + Date.now(),
+      date: todayISO(),
+      createdAt: new Date().toISOString(),
+      client: cliente,
+      method: currentPaymentMethod,
+      subtotal: subtotal,
+      promoDiscount: promoDiscountTotal,
+      total: totalPagar,
+      items: cart.map(i => ({ id: i.id, name: i.name, code: i.code, price: i.price, qty: i.qty, subtotal: (i.price * i.qty) - (i.promoApplied||0) }))
+    };
+
+    // Guardar en la DB
+    dbSales.unshift(nuevaVenta);
+    setData(KEYS.sales, dbSales);
+
+    // Descontar Stock
+    cart.forEach(cartItem => {
+      const pDB = dbProducts.find(p => p.id === cartItem.id);
+      if (pDB) pDB.stock -= cartItem.qty;
+    });
+    setData(KEYS.products, dbProducts);
+    
+    window.dispatchEvent(new Event('saas:data-updated'));
+
+    alert(`✅ ¡Venta registrada!\nTotal: ${currency(totalPagar)} en ${currentPaymentMethod}`);
+    
+    // Resetear Caja
+    cart = [];
+    document.getElementById('clientName').value = 'Consumidor Final';
+    renderCart();
+    renderHistorialYcaja(); // Actualiza las pestañas ocultas
+    searchInput.focus();
   }
 
+  // ── HISTORIAL Y CIERRE DE CAJA ──
+  function renderHistorialYcaja() {
+    const today = todayISO();
+    const ventasHoy = dbSales.filter(s => s.date === today || (s.createdAt && s.createdAt.startsWith(today)));
+    
+    // HISTORIAL
+    const tbody = document.getElementById('historialBody');
+    if (ventasHoy.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">No hay ventas registradas en el día de hoy.</td></tr>';
+    } else {
+      tbody.innerHTML = ventasHoy.map(v => {
+        const hora = v.createdAt ? new Date(v.createdAt).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'}) : '-';
+        return `
+        <tr>
+          <td>${hora}</td>
+          <td style="color:var(--muted); font-size:12px;">#${v.id.replace('vta_','')}</td>
+          <td><strong>${escapeHtml(v.client)}</strong></td>
+          <td><span class="badge badge-neutral">${v.method}</span></td>
+          <td style="text-align:right; font-weight:bold; color:var(--success);">${currency(v.total)}</td>
+          <td style="text-align:center;">
+            <button class="btn btn-danger-text" style="padding:4px 8px; font-size:11px;" onclick="anularVenta('${v.id}')">Anular</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // CIERRE DE CAJA
+    let totEfectivo = 0, totTransf = 0, totTarjeta = 0;
+    ventasHoy.forEach(v => {
+      if (v.method === 'Efectivo') totEfectivo += v.total;
+      else if (v.method === 'Transferencia') totTransf += v.total;
+      else if (v.method === 'Tarjeta') totTarjeta += v.total;
+    });
+
+    document.getElementById('cajaEfectivo').textContent = currency(totEfectivo);
+    document.getElementById('cajaTransf').textContent = currency(totTransf);
+    document.getElementById('cajaTarjeta').textContent = currency(totTarjeta);
+    document.getElementById('cajaTotal').textContent = currency(totEfectivo + totTransf + totTarjeta);
+  }
+
+  function anularVenta(id) {
+    if(!confirm('¿Estás seguro de anular esta venta? El stock volverá al inventario.')) return;
+    
+    const venta = dbSales.find(v => v.id === id);
+    if(venta) {
+      // Devolver stock
+      venta.items.forEach(item => {
+        const pDB = dbProducts.find(p => p.id === item.id);
+        if (pDB) pDB.stock += item.qty;
+      });
+      setData(KEYS.products, dbProducts);
+    }
+
+    // Eliminar venta
+    dbSales = dbSales.filter(v => v.id !== id);
+    setData(KEYS.sales, dbSales);
+    
+    renderHistorialYcaja();
+    window.dispatchEvent(new Event('saas:data-updated'));
+  }
+
+  function imprimirCierre() {
+    const ef = document.getElementById('cajaEfectivo').textContent;
+    const total = document.getElementById('cajaTotal').textContent;
+    alert(`🖨️ Imprimiendo Cierre...\n\nTotal Efectivo Esperado en Caja: ${ef}\nFacturación Total del Turno: ${total}`);
+  }
+
+  // Arrancar
   initPOS();
 </script>
 </body>
