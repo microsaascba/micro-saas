@@ -45,7 +45,7 @@
     .totals-row.discount { color: var(--danger); font-weight: bold; }
     .totals-row.grand-total { font-size: 36px; font-weight: 800; color: var(--text); border-top: 2px dashed var(--line); padding-top: 16px; margin-top: 8px; }
 
-    .pay-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+    .pay-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
     .pay-btn { border: 2px solid var(--line); background: #fff; padding: 14px 8px; border-radius: 12px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; font-size: 14px; transition: 0.2s; }
     .pay-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
 
@@ -54,6 +54,11 @@
     .qty-control { display: flex; align-items: center; gap: 6px; }
     .qty-btn { background: var(--line); border: none; width: 28px; height: 28px; border-radius: 6px; font-weight: bold; cursor: pointer; }
     .qty-input { width: 40px; text-align: center; border: 1px solid var(--line); border-radius: 6px; padding: 4px; font-weight: bold; }
+
+    /* Ocultar flechitas de los inputs tipo número para el cupón */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
 
     /* ── ESTILOS CIERRE DE CAJA ── */
     .caja-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
@@ -84,7 +89,6 @@
     </div>
     <nav class="nav">
       <a href="ventas.html" class="active"><span class="nav-icon">🧾</span> Ventas y Caja</a>
-      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       
       <a href="login.html" style="color: var(--danger); margin-top: auto;"><span class="nav-icon">🚪</span> Cerrar sesión</a>
     </nav>
@@ -161,6 +165,11 @@
               <button class="pay-btn" onclick="setPayment('Tarjeta', this)">💳 Tarjeta</button>
             </div>
 
+            <div id="cuponContainer" style="display: none; margin-bottom: 15px;">
+              <label style="font-size: 11px; color: var(--danger); text-transform: uppercase; font-weight:bold;">Número de Cupón *</label>
+              <input type="number" id="cuponNumber" placeholder="Ej: 123456" style="background: #fff; border: 2px solid var(--line); font-weight: 600; padding: 12px; width: 100%; box-sizing: border-box; margin-top: 5px; border-radius: 8px;">
+            </div>
+
             <button class="btn btn-success btn-charge" onclick="procesarVenta()">Cobrar Venta (F12)</button>
             <button class="btn btn-outline" style="width: 100%; margin-top: 10px;" onclick="cancelarVenta()">Vaciar Carrito</button>
           </div>
@@ -212,13 +221,32 @@
       
       <div class="card card-pad" style="text-align: center;">
         <h3 style="margin-top: 0;">Finalizar Turno</h3>
-        <p style="color: var(--muted); margin-bottom: 20px;">Al realizar el cierre, se guardará el registro del dinero esperado en caja.</p>
-        <button class="btn btn-primary" style="padding: 15px 30px; font-size: 16px;" onclick="imprimirCierre()">Imprimir Ticket de Cierre</button>
+        <p style="color: var(--muted); margin-bottom: 20px;">Se requiere autorización del administrador para realizar el cierre de caja.</p>
+        <button class="btn btn-primary" style="padding: 15px 30px; font-size: 16px;" onclick="imprimirCierrePrompt()">Cerrar Caja e Imprimir Ticket</button>
       </div>
     </div>
 
   </main>
 </div>
+
+<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%;">
+  <div class="modal-head" style="padding: 15px 20px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización de Administrador</h3>
+    <button class="btn btn-outline" style="padding: 4px 8px; border:none;" onclick="cerrarAdminAuth()">✕</button>
+  </div>
+  <form onsubmit="validarAdminAuth(event)" style="padding: 24px;">
+    <p style="font-size: 13px; margin-top:0; margin-bottom: 20px; color:var(--text);">Se requiere la contraseña del administrador para <strong id="authActionText"></strong>.</p>
+    
+    <div class="field" style="margin-bottom: 24px;">
+      <input type="password" id="adminAuthPin" required placeholder="Contraseña o PIN" autocomplete="off" style="width:100%; padding:12px; border:2px solid var(--line); border-radius:8px; font-size: 16px;">
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
+      <button type="submit" class="btn btn-danger-text" style="border: 1px solid var(--danger);">Autorizar</button>
+    </div>
+  </form>
+</dialog>
 
 <script src="core.js"></script>
 <script>
@@ -229,6 +257,11 @@
   let currentPaymentMethod = 'Efectivo';
   let filteredProducts = [];
   let selectedSearchIndex = -1;
+  
+  // ── PIN DEL ADMINISTRADOR ──
+  const PIN_ADMIN = "1234"; 
+  let pendingAdminAction = null;
+  let pendingAdminParam = null;
 
   // ── UTILIDADES ──
   function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
@@ -247,29 +280,24 @@
 
   // ── INICIALIZACIÓN ──
   function initPOS() {
-    // 1. CARGAMOS LA BASE DE DATOS REAL (No más datos falsos)
     dbProducts = getData(KEYS.products, []); 
     dbSales = getData(KEYS.sales, []);
-    
     renderCart();
     renderHistorialYcaja();
     document.getElementById('posSearch').focus();
   }
 
-  // ── BUSCADOR (Súper rápido) ──
+  // ── BUSCADOR ──
   const searchInput = document.getElementById('posSearch');
   const searchResults = document.getElementById('searchResults');
 
   searchInput.addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
-    // Ahora busca desde la primera letra o número
     if (term.length < 1) { searchResults.classList.remove('active'); return; }
-
     filteredProducts = dbProducts.filter(p => (p.name.toLowerCase().includes(term) || p.code.toLowerCase().includes(term)) && p.stock > 0).slice(0, 10);
     renderSearchResults();
   });
 
-  // NAVEGACIÓN CON TECLADO
   searchInput.addEventListener('keydown', (e) => {
     if (!searchResults.classList.contains('active')) return;
     const items = document.querySelectorAll('.autocomplete-item');
@@ -288,7 +316,7 @@
       if (selectedSearchIndex >= 0 && selectedSearchIndex < filteredProducts.length) {
         agregarAlCarrito(filteredProducts[selectedSearchIndex]);
       } else if (filteredProducts.length > 0) {
-        agregarAlCarrito(filteredProducts[0]); // Agrega el primero si no seleccionó nada
+        agregarAlCarrito(filteredProducts[0]);
       }
     }
   });
@@ -357,7 +385,6 @@
       subtotal += itemSub;
       item.promoApplied = 0;
 
-      // Descuentos automáticos si el producto lo tiene configurado
       if (item.promoType === '2x1') item.promoApplied = Math.floor(item.qty / 2) * item.price;
       else if (item.promoType === '50_second') item.promoApplied = Math.floor(item.qty / 2) * (item.price * 0.5);
       else if (item.promoType === 'desc_10') item.promoApplied = itemSub * 0.10;
@@ -401,15 +428,37 @@
     document.getElementById('txtTotal').textContent = currency(totalPagar);
   }
 
-  // ── COBRO ──
+  // ── COBRO Y CUPONES ──
   function setPayment(method, btnElement) {
     currentPaymentMethod = method;
     document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
-    btnElement.classList.add('active'); searchInput.focus();
+    btnElement.classList.add('active'); 
+    
+    const cuponContainer = document.getElementById('cuponContainer');
+    if (method === 'Tarjeta') {
+      cuponContainer.style.display = 'block';
+      document.getElementById('cuponNumber').focus();
+    } else {
+      cuponContainer.style.display = 'none';
+      document.getElementById('cuponNumber').value = '';
+      searchInput.focus();
+    }
   }
 
   function procesarVenta() {
     if (cart.length === 0) return;
+    
+    // Validación obligatoria de Tarjeta
+    let cuponText = '';
+    if (currentPaymentMethod === 'Tarjeta') {
+      cuponText = document.getElementById('cuponNumber').value.trim();
+      if (!cuponText || isNaN(cuponText)) {
+        alert("⚠️ Por favor, ingresá el número de cupón de la tarjeta (Solo números).");
+        document.getElementById('cuponNumber').focus();
+        return;
+      }
+    }
+
     const { subtotal, promoDiscountTotal, totalPagar } = calcularTotales();
     const cliente = document.getElementById('clientName').value.trim() || 'Consumidor Final';
 
@@ -419,33 +468,63 @@
       createdAt: new Date().toISOString(),
       client: cliente,
       method: currentPaymentMethod,
+      cupon: cuponText, // Se guarda el cupón si existe
       subtotal: subtotal,
       promoDiscount: promoDiscountTotal,
       total: totalPagar,
       items: cart.map(i => ({ id: i.id, name: i.name, code: i.code, price: i.price, qty: i.qty, subtotal: (i.price * i.qty) - (i.promoApplied||0) }))
     };
 
-    // Guardar en la DB
     dbSales.unshift(nuevaVenta);
     setData(KEYS.sales, dbSales);
 
-    // Descontar Stock
     cart.forEach(cartItem => {
       const pDB = dbProducts.find(p => p.id === cartItem.id);
       if (pDB) pDB.stock -= cartItem.qty;
     });
     setData(KEYS.products, dbProducts);
-    
     window.dispatchEvent(new Event('saas:data-updated'));
 
     alert(`✅ ¡Venta registrada!\nTotal: ${currency(totalPagar)} en ${currentPaymentMethod}`);
     
-    // Resetear Caja
     cart = [];
     document.getElementById('clientName').value = 'Consumidor Final';
+    if(currentPaymentMethod === 'Tarjeta') {
+       document.getElementById('cuponNumber').value = '';
+    }
     renderCart();
-    renderHistorialYcaja(); // Actualiza las pestañas ocultas
+    renderHistorialYcaja(); 
     searchInput.focus();
+  }
+
+  // ── SEGURIDAD (ADMIN PIN) ──
+  function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
+    document.getElementById('authActionText').textContent = accionTexto;
+    pendingAdminAction = funcionExito;
+    pendingAdminParam = param;
+    document.getElementById('adminAuthPin').value = '';
+    document.getElementById('adminAuthDialog').showModal();
+    // Forzamos el foco en el campo de la contraseña
+    setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
+  }
+
+  function cerrarAdminAuth() {
+    document.getElementById('adminAuthDialog').close();
+    pendingAdminAction = null;
+    pendingAdminParam = null;
+  }
+
+  function validarAdminAuth(e) {
+    e.preventDefault();
+    const pin = document.getElementById('adminAuthPin').value;
+    if (pin === PIN_ADMIN) {
+      cerrarAdminAuth();
+      if (pendingAdminAction) pendingAdminAction(pendingAdminParam);
+    } else {
+      alert("❌ Contraseña de administrador incorrecta.");
+      document.getElementById('adminAuthPin').value = '';
+      document.getElementById('adminAuthPin').focus();
+    }
   }
 
   // ── HISTORIAL Y CIERRE DE CAJA ──
@@ -460,15 +539,16 @@
     } else {
       tbody.innerHTML = ventasHoy.map(v => {
         const hora = v.createdAt ? new Date(v.createdAt).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'}) : '-';
+        const cuponDisplay = v.cupon ? ` <span style="font-size:11px; color:var(--muted); display:block;">Cupón: ${v.cupon}</span>` : '';
         return `
         <tr>
           <td>${hora}</td>
           <td style="color:var(--muted); font-size:12px;">#${v.id.replace('vta_','')}</td>
           <td><strong>${escapeHtml(v.client)}</strong></td>
-          <td><span class="badge badge-neutral">${v.method}</span></td>
+          <td><span class="badge badge-neutral">${v.method}</span>${cuponDisplay}</td>
           <td style="text-align:right; font-weight:bold; color:var(--success);">${currency(v.total)}</td>
           <td style="text-align:center;">
-            <button class="btn btn-danger-text" style="padding:4px 8px; font-size:11px;" onclick="anularVenta('${v.id}')">Anular</button>
+            <button class="btn btn-danger-text" style="padding:4px 8px; font-size:11px;" onclick="anularVentaPrompt('${v.id}')">Anular</button>
           </td>
         </tr>`;
       }).join('');
@@ -488,31 +568,36 @@
     document.getElementById('cajaTotal').textContent = currency(totEfectivo + totTransf + totTarjeta);
   }
 
-  function anularVenta(id) {
-    if(!confirm('¿Estás seguro de anular esta venta? El stock volverá al inventario.')) return;
-    
+  // Llamadas protegidas por el PIN
+  function anularVentaPrompt(id) {
+    pedirAuthAdmin('anular este comprobante', ejecutarAnulacionVenta, id);
+  }
+
+  function ejecutarAnulacionVenta(id) {
     const venta = dbSales.find(v => v.id === id);
     if(venta) {
-      // Devolver stock
       venta.items.forEach(item => {
         const pDB = dbProducts.find(p => p.id === item.id);
         if (pDB) pDB.stock += item.qty;
       });
       setData(KEYS.products, dbProducts);
     }
-
-    // Eliminar venta
     dbSales = dbSales.filter(v => v.id !== id);
     setData(KEYS.sales, dbSales);
     
     renderHistorialYcaja();
     window.dispatchEvent(new Event('saas:data-updated'));
+    alert("✅ Venta anulada y stock devuelto al inventario.");
   }
 
-  function imprimirCierre() {
+  function imprimirCierrePrompt() {
+    pedirAuthAdmin('finalizar el turno y cerrar la caja', ejecutarCierreCaja);
+  }
+
+  function ejecutarCierreCaja() {
     const ef = document.getElementById('cajaEfectivo').textContent;
     const total = document.getElementById('cajaTotal').textContent;
-    alert(`🖨️ Imprimiendo Cierre...\n\nTotal Efectivo Esperado en Caja: ${ef}\nFacturación Total del Turno: ${total}`);
+    alert(`🖨️ Imprimiendo Cierre...\n\nTotal Efectivo Esperado en Caja: ${ef}\nFacturación Total del Turno: ${total}\n\n✅ Turno finalizado correctamente.`);
   }
 
   // Arrancar
