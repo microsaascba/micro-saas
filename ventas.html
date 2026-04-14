@@ -6,145 +6,149 @@
   <title>Ventas y Caja | Micro SaaS</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    /* El único estilo extra necesario es para el layout de dos columnas tipo "Productos" */
+    .ventas-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
     
-    .pos-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--line); padding-bottom: 10px; overflow-x: auto; }
-    .pos-tab { background: transparent; border: none; font-size: 15px; font-weight: 700; color: var(--muted); padding: 8px 16px; cursor: pointer; border-radius: 8px; transition: 0.2s; white-space: nowrap; }
-    .pos-tab:hover { background: var(--panel-hover); color: var(--text); }
-    .pos-tab.active { background: var(--primary-soft); color: var(--primary); }
-
-    .view-section { display: none; animation: fadeIn 0.3s ease; }
-    .view-section.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-    .caja-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .caja-card { background: var(--panel); border: 1px solid var(--line); padding: 24px; border-radius: 16px; text-align: center; box-shadow: var(--shadow); }
-    .caja-card h3 { margin: 0 0 10px 0; color: var(--muted); font-size: 14px; text-transform: uppercase; }
-    .caja-card .monto { font-size: 28px; font-weight: 800; color: var(--text); }
-    
-    .pos-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .pos-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--line); }
-    .pos-table td { padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
+    @media (max-width: 1000px) {
+      .ventas-layout { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
 <div class="app">
   
- <aside class="sidebar">
-    <div class="brand" style="padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,.08); color: white;">
-      <div style="font-weight: bold; font-size: 18px;">Usuario: caja1</div>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong>Usuario: caja1</strong><small>Control del negocio</small></div>
     </div>
-    <nav class="nav" style="padding: 20px 0; display:flex; flex-direction:column; gap:5px;">
-      <a href="facturacion.html" style="padding: 12px 24px; color: #cbd5e1; text-decoration: none; display:flex; align-items:center; gap:10px; margin: 0 10px;">🛒 Facturación</a>
-      <a href="ventas.html" class="active" style="padding: 12px 24px; color: #fff; background: rgba(255,255,255,.08); border-radius: 8px; margin: 0 10px; text-decoration: none; display:flex; align-items:center; gap:10px; font-weight:bold;">📋 Ventas y Caja</a>
+    <nav class="nav">
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html" class="active"><span class="nav-icon">🧾</span> Ventas y Caja</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
       
-      <a href="login.html" style="padding: 12px 24px; color: #ef4444; text-decoration: none; display:flex; align-items:center; gap:10px; margin: 0 10px; margin-top:20px;">🚪 Cerrar sesión</a>
+      <a href="login.html" style="color: #ef4444; margin-top: 30px;"><span class="nav-icon">🚪</span> Cerrar sesión</a>
     </nav>
   </aside>
 
   <main class="content">
     <header class="topbar">
       <div class="page-title">
-        <h1 style="margin:0; font-size: 24px;">Historial y Cierre de Caja</h1>
+        <h1 style="margin:0; font-size: 26px;">Ventas y Caja</h1>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Historial de transacciones, anulación de tickets y arqueo de caja del turno.</p>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcelPrompt()">⬇ Exportar a Excel</button>
+        <button class="btn btn-success" onclick="exportarExcelPrompt()">⬇ Exportar Excel</button>
       </div>
     </header>
 
-    <div class="pos-tabs">
-      <button class="pos-tab active" onclick="switchTab('historial')">📋 Historial del Día</button>
-      <button class="pos-tab" onclick="switchTab('caja')">💰 Cierre de Caja</button>
-    </div>
+    <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+      <article class="card card-pad" style="border-top: 4px solid var(--success);">
+        <div class="kpi-label" style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Efectivo en Caja</div>
+        <div class="kpi-value" id="cajaEfectivo" style="font-size:28px; font-weight:800;">$0</div>
+      </article>
+      
+      <article class="card card-pad" style="border-top: 4px solid var(--primary);">
+        <div class="kpi-label" style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Transferencias</div>
+        <div class="kpi-value" id="cajaTransf" style="font-size:28px; font-weight:800;">$0</div>
+      </article>
+      
+      <article class="card card-pad" style="border-top: 4px solid var(--warning);">
+        <div class="kpi-label" style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Tarjetas / Posnet</div>
+        <div class="kpi-value" id="cajaTarjeta" style="font-size:28px; font-weight:800;">$0</div>
+      </article>
+      
+      <article class="card card-pad" style="background: var(--panel-2); border: 1px solid var(--primary-soft);">
+        <div class="kpi-label" style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Total Facturado</div>
+        <div class="kpi-value" id="cajaTotal" style="font-size:28px; font-weight:800; color:var(--primary);">$0</div>
+      </article>
+    </section>
 
-    <div id="view-historial" class="view-section active">
-      <div class="card card-pad">
-        <h2 style="margin-top: 0; font-size: 18px;">Movimientos Registrados Hoy</h2>
-        <div style="overflow-x: auto;">
-          <table class="pos-table">
+    <div class="ventas-layout">
+      
+      <article class="card card-pad">
+        <div class="section-head" style="margin-bottom: 20px;">
+          <h2 style="margin:0; font-size:18px;">Arqueo y Cierre</h2>
+          <p style="margin:4px 0 0; font-size:13px; color:var(--muted);">Finalización del turno operativo.</p>
+        </div>
+        
+        <div style="background: var(--bg); padding: 15px; border-radius: 12px; border: 1px dashed var(--line); margin-bottom: 20px; text-align: center;">
+          <p style="font-size: 13px; color: var(--muted); margin: 0 0 10px 0;">El cierre de caja requiere autorización del encargado. Se generará un ticket con los totales.</p>
+        </div>
+
+        <button class="btn btn-primary" style="width: 100%; padding: 14px; font-size: 15px; justify-content: center;" onclick="imprimirCierrePrompt()">
+          🔒 Cerrar Caja e Imprimir
+        </button>
+      </article>
+
+      <article class="card card-pad">
+        <div class="section-head" style="margin-bottom: 20px;">
+          <h2 style="margin:0; font-size:18px;">Historial del Día</h2>
+          <p style="margin:4px 0 0; font-size:13px; color:var(--muted);">Lista de comprobantes emitidos.</p>
+        </div>
+
+        <div class="table-wrap">
+          <table style="width: 100%; border-collapse: collapse;">
             <thead>
               <tr>
-                <th>Hora</th>
-                <th>Comprobante</th>
-                <th>Cliente</th>
-                <th>Método</th>
-                <th style="text-align: right;">Total</th>
-                <th style="text-align: center;">Acción</th>
+                <th style="background: var(--bg); padding: 12px 16px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line);">Hora</th>
+                <th style="background: var(--bg); padding: 12px 16px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line);">Comprobante</th>
+                <th style="background: var(--bg); padding: 12px 16px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line);">Cliente</th>
+                <th style="background: var(--bg); padding: 12px 16px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line);">Método</th>
+                <th style="background: var(--bg); padding: 12px 16px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); text-align: right;">Total</th>
+                <th style="background: var(--bg); padding: 12px 16px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); text-align: center;">Acción</th>
               </tr>
             </thead>
-            <tbody id="historialBody"></tbody>
+            <tbody id="historialBody">
+              </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </article>
 
-    <div id="view-caja" class="view-section">
-      <div class="caja-grid">
-        <div class="caja-card" style="border-top: 4px solid var(--success);">
-          <h3>Efectivo en Caja</h3>
-          <div class="monto" id="cajaEfectivo">$0</div>
-        </div>
-        <div class="caja-card" style="border-top: 4px solid var(--primary);">
-          <h3>Transferencias</h3>
-          <div class="monto" id="cajaTransf">$0</div>
-        </div>
-        <div class="caja-card" style="border-top: 4px solid var(--warning);">
-          <h3>Tarjetas / Posnet</h3>
-          <div class="monto" id="cajaTarjeta">$0</div>
-        </div>
-        <div class="caja-card" style="background: var(--panel-2);">
-          <h3>Total Facturado Hoy</h3>
-          <div class="monto" id="cajaTotal" style="color: var(--primary);">$0</div>
-        </div>
-      </div>
-      
-      <div class="card card-pad" style="text-align: center;">
-        <h3 style="margin-top: 0;">Finalizar Turno</h3>
-        <p style="color: var(--muted); margin-bottom: 20px;">Se requiere autorización del administrador para realizar el cierre de caja.</p>
-        <button class="btn btn-primary" style="padding: 15px 30px; font-size: 16px;" onclick="imprimirCierrePrompt()">Cerrar Caja e Imprimir Ticket</button>
-      </div>
     </div>
-
   </main>
 </div>
 
-<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%;">
-  <div class="modal-head" style="padding: 15px 20px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
-    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización de Administrador</h3>
-    <button class="btn btn-outline" style="padding: 4px 8px; border:none;" onclick="cerrarAdminAuth()">✕</button>
+<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: var(--panel);">
+  <div class="modal-head" style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
+    <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
   </div>
-  <form onsubmit="validarAdminAuth(event)" style="padding: 24px;">
-    <p style="font-size: 13px; margin-top:0; margin-bottom: 20px; color:var(--text);">Se requiere la contraseña del administrador para <strong id="authActionText"></strong>.</p>
+  <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
+    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Se requiere PIN de administrador para <strong id="authActionText"></strong>.</p>
     
     <div class="field" style="margin-bottom: 24px;">
-      <input type="password" id="adminAuthPin" required placeholder="Contraseña o PIN" autocomplete="off" style="width:100%; padding:12px; border:2px solid var(--line); border-radius:8px; font-size: 16px;">
+      <input type="password" id="adminAuthPin" required placeholder="Ingresá el PIN" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none;">
     </div>
 
     <div style="display: flex; justify-content: flex-end; gap: 10px;">
       <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
-      <button type="submit" class="btn btn-danger-text" style="border: 1px solid var(--danger);">Autorizar</button>
+      <button type="submit" class="btn btn-danger-text" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
     </div>
   </form>
 </dialog>
 
 <script src="core.js"></script>
 <script>
-  let dbProducts = []; let dbSales = [];
-  const PIN_ADMIN = "1234"; 
-  let pendingAdminAction = null; let pendingAdminParam = null;
+  // ── ESTADO GLOBAL Y SEGURIDAD ──
+  let dbProducts = []; 
+  let dbSales = [];
+  const PIN_ADMIN = "1234"; // Pin del encargado
+  let pendingAdminAction = null; 
+  let pendingAdminParam = null;
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
-  
-  function switchTab(tabId) {
-    document.querySelectorAll('.pos-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-    document.getElementById(`view-${tabId}`).classList.add('active');
-  }
 
   function initData() {
     dbProducts = getData(KEYS.products, []); 
@@ -152,10 +156,11 @@
     renderHistorialYcaja();
   }
 
-  // ── SEGURIDAD (ADMIN PIN) ──
+  // ── MODAL SEGURIDAD (ADMIN PIN) ──
   function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
     document.getElementById('authActionText').textContent = accionTexto;
-    pendingAdminAction = funcionExito; pendingAdminParam = param;
+    pendingAdminAction = funcionExito; 
+    pendingAdminParam = param;
     document.getElementById('adminAuthPin').value = '';
     document.getElementById('adminAuthDialog').showModal();
     setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
@@ -172,37 +177,40 @@
       cerrarAdminAuth();
       if (pendingAdminAction) pendingAdminAction(pendingAdminParam);
     } else {
-      alert("❌ Contraseña incorrecta.");
-      document.getElementById('adminAuthPin').value = ''; document.getElementById('adminAuthPin').focus();
+      alert("❌ PIN incorrecto.");
+      document.getElementById('adminAuthPin').value = ''; 
+      document.getElementById('adminAuthPin').focus();
     }
   }
 
-  // ── HISTORIAL Y CIERRE ──
+  // ── RENDERIZADO TABLA Y KPIS ──
   function renderHistorialYcaja() {
     const today = todayISO();
     const ventasHoy = dbSales.filter(s => s.date === today || (s.createdAt && s.createdAt.startsWith(today)));
     
+    // Rellenar Tabla
     const tbody = document.getElementById('historialBody');
     if (ventasHoy.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">No hay ventas registradas hoy.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted); font-size:14px;">No hay ventas registradas hoy.</td></tr>';
     } else {
       tbody.innerHTML = ventasHoy.map(v => {
         const hora = v.createdAt ? new Date(v.createdAt).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'}) : '-';
-        const cuponDisplay = v.cupon ? ` <span style="font-size:11px; color:var(--muted); display:block;">Cupón: ${v.cupon}</span>` : '';
+        const cuponDisplay = v.cupon ? ` <span style="font-size:11px; color:var(--muted); display:block;">Cupón: ${escapeHtml(v.cupon)}</span>` : '';
         return `
         <tr>
-          <td>${hora}</td>
-          <td style="color:var(--muted); font-size:12px;">#${v.id.replace('vta_','')}</td>
-          <td><strong>${escapeHtml(v.client)}</strong></td>
-          <td><span style="background:var(--panel-2); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold;">${v.method}</span>${cuponDisplay}</td>
-          <td style="text-align:right; font-weight:bold; color:var(--success);">${currency(v.total)}</td>
-          <td style="text-align:center;">
-            <button class="btn btn-danger-text" style="padding:4px 8px; font-size:11px;" onclick="anularVentaPrompt('${v.id}')">Anular</button>
+          <td style="padding: 12px 16px; border-bottom: 1px solid var(--line);">${hora}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid var(--line); color:var(--muted); font-size:12px;">#${v.id.replace('vta_','')}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid var(--line);"><strong>${escapeHtml(v.client)}</strong></td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid var(--line);"><span class="badge badge-neutral" style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:12px;">${v.method}</span>${cuponDisplay}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid var(--line); text-align:right; font-weight:800; color:var(--success);">${currency(v.total)}</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid var(--line); text-align:center;">
+            <button class="btn" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); padding:4px 10px; font-size:11px; cursor:pointer; border-radius:6px;" onclick="anularVentaPrompt('${v.id}')">Anular</button>
           </td>
         </tr>`;
       }).join('');
     }
 
+    // Calcular Totales
     let totEfectivo = 0, totTransf = 0, totTarjeta = 0;
     ventasHoy.forEach(v => {
       if (v.method === 'Efectivo') totEfectivo += v.total;
@@ -216,32 +224,40 @@
     document.getElementById('cajaTotal').textContent = currency(totEfectivo + totTransf + totTarjeta);
   }
 
-  // Llamadas protegidas por el PIN
+  // ── ACCIONES PROTEGIDAS POR PIN ──
   function anularVentaPrompt(id) { pedirAuthAdmin('anular este comprobante', ejecutarAnulacionVenta, id); }
-  function imprimirCierrePrompt() { pedirAuthAdmin('finalizar el turno y cerrar la caja', ejecutarCierreCaja); }
+  function imprimirCierrePrompt() { pedirAuthAdmin('cerrar la caja del turno', ejecutarCierreCaja); }
   function exportarExcelPrompt() { pedirAuthAdmin('descargar el historial en Excel', exportarHistorialExcel); }
 
   function ejecutarAnulacionVenta(id) {
     const venta = dbSales.find(v => v.id === id);
     if(venta) {
+      // Devolver stock
       venta.items.forEach(item => { const pDB = dbProducts.find(p => p.id === item.id); if (pDB) pDB.stock += item.qty; });
       setData(KEYS.products, dbProducts);
     }
-    dbSales = dbSales.filter(v => v.id !== id); setData(KEYS.sales, dbSales);
-    renderHistorialYcaja(); window.dispatchEvent(new Event('saas:data-updated'));
-    alert("✅ Venta anulada y stock devuelto al inventario.");
+    // Borrar venta
+    dbSales = dbSales.filter(v => v.id !== id); 
+    setData(KEYS.sales, dbSales);
+    
+    renderHistorialYcaja(); 
+    window.dispatchEvent(new Event('saas:data-updated'));
+    alert("✅ Venta anulada con éxito. El stock fue devuelto.");
   }
 
   function ejecutarCierreCaja() {
     const ef = document.getElementById('cajaEfectivo').textContent;
+    const trans = document.getElementById('cajaTransf').textContent;
+    const tar = document.getElementById('cajaTarjeta').textContent;
     const total = document.getElementById('cajaTotal').textContent;
-    alert(`🖨️ Cierre Exitoso.\nTotal Efectivo Esperado: ${ef}\nFacturación del Turno: ${total}`);
+    
+    alert(`🖨️ TICKET DE CIERRE (Simulación)\n\nEfectivo en Caja: ${ef}\nTransferencias: ${trans}\nTarjetas/Posnet: ${tar}\n------------------\nTOTAL FACTURADO: ${total}\n\n✅ Turno finalizado.`);
   }
 
   function exportarHistorialExcel() {
     const today = todayISO();
     const ventasHoy = dbSales.filter(s => s.date === today || (s.createdAt && s.createdAt.startsWith(today)));
-    if(!ventasHoy.length) return alert("No hay datos para exportar hoy.");
+    if(!ventasHoy.length) return alert("No hay ventas hoy para exportar.");
 
     const dataArray = ventasHoy.map(v => ({
       "Fecha/Hora": new Date(v.createdAt).toLocaleString('es-AR'),
@@ -250,15 +266,15 @@
       "Método Pago": v.method,
       "Cupón": v.cupon || '-',
       "Subtotal": v.subtotal,
-      "Descuento Promos": v.promoDiscount,
-      "Total": v.total
+      "Descuento": v.promoDiscount || 0,
+      "Total Final": v.total
     }));
 
     const headers = Object.keys(dataArray[0]);
     const csvContent = [headers.join(';'), ...dataArray.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
-    link.download = `Ventas_${today}.csv`;
+    link.download = `Cierre_Caja_${today}.csv`;
     link.click();
   }
 
