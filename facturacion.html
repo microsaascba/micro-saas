@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="styles.css" />
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; }
     
     .pos-wrapper { display: grid; grid-template-columns: 1.8fr 1fr; gap: 20px; align-items: start; }
     .pos-cart-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; min-height: 70vh; }
@@ -62,25 +62,27 @@
 
 <div class="app">
   <aside class="sidebar">
-    <div class="brand" style="padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,.08); color: white;">
-      <div style="font-weight: bold; font-size: 18px;">Usuario: admin</div>
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong>Usuario: demo</strong><small>Control del negocio</small></div>
     </div>
-    <nav class="nav" style="padding: 20px 0; display:flex; flex-direction:column; gap:5px;">
-      <a href="dashboard.html" style="padding: 12px 24px; color: #cbd5e1; text-decoration: none; display:flex; align-items:center; gap:10px; margin: 0 10px;">📊 Dashboard</a>
-      <a href="producto.html" style="padding: 12px 24px; color: #cbd5e1; text-decoration: none; display:flex; align-items:center; gap:10px; margin: 0 10px;">📦 Productos</a>
-      <a href="facturacion.html" class="active" style="padding: 12px 24px; color: #fff; background: rgba(255,255,255,.08); border-radius: 8px; margin: 0 10px; text-decoration: none; display:flex; align-items:center; gap:10px; font-weight:bold;">🛒 Facturación</a>
-      <a href="ventas.html" style="padding: 12px 24px; color: #cbd5e1; text-decoration: none; display:flex; align-items:center; gap:10px; margin: 0 10px;">📋 Ventas y Caja</a>
-      <a href="contable.html" style="padding: 12px 24px; color: #cbd5e1; text-decoration: none; display:flex; align-items:center; gap:10px; margin: 0 10px;">💸 Contable</a>
-      <a href="stock.html" style="padding: 12px 24px; color: #cbd5e1; text-decoration: none; display:flex; align-items:center; gap:10px; margin: 0 10px;">📚 Stock</a>
-      
-      <a href="login.html" style="color: #ef4444; margin-top: 30px; padding: 12px 24px; text-decoration: none; display:flex; align-items:center; gap:10px; margin: 0 10px;"><span class="nav-icon">🚪</span> Cerrar sesión</a>
+    
+    <nav class="nav">
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="facturacion.html" class="active"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
+      <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
   </aside>
 
   <main class="content">
     <header class="topbar">
       <div class="page-title">
-        <h1 style="margin:0; font-size: 24px;">Facturación (PDV)</h1>
+        <h1 style="margin:0; font-size: 24px;">Facturación</h1>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Emisión rápida de comprobantes y control de stock en tiempo real.</p>
       </div>
       <div class="topbar-actions">
         <button class="btn btn-outline" onclick="cancelarVenta()">Vaciar Carrito</button>
@@ -90,7 +92,7 @@
     <div class="pos-wrapper">
       <div class="pos-cart-panel">
         <div class="pos-search-box">
-          <input type="text" id="posSearch" class="pos-search-input" placeholder="Empezá a escribir para buscar producto..." autocomplete="off" autofocus>
+          <input type="text" id="posSearch" class="pos-search-input" placeholder="Buscá por nombre, código o escaneá..." autocomplete="off" autofocus>
           <div id="searchResults" class="autocomplete-list"></div>
         </div>
 
@@ -101,7 +103,7 @@
                 <th>Producto</th>
                 <th style="width: 100px;">Precio</th>
                 <th style="width: 120px; text-align: center;">Cant.</th>
-                <th style="width: 100px; text-align: right;">Total</th>
+                <th style="width: 100px; text-align: right;">Subtotal</th>
                 <th style="width: 40px;"></th>
               </tr>
             </thead>
@@ -111,21 +113,21 @@
       </div>
 
       <div class="pos-checkout-panel">
-        <div class="field" style="margin-bottom: 20px;">
-          <label style="font-size: 11px; color: var(--muted); text-transform: uppercase;">Cliente</label>
-          <input type="text" id="clientName" value="Consumidor Final" style="background: var(--panel-2); border: 1px solid var(--line); font-weight: 600; padding: 10px; width: 100%; border-radius:8px;">
+        <div class="field" style="margin-bottom: 24px;">
+          <label style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; display: block;">Cliente</label>
+          <input type="text" id="clientName" value="Consumidor Final" style="background: var(--panel-2); border: 1px solid var(--line); font-weight: 600; padding: 12px; width: 100%; border-radius: 10px; outline: none;">
         </div>
 
         <div style="flex: 1;">
           <div class="totals-row"><span>Subtotal</span><span id="txtSubtotal">$0</span></div>
-          <div class="totals-row discount" id="rowPromoDiscount" style="display: none;">
-            <span>Promociones aplicadas</span><span id="txtPromoDiscount">-$0</span>
+          <div class="totals-row" id="rowPromoDiscount" style="display: none; color: var(--danger); font-weight: bold;">
+            <span>Ahorro Promos</span><span id="txtPromoDiscount">-$0</span>
           </div>
           <div class="totals-row grand-total"><span>Total</span><span id="txtTotal" style="color: var(--primary);">$0</span></div>
         </div>
 
-        <div style="margin-top: 20px;">
-          <label style="display:block; margin-bottom:10px; font-size:12px; font-weight:bold; color:var(--muted); text-transform: uppercase;">Método de Pago</label>
+        <div style="margin-top: 30px;">
+          <label style="display:block; margin-bottom:12px; font-size:12px; font-weight:700; color:var(--muted); text-transform: uppercase;">Método de Pago</label>
           <div class="pay-methods">
             <button class="pay-btn active" onclick="setPayment('Efectivo', this)">💵 Efectivo</button>
             <button class="pay-btn" onclick="setPayment('Transferencia', this)">📱 Transf.</button>
@@ -134,10 +136,10 @@
 
           <div id="cuponContainer" style="display: none; margin-bottom: 15px;">
             <label style="font-size: 11px; color: var(--danger); text-transform: uppercase; font-weight:bold;">Número de Cupón *</label>
-            <input type="number" id="cuponNumber" placeholder="Ej: 123456" style="background: #fff; border: 2px solid var(--line); font-weight: 600; padding: 12px; width: 100%; box-sizing: border-box; margin-top: 5px; border-radius: 8px;">
+            <input type="number" id="cuponNumber" placeholder="Ingresá los números" style="background: #fff; border: 2px solid var(--line); font-weight: 600; padding: 14px; width: 100%; box-sizing: border-box; margin-top: 6px; border-radius: 10px;">
           </div>
 
-          <button class="btn btn-charge" onclick="procesarVenta()">Cobrar e Imprimir (F12)</button>
+          <button class="btn-charge" onclick="procesarVenta()">Cobrar e Imprimir</button>
         </div>
       </div>
     </div>
@@ -188,12 +190,12 @@
 
   function renderSearchResults() {
     if (filteredProducts.length === 0) {
-      searchResults.innerHTML = '<div style="padding:15px; color:var(--danger); text-align:center; font-weight:bold;">Producto no encontrado o sin stock</div>';
+      searchResults.innerHTML = '<div style="padding:15px; color:var(--danger); text-align:center; font-weight:bold;">Sin stock o no existe</div>';
     } else {
       searchResults.innerHTML = filteredProducts.map((p, idx) => `
         <div class="autocomplete-item" onclick="agregarAlCarrito(filteredProducts[${idx}])">
           <div>
-            <div style="font-weight:700; font-size:14px;">${escapeHtml(p.name)}</div>
+            <div style="font-weight:700;">${escapeHtml(p.name)}</div>
             <div style="font-size:12px; color:var(--muted);">Stock: <strong>${p.stock}</strong></div>
           </div>
           <div style="text-align:right;">
@@ -216,7 +218,7 @@
 
   function agregarAlCarrito(prod) {
     const existe = cart.find(item => item.id === prod.id);
-    if (existe) { if (existe.qty < prod.stock) existe.qty++; else alert("Stock máximo alcanzado."); } 
+    if (existe) { if (existe.qty < prod.stock) existe.qty++; else alert("Límite de stock."); } 
     else { cart.unshift({ ...prod, qty: 1 }); }
     searchInput.value = ''; searchResults.classList.remove('active'); searchInput.focus(); renderCart();
   }
@@ -225,8 +227,8 @@
     const item = cart.find(x => x.id === id);
     if (!item) return;
     const nueva = item.qty + delta;
-    if (nueva < 1) return; 
-    if (nueva > item.stock) { alert("Stock insuficiente."); return; }
+    if (nueva < 1) return;
+    if (nueva > item.stock) return alert("Sin stock suficiente.");
     item.qty = nueva; renderCart();
   }
 
@@ -240,9 +242,9 @@
   }
 
   function quitarDelCarrito(id) { cart = cart.filter(x => x.id !== id); renderCart(); searchInput.focus(); }
-  function cancelarVenta() { if (cart.length > 0) { cart = []; renderCart(); searchInput.focus(); } }
+  function cancelarVenta() { if (confirm("¿Vaciar carrito?")) { cart = []; renderCart(); searchInput.focus(); } }
 
-  // LA FUNCIÓN DE MATEMÁTICA QUE FALTABA
+  // Calculadora de Totales
   function calcularTotales() {
     let subtotal = 0, promoDiscountTotal = 0;
     cart.forEach(item => {
@@ -264,7 +266,7 @@
     const { subtotal, promoDiscountTotal, totalPagar } = calcularTotales();
 
     if (cart.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5"><div style="text-align:center; color:var(--muted); padding:40px 10px;">El carrito está vacío.<br>Usá el buscador para agregar productos.</div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5"><div style="text-align:center; color:var(--muted); padding:40px 10px;">El carrito está vacío.<br><small>Buscá un producto o presioná F2.</small></div></td></tr>';
     } else {
       tbody.innerHTML = cart.map(item => `
         <tr>
@@ -332,8 +334,10 @@
   // EVENTO DE TECLADO PARA F12
   document.addEventListener('keydown', (e) => {
     if (e.key === 'F12') { e.preventDefault(); procesarVenta(); }
+    if (e.key === 'F2') { e.preventDefault(); searchInput.focus(); }
   });
 
+  // CONFIRMACIÓN RÁPIDA E IMPRESIÓN DIRECTA
   function procesarVenta() {
     if (cart.length === 0) return;
     
