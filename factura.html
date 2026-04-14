@@ -3,135 +3,161 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Comprobante de Venta</title>
+  <title>Ticket de Venta</title>
   <style>
-    /* Estilos minimalistas optimizados para impresora A4 */
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 14px;
+      margin: 0;
+      padding: 10px;
+      width: 80mm; /* Tamaño estándar de comandera */
+      background: #fff;
+      color: #000;
+    }
+    .header { text-align: center; margin-bottom: 15px; }
+    .header strong { font-size: 18px; display: block; }
     
-    body { font-family: Arial, sans-serif; color: #000; background: #fff; margin: 0; padding: 40px; font-size: 14px; }
-    .invoice-box { max-width: 800px; margin: auto; }
-    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; }
-    .title h1 { margin: 0; font-size: 28px; text-transform: uppercase; letter-spacing: 2px; }
-    .title p { margin: 5px 0 0; color: #555; }
-    .meta-data { text-align: right; }
-    .meta-data table { width: 100%; border-collapse: collapse; }
-    .meta-data td { padding: 4px 8px; }
-    .meta-data td:first-child { font-weight: bold; text-align: right; }
+    .info { margin-bottom: 10px; font-size: 12px; }
+    .divider { border-top: 1px dashed #000; margin: 8px 0; }
     
-    .items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-    .items-table th { background: #f0f0f0; border-bottom: 2px solid #000; border-top: 2px solid #000; padding: 12px 8px; text-align: left; font-size: 12px; text-transform: uppercase; }
-    .items-table td { padding: 12px 8px; border-bottom: 1px solid #ccc; vertical-align: middle; }
-    .items-table th.num, .items-table td.num { text-align: right; font-family: 'DM Mono', monospace; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 11px; }
+    td { padding: 4px 0; vertical-align: top; }
     
-    .totals { width: 50%; float: right; }
-    .totals table { width: 100%; border-collapse: collapse; }
-    .totals td { padding: 8px; text-align: right; border-bottom: 1px solid #eee; }
-    .totals td:first-child { font-weight: bold; width: 60%; }
-    .totals tr.grand-total td { font-size: 18px; font-weight: bold; border-top: 2px solid #000; border-bottom: none; }
+    .totals { margin-top: 10px; }
+    .total-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .grand-total { font-size: 18px; font-weight: bold; margin-top: 5px; }
     
-    .footer { clear: both; margin-top: 50px; text-align: center; color: #555; font-size: 12px; border-top: 1px solid #ccc; padding-top: 20px; }
-    
-    /* Reglas exclusivas para cuando se abre la ventana de imprimir */
+    .footer { text-align: center; margin-top: 20px; font-size: 11px; }
+
+    /* Botones de control fuera de la impresión */
+    .no-print {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: sans-serif;
+    }
+    .btn-back { background: #334155; color: white; }
+    .btn-print { background: #10b981; color: white; }
+
     @media print {
-      body { padding: 0; }
-      .no-print { display: none !important; }
+      .no-print { display: none; }
+      body { width: 100%; padding: 0; }
     }
   </style>
 </head>
 <body>
 
-  <div class="no-print" style="margin-bottom: 20px; text-align: right;">
-    <button onclick="window.print()" style="padding: 10px 20px; background: #000; color: #fff; border: none; cursor: pointer; font-weight: bold;">🖨️ Imprimir Comprobante</button>
-    <button onclick="window.close()" style="padding: 10px 20px; background: #fff; color: #000; border: 1px solid #000; cursor: pointer; margin-left: 10px;">Cerrar</button>
+  <div class="no-print">
+    <button class="btn btn-back" onclick="window.location.href='facturacion.html'">← Volver a Facturar</button>
+    <button class="btn btn-print" onclick="window.print()">🖨️ Re-Imprimir</button>
   </div>
 
-  <div class="invoice-box" id="invoiceContent">
-    Cargando comprobante...
+  <div class="header">
+    <strong>MICRO SAAS SOLUCIONES</strong>
+    <small>Córdoba, Argentina</small><br>
+    <small>Ticket de Venta No Válido como Factura</small>
   </div>
 
-  <script src="core.js"></script>
+  <div class="info">
+    <div id="printId">Orden: #</div>
+    <div id="printDate">Fecha: </div>
+    <div id="printClient">Cliente: </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 15%;">Cant</th>
+        <th style="width: 55%;">Producto</th>
+        <th style="width: 30%; text-align: right;">Total</th>
+      </tr>
+    </thead>
+    <tbody id="printItems"></tbody>
+  </table>
+
+  <div class="divider"></div>
+
+  <div class="totals">
+    <div class="total-row">
+      <span>SUBTOTAL:</span>
+      <span id="printSubtotal">$0</span>
+    </div>
+    <div class="total-row">
+      <span>DESCUENTOS:</span>
+      <span id="printDiscount">-$0</span>
+    </div>
+    <div class="total-row grand-total">
+      <span>TOTAL:</span>
+      <span id="printTotal">$0</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="info">
+    <div>Método: <span id="printMethod"></span></div>
+    <div id="printCuponRow" style="display:none;">Cupón: <span id="printCupon"></span></div>
+  </div>
+
+  <div class="footer">
+    ¡Gracias por su compra!<br>
+    Esperamos verte pronto.
+  </div>
+
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      // Leer el ID de la venta desde la URL (ej: factura.html?id=sale_123)
-      const urlParams = new URLSearchParams(window.location.search);
-      const saleId = urlParams.get('id');
+    function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
 
-      if (!saleId) {
-        document.getElementById('invoiceContent').innerHTML = '<h2>Error: No se especificó número de comprobante.</h2>';
-        return;
-      }
+    // Cargar datos de la venta
+    const venta = JSON.parse(localStorage.getItem('last_sale_to_print'));
 
-      const sales = getData(KEYS.sales, []);
-      const sale = sales.find(s => s.id === saleId);
-
-      if (!sale) {
-        document.getElementById('invoiceContent').innerHTML = '<h2>Error: Comprobante no encontrado en la base de datos.</h2>';
-        return;
-      }
-
-      // Formatear datos
-      const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
-      const fecha = new Date(sale.createdAt || sale.date).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+    if (!venta) {
+      alert("No hay datos de venta para mostrar.");
+      window.location.href = 'facturacion.html';
+    } else {
+      document.getElementById('printId').textContent = "Ticket: #" + venta.id.split('_')[1];
+      document.getElementById('printDate').textContent = "Fecha: " + new Date(venta.createdAt).toLocaleString('es-AR');
+      document.getElementById('printClient').textContent = "Cliente: " + (venta.client || 'Consumidor Final');
       
-      const itemsHtml = (sale.items || []).map(item => `
-        <tr>
-          <td>${escapeHtml(item.code || '-')}</td>
-          <td><strong>${escapeHtml(item.name)}</strong></td>
-          <td class="num">${item.quantity}</td>
-          <td class="num">${fmt.format(item.price)}</td>
-          <td class="num">${item.discount > 0 ? fmt.format(item.discount) : '-'}</td>
-          <td class="num"><strong>${fmt.format(item.subtotal || (item.price * item.quantity))}</strong></td>
-        </tr>
-      `).join('');
+      const itemsBody = document.getElementById('printItems');
+      venta.items.forEach(i => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${i.qty}</td>
+          <td>${i.name.substring(0,25)}</td>
+          <td style="text-align: right;">${currency(i.subtotal)}</td>
+        `;
+        itemsBody.appendChild(tr);
+      });
 
-      // Construir el HTML del documento
-      document.getElementById('invoiceContent').innerHTML = `
-        <div class="header">
-          <div class="title">
-            <h1>DOCUMENTO NO VÁLIDO COMO FACTURA</h1>
-            <p>Comprobante de Operación Interna</p>
-          </div>
-          <div class="meta-data">
-            <table>
-              <tr><td>COMPROBANTE:</td><td>${sale.code || 'S/N'}</td></tr>
-              <tr><td>FECHA:</td><td>${fecha}</td></tr>
-              <tr><td>MÉTODO PAGO:</td><td>${sale.paymentMethod || 'N/D'}</td></tr>
-            </table>
-          </div>
-        </div>
+      document.getElementById('printSubtotal').textContent = currency(venta.subtotal);
+      document.getElementById('printDiscount').textContent = "-" + currency(venta.promoDiscount);
+      document.getElementById('printTotal').textContent = currency(venta.total);
+      document.getElementById('printMethod').textContent = venta.method;
 
-        <table class="items-table">
-          <thead>
-            <tr>
-              <th style="width: 15%">CÓDIGO</th>
-              <th style="width: 40%">DESCRIPCIÓN</th>
-              <th class="num" style="width: 10%">CANT.</th>
-              <th class="num" style="width: 15%">PRECIO UNIT.</th>
-              <th class="num" style="width: 10%">DTO.</th>
-              <th class="num" style="width: 10%">SUBTOTAL</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsHtml}
-          </tbody>
-        </table>
+      if (venta.cupon) {
+        document.getElementById('printCuponRow').style.display = 'block';
+        document.getElementById('printCupon').textContent = venta.cupon;
+      }
 
-        <div class="totals">
-          <table>
-            <tr><td>Subtotal Operación:</td><td>${fmt.format(sale.subtotal || sale.total)}</td></tr>
-            <tr><td>Descuento Global Aplicado:</td><td style="color: #555;">- ${fmt.format(sale.globalDiscount || 0)}</td></tr>
-            <tr class="grand-total"><td>TOTAL FINAL:</td><td>${fmt.format(sale.total)}</td></tr>
-          </table>
-        </div>
-
-        <div class="footer">
-          Generado automáticamente por el sistema de gestión. 
-        </div>
-      `;
-
-      // Lanzar cuadro de impresión automáticamente al abrir
-      setTimeout(() => { window.print(); }, 500);
-    });
+      // Auto-imprimir al cargar
+      window.onload = () => {
+        setTimeout(() => {
+          window.print();
+        }, 500);
+      };
+    }
   </script>
 </body>
 </html>
