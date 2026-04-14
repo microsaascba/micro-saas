@@ -327,27 +327,46 @@
     document.getElementById('cuponContainer').style.display = method === 'Tarjeta' ? 'block' : 'none';
   }
 
-  function procesarVenta() {
+function procesarVenta() {
     if (cart.length === 0) return;
-    let cupon = "";
+    
+    // 1. Confirmación rápida: Al apretar F12 salta esto, y con ENTER se acepta.
+    if (!confirm("¿Confirmar venta e imprimir ticket?")) return;
+
+    let cuponText = '';
     if (currentPaymentMethod === 'Tarjeta') {
-      cupon = document.getElementById('cuponNumber').value;
-      if (!cupon) return alert("Número de cupón obligatorio.");
+      cuponText = document.getElementById('cuponNumber').value.trim();
+      if (!cuponText || isNaN(cuponText)) { 
+        alert("⚠️ Por favor, ingresá el número de cupón numérico."); 
+        document.getElementById('cuponNumber').focus(); 
+        return; 
+      }
     }
 
-    const { total } = { total: cart.reduce((a,b) => a + (b.price * b.qty - b.promoApplied), 0) };
+    const { subtotal, promoDiscountTotal, totalPagar } = calcularTotales();
+    const cliente = document.getElementById('clientName').value.trim() || 'Consumidor Final';
+
     const nuevaVenta = {
-      id: 'vta_' + Date.now(), date: todayISO(), createdAt: new Date().toISOString(), client: document.getElementById('clientName').value,
-      method: currentPaymentMethod, cupon, subtotal: cart.reduce((a,b)=>a+(b.price*b.qty),0), 
-      promoDiscount: cart.reduce((a,b)=>a+b.promoApplied,0), total,
-      items: cart.map(i => ({ id: i.id, name: i.name, qty: i.qty, subtotal: (i.price * i.qty) - i.promoApplied }))
+      id: 'vta_' + Date.now(), date: todayISO(), createdAt: new Date().toISOString(), 
+      client: cliente, method: currentPaymentMethod, cupon: cuponText, 
+      subtotal: subtotal, promoDiscount: promoDiscountTotal, total: totalPagar,
+      items: cart.map(i => ({ id: i.id, name: i.name, code: i.code, price: i.price, qty: i.qty, subtotal: (i.price * i.qty) - (i.promoApplied||0) }))
     };
 
     dbSales.unshift(nuevaVenta); setData(KEYS.sales, dbSales);
-    cart.forEach(c => { const p = dbProducts.find(x => x.id === c.id); if(p) p.stock -= c.qty; });
-    setData(KEYS.products, dbProducts);
-    localStorage.setItem('last_sale_to_print', JSON.stringify(nuevaVenta));
-    window.location.href = 'factura.html';
+    cart.forEach(cartItem => { const pDB = dbProducts.find(p => p.id === cartItem.id); if (pDB) pDB.stock -= cartItem.qty; });
+    setData(KEYS.products, dbProducts); window.dispatchEvent(new Event('saas:data-updated'));
+
+    // Generar el HTML del ticket
+    document.getElementById('printTicketArea').innerHTML = generarTicketHTML(nuevaVenta);
+    
+    // 2. Disparar la impresión
+    window.print();
+    
+    // 3. Limpiar la caja para el siguiente cliente
+    cart = []; document.getElementById('clientName').value = 'Consumidor Final';
+    if(currentPaymentMethod === 'Tarjeta') document.getElementById('cuponNumber').value = '';
+    renderCart(); searchInput.focus();
   }
 
   initPOS();
