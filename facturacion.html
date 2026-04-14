@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="styles.css" />
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; }
     
     .pos-wrapper { display: grid; grid-template-columns: 1.8fr 1fr; gap: 20px; align-items: start; }
     .pos-cart-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column; min-height: 70vh; }
@@ -40,16 +40,13 @@
     .qty-control { display: flex; align-items: center; gap: 6px; }
     .qty-btn { background: var(--line); border: none; width: 28px; height: 28px; border-radius: 6px; font-weight: bold; cursor: pointer; display:grid; place-items:center; }
     .qty-input { width: 45px; text-align: center; border: 1px solid var(--line); border-radius: 6px; padding: 4px; font-weight: bold; outline:none; }
-    .qty-input:focus { border-color: var(--primary); }
 
-    /* Ocultar flechitas input number */
-    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
 
-    /* ── ESTILOS PARA IMPRIMIR TICKET COMANDERA ── */
     #printTicketArea { display: none; }
     @media print {
-      @page { margin: 0; size: 80mm auto; } /* Formato comandera sin textos de Chrome */
+      @page { margin: 0; size: 80mm auto; }
       body { margin: 0; background: #fff; }
       body * { visibility: hidden; }
       #printTicketArea, #printTicketArea * { visibility: visible; }
@@ -66,9 +63,8 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Usuario: demo</strong><small>Control del negocio</small></div>
+      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
     </div>
-    
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
@@ -84,7 +80,7 @@
     <header class="topbar">
       <div class="page-title">
         <h1 style="margin:0; font-size: 24px;">Facturación</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Emisión rápida de comprobantes y control de stock en tiempo real.</p>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Emisión rápida y motor de ofertas automáticas.</p>
       </div>
       <div class="topbar-actions">
         <button class="btn btn-outline" onclick="cancelarVenta()">Vaciar Carrito</button>
@@ -121,11 +117,11 @@
         </div>
 
         <div style="flex: 1;">
-          <div class="totals-row"><span>Subtotal</span><span id="txtSubtotal">$0</span></div>
+          <div class="totals-row"><span>Subtotal bruto</span><span id="txtSubtotal">$0</span></div>
           <div class="totals-row" id="rowPromoDiscount" style="display: none; color: var(--danger); font-weight: bold;">
-            <span>Ahorro Promos</span><span id="txtPromoDiscount">-$0</span>
+            <span>Ahorro Promociones</span><span id="txtPromoDiscount">-$0</span>
           </div>
-          <div class="totals-row grand-total"><span>Total</span><span id="txtTotal" style="color: var(--primary);">$0</span></div>
+          <div class="totals-row grand-total"><span>Total a Pagar</span><span id="txtTotal" style="color: var(--primary);">$0</span></div>
         </div>
 
         <div style="margin-top: 30px;">
@@ -141,7 +137,7 @@
             <input type="number" id="cuponNumber" placeholder="Ingresá los números" style="background: #fff; border: 2px solid var(--line); font-weight: 600; padding: 14px; width: 100%; box-sizing: border-box; margin-top: 6px; border-radius: 10px;">
           </div>
 
-          <button class="btn-charge" onclick="procesarVenta()">Cobrar e Imprimir</button>
+          <button class="btn-charge" onclick="procesarVenta()">Cobrar e Imprimir (F12)</button>
         </div>
       </div>
     </div>
@@ -156,7 +152,7 @@
   let currentPaymentMethod = 'Efectivo';
   let filteredProducts = []; let selectedSearchIndex = -1;
 
-  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
 
@@ -179,14 +175,12 @@
   searchInput.addEventListener('keydown', (e) => {
     if (!searchResults.classList.contains('active')) return;
     const items = document.querySelectorAll('.autocomplete-item');
-    if (items.length === 0) return;
-
     if (e.key === 'ArrowDown') { e.preventDefault(); selectedSearchIndex = (selectedSearchIndex + 1) % items.length; updateSearchSelection(items); } 
     else if (e.key === 'ArrowUp') { e.preventDefault(); selectedSearchIndex = (selectedSearchIndex - 1 + items.length) % items.length; updateSearchSelection(items); } 
     else if (e.key === 'Enter') {
       e.preventDefault();
-      if (selectedSearchIndex >= 0 && selectedSearchIndex < filteredProducts.length) { agregarAlCarrito(filteredProducts[selectedSearchIndex]); } 
-      else if (filteredProducts.length > 0) { agregarAlCarrito(filteredProducts[0]); }
+      if (selectedSearchIndex >= 0 && selectedSearchIndex < filteredProducts.length) agregarAlCarrito(filteredProducts[selectedSearchIndex]); 
+      else if (filteredProducts.length > 0) agregarAlCarrito(filteredProducts[0]);
     }
   });
 
@@ -194,7 +188,10 @@
     if (filteredProducts.length === 0) {
       searchResults.innerHTML = '<div style="padding:15px; color:var(--danger); text-align:center; font-weight:bold;">Sin stock o no existe</div>';
     } else {
-      searchResults.innerHTML = filteredProducts.map((p, idx) => `
+      searchResults.innerHTML = filteredProducts.map((p, idx) => {
+        let promoTag = '';
+        if(p.promoType && p.promoType !== 'none') promoTag = `<div class="prod-promo">PROMO ACTIVA</div>`;
+        return `
         <div class="autocomplete-item" onclick="agregarAlCarrito(filteredProducts[${idx}])">
           <div>
             <div style="font-weight:700;">${escapeHtml(p.name)}</div>
@@ -202,10 +199,10 @@
           </div>
           <div style="text-align:right;">
             <div style="font-weight:800; color:var(--success); font-size:15px;">${currency(p.price)}</div>
-            ${p.promoType && p.promoType !== 'none' ? `<div class="prod-promo">Promo</div>` : ''}
+            ${promoTag}
           </div>
         </div>
-      `).join('');
+      `}).join('');
     }
     searchResults.classList.add('active'); selectedSearchIndex = -1;
   }
@@ -229,7 +226,7 @@
     const item = cart.find(x => x.id === id);
     if (!item) return;
     const nueva = item.qty + delta;
-    if (nueva < 1) return;
+    if (nueva < 1) return; 
     if (nueva > item.stock) return alert("Sin stock suficiente.");
     item.qty = nueva; renderCart();
   }
@@ -246,20 +243,45 @@
   function quitarDelCarrito(id) { cart = cart.filter(x => x.id !== id); renderCart(); searchInput.focus(); }
   function cancelarVenta() { if (confirm("¿Vaciar carrito?")) { cart = []; renderCart(); searchInput.focus(); } }
 
-  // Calculadora de Totales
+  // ── MOTOR DE PROMOCIONES INTELIGENTE ──
   function calcularTotales() {
     let subtotal = 0, promoDiscountTotal = 0;
+    
+    // Primero calculamos el subtotal puro
+    cart.forEach(item => { item.promoApplied = 0; subtotal += (item.price * item.qty); });
+
+    // Segundo recorrido: aplicamos descuentos según las reglas
     cart.forEach(item => {
-      const itemSub = item.price * item.qty;
       let d = 0;
-      if (item.promoType === '2x1') d = Math.floor(item.qty / 2) * item.price;
-      else if (item.promoType === '50_second') d = Math.floor(item.qty / 2) * (item.price * 0.5);
-      else if (item.promoType === 'desc_10') d = itemSub * 0.10;
+      const type = item.promoType;
+      const val = parseFloat(item.promoValue) || 0;
+
+      if (type === '2x1') {
+        // Por cada par, se descuenta 1 entero (100%)
+        d = Math.floor(item.qty / 2) * item.price;
+      } 
+      else if (type === '2da_unidad') {
+        // Por cada par, se descuenta el porcentaje indicado del precio de 1 unidad
+        d = Math.floor(item.qty / 2) * (item.price * (val / 100));
+      } 
+      else if (type === 'descuento_directo') {
+        // Descuento a todas las unidades de este producto
+        d = (item.price * item.qty) * (val / 100);
+      } 
+      else if (type === 'combo' && item.promoLinked) {
+        // Busca si el producto vinculado está en el carrito
+        const linkedItem = cart.find(c => c.id === item.promoLinked);
+        if (linkedItem) {
+          // El combo aplica a la cantidad de pares formados.
+          const cantCombosFormados = Math.min(item.qty, linkedItem.qty);
+          d = cantCombosFormados * (item.price * (val / 100));
+        }
+      }
       
       item.promoApplied = d;
-      subtotal += itemSub;
       promoDiscountTotal += d;
     });
+
     return { subtotal, promoDiscountTotal, totalPagar: Math.max(0, subtotal - promoDiscountTotal) };
   }
 
@@ -270,12 +292,23 @@
     if (cart.length === 0) {
       tbody.innerHTML = '<tr><td colspan="5"><div style="text-align:center; color:var(--muted); padding:40px 10px;">El carrito está vacío.<br><small>Buscá un producto o presioná F2.</small></div></td></tr>';
     } else {
-      tbody.innerHTML = cart.map(item => `
+      tbody.innerHTML = cart.map(item => {
+        let tagHtml = '';
+        if (item.promoApplied > 0) {
+          let razon = '';
+          if(item.promoType === '2x1') razon = '2x1 Aplicado';
+          if(item.promoType === '2da_unidad') razon = `2da al ${item.promoValue}% OFF`;
+          if(item.promoType === 'descuento_directo') razon = `${item.promoValue}% OFF`;
+          if(item.promoType === 'combo') razon = `COMBO: ${item.promoValue}% OFF`;
+          tagHtml = `<div style="font-size:10px; color:var(--danger); font-weight:bold; background:#fee2e2; display:inline-block; padding:2px 6px; border-radius:4px; margin-top:4px;">${razon}: -${currency(item.promoApplied)}</div>`;
+        }
+
+        return `
         <tr>
           <td>
             <div style="font-weight: 700; font-size:14px;">${escapeHtml(item.name)}</div>
             <div style="font-size: 11px; color: var(--muted);">${item.code || ''}</div>
-            ${item.promoApplied > 0 ? `<div style="font-size:11px; color:var(--danger); font-weight:bold;">Ahorro Promo: -${currency(item.promoApplied)}</div>` : ''}
+            ${tagHtml}
           </td>
           <td><strong style="color:var(--muted); font-size:13px;">${currency(item.price)}</strong></td>
           <td>
@@ -286,8 +319,9 @@
             </div>
           </td>
           <td style="text-align: right;"><strong>${currency((item.price * item.qty) - (item.promoApplied||0))}</strong></td>
-          <td style="text-align: center;"><button class="btn btn-outline" style="padding:4px 8px; border-color:transparent; color:var(--danger); border-radius:50%; background: #fee2e2;" onclick="quitarDelCarrito('${item.id}')" tabindex="-1">✕</button></td>
-        </tr>`).join('');
+          <td style="text-align: center;"><button class="btn" style="background:#fee2e2; border:none; border-radius:8px; padding:6px; color:var(--danger); cursor:pointer;" onclick="quitarDelCarrito('${item.id}')" tabindex="-1">✕</button></td>
+        </tr>`;
+      }).join('');
     }
 
     document.getElementById('txtSubtotal').textContent = currency(subtotal);
@@ -300,7 +334,6 @@
     currentPaymentMethod = method;
     document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
     btnElement.classList.add('active'); 
-    
     const cuponContainer = document.getElementById('cuponContainer');
     if (method === 'Tarjeta') { cuponContainer.style.display = 'block'; document.getElementById('cuponNumber').focus(); } 
     else { cuponContainer.style.display = 'none'; document.getElementById('cuponNumber').value = ''; searchInput.focus(); }
@@ -309,7 +342,7 @@
   function generarTicketHTML(venta) {
     let itemsHTML = venta.items.map(i => `
       <div class="ticket-line">
-        <span style="width: 60%; overflow:hidden;">${i.qty}x ${i.name.substring(0,15)}</span>
+        <span style="width: 65%; overflow:hidden;">${i.qty}x ${i.name.substring(0,18)}</span>
         <span>${currency(i.subtotal)}</span>
       </div>
     `).join('');
@@ -333,7 +366,7 @@
     `;
   }
 
-  // EVENTO DE TECLADO PARA F12
+  // EVENTO DE TECLADO PARA F12 Y F2
   document.addEventListener('keydown', (e) => {
     if (e.key === 'F12') { e.preventDefault(); procesarVenta(); }
     if (e.key === 'F2') { e.preventDefault(); searchInput.focus(); }
@@ -342,7 +375,6 @@
   // CONFIRMACIÓN RÁPIDA E IMPRESIÓN DIRECTA
   function procesarVenta() {
     if (cart.length === 0) return;
-    
     if (!confirm("¿Confirmar venta e imprimir ticket?")) return;
 
     let cuponText = '';
