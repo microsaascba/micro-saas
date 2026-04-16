@@ -40,7 +40,7 @@
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
       <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
       <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-      <a href="contable.html"><span class="active">💸</span> Contable</a>
+      <a href="contable.html" class="active"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
@@ -335,7 +335,7 @@
     alert("✅ Gasto eliminado correctamente.");
   }
 
-  // ── SEGURIDAD (ADMIN PIN) ──
+  // ── SEGURIDAD (ADMIN PIN) - CORREGIDO ──
   function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
     document.getElementById('authActionText').textContent = accionTexto;
     pendingAdminAction = funcionExito; 
@@ -353,8 +353,15 @@
   function validarAdminAuth(e) {
     e.preventDefault();
     if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
+      // Guardamos en memoria rápida qué hay que hacer
+      const accion = pendingAdminAction;
+      const param = pendingAdminParam;
+      
+      // Cerramos el modal (esto limpia la memoria global)
       cerrarAdminAuth();
-      if (pendingAdminAction) pendingAdminAction(pendingAdminParam);
+      
+      // Ejecutamos la acción desde la memoria rápida
+      if (accion) accion(param);
     } else {
       alert("❌ PIN de administrador incorrecto.");
       document.getElementById('adminAuthPin').value = ''; 
