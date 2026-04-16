@@ -40,7 +40,7 @@
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
       <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
       <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-      <a href="contable.html" class="active"><span class="nav-icon">💸</span> Contable</a>
+      <a href="contable.html"><span class="active">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
@@ -133,7 +133,7 @@
       <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarModalGasto()">✕ Cerrar</button>
     </div>
     
-    <form onsubmit="guardarGasto(event)">
+    <form id="expenseForm" onsubmit="guardarGasto(event)">
       <input type="hidden" id="expId">
       
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
@@ -243,7 +243,6 @@
   }
 
   function initContable() {
-    // Si no tenés KEYS.expenses en core.js, usaremos 'saas_expenses'
     const keyExpenses = (typeof KEYS !== 'undefined' && KEYS.expenses) ? KEYS.expenses : 'saas_expenses';
     const keySales = (typeof KEYS !== 'undefined' && KEYS.sales) ? KEYS.sales : 'saas_sales';
     
@@ -261,7 +260,6 @@
     form.reset();
     
     if (id) {
-      // MODO EDICIÓN
       const exp = dbExpenses.find(e => e.id === id);
       if (!exp) return;
       title.textContent = "Editar gasto";
@@ -275,14 +273,13 @@
       document.getElementById('expDueDate').value = exp.dueDate || '';
       document.getElementById('expNotes').value = exp.notes || '';
       
-      btnDel.style.display = 'block'; // Mostrar botón rojo
+      btnDel.style.display = 'block'; 
     } else {
-      // MODO CREACIÓN
       title.textContent = "Registrar gasto";
       document.getElementById('expId').value = '';
       document.getElementById('expDate').value = todayISO();
       
-      btnDel.style.display = 'none'; // Ocultar botón rojo
+      btnDel.style.display = 'none'; 
     }
     
     document.getElementById('modalGasto').showModal();
@@ -376,11 +373,9 @@
     const tbody = document.getElementById('tableBodyGastos');
     let rowsHtml = '';
 
-    // Ordenar por fecha descendente
     const sortedExpenses = [...dbExpenses].sort((a,b) => new Date(b.date) - new Date(a.date));
 
     sortedExpenses.forEach(exp => {
-      // Cálculos KPIs
       if (exp.date === today) {
         gastosDia += exp.amount;
         countDia++;
@@ -390,12 +385,10 @@
         else pendientesMes += exp.amount;
       }
 
-      // Dibujar Fila
       const statusBadge = exp.status === 'Pagado' 
         ? `<span style="background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold;">Pagado</span>`
         : `<span style="background:#fef08a; color:#b45309; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold;">Pendiente</span>`;
 
-      // Invertir formato fecha DD/MM/YYYY
       const fechaParts = exp.date.split('-');
       const fechaLocal = fechaParts.length === 3 ? `${fechaParts[2]}/${fechaParts[1]}/${fechaParts[0]}` : exp.date;
 
@@ -417,7 +410,6 @@
     }
     tbody.innerHTML = rowsHtml;
 
-    // Calcular Ingresos del Mes (Ventas)
     let ingresosMes = 0;
     dbSales.forEach(venta => {
       if (venta.date.startsWith(currentMonth)) {
@@ -427,7 +419,6 @@
 
     const resultadoNeto = ingresosMes - gastosMes;
 
-    // Actualizar Textos KPIs
     document.getElementById('kpiGastosDia').textContent = currency(gastosDia);
     document.getElementById('kpiCountDia').textContent = `${countDia} movimientos hoy`;
     document.getElementById('kpiGastosMes').textContent = currency(gastosMes);
