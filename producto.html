@@ -28,6 +28,10 @@
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
     td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+
+    /* Modales */
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
+    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
   </style>
 </head>
 <body>
@@ -180,9 +184,31 @@
   </main>
 </div>
 
+<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: var(--panel);">
+  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
+    <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
+  </div>
+  <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
+    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Se requiere PIN de administrador para <strong id="authActionText"></strong>.</p>
+    
+    <div style="margin-bottom: 24px;">
+      <input type="password" id="adminAuthPin" required placeholder="Ingresá el PIN" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none;">
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
+      <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
+    </div>
+  </form>
+</dialog>
+
 <script src="core.js"></script>
 <script>
   let dbProducts = [];
+  const PIN_ADMIN = "1234";
+  let pendingAdminAction = null;
+  let pendingAdminParam = null;
 
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -202,7 +228,6 @@
     const marginBox = document.getElementById('prodMargin');
     
     if (price > 0) {
-      // Fórmula clásica de margen sobre ventas: ((Precio - CostoTotal) / Precio) * 100
       const totalCost = cost + expenses;
       const margin = ((price - totalCost) / price) * 100;
       marginBox.value = margin.toFixed(1) + '%';
@@ -297,14 +322,6 @@
     togglePromoFields();
   }
 
-  function eliminarProducto(id) {
-    if(!confirm("¿Eliminar producto del catálogo?")) return;
-    dbProducts = dbProducts.filter(p => p.id !== id);
-    setData(KEYS.products, dbProducts);
-    actualizarSelectCombos();
-    renderTable();
-  }
-
   function limpiarFormulario() {
     document.getElementById('formTitle').textContent = "Alta de producto";
     document.getElementById('productForm').reset();
@@ -314,6 +331,49 @@
     togglePromoFields();
   }
 
+  // --- SEGURIDAD: ELIMINAR CON PIN ---
+  function eliminarProductoPrompt(id) {
+    pedirAuthAdmin('borrar permanentemente este producto del sistema', ejecutarEliminacionProducto, id);
+  }
+
+  function ejecutarEliminacionProducto(id) {
+    dbProducts = dbProducts.filter(p => p.id !== id);
+    setData(KEYS.products, dbProducts);
+    actualizarSelectCombos();
+    renderTable();
+    window.dispatchEvent(new Event('saas:data-updated'));
+    alert("✅ Producto eliminado correctamente.");
+  }
+
+  function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
+    document.getElementById('authActionText').textContent = accionTexto;
+    pendingAdminAction = funcionExito; 
+    pendingAdminParam = param;
+    document.getElementById('adminAuthPin').value = '';
+    document.getElementById('adminAuthDialog').showModal();
+    setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
+  }
+
+  function cerrarAdminAuth() {
+    document.getElementById('adminAuthDialog').close();
+    pendingAdminAction = null; pendingAdminParam = null;
+  }
+
+  function validarAdminAuth(e) {
+    e.preventDefault();
+    if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
+      const accion = pendingAdminAction;
+      const param = pendingAdminParam;
+      cerrarAdminAuth();
+      if (accion) accion(param);
+    } else {
+      alert("❌ PIN de administrador incorrecto.");
+      document.getElementById('adminAuthPin').value = ''; 
+      document.getElementById('adminAuthPin').focus();
+    }
+  }
+
+  // --- RENDER TABLA ---
   function renderTable() {
     const term = document.getElementById('searchTable').value.toLowerCase();
     const filtrados = dbProducts.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)));
@@ -355,7 +415,8 @@
         </td>
         <td style="text-align: center;">
           <button onclick="editarProducto('${p.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; margin-right:5px;">Editar</button>
-          <button onclick="eliminarProducto('${p.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Borrar</button>
+          
+          <button onclick="eliminarProductoPrompt('${p.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Borrar</button>
         </td>
       </tr>`
     }).join('');
