@@ -57,7 +57,6 @@
       </div>
       <div class="topbar-actions" style="display: flex; gap: 10px;">
         <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalImportar()">⬆ Importar CSV</button>
-        
         <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Exportar Excel</button>
         <button class="btn btn-outline">Sincronizar</button>
         <button class="btn btn-primary">+ Ajuste manual</button>
@@ -93,7 +92,7 @@
         <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Vista central del inventario y alertas automáticas.</p>
         
         <div style="display:flex; gap:10px; margin-bottom:20px;">
-          <input type="text" id="searchStock" class="input-box" placeholder="Buscar producto..." style="max-width: 250px;" onkeyup="renderStock()">
+          <input type="text" id="searchStock" class="input-box" placeholder="Buscar producto o SKU..." style="max-width: 250px;" onkeyup="renderStock()">
           <select class="input-box" style="max-width: 150px;">
             <option>Todos</option>
           </select>
@@ -121,14 +120,13 @@
         <h2 style="margin: 0 0 5px 0; font-size: 18px;">Productos críticos</h2>
         <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Priorizá reposición sin perder tiempo.</p>
         
-        <div id="listaCriticos">
-          </div>
+        <div id="listaCriticos"></div>
       </article>
     </div>
   </main>
 </div>
 
-<dialog id="modalImportar" style="width: 100%; max-width: 500px;">
+<dialog id="modalImportar" style="width: 100%; max-width: 550px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
       <h2 style="margin: 0; font-size:20px;">Importar Carga Masiva</h2>
@@ -137,11 +135,12 @@
     
     <div class="legend-box">
       <strong>Instrucciones para subir el archivo:</strong><br><br>
-      1. El archivo debe estar en formato <strong>.CSV</strong> (separado por comas o punto y coma).<br>
-      2. La primera fila (el encabezado) debe contener exactamente estas columnas:<br><br>
-      <div style="text-align: center;"><span class="code-tag">Nombre, Codigo, Stock, Costo, Precio</span></div><br>
-      3. Las columnas <span class="code-tag">Nombre</span> y <span class="code-tag">Stock</span> son obligatorias. Las demás son opcionales.<br>
-      <em>Tip: Podés descargar un Excel desde el botón verde de exportar para usarlo de plantilla.</em>
+      1. El archivo debe estar en formato <strong>.CSV</strong> (separado por comas o punto y coma).<br><br>
+      2. <strong>Columnas Obligatorias:</strong><br>
+      <span class="code-tag">SKU</span> <span class="code-tag">Nombre</span> <span class="code-tag">Stock</span> <span class="code-tag">Costo</span> <span class="code-tag">Precio</span><br><br>
+      3. <strong>Columnas Opcionales:</strong><br>
+      <span class="code-tag">Categoria</span> <span class="code-tag">Estado</span> <span class="code-tag">Gastos</span> <span class="code-tag">Color</span> <span class="code-tag">Talle</span><br><br>
+      <em>Tip: Descargá un Excel desde el botón verde para usarlo como plantilla exacta.</em>
     </div>
 
     <form onsubmit="procesarCSV(event)">
@@ -163,6 +162,7 @@
   let dbProducts = [];
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function todayISO() { return new Date().toISOString().split('T')[0]; }
 
   function initStock() {
     dbProducts = getData(KEYS.products, []);
@@ -180,20 +180,17 @@
     let rowsHtml = '';
     let criticosHtml = '';
 
-    // Ordenamos para que los sin stock salgan arriba
     filtrados.sort((a,b) => a.stock - b.stock);
 
     filtrados.forEach(p => {
-      // Cálculos KPI
       if (p.status !== 'Inactivo') kpiActivos++;
       kpiUnidades += p.stock;
       if (p.stock <= 3 && p.stock > 0) kpiBajo++;
       if (p.stock === 0) kpiCero++;
 
-      // Badges
       let estadoBadge = '';
       let msj = '';
-      const stockMinimo = 3; // Lógica fija basada en tu imagen
+      const stockMinimo = 3; 
 
       if (p.stock === 0) {
         estadoBadge = '<span style="background:#fee2e2; color:#dc2626; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Agotado</span>';
@@ -246,7 +243,7 @@
     }
 
     tbody.innerHTML = rowsHtml;
-    criticosDiv.innerHTML = criticosHtml;
+    document.getElementById('listaCriticos').innerHTML = criticosHtml;
 
     document.getElementById('kpiActivos').textContent = kpiActivos;
     document.getElementById('kpiUnidades').textContent = kpiUnidades;
@@ -254,15 +251,20 @@
     document.getElementById('kpiCero').textContent = kpiCero;
   }
 
+  // ── EXPORTACIÓN AHORA CON TODAS LAS COLUMNAS ──
   function exportarExcel() {
     if(dbProducts.length === 0) return alert("No hay productos para exportar.");
     const csvData = dbProducts.map(p => ({
+      SKU: p.code || '',
       Nombre: p.name,
-      Codigo: p.code || '',
-      Stock: p.stock,
+      Stock: p.stock || 0,
       Costo: p.cost || 0,
       Precio: p.price || 0,
-      Estado: p.status || 'Activo'
+      Categoria: p.category || '',
+      Estado: p.status || 'Activo',
+      Gastos: p.expenses || 0,
+      Color: p.color || '',
+      Talle: p.size || ''
     }));
 
     const headers = Object.keys(csvData[0]);
@@ -298,17 +300,24 @@
         return;
       }
 
-      // Procesar encabezados (soportamos separadores coma o punto y coma)
+      // Procesar encabezados ignorando mayúsculas y espacios
       const headers = lines[0].split(/[;,]/).map(h => h.trim().toLowerCase().replace(/"/g, ''));
       
-      const nameIdx = headers.findIndex(h => h === 'nombre');
-      const codeIdx = headers.findIndex(h => h === 'codigo' || h === 'sku');
-      const stockIdx = headers.findIndex(h => h === 'stock');
-      const costIdx = headers.findIndex(h => h === 'costo');
-      const priceIdx = headers.findIndex(h => h === 'precio');
+      const skuIdx = headers.findIndex(h => h === 'sku' || h === 'codigo' || h === 'código');
+      const nameIdx = headers.findIndex(h => h === 'nombre' || h === 'producto');
+      const stockIdx = headers.findIndex(h => h === 'stock' || h === 'cantidad');
+      const costIdx = headers.findIndex(h => h === 'costo' || h === 'precio costo' || h === 'preciocosto');
+      const priceIdx = headers.findIndex(h => h === 'precio' || h === 'precio de venta' || h === 'precioventa');
+      
+      const catIdx = headers.findIndex(h => h === 'categoria' || h === 'categoría');
+      const statusIdx = headers.findIndex(h => h === 'estado');
+      const expIdx = headers.findIndex(h => h === 'gastos' || h === 'gastos asociados');
+      const colorIdx = headers.findIndex(h => h === 'color');
+      const sizeIdx = headers.findIndex(h => h === 'talle' || h === 'tamaño' || h === 'size');
 
-      if (nameIdx === -1 || stockIdx === -1) {
-        alert("❌ Error: El archivo debe contener al menos las columnas 'Nombre' y 'Stock' escritas exactamente así en la primera fila.");
+      // Validar las 5 obligatorias
+      if (skuIdx === -1 || nameIdx === -1 || stockIdx === -1 || costIdx === -1 || priceIdx === -1) {
+        alert("❌ Error: Faltan columnas obligatorias.\nEl archivo debe contener exactamente: SKU, Nombre, Stock, Costo y Precio.");
         return;
       }
 
@@ -316,36 +325,52 @@
       let addedCount = 0;
 
       for (let i = 1; i < lines.length; i++) {
-        // Expresión regular para separar por coma o punto y coma, ignorando los que están entre comillas
         const cols = lines[i].split(/[;,]/).map(c => c.trim().replace(/"/g, ''));
         if(cols.length < 2) continue;
 
+        const code = cols[skuIdx];
         const name = cols[nameIdx];
-        if(!name) continue; // Si no hay nombre, salto la fila
+        if(!code || !name) continue; // SKU y Nombre son obligatorios por fila
 
-        const code = codeIdx >= 0 ? cols[codeIdx] : '';
         const stock = parseInt(cols[stockIdx]) || 0;
-        const cost = costIdx >= 0 ? parseFloat(cols[costIdx]) || 0 : 0;
-        const price = priceIdx >= 0 ? parseFloat(cols[priceIdx]) || 0 : 0;
+        const cost = parseFloat(cols[costIdx]) || 0;
+        const price = parseFloat(cols[priceIdx]) || 0;
 
-        // Buscar si el producto ya existe (por Código o por Nombre exacto)
-        let prod = dbProducts.find(p => (code && p.code === code) || p.name.toLowerCase() === name.toLowerCase());
+        const category = catIdx >= 0 ? cols[catIdx] : '';
+        const status = statusIdx >= 0 && cols[statusIdx] ? cols[statusIdx] : 'Activo';
+        const expenses = expIdx >= 0 ? parseFloat(cols[expIdx]) || 0 : 0;
+        const color = colorIdx >= 0 ? cols[colorIdx] : '';
+        const size = sizeIdx >= 0 ? cols[sizeIdx] : '';
+
+        // Buscar producto por SKU (prioridad) o por Nombre exacto
+        let prod = dbProducts.find(p => p.code === code || p.name.toLowerCase() === name.toLowerCase());
 
         if (prod) {
-          prod.stock = stock; // Sobreescribimos el stock
-          if (cost > 0) prod.cost = cost;
-          if (price > 0) prod.price = price;
+          // Actualizar existente
+          prod.code = code;
+          prod.stock = stock; 
+          prod.cost = cost;
+          prod.price = price;
+          if (catIdx >= 0) prod.category = category;
+          if (statusIdx >= 0) prod.status = status;
+          if (expIdx >= 0) prod.expenses = expenses;
+          if (colorIdx >= 0) prod.color = color;
+          if (sizeIdx >= 0) prod.size = size;
           updatedCount++;
         } else {
-          // Crear nuevo producto
+          // Crear producto nuevo
           prod = {
             id: 'prod_' + Date.now() + Math.floor(Math.random()*1000),
-            name: name,
             code: code,
+            name: name,
             stock: stock,
             cost: cost,
             price: price,
-            status: 'Activo',
+            category: category,
+            status: status,
+            expenses: expenses,
+            color: color,
+            size: size,
             promoType: 'none'
           };
           dbProducts.unshift(prod);
@@ -353,9 +378,9 @@
         }
       }
 
-      // Guardar en la DB
+      // Guardar en la DB y avisar a toda la aplicación
       setData(KEYS.products, dbProducts);
-      window.dispatchEvent(new Event('saas:data-updated')); // Avisa al resto de la app
+      window.dispatchEvent(new Event('saas:data-updated')); 
       
       cerrarModalImportar();
       renderStock();
