@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clientes | Micro SaaS</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    .layout-2col { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 1000px) { .layout-2col { grid-template-columns: 1fr; } }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .full-width { grid-column: span 2; }
+    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
+    .input-box:focus { border-color: var(--primary); }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+    .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+    .badge-may { background: #e0e7ff; color: #0f766e; }
+    .badge-min { background: #f3f4f6; color: #475569; }
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
+    </div>
+    <nav class="nav">
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html" class="active"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
+      <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div class="page-title">
+        <h1 style="margin:0; font-size: 26px;">Clientes B2B / B2C</h1>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Directorio de clientes para ventas y cuentas corrientes.</p>
+      </div>
+    </header>
+
+    <div class="layout-2col">
+      <article class="card card-pad">
+        <h2 style="margin: 0 0 5px 0; font-size: 18px;" id="formTitle">Alta de Cliente</h2>
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Datos fiscales y de contacto.</p>
+        
+        <form id="clientForm" onsubmit="guardarCliente(event)">
+          <input type="hidden" id="cliId">
+          <div class="form-grid">
+            <div class="full-width">
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Razón Social / Nombre *</label>
+              <input type="text" id="cliName" class="input-box" required placeholder="Ej: Supermercados SA">
+            </div>
+            <div>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">CUIT / DNI</label>
+              <input type="text" id="cliCuit" class="input-box" placeholder="Sin guiones">
+            </div>
+            <div>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Teléfono</label>
+              <input type="text" id="cliPhone" class="input-box" placeholder="Ej: 351...">
+            </div>
+            <div class="full-width">
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Dirección</label>
+              <input type="text" id="cliAddress" class="input-box" placeholder="Calle, Número, Ciudad">
+            </div>
+            <div class="full-width">
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Tipo de Cliente</label>
+              <select id="cliType" class="input-box">
+                <option value="Minorista">Minorista (Consumidor)</option>
+                <option value="Mayorista">Mayorista (B2B)</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button type="button" class="btn btn-light" style="flex:1;" onclick="limpiarFormulario()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" style="flex:2;">Guardar Cliente</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="card card-pad">
+        <h2 style="margin: 0 0 20px 0; font-size: 18px;">Directorio Activo</h2>
+        <input type="text" id="searchTable" class="input-box" placeholder="Buscar por nombre o CUIT..." onkeyup="renderTable()" style="margin-bottom: 20px;">
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>CUIT/DNI</th>
+                <th>Contacto</th>
+                <th>Tipo</th>
+                <th style="text-align: center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </main>
+</div>
+
+<script src="core.js"></script>
+<script>
+  let dbClients = [];
+
+  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function initClients() {
+    const key = (typeof KEYS !== 'undefined' && KEYS.clients) ? KEYS.clients : 'saas_clients';
+    dbClients = getData(key, []);
+    renderTable();
+  }
+
+  function guardarCliente(e) {
+    e.preventDefault();
+    const id = document.getElementById('cliId').value || 'cli_' + Date.now();
+    const client = {
+      id: id,
+      name: document.getElementById('cliName').value.trim(),
+      cuit: document.getElementById('cliCuit').value.trim(),
+      phone: document.getElementById('cliPhone').value.trim(),
+      address: document.getElementById('cliAddress').value.trim(),
+      type: document.getElementById('cliType').value
+    };
+
+    const idx = dbClients.findIndex(c => c.id === id);
+    if (idx >= 0) dbClients[idx] = client; else dbClients.unshift(client);
+
+    const key = (typeof KEYS !== 'undefined' && KEYS.clients) ? KEYS.clients : 'saas_clients';
+    setData(key, dbClients);
+    limpiarFormulario();
+    renderTable();
+    window.dispatchEvent(new Event('saas:data-updated'));
+  }
+
+  function editarCliente(id) {
+    const c = dbClients.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('formTitle').textContent = "Editar Cliente";
+    document.getElementById('cliId').value = c.id;
+    document.getElementById('cliName').value = c.name;
+    document.getElementById('cliCuit').value = c.cuit || '';
+    document.getElementById('cliPhone').value = c.phone || '';
+    document.getElementById('cliAddress').value = c.address || '';
+    document.getElementById('cliType').value = c.type || 'Minorista';
+  }
+
+  function eliminarCliente(id) {
+    if(!confirm("¿Eliminar este cliente? Asegurate de que no tenga deudas en Cta Cte.")) return;
+    dbClients = dbClients.filter(c => c.id !== id);
+    const key = (typeof KEYS !== 'undefined' && KEYS.clients) ? KEYS.clients : 'saas_clients';
+    setData(key, dbClients);
+    renderTable();
+  }
+
+  function limpiarFormulario() {
+    document.getElementById('formTitle').textContent = "Alta de Cliente";
+    document.getElementById('clientForm').reset();
+    document.getElementById('cliId').value = '';
+  }
+
+  function renderTable() {
+    const term = document.getElementById('searchTable').value.toLowerCase();
+    const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term) || (c.cuit && c.cuit.toLowerCase().includes(term)));
+    const tbody = document.getElementById('tableBody');
+    
+    tbody.innerHTML = filtrados.map(c => {
+      const badge = c.type === 'Mayorista' ? '<span class="badge badge-may">Mayorista</span>' : '<span class="badge badge-min">Minorista</span>';
+      return `
+      <tr>
+        <td><strong>${escapeHtml(c.name)}</strong></td>
+        <td style="color:var(--muted);">${escapeHtml(c.cuit) || '-'}</td>
+        <td style="font-size:12px; color:var(--muted);">${escapeHtml(c.phone) || '-'}<br>${escapeHtml(c.address) || ''}</td>
+        <td>${badge}</td>
+        <td style="text-align: center;">
+          <button onclick="editarCliente('${c.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; margin-right:5px;">Editar</button>
+          <button onclick="eliminarCliente('${c.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Borrar</button>
+        </td>
+      </tr>`
+    }).join('');
+    
+    if (filtrados.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No hay clientes registrados.</td></tr>';
+  }
+
+  initClients();
+</script>
+</body>
+</html>
