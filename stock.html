@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stock | Micro SaaS</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
@@ -21,7 +22,6 @@
 
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
     
-    /* Modales */
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
@@ -56,7 +56,7 @@
         <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Control simple de unidades, alertas de faltantes y movimientos básicos.</p>
       </div>
       <div class="topbar-actions" style="display: flex; gap: 10px;">
-        <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalImportar()">⬆ Importar CSV</button>
+        <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalImportar()">⬆ Importar Excel / CSV</button>
         <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Exportar Excel</button>
         <button class="btn btn-outline">Sincronizar</button>
         <button class="btn btn-primary">+ Ajuste manual</button>
@@ -119,7 +119,6 @@
       <article class="card card-pad">
         <h2 style="margin: 0 0 5px 0; font-size: 18px;">Productos críticos</h2>
         <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Priorizá reposición sin perder tiempo.</p>
-        
         <div id="listaCriticos"></div>
       </article>
     </div>
@@ -134,19 +133,21 @@
     </div>
     
     <div class="legend-box">
-      <strong>Instrucciones para subir el archivo:</strong><br><br>
-      1. El archivo debe estar en formato <strong>.CSV</strong> (separado por comas o punto y coma).<br><br>
-      2. <strong>Columnas Obligatorias:</strong><br>
-      <span class="code-tag">SKU</span> <span class="code-tag">Nombre</span> <span class="code-tag">Stock</span> <span class="code-tag">Costo</span> <span class="code-tag">Precio</span><br><br>
-      3. <strong>Columnas Opcionales:</strong><br>
-      <span class="code-tag">Categoria</span> <span class="code-tag">Estado</span> <span class="code-tag">Gastos</span> <span class="code-tag">Color</span> <span class="code-tag">Talle</span><br><br>
-      <em>Tip: Descargá un Excel desde el botón verde para usarlo como plantilla exacta.</em>
+      <strong>Instrucciones:</strong> Soporta archivos <strong>.xlsx, .xls y .csv</strong>.<br><br>
+      La primera fila debe tener estos nombres de columna:<br><br>
+      <div style="text-align: center; margin-bottom: 10px;">
+        <span class="code-tag">SKU</span> <span class="code-tag">Nombre</span> <span class="code-tag">Stock</span> <span class="code-tag">Costo</span> <span class="code-tag">Precio</span>
+      </div>
+      <div style="text-align: center;">
+        <span class="code-tag">Categoria</span> <span class="code-tag">Estado</span> <span class="code-tag">Gastos</span> <span class="code-tag">Color</span> <span class="code-tag">Talle</span>
+      </div><br>
+      <em>* SKU, Nombre, Stock, Costo y Precio son obligatorios.</em>
     </div>
 
-    <form onsubmit="procesarCSV(event)">
+    <form onsubmit="procesarArchivo(event)">
       <div style="margin-bottom: 20px;">
-        <label style="font-size: 12px; font-weight: bold; color: var(--muted); margin-bottom: 8px; display: block;">Seleccionar archivo CSV</label>
-        <input type="file" id="csvFileInput" accept=".csv" required class="input-box" style="padding: 8px;">
+        <label style="font-size: 12px; font-weight: bold; color: var(--muted); margin-bottom: 8px; display: block;">Seleccionar archivo (Excel o CSV)</label>
+        <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" required class="input-box" style="padding: 8px;">
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
@@ -172,11 +173,8 @@
   function renderStock() {
     const term = document.getElementById('searchStock').value.toLowerCase();
     const filtrados = dbProducts.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)));
-    
     let kpiActivos = 0, kpiUnidades = 0, kpiBajo = 0, kpiCero = 0;
-    
     const tbody = document.getElementById('tableBodyStock');
-    const criticosDiv = document.getElementById('listaCriticos');
     let rowsHtml = '';
     let criticosHtml = '';
 
@@ -188,206 +186,99 @@
       if (p.stock <= 3 && p.stock > 0) kpiBajo++;
       if (p.stock === 0) kpiCero++;
 
-      let estadoBadge = '';
-      let msj = '';
-      const stockMinimo = 3; 
+      let estadoBadge = p.stock === 0 ? '<span style="background:#fee2e2; color:#dc2626; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Agotado</span>' : (p.stock <= 3 ? '<span style="background:#fef08a; color:#b45309; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Bajo</span>' : '<span style="background:#dcfce7; color:#16a34a; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Normal</span>');
 
-      if (p.stock === 0) {
-        estadoBadge = '<span style="background:#fee2e2; color:#dc2626; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Agotado</span>';
-        msj = 'Sin stock disponible';
-        
-        criticosHtml += `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid #fee2e2; border-radius:8px; margin-bottom:10px; background:#fffaf9;">
-            <div><strong>${escapeHtml(p.name)}</strong><div style="font-size:11px; color:var(--danger); font-weight:bold;">Agotado</div></div>
-            <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;">Reponer</button>
-          </div>
-        `;
-      } else if (p.stock <= stockMinimo) {
-        estadoBadge = '<span style="background:#fef08a; color:#b45309; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Bajo</span>';
-        msj = 'Requiere reposición';
-        
-        criticosHtml += `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid #fef08a; border-radius:8px; margin-bottom:10px; background:#fffdf2;">
-            <div><strong>${escapeHtml(p.name)}</strong><div style="font-size:11px; color:var(--warning); font-weight:bold;">Quedan ${p.stock} un.</div></div>
-            <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;">Reponer</button>
-          </div>
-        `;
-      } else {
-        estadoBadge = '<span style="background:#dcfce7; color:#16a34a; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Normal</span>';
-        msj = 'Stock saludable';
+      rowsHtml += `<tr><td><strong>${escapeHtml(p.name)}</strong></td><td>${p.code || '-'}</td><td><strong>${p.stock}</strong> <span style="font-size:11px; color:var(--muted);">u.</span></td><td style="color:var(--muted);">3</td><td>${estadoBadge}</td><td style="font-size:13px;">${p.stock<=3?'Requiere reposición':'Stock saludable'}</td><td style="text-align: center;"><div style="display:flex; gap:5px; justify-content:center;"><button class="btn-outline" style="padding:4px 8px; font-size:12px;">Ajustar</button></div></td></tr>`;
+      
+      if(p.stock <= 3) {
+        criticosHtml += `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid #fef08a; border-radius:8px; margin-bottom:10px; background:#fffdf2;"><div><strong>${escapeHtml(p.name)}</strong><div style="font-size:11px; color:var(--warning); font-weight:bold;">Quedan ${p.stock} un.</div></div><button class="btn btn-outline" style="padding:4px 8px; font-size:11px;">Reponer</button></div>`;
       }
-
-      rowsHtml += `
-      <tr>
-        <td><strong>${escapeHtml(p.name)}</strong></td>
-        <td style="color:var(--muted);">${p.code || '-'}</td>
-        <td><strong>${p.stock}</strong> <span style="font-size:11px; color:var(--muted);">u.</span></td>
-        <td style="color:var(--muted);">${stockMinimo}</td>
-        <td>${estadoBadge}</td>
-        <td style="font-size:13px; color:var(--text);">${msj}</td>
-        <td style="text-align: center;">
-          <div style="display:flex; gap:5px; justify-content:center;">
-            <button style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:12px; font-weight:bold;">Ajustar</button>
-            <button style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:12px; font-weight:bold;">Ver</button>
-          </div>
-        </td>
-      </tr>`;
     });
 
-    if (filtrados.length === 0) {
-      rowsHtml = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No hay productos registrados en stock.</td></tr>';
-    }
-    
-    if (criticosHtml === '') {
-      criticosHtml = '<div style="text-align:center; padding:20px; border:1px dashed var(--line); border-radius:8px; color:var(--muted); font-size:13px;">Sin productos críticos. El stock está bajo control.</div>';
-    }
-
-    tbody.innerHTML = rowsHtml;
-    document.getElementById('listaCriticos').innerHTML = criticosHtml;
-
+    tbody.innerHTML = rowsHtml || '<tr><td colspan="7" style="text-align:center; padding:30px;">No hay productos.</td></tr>';
+    document.getElementById('listaCriticos').innerHTML = criticosHtml || '<div style="text-align:center; color:var(--muted);">Todo bajo control.</div>';
     document.getElementById('kpiActivos').textContent = kpiActivos;
     document.getElementById('kpiUnidades').textContent = kpiUnidades;
     document.getElementById('kpiBajo').textContent = kpiBajo;
     document.getElementById('kpiCero').textContent = kpiCero;
   }
 
-  // ── EXPORTACIÓN AHORA CON TODAS LAS COLUMNAS ──
   function exportarExcel() {
-    if(dbProducts.length === 0) return alert("No hay productos para exportar.");
-    const csvData = dbProducts.map(p => ({
-      SKU: p.code || '',
-      Nombre: p.name,
-      Stock: p.stock || 0,
-      Costo: p.cost || 0,
-      Precio: p.price || 0,
-      Categoria: p.category || '',
-      Estado: p.status || 'Activo',
-      Gastos: p.expenses || 0,
-      Color: p.color || '',
-      Talle: p.size || ''
-    }));
-
+    if(dbProducts.length === 0) return alert("No hay datos.");
+    const csvData = dbProducts.map(p => ({ SKU: p.code||'', Nombre: p.name, Stock: p.stock, Costo: p.cost, Precio: p.price, Categoria: p.category||'', Estado: p.status||'Activo', Gastos: p.expenses||0, Color: p.color||'', Talle: p.size||'' }));
     const headers = Object.keys(csvData[0]);
     const csvContent = [headers.join(';'), ...csvData.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
-    
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
-    link.download = `Stock_${todayISO()}.csv`;
+    link.download = `Plantilla_Stock.csv`;
     link.click();
   }
 
-  // ── LÓGICA DE IMPORTACIÓN MASIVA ──
-  function abrirModalImportar() {
-    document.getElementById('csvFileInput').value = '';
-    document.getElementById('modalImportar').showModal();
-  }
+  function abrirModalImportar() { document.getElementById('modalImportar').showModal(); }
+  function cerrarModalImportar() { document.getElementById('modalImportar').close(); }
 
-  function cerrarModalImportar() {
-    document.getElementById('modalImportar').close();
-  }
-
-  function procesarCSV(e) {
+  // ── LÓGICA DE PROCESAMIENTO HÍBRIDO (Excel o CSV) ──
+  function procesarArchivo(e) {
     e.preventDefault();
-    const file = document.getElementById('csvFileInput').files[0];
-    if (!file) return alert("Por favor, seleccioná un archivo CSV.");
+    const file = document.getElementById('fileInput').files[0];
+    if (!file) return;
 
     const reader = new FileReader();
     reader.onload = function(evt) {
-      const text = evt.target.result;
-      const lines = text.split('\n').filter(l => l.trim() !== '');
-      if(lines.length < 2) {
-        alert("El archivo está vacío o no tiene el formato correcto.");
-        return;
-      }
-
-      // Procesar encabezados ignorando mayúsculas y espacios
-      const headers = lines[0].split(/[;,]/).map(h => h.trim().toLowerCase().replace(/"/g, ''));
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
       
-      const skuIdx = headers.findIndex(h => h === 'sku' || h === 'codigo' || h === 'código');
-      const nameIdx = headers.findIndex(h => h === 'nombre' || h === 'producto');
-      const stockIdx = headers.findIndex(h => h === 'stock' || h === 'cantidad');
-      const costIdx = headers.findIndex(h => h === 'costo' || h === 'precio costo' || h === 'preciocosto');
-      const priceIdx = headers.findIndex(h => h === 'precio' || h === 'precio de venta' || h === 'precioventa');
+      // Convertimos la hoja de Excel a un array de objetos JSON
+      const rows = XLSX.utils.sheet_to_json(firstSheet);
       
-      const catIdx = headers.findIndex(h => h === 'categoria' || h === 'categoría');
-      const statusIdx = headers.findIndex(h => h === 'estado');
-      const expIdx = headers.findIndex(h => h === 'gastos' || h === 'gastos asociados');
-      const colorIdx = headers.findIndex(h => h === 'color');
-      const sizeIdx = headers.findIndex(h => h === 'talle' || h === 'tamaño' || h === 'size');
+      if(rows.length === 0) return alert("El archivo está vacío.");
 
-      // Validar las 5 obligatorias
-      if (skuIdx === -1 || nameIdx === -1 || stockIdx === -1 || costIdx === -1 || priceIdx === -1) {
-        alert("❌ Error: Faltan columnas obligatorias.\nEl archivo debe contener exactamente: SKU, Nombre, Stock, Costo y Precio.");
-        return;
-      }
+      let updated = 0; let added = 0;
 
-      let updatedCount = 0;
-      let addedCount = 0;
+      rows.forEach(row => {
+        // Normalizar nombres de columnas (quitar espacios y pasar a minúsculas para comparar)
+        const findVal = (names) => {
+          const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
+          return key ? row[key] : null;
+        };
 
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(/[;,]/).map(c => c.trim().replace(/"/g, ''));
-        if(cols.length < 2) continue;
+        const code = String(findVal(['sku', 'codigo', 'código']) || '');
+        const name = String(findVal(['nombre', 'producto']) || '');
+        const stock = parseInt(findVal(['stock', 'cantidad'])) || 0;
+        const cost = parseFloat(findVal(['costo', 'precio costo'])) || 0;
+        const price = parseFloat(findVal(['precio', 'precio de venta'])) || 0;
 
-        const code = cols[skuIdx];
-        const name = cols[nameIdx];
-        if(!code || !name) continue; // SKU y Nombre son obligatorios por fila
+        if(!name || isNaN(stock)) return; // Saltear filas sin datos clave
 
-        const stock = parseInt(cols[stockIdx]) || 0;
-        const cost = parseFloat(cols[costIdx]) || 0;
-        const price = parseFloat(cols[priceIdx]) || 0;
+        let prod = dbProducts.find(p => (code && p.code === code) || p.name.toLowerCase() === name.toLowerCase());
 
-        const category = catIdx >= 0 ? cols[catIdx] : '';
-        const status = statusIdx >= 0 && cols[statusIdx] ? cols[statusIdx] : 'Activo';
-        const expenses = expIdx >= 0 ? parseFloat(cols[expIdx]) || 0 : 0;
-        const color = colorIdx >= 0 ? cols[colorIdx] : '';
-        const size = sizeIdx >= 0 ? cols[sizeIdx] : '';
-
-        // Buscar producto por SKU (prioridad) o por Nombre exacto
-        let prod = dbProducts.find(p => p.code === code || p.name.toLowerCase() === name.toLowerCase());
+        const dataObj = {
+          code: code, name: name, stock: stock, cost: cost, price: price,
+          category: findVal(['categoria', 'categoría']) || '',
+          status: findVal(['estado']) || 'Activo',
+          expenses: parseFloat(findVal(['gastos'])) || 0,
+          color: findVal(['color']) || '',
+          size: findVal(['talle', 'talla', 'size']) || '',
+          promoType: 'none'
+        };
 
         if (prod) {
-          // Actualizar existente
-          prod.code = code;
-          prod.stock = stock; 
-          prod.cost = cost;
-          prod.price = price;
-          if (catIdx >= 0) prod.category = category;
-          if (statusIdx >= 0) prod.status = status;
-          if (expIdx >= 0) prod.expenses = expenses;
-          if (colorIdx >= 0) prod.color = color;
-          if (sizeIdx >= 0) prod.size = size;
-          updatedCount++;
+          Object.assign(prod, dataObj);
+          updated++;
         } else {
-          // Crear producto nuevo
-          prod = {
-            id: 'prod_' + Date.now() + Math.floor(Math.random()*1000),
-            code: code,
-            name: name,
-            stock: stock,
-            cost: cost,
-            price: price,
-            category: category,
-            status: status,
-            expenses: expenses,
-            color: color,
-            size: size,
-            promoType: 'none'
-          };
-          dbProducts.unshift(prod);
-          addedCount++;
+          dbProducts.unshift({ id: 'prod_' + Date.now() + Math.random(), ...dataObj });
+          added++;
         }
-      }
+      });
 
-      // Guardar en la DB y avisar a toda la aplicación
       setData(KEYS.products, dbProducts);
-      window.dispatchEvent(new Event('saas:data-updated')); 
-      
+      window.dispatchEvent(new Event('saas:data-updated'));
       cerrarModalImportar();
       renderStock();
-      alert(`✅ Carga masiva exitosa.\n\nProductos actualizados: ${updatedCount}\nNuevos agregados: ${addedCount}`);
+      alert(`✅ Éxito: ${updated} actualizados y ${added} nuevos.`);
     };
-    
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
   }
 
   initStock();
