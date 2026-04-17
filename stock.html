@@ -6,29 +6,32 @@
   <title>Stock | Micro SaaS</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .two-col { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; }
-    .state-normal   { background: var(--success-soft); color: var(--success); }
-    .state-low      { background: var(--warning-soft); color: var(--warning); }
-    .state-zero     { background: var(--danger-soft);  color: var(--danger); }
-    .filters { display: flex; gap: 10px; flex-wrap: wrap; }
-    .filters input, .filters select { width: auto; flex: 1; min-width: 140px; }
-    .critical-item { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: #fff; }
-    .critical-item strong { display: block; margin-bottom: 6px; }
-    .critical-item p { margin: 0; color: var(--muted); font-size: 13px; }
-    .msg-box { margin-top: 8px; font-size: 13px; font-weight: 700; }
-    .msg-low  { color: var(--warning); }
-    .msg-zero { color: var(--danger); }
-    .history-item { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: #fff; }
-    .history-top { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 5px; flex-wrap: wrap; }
-    .history-top strong { font-size: 14px; }
-    .history-item p, .history-item small { margin: 0; color: var(--muted); font-size: 12px; }
-    .qty-up   { color: var(--success); font-weight: 700; }
-    .qty-down { color: var(--danger);  font-weight: 700; }
-    .history-list { max-height: 400px; overflow-y: auto; display: grid; gap: 10px; }
-    @media (max-width: 1000px) { .two-col { grid-template-columns: 1fr; } }
+    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    
+    .layout-2col { display: grid; grid-template-columns: 1fr 350px; gap: 20px; align-items: start; }
+    @media (max-width: 1000px) { .layout-2col { grid-template-columns: 1fr; } }
+    
+    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
+    .input-box:focus { border-color: var(--primary); }
+    
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    
+    /* Modales */
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
+    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
+    .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
+
+    .legend-box { background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px dashed var(--muted); font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 20px;}
+    .code-tag { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; color: #0f172a; }
   </style>
 </head>
 <body>
+
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -39,259 +42,330 @@
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
       <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
-      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas y Caja</a>
+      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
-      <a href="stock.html"><span class="active">📚</span> Stock</a>
+      <a href="stock.html" class="active"><span class="nav-icon">📚</span> Stock</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
- 
   </aside>
 
   <main class="content">
     <header class="topbar">
       <div class="page-title">
-        <h1>Stock</h1>
-        <p>Control simple de unidades, alertas de faltantes y movimientos básicos.</p>
+        <h1 style="margin:0; font-size: 26px;">Stock</h1>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Control simple de unidades, alertas de faltantes y movimientos básicos.</p>
       </div>
-      <div class="topbar-actions">
-        <button class="btn btn-success" id="exportBtn">⬇ Exportar Excel</button>
-        <button class="btn btn-light" id="syncBtn">Sincronizar</button>
-        <button class="btn btn-primary" id="openAdjustBtn">+ Ajuste manual</button>
+      <div class="topbar-actions" style="display: flex; gap: 10px;">
+        <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalImportar()">⬆ Importar CSV</button>
+        
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Exportar Excel</button>
+        <button class="btn btn-outline">Sincronizar</button>
+        <button class="btn btn-primary">+ Ajuste manual</button>
       </div>
     </header>
 
-    <section class="kpi-grid" style="margin-bottom:22px;">
-      <article class="card kpi-card"><div class="kpi-label">Productos activos</div><div class="kpi-value" id="metricProducts">0</div><div class="kpi-sub">Vinculados al módulo producto</div></article>
-      <article class="card kpi-card"><div class="kpi-label">Unidades en stock</div><div class="kpi-value" id="metricUnits">0</div><div class="kpi-sub">Suma total del stock actual</div></article>
-      <article class="card kpi-card"><div class="kpi-label">Stock bajo</div><div class="kpi-value" id="metricLow">0</div><div class="kpi-sub">Cerca de agotarse</div></article>
-      <article class="card kpi-card"><div class="kpi-label">Sin stock</div><div class="kpi-value" id="metricZero">0</div><div class="kpi-sub">No se pueden vender</div></article>
-    </section>
-
-    <div class="two-col" style="margin-bottom:18px;">
+    <div class="kpi-grid">
       <article class="card card-pad">
-        <div class="section-head">
-          <div><h2>Stock actual</h2><p>Vista central del inventario y alertas automáticas.</p></div>
-          <div class="filters">
-            <input type="text" id="searchInput" placeholder="Buscar producto..." />
-            <select id="statusFilter">
-              <option value="all">Todos</option>
-              <option value="normal">Normal</option>
-              <option value="low">Stock bajo</option>
-              <option value="zero">Sin stock</option>
-            </select>
-          </div>
+        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Productos activos</div>
+        <div id="kpiActivos" style="font-size:28px; font-weight:800;">0</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Vinculados al módulo producto</div>
+      </article>
+      <article class="card card-pad">
+        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Unidades en stock</div>
+        <div id="kpiUnidades" style="font-size:28px; font-weight:800;">0</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Suma total del stock actual</div>
+      </article>
+      <article class="card card-pad">
+        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Stock bajo</div>
+        <div id="kpiBajo" style="font-size:28px; font-weight:800;">0</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Cerca de agotarse</div>
+      </article>
+      <article class="card card-pad">
+        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Sin stock</div>
+        <div id="kpiCero" style="font-size:28px; font-weight:800;">0</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:5px;">No se pueden vender</div>
+      </article>
+    </div>
+
+    <div class="layout-2col">
+      <article class="card card-pad">
+        <h2 style="margin: 0 0 5px 0; font-size: 18px;">Stock actual</h2>
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Vista central del inventario y alertas automáticas.</p>
+        
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+          <input type="text" id="searchStock" class="input-box" placeholder="Buscar producto..." style="max-width: 250px;" onkeyup="renderStock()">
+          <select class="input-box" style="max-width: 150px;">
+            <option>Todos</option>
+          </select>
         </div>
-        <div class="table-wrap">
+
+        <div style="overflow-x: auto;">
           <table>
-            <thead><tr><th>Producto</th><th>SKU</th><th>Stock actual</th><th>Stock mínimo</th><th>Estado</th><th>Mensaje</th><th>Acciones</th></tr></thead>
-            <tbody id="stockTableBody"></tbody>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>SKU</th>
+                <th>Stock Actual</th>
+                <th>Stock Mínimo</th>
+                <th>Estado</th>
+                <th>Mensaje</th>
+                <th style="text-align: center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tableBodyStock"></tbody>
           </table>
         </div>
       </article>
 
       <article class="card card-pad">
-        <div class="section-head"><div><h2>Productos críticos</h2><p>Priorizá reposición sin perder tiempo.</p></div></div>
-        <div id="criticalList" style="display:grid;gap:10px;"></div>
-      </article>
-    </div>
-
-    <div class="two-col">
-      <article class="card card-pad">
-        <div class="section-head"><div><h2>Ajuste manual</h2><p>Para diferencias de conteo, roturas, muestras o correcciones.</p></div></div>
-        <form id="adjustForm" class="form-grid">
-          <div class="field full"><select id="adjustProduct" required><option value="">Seleccionar producto</option></select></div>
-          <div class="field"><select id="adjustType" required><option value="add">Sumar stock</option><option value="remove">Restar stock</option><option value="set">Fijar valor exacto</option></select></div>
-          <div class="field"><input type="number" id="adjustQty" min="0" step="1" placeholder="Cantidad" required /></div>
-          <div class="field full"><input type="text" id="adjustReason" placeholder="Motivo. Ej: rotura, conteo físico, muestra" required /></div>
-          <div class="field full"><button type="submit" class="btn btn-primary">Guardar ajuste</button></div>
-        </form>
-        <p style="margin-top:12px;color:var(--muted);font-size:12px;">El ajuste se guarda como movimiento y recalcula el stock sin tocar la venta original.</p>
-      </article>
-
-      <article class="card card-pad">
-        <div class="section-head"><div><h2>Historial básico</h2><p>Últimos movimientos de stock del sistema.</p></div></div>
-        <div id="historyList" class="history-list"></div>
+        <h2 style="margin: 0 0 5px 0; font-size: 18px;">Productos críticos</h2>
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Priorizá reposición sin perder tiempo.</p>
+        
+        <div id="listaCriticos">
+          </div>
       </article>
     </div>
   </main>
 </div>
 
+<dialog id="modalImportar" style="width: 100%; max-width: 500px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;">Importar Carga Masiva</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarModalImportar()">✕</button>
+    </div>
+    
+    <div class="legend-box">
+      <strong>Instrucciones para subir el archivo:</strong><br><br>
+      1. El archivo debe estar en formato <strong>.CSV</strong> (separado por comas o punto y coma).<br>
+      2. La primera fila (el encabezado) debe contener exactamente estas columnas:<br><br>
+      <div style="text-align: center;"><span class="code-tag">Nombre, Codigo, Stock, Costo, Precio</span></div><br>
+      3. Las columnas <span class="code-tag">Nombre</span> y <span class="code-tag">Stock</span> son obligatorias. Las demás son opcionales.<br>
+      <em>Tip: Podés descargar un Excel desde el botón verde de exportar para usarlo de plantilla.</em>
+    </div>
+
+    <form onsubmit="procesarCSV(event)">
+      <div style="margin-bottom: 20px;">
+        <label style="font-size: 12px; font-weight: bold; color: var(--muted); margin-bottom: 8px; display: block;">Seleccionar archivo CSV</label>
+        <input type="file" id="csvFileInput" accept=".csv" required class="input-box" style="padding: 8px;">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="cerrarModalImportar()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Subir y Actualizar</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
 <script src="core.js"></script>
 <script>
-function normalizeProduct(p) {
-  return {
-    id: p.id || uid('prd'),
-    name: p.name || p.nombre || 'Producto sin nombre',
-    sku: p.sku || p.codigo || '-',
-    stockInitial: toNum(p.stockInitial ?? p.stock_inicial ?? p.stock ?? 0),
-    stockMin: toNum(p.stockMin ?? p.stock_min ?? p.minStock ?? 3),
-    price: toNum(p.price ?? p.precio ?? 0),
-    status: p.status || (p.active===false ? 'Inactivo' : 'Activo'),
-    active: p.active !== false && (p.status || 'Activo') !== 'Inactivo'
-  };
-}
-function normalizeSale(sale) {
-  return { id:sale.id||uid('sale'), date:sale.date||sale.fecha||sale.createdAt||new Date().toISOString(), items:Array.isArray(sale.items)?sale.items.map(i=>({productId:i.productId||i.id||'',name:i.name||'',quantity:toNum(i.quantity??i.qty??i.cantidad??0)})):[] };
-}
-function normalizeAdj(adj) { return { id:adj.id||uid('adj'), productId:adj.productId, type:adj.type, qty:toNum(adj.qty||0), reason:adj.reason||'Ajuste manual', date:adj.date||new Date().toISOString() }; }
+  let dbProducts = [];
 
-function loadAll() {
-  return {
-    products: getData(KEYS.products,[]).map(normalizeProduct).filter(p=>p.active),
-    sales:    getData(KEYS.sales,[]).map(normalizeSale),
-    adjs:     getData(KEYS.stockAdjustments,[]).map(normalizeAdj),
-    purchases: getData(KEYS.purchases,[])
-  };
-}
+  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-function getStockState(current, min) {
-  if (current <= 0) return { key:'zero', label:'Sin stock', cls:'state-zero', msg:'Reponer urgente' };
-  if (current <= min) return { key:'low', label:'Stock bajo', cls:'state-low', msg:`Te quedan ${current} unidades` };
-  return { key:'normal', label:'Normal', cls:'state-normal', msg:'Stock saludable' };
-}
-
-function buildDataset() {
-  const { products, sales, adjs, purchases } = loadAll();
-  const salesMap={}, purchaseMap={}, adjMap={}, movements=[];
-
-  sales.forEach(sale => sale.items.forEach(item => {
-    if (!item.productId) return;
-    salesMap[item.productId] = (salesMap[item.productId]||0) + toNum(item.quantity);
-    movements.push({ type:'sale', productId:item.productId, qty:-Math.abs(toNum(item.quantity)), ref:`Venta ${sale.id}`, reason:'Descuento automático por venta', date:sale.date });
-  }));
-
-  purchases.forEach(p => (p.items||[]).forEach(item => {
-    if (!item.productId) return;
-    purchaseMap[item.productId] = (purchaseMap[item.productId]||0) + toNum(item.quantity);
-    movements.push({ type:'purchase', productId:item.productId, qty:Math.abs(toNum(item.quantity)), ref:`Compra ${p.id}`, reason:'Ingreso por compra', date:p.date||new Date().toISOString() });
-  }));
-
-  adjs.forEach(adj => { if (!adj.productId) return; if (!adjMap[adj.productId]) adjMap[adj.productId]=[]; adjMap[adj.productId].push(adj); });
-
-  const rows = products.map(product => {
-    let current = toNum(product.stockInitial) + toNum(purchaseMap[product.id]||0) - toNum(salesMap[product.id]||0);
-    (adjMap[product.id]||[]).sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(adj => {
-      if (adj.type==='add')    current += toNum(adj.qty);
-      if (adj.type==='remove') current -= toNum(adj.qty);
-      if (adj.type==='set')    current  = toNum(adj.qty);
-      movements.push({ type:'adjustment', productId:product.id, qty:adj.type==='remove'?-Math.abs(adj.qty):adj.type==='set'?0:Math.abs(adj.qty), ref:'Ajuste manual', reason:adj.reason, date:adj.date, meta:adj.type==='set'?`Nuevo valor: ${adj.qty}`:'' });
-    });
-    current = Math.max(0, current);
-    return { ...product, current, sold:toNum(salesMap[product.id]||0), purchased:toNum(purchaseMap[product.id]||0), state:getStockState(current, product.stockMin) };
-  });
-
-  const prodMap = Object.fromEntries(rows.map(r=>[r.id,r]));
-  const movs = movements.filter(m=>prodMap[m.productId]).sort((a,b)=>new Date(b.date)-new Date(a.date)).map(m=>({...m,productName:prodMap[m.productId]?.name||'Producto'}));
-  return { rows, movements:movs };
-}
-
-function syncDashboardStock(rows) {
-  const payload = { stock:{ totalProducts:rows.length, totalUnits:rows.reduce((a,i)=>a+i.current,0), low:rows.filter(i=>i.state.key==='low').length, zero:rows.filter(i=>i.state.key==='zero').length, updatedAt:new Date().toISOString() } };
-  setData(KEYS.dashboard, { ...getData(KEYS.dashboard,{}), ...payload });
-}
-
-function fillMetrics(rows) {
-  document.getElementById('metricProducts').textContent = rows.length;
-  document.getElementById('metricUnits').textContent    = rows.reduce((a,i)=>a+i.current,0);
-  document.getElementById('metricLow').textContent      = rows.filter(i=>i.state.key==='low').length;
-  document.getElementById('metricZero').textContent     = rows.filter(i=>i.state.key==='zero').length;
-}
-
-function renderStockTable(rows) {
-  const tbody=document.getElementById('stockTableBody'), q=document.getElementById('searchInput').value.trim().toLowerCase(), st=document.getElementById('statusFilter').value;
-  const filtered=rows.filter(i=>(i.name.toLowerCase().includes(q)||i.sku.toLowerCase().includes(q))&&(st==='all'||i.state.key===st));
-  tbody.innerHTML = filtered.length
-    ? filtered.map(item=>`<tr>
-        <td><strong>${escapeHtml(item.name)}</strong></td>
-        <td>${escapeHtml(item.sku)}</td>
-        <td><strong>${item.current}</strong> u.</td>
-        <td>${item.stockMin}</td>
-        <td><span class="badge ${item.state.cls}">${item.state.label}</span></td>
-        <td>${item.state.key==='zero'?'Reponer urgente':item.state.msg}</td>
-        <td><div class="row-actions"><button class="mini-btn" onclick="prefillAdjustment('${item.id}')">Ajustar</button><button class="mini-btn" onclick="showSummary('${item.id}')">Ver</button></div></td>
-      </tr>`).join('')
-    : `<tr><td colspan="7"><div class="empty">Sin productos con ese filtro.</div></td></tr>`;
-}
-
-function renderCritical(rows) {
-  const el=document.getElementById('criticalList'), critical=rows.filter(i=>i.state.key!=='normal').sort((a,b)=>a.current-b.current);
-  el.innerHTML = critical.length
-    ? critical.map(item=>`<div class="critical-item"><strong>${escapeHtml(item.name)}</strong><p>Stock actual: ${item.current} · Mínimo: ${item.stockMin}</p><div class="msg-box ${item.state.key==='zero'?'msg-zero':'msg-low'}">${item.state.key==='zero'?'Reponer urgente':item.state.msg}</div></div>`).join('')
-    : '<div class="empty">Sin productos críticos. El stock está bajo control.</div>';
-}
-
-function renderHistory(movements) {
-  const el=document.getElementById('historyList');
-  el.innerHTML = movements.length
-    ? movements.slice(0,20).map(m=>`<div class="history-item"><div class="history-top"><strong>${escapeHtml(m.productName)}</strong><span class="${m.qty<0?'qty-down':'qty-up'}">${m.qty>0?'+':''} ${m.qty}</span></div><p>${escapeHtml(m.ref)} · ${escapeHtml(m.reason)}${m.meta?' · '+escapeHtml(m.meta):''}</p><small>${formatDate(m.date)}</small></div>`).join('')
-    : '<div class="empty">Sin movimientos de stock.</div>';
-}
-
-function renderSelect(rows) {
-  const sel=document.getElementById('adjustProduct'), cur=sel.value;
-  sel.innerHTML='<option value="">Seleccionar producto</option>'+rows.map(r=>`<option value="${r.id}">${escapeHtml(r.name)} (${r.current} u.)</option>`).join('');
-  sel.value=cur;
-}
-
-function refreshAll() {
-  const { rows, movements } = buildDataset();
-  window.__stockRows = rows;
-  fillMetrics(rows);
-  renderStockTable(rows);
-  renderCritical(rows);
-  renderHistory(movements);
-  renderSelect(rows);
-  syncDashboardStock(rows);
-}
-
-// ── Exportación a Excel ──────────────────────────────────────
-document.getElementById('exportBtn').addEventListener('click', () => {
-  const rows = window.__stockRows || buildDataset().rows;
-  if (!rows || !rows.length) {
-    alert("No hay datos de stock para exportar.");
-    return;
+  function initStock() {
+    dbProducts = getData(KEYS.products, []);
+    renderStock();
   }
 
-  const datosPlanos = rows.map(r => ({
-    "Nombre del Producto": r.name,
-    "Código/SKU": r.sku || '-',
-    "Stock Actual": r.current,
-    "Stock Mínimo": r.stockMin,
-    "Estado de Stock": r.state.label,
-    "Alerta Operativa": r.state.msg,
-    "Unidades Vendidas Históricas": r.sold || 0,
-    "Unidades Compradas Históricas": r.purchased || 0
-  }));
+  function renderStock() {
+    const term = document.getElementById('searchStock').value.toLowerCase();
+    const filtrados = dbProducts.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)));
+    
+    let kpiActivos = 0, kpiUnidades = 0, kpiBajo = 0, kpiCero = 0;
+    
+    const tbody = document.getElementById('tableBodyStock');
+    const criticosDiv = document.getElementById('listaCriticos');
+    let rowsHtml = '';
+    let criticosHtml = '';
 
-  exportarAExcel(datosPlanos, 'Reporte_Inventario');
-});
+    // Ordenamos para que los sin stock salgan arriba
+    filtrados.sort((a,b) => a.stock - b.stock);
 
-window.prefillAdjustment = productId => { document.getElementById('adjustProduct').value=productId; document.getElementById('adjustQty').focus(); window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'}); };
-window.showSummary = productId => {
-  const item=(window.__stockRows||[]).find(p=>p.id===productId); if(!item) return;
-  alert([`Producto: ${item.name}`,`SKU: ${item.sku}`,`Stock actual: ${item.current}`,`Stock mínimo: ${item.stockMin}`,`Estado: ${item.state.label}`,`Ventas descontadas: ${item.sold}`].join('\n'));
-};
+    filtrados.forEach(p => {
+      // Cálculos KPI
+      if (p.status !== 'Inactivo') kpiActivos++;
+      kpiUnidades += p.stock;
+      if (p.stock <= 3 && p.stock > 0) kpiBajo++;
+      if (p.stock === 0) kpiCero++;
 
-document.getElementById('adjustForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const productId=document.getElementById('adjustProduct').value, type=document.getElementById('adjustType').value, qty=toNum(document.getElementById('adjustQty').value||0), reason=document.getElementById('adjustReason').value.trim();
-  if (!productId || qty < 0 || !reason) { alert('Completá producto, cantidad y motivo.'); return; }
-  const adjs = getData(KEYS.stockAdjustments,[]);
-  adjs.push({ id:uid('adj'), productId, type, qty, reason, date:new Date().toISOString() });
-  setData(KEYS.stockAdjustments, adjs);
-  document.getElementById('adjustForm').reset();
-  refreshAll();
-  alert('Ajuste guardado correctamente.');
-});
+      // Badges
+      let estadoBadge = '';
+      let msj = '';
+      const stockMinimo = 3; // Lógica fija basada en tu imagen
 
-document.getElementById('searchInput').addEventListener('input', refreshAll);
-document.getElementById('statusFilter').addEventListener('change', refreshAll);
-document.getElementById('syncBtn').addEventListener('click', refreshAll);
-document.getElementById('openAdjustBtn').addEventListener('click', () => { document.getElementById('adjustForm').scrollIntoView({behavior:'smooth',block:'center'}); document.getElementById('adjustProduct').focus(); });
+      if (p.stock === 0) {
+        estadoBadge = '<span style="background:#fee2e2; color:#dc2626; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Agotado</span>';
+        msj = 'Sin stock disponible';
+        
+        criticosHtml += `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid #fee2e2; border-radius:8px; margin-bottom:10px; background:#fffaf9;">
+            <div><strong>${escapeHtml(p.name)}</strong><div style="font-size:11px; color:var(--danger); font-weight:bold;">Agotado</div></div>
+            <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;">Reponer</button>
+          </div>
+        `;
+      } else if (p.stock <= stockMinimo) {
+        estadoBadge = '<span style="background:#fef08a; color:#b45309; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Bajo</span>';
+        msj = 'Requiere reposición';
+        
+        criticosHtml += `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid #fef08a; border-radius:8px; margin-bottom:10px; background:#fffdf2;">
+            <div><strong>${escapeHtml(p.name)}</strong><div style="font-size:11px; color:var(--warning); font-weight:bold;">Quedan ${p.stock} un.</div></div>
+            <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;">Reponer</button>
+          </div>
+        `;
+      } else {
+        estadoBadge = '<span style="background:#dcfce7; color:#16a34a; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Normal</span>';
+        msj = 'Stock saludable';
+      }
 
-window.addEventListener('storage', e => { if(Object.values(KEYS).includes(e.key)) refreshAll(); });
-window.addEventListener('saas:data-updated', refreshAll);
-refreshAll();
+      rowsHtml += `
+      <tr>
+        <td><strong>${escapeHtml(p.name)}</strong></td>
+        <td style="color:var(--muted);">${p.code || '-'}</td>
+        <td><strong>${p.stock}</strong> <span style="font-size:11px; color:var(--muted);">u.</span></td>
+        <td style="color:var(--muted);">${stockMinimo}</td>
+        <td>${estadoBadge}</td>
+        <td style="font-size:13px; color:var(--text);">${msj}</td>
+        <td style="text-align: center;">
+          <div style="display:flex; gap:5px; justify-content:center;">
+            <button style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:12px; font-weight:bold;">Ajustar</button>
+            <button style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:12px; font-weight:bold;">Ver</button>
+          </div>
+        </td>
+      </tr>`;
+    });
+
+    if (filtrados.length === 0) {
+      rowsHtml = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No hay productos registrados en stock.</td></tr>';
+    }
+    
+    if (criticosHtml === '') {
+      criticosHtml = '<div style="text-align:center; padding:20px; border:1px dashed var(--line); border-radius:8px; color:var(--muted); font-size:13px;">Sin productos críticos. El stock está bajo control.</div>';
+    }
+
+    tbody.innerHTML = rowsHtml;
+    criticosDiv.innerHTML = criticosHtml;
+
+    document.getElementById('kpiActivos').textContent = kpiActivos;
+    document.getElementById('kpiUnidades').textContent = kpiUnidades;
+    document.getElementById('kpiBajo').textContent = kpiBajo;
+    document.getElementById('kpiCero').textContent = kpiCero;
+  }
+
+  function exportarExcel() {
+    if(dbProducts.length === 0) return alert("No hay productos para exportar.");
+    const csvData = dbProducts.map(p => ({
+      Nombre: p.name,
+      Codigo: p.code || '',
+      Stock: p.stock,
+      Costo: p.cost || 0,
+      Precio: p.price || 0,
+      Estado: p.status || 'Activo'
+    }));
+
+    const headers = Object.keys(csvData[0]);
+    const csvContent = [headers.join(';'), ...csvData.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
+    
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
+    link.download = `Stock_${todayISO()}.csv`;
+    link.click();
+  }
+
+  // ── LÓGICA DE IMPORTACIÓN MASIVA ──
+  function abrirModalImportar() {
+    document.getElementById('csvFileInput').value = '';
+    document.getElementById('modalImportar').showModal();
+  }
+
+  function cerrarModalImportar() {
+    document.getElementById('modalImportar').close();
+  }
+
+  function procesarCSV(e) {
+    e.preventDefault();
+    const file = document.getElementById('csvFileInput').files[0];
+    if (!file) return alert("Por favor, seleccioná un archivo CSV.");
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      const text = evt.target.result;
+      const lines = text.split('\n').filter(l => l.trim() !== '');
+      if(lines.length < 2) {
+        alert("El archivo está vacío o no tiene el formato correcto.");
+        return;
+      }
+
+      // Procesar encabezados (soportamos separadores coma o punto y coma)
+      const headers = lines[0].split(/[;,]/).map(h => h.trim().toLowerCase().replace(/"/g, ''));
+      
+      const nameIdx = headers.findIndex(h => h === 'nombre');
+      const codeIdx = headers.findIndex(h => h === 'codigo' || h === 'sku');
+      const stockIdx = headers.findIndex(h => h === 'stock');
+      const costIdx = headers.findIndex(h => h === 'costo');
+      const priceIdx = headers.findIndex(h => h === 'precio');
+
+      if (nameIdx === -1 || stockIdx === -1) {
+        alert("❌ Error: El archivo debe contener al menos las columnas 'Nombre' y 'Stock' escritas exactamente así en la primera fila.");
+        return;
+      }
+
+      let updatedCount = 0;
+      let addedCount = 0;
+
+      for (let i = 1; i < lines.length; i++) {
+        // Expresión regular para separar por coma o punto y coma, ignorando los que están entre comillas
+        const cols = lines[i].split(/[;,]/).map(c => c.trim().replace(/"/g, ''));
+        if(cols.length < 2) continue;
+
+        const name = cols[nameIdx];
+        if(!name) continue; // Si no hay nombre, salto la fila
+
+        const code = codeIdx >= 0 ? cols[codeIdx] : '';
+        const stock = parseInt(cols[stockIdx]) || 0;
+        const cost = costIdx >= 0 ? parseFloat(cols[costIdx]) || 0 : 0;
+        const price = priceIdx >= 0 ? parseFloat(cols[priceIdx]) || 0 : 0;
+
+        // Buscar si el producto ya existe (por Código o por Nombre exacto)
+        let prod = dbProducts.find(p => (code && p.code === code) || p.name.toLowerCase() === name.toLowerCase());
+
+        if (prod) {
+          prod.stock = stock; // Sobreescribimos el stock
+          if (cost > 0) prod.cost = cost;
+          if (price > 0) prod.price = price;
+          updatedCount++;
+        } else {
+          // Crear nuevo producto
+          prod = {
+            id: 'prod_' + Date.now() + Math.floor(Math.random()*1000),
+            name: name,
+            code: code,
+            stock: stock,
+            cost: cost,
+            price: price,
+            status: 'Activo',
+            promoType: 'none'
+          };
+          dbProducts.unshift(prod);
+          addedCount++;
+        }
+      }
+
+      // Guardar en la DB
+      setData(KEYS.products, dbProducts);
+      window.dispatchEvent(new Event('saas:data-updated')); // Avisa al resto de la app
+      
+      cerrarModalImportar();
+      renderStock();
+      alert(`✅ Carga masiva exitosa.\n\nProductos actualizados: ${updatedCount}\nNuevos agregados: ${addedCount}`);
+    };
+    
+    reader.readAsText(file);
+  }
+
+  initStock();
 </script>
 </body>
 </html>
