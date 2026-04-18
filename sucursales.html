@@ -127,6 +127,46 @@
   </form>
 </dialog>
 
+  <button class="btn btn-outline" onclick="abrirConfigTerminal()">🖥️ Configurar esta PC</button>
+
+<dialog id="modalTerminal" style="width: 100%; max-width: 400px;">
+    <div class="modal-content">
+        <h2 style="margin: 0 0 10px 0; font-size:18px;">Vincular Dispositivo</h2>
+        <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Asigná esta computadora a una sucursal fija para evitar errores de facturación.</p>
+        
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seleccionar Destino</label>
+        <select id="selectTerminalBranch" class="input-box" style="margin-bottom: 25px;">
+            </select>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-light" onclick="document.getElementById('modalTerminal').close()">Cancelar</button>
+            <button class="btn btn-primary" onclick="confirmarVinculo()">Vincular esta PC</button>
+        </div>
+    </div>
+</dialog>
+
+<script>
+function abrirConfigTerminal() {
+    // Solo permitimos esto si eres Admin
+    if(localStorage.getItem('userRole') !== 'admin') return alert("Solo el administrador puede configurar terminales.");
+    
+    // Cargar el select con las sucursales existentes en dbBranches
+    const select = document.getElementById('selectTerminalBranch');
+    select.innerHTML = dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+    
+    document.getElementById('modalTerminal').showModal();
+}
+
+function confirmarVinculo() {
+    const branch = document.getElementById('selectTerminalBranch').value;
+    if(confirm(`¿Confirmás que esta computadora pertenece a: ${branch}?`)) {
+        localStorage.setItem('terminal_assigned_branch', branch);
+        alert("✅ Terminal vinculada con éxito. El sistema ahora operará bajo esta sucursal.");
+        location.reload();
+    }
+}
+</script>
+
 <script src="core.js"></script>
 <script>
   const API_URL = "/api"; 
