@@ -1,19 +1,25 @@
+// Tu URL del Worker de Cloudflare
+const API_URL = "https://tu-worker.tu-usuario.workers.dev/api";
 
-export const API = {
-  products: "/api/products",
-  sales: "/api/sales"
-};
-
-export async function apiGet(url){
-  const r = await fetch(url);
-  return r.json();
+// Ahora getData es ASÍNCRONO
+async function getData(endpoint) {
+  try {
+    const response = await fetch(`${API_URL}/${endpoint}`);
+    return await response.json();
+  } catch (error) {
+    console.error("Error cargando datos:", error);
+    return [];
+  }
 }
 
-export async function apiPost(url, data){
-  const r = await fetch(url, {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body: JSON.stringify(data)
-  });
-  return r.json();
+async function setData(endpoint, data) {
+  try {
+    await fetch(`${API_URL}/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch (error) {
+    console.error("Error guardando datos:", error);
+  }
 }
