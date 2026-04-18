@@ -104,6 +104,11 @@
           <div id="payMethodsB2B" style="display: none;">
             <button class="pay-btn active" style="border-color: var(--warning); color: #b45309; width: 100%;">📓 A Cuenta Corriente</button>
           </div>
+          
+          <div id="cuponContainer" style="display: none; margin-top: 15px;">
+            <label style="font-size: 11px; color: var(--danger); text-transform: uppercase; font-weight:bold; display:block; margin-bottom:6px;">Número de Cupón / Lote *</label>
+            <input type="number" id="cuponNumber" placeholder="Ingresá el número del comprobante" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 600; border: 2px solid var(--line); border-radius: 8px; outline: none; box-sizing: border-box;">
+          </div>
         </article>
 
         <article class="card card-pad">
@@ -149,7 +154,6 @@
     }
   }
 
-  // Cerrar menús desplegables si se hace clic afuera
   document.addEventListener('click', (e) => {
     if (!document.getElementById('posSearch').contains(e.target) && !document.getElementById('searchResults').contains(e.target)) {
       document.getElementById('searchResults').classList.remove('active');
@@ -190,6 +194,7 @@
     isB2B = false; 
     document.getElementById('payMethodsB2C').style.display = 'flex'; 
     document.getElementById('payMethodsB2B').style.display = 'none';
+    document.getElementById('cuponContainer').style.display = 'none'; // Aseguramos que se oculte
     document.getElementById('btnCobrar').textContent = "Confirmar e Imprimir (F12)";
     setPayment('Efectivo', document.querySelector('#payMethodsB2C .pay-btn'), false);
   }
@@ -198,15 +203,26 @@
     isB2B = true; currentPaymentMethod = 'A Cuenta Corriente';
     document.getElementById('payMethodsB2C').style.display = 'none'; 
     document.getElementById('payMethodsB2B').style.display = 'flex';
+    document.getElementById('cuponContainer').style.display = 'none'; // Aseguramos que se oculte
     document.getElementById('btnCobrar').textContent = "Confirmar en Cuenta Corriente (F12)";
   }
 
+  // --- LÓGICA DE MOSTRAR/OCULTAR CUPÓN ---
   function setPayment(method, btn, focus = true) {
     if (isB2B) return;
     currentPaymentMethod = method;
     document.querySelectorAll('#payMethodsB2C .pay-btn').forEach(b => b.classList.remove('active'));
     if(btn) btn.classList.add('active');
-    if(focus) document.getElementById('posSearch').focus();
+    
+    const cupon = document.getElementById('cuponContainer');
+    if (method === 'Tarjeta') { 
+      cupon.style.display = 'block'; 
+      if(focus) document.getElementById('cuponNumber').focus(); 
+    } else { 
+      cupon.style.display = 'none'; 
+      document.getElementById('cuponNumber').value = ''; 
+      if(focus) document.getElementById('posSearch').focus(); 
+    }
   }
 
   // --- BUSQUEDA PRODUCTOS ---
@@ -263,10 +279,22 @@
   window.quitar = (id) => { cart = cart.filter(x => x.id !== id); renderCart(); };
   window.cancelarVenta = () => { if(confirm("¿Vaciar?")) { cart = []; renderCart(); } };
 
+  // --- COBRO CON VALIDACIÓN DE CUPÓN ---
   window.procesarVenta = async function() {
     if(!cart.length) return;
     if(!confirm(isB2B ? "¿Confirmar y enviar deuda a la Cuenta Corriente?" : "¿Confirmar venta e imprimir ticket?")) return;
     
+    // VALIDACIÓN: Si es tarjeta, obligar a poner cupón
+    let cuponText = '';
+    if (!isB2B && currentPaymentMethod === 'Tarjeta') {
+      cuponText = document.getElementById('cuponNumber').value.trim();
+      if (!cuponText) { 
+        alert("⚠️ Ingresá el número de lote/cupón para poder cobrar con Tarjeta."); 
+        document.getElementById('cuponNumber').focus(); 
+        return; 
+      }
+    }
+
     mostrarCarga(true);
     const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
     const dateStr = todayISO();
@@ -275,7 +303,7 @@
     const venta = {
       id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: dateStr,
       clientId: cid || 'Consumidor Final', client: document.getElementById('clientName').value || 'Consumidor Final',
-      method: currentPaymentMethod, subtotal: total, promoDiscount: 0, total: total, isB2B: isB2B, items: cart
+      method: currentPaymentMethod, cupon: cuponText, subtotal: total, promoDiscount: 0, total: total, isB2B: isB2B, items: cart
     };
 
     try {
@@ -292,6 +320,7 @@
       localStorage.setItem('last_sale_to_print', JSON.stringify(venta));
 
       cart = []; document.getElementById('clientName').value = 'Consumidor Final'; document.getElementById('clientId').value = '';
+      if (currentPaymentMethod === 'Tarjeta') document.getElementById('cuponNumber').value = '';
       const ventaFueB2B = isB2B;
       activarModoB2C(); renderCart();
       
