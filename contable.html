@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contable | Micro SaaS</title>
+  
+  <style>
+    html, body { background-color: #f0f2f7 !important; }
+    body { animation: fadeIn 0.15s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+
   <link rel="stylesheet" href="styles.css" />
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
@@ -17,7 +24,7 @@
     
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
-    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
 
     /* Modales */
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
@@ -25,9 +32,13 @@
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
     
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    
+    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
   </style>
 </head>
 <body>
+
+<div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -38,8 +49,10 @@
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
       <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
       <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html" class="active"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
@@ -49,50 +62,51 @@
   <main class="content">
     <header class="topbar">
       <div class="page-title">
-        <h1 style="margin:0; font-size: 26px;">Módulo Contable</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Controlá salidas de dinero, pagos pendientes y resultado neto.</p>
+        <h1 style="margin:0; font-size: 26px;">Compras y Proveedores</h1>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Auditoría de egresos, comprobantes fiscales y Cuentas por Pagar.</p>
       </div>
       <div class="topbar-actions" style="display: flex; gap: 10px;">
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Exportar Movimientos</button>
-        <button class="btn btn-primary" onclick="abrirModalGasto()">+ Registrar gasto</button>
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Exportar Libro</button>
+        <button class="btn btn-primary" onclick="abrirModalGasto()">+ Cargar Comprobante</button>
       </div>
     </header>
 
     <div class="kpi-grid">
-      <article class="card card-pad">
-        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Gastos del día</div>
+      <article class="card card-pad" style="border-top: 4px solid var(--primary);">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Egresos del día</div>
         <div id="kpiGastosDia" style="font-size:28px; font-weight:800;">$0</div>
-        <div style="font-size:12px; color:var(--muted); margin-top:5px;" id="kpiCountDia">0 movimientos hoy</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:5px;" id="kpiCountDia">0 comprobantes procesados</div>
       </article>
-      <article class="card card-pad">
-        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Gastos del mes</div>
+      <article class="card card-pad" style="border-top: 4px solid var(--text);">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Compras Mes (Devengado)</div>
         <div id="kpiGastosMes" style="font-size:28px; font-weight:800;">$0</div>
-        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Acumulado del mes actual</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Total facturado por proveedores</div>
       </article>
-      <article class="card card-pad">
-        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Pagos Pendientes</div>
+      <article class="card card-pad" style="border-top: 4px solid var(--warning);">
+        <div style="font-size:11px; color:var(--warning); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Cuentas por Pagar (Pasivo)</div>
         <div id="kpiPendientes" style="font-size:28px; font-weight:800; color:var(--warning);">-$0</div>
-        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Deudas a regularizar</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Deuda a proveedores / Servicios</div>
       </article>
-      <article class="card card-pad">
-        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Resultado Neto (Mes)</div>
+      <article class="card card-pad" style="border-top: 4px solid var(--success);">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Resultado Neto (Caja Mes)</div>
         <div id="kpiNeto" style="font-size:28px; font-weight:800;">$0</div>
-        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Ingresos vs Egresos</div>
+        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Ingresos vs Pagos Emitidos</div>
       </article>
     </div>
 
     <div class="layout-2col">
       <article class="card card-pad">
-        <h2 style="margin: 0 0 20px 0; font-size: 18px;">Movimientos y Gastos</h2>
+        <h2 style="margin: 0 0 20px 0; font-size: 18px;">Libro de Compras y Gastos</h2>
         <div style="overflow-x: auto;">
           <table>
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Concepto</th>
-                <th>Categoría</th>
+                <th>Fecha Emisión</th>
+                <th>Comprobante</th>
+                <th>Proveedor / Razón Social</th>
+                <th>Concepto / Imputación</th>
                 <th>Estado</th>
-                <th style="text-align: right;">Monto</th>
+                <th style="text-align: right;">Total</th>
                 <th style="text-align: center;">Acción</th>
               </tr>
             </thead>
@@ -102,23 +116,23 @@
       </article>
 
       <article class="card card-pad">
-        <h2 style="margin: 0 0 20px 0; font-size: 18px;">Resumen del módulo</h2>
-        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Indicadores clave del período.</p>
+        <h2 style="margin: 0 0 20px 0; font-size: 18px;">Flujo de Fondos (Mes)</h2>
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Resumen financiero del período en curso.</p>
         
         <div style="display:flex; justify-content:space-between; margin-bottom:12px; padding-bottom:12px; border-bottom:1px dashed var(--line);">
-          <span style="color:var(--muted); font-size:14px;">Ingresos del mes (Ventas)</span>
+          <span style="color:var(--muted); font-size:14px;">Ingresos (Ventas)</span>
           <strong id="resIngresos" style="color:var(--success);">$0</strong>
         </div>
         <div style="display:flex; justify-content:space-between; margin-bottom:12px; padding-bottom:12px; border-bottom:1px dashed var(--line);">
-          <span style="color:var(--muted); font-size:14px;">Gastos pagados del mes</span>
+          <span style="color:var(--muted); font-size:14px;">Pagos Realizados (Caja)</span>
           <strong id="resGastos">-$0</strong>
         </div>
         <div style="display:flex; justify-content:space-between; margin-bottom:12px; padding-bottom:12px; border-bottom:1px dashed var(--line);">
-          <span style="color:var(--muted); font-size:14px;">Gastos pendientes</span>
+          <span style="color:var(--muted); font-size:14px;">Cuentas por Pagar (Deuda)</span>
           <strong id="resPendientes" style="color:var(--warning);">-$0</strong>
         </div>
         <div style="display:flex; justify-content:space-between; margin-top:20px;">
-          <span style="font-weight:bold; font-size:16px;">Resultado Neto</span>
+          <span style="font-weight:bold; font-size:16px;">Flujo Neto de Caja</span>
           <strong id="resNeto" style="font-size:18px;">$0</strong>
         </div>
       </article>
@@ -126,109 +140,143 @@
   </main>
 </div>
 
-<dialog id="modalGasto" style="width: 100%; max-width: 550px;">
+<dialog id="modalGasto" style="width: 100%; max-width: 700px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 id="gastoModalTitle" style="margin: 0; font-size:20px;">Registrar gasto</h2>
+      <h2 id="gastoModalTitle" style="margin: 0; font-size:20px;">Carga de Comprobante / Gasto</h2>
       <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarModalGasto()">✕ Cerrar</button>
     </div>
     
     <form id="expenseForm" onsubmit="guardarGasto(event)">
       <input type="hidden" id="expId">
       
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 15px;">
         <div>
-          <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Fecha *</label>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Fecha Emisión *</label>
           <input type="date" id="expDate" required class="input-box">
         </div>
         <div>
-          <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Monto *</label>
-          <input type="number" id="expAmount" required min="1" step="0.01" class="input-box" placeholder="Ej: 18500">
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Tipo Comprobante *</label>
+          <select id="expInvoiceType" class="input-box">
+            <option value="Factura A">Factura A</option>
+            <option value="Factura B">Factura B</option>
+            <option value="Factura C">Factura C</option>
+            <option value="Ticket/Recibo">Ticket / Recibo</option>
+            <option value="Gasto Interno">Interno (Sin comprobante)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Nro Comprobante</label>
+          <input type="text" id="expInvoiceNum" class="input-box" placeholder="Ej: 0001-00001234">
         </div>
       </div>
       
-      <div style="margin-bottom: 15px;">
-        <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Concepto *</label>
-        <input type="text" id="expConcept" required class="input-box" placeholder="Ej: Combustible, Luz, Reposición">
-      </div>
-      
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 15px; align-items: end;">
         <div>
-          <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Categoría</label>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Proveedor / Razón Social *</label>
+          <div style="display: flex; gap: 5px;">
+            <select id="expSupplier" class="input-box" required></select>
+            <button type="button" class="btn btn-primary" style="padding: 10px;" onclick="abrirModalProveedor()" title="Nuevo Proveedor">+</button>
+          </div>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Imputación Contable</label>
           <select id="expCategory" class="input-box">
-            <option value="Transporte">Transporte</option>
-            <option value="Mercadería">Mercadería</option>
-            <option value="Servicios">Servicios</option>
-            <option value="Sueldos">Sueldos</option>
-            <option value="Impuestos">Impuestos</option>
-            <option value="Otros">Otros</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Estado</label>
-          <select id="expStatus" class="input-box">
-            <option value="Pagado">Pagado</option>
-            <option value="Pendiente">Pendiente (A pagar)</option>
+            <option value="Mercadería">Compra Mercadería</option>
+            <option value="Servicios">Servicios Básicos</option>
+            <option value="Honorarios">Honorarios Profesionales</option>
+            <option value="Sueldos">Sueldos y Cargas</option>
+            <option value="Impuestos">Impuestos y Tasas</option>
+            <option value="Logística">Transporte / Logística</option>
+            <option value="Otros">Gastos Generales</option>
           </select>
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-        <div>
-          <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Medio de pago</label>
-          <select id="expMethod" class="input-box">
-            <option value="Efectivo">Efectivo</option>
-            <option value="Transferencia">Transferencia</option>
-            <option value="Tarjeta">Tarjeta</option>
-            <option value="A Convenir">A Convenir / Cuenta Corriente</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Fecha de Vencimiento</label>
-          <input type="date" id="expDueDate" class="input-box">
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Concepto / Detalle de compra *</label>
+        <input type="text" id="expConcept" required class="input-box" placeholder="Ej: Compra de insumos, Pago de luz, Resma papel">
+      </div>
+      
+      <div style="background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px dashed var(--line); margin-bottom: 15px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+          <div>
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Monto Total ($) *</label>
+            <input type="number" id="expAmount" required min="1" step="0.01" class="input-box" style="border-color: var(--primary); color: var(--primary); font-weight: bold; font-size: 16px;">
+          </div>
+          <div>
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Estado de Pago</label>
+            <select id="expStatus" class="input-box" style="font-weight: bold;">
+              <option value="Pagado">Cancelado / Pagado</option>
+              <option value="Pendiente">Cta Cte / A Pagar</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de pago</label>
+            <select id="expMethod" class="input-box">
+              <option value="Transferencia">Transferencia / Banco</option>
+              <option value="Efectivo">Efectivo / Caja Fija</option>
+              <option value="Tarjeta">Tarjeta Corporativa</option>
+              <option value="A Convenir">Cuenta Corriente</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div style="margin-bottom: 24px;">
-        <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Observación (Opcional)</label>
-        <textarea id="expNotes" class="input-box" rows="2" placeholder="Detalles extra..."></textarea>
-      </div>
-
-      <div style="display: flex; align-items: center;">
-        <button type="button" id="btnDeleteExpense" class="btn" style="background: #fee2e2; color: var(--danger); border: none; display: none; font-weight:bold; padding: 12px 20px;" onclick="eliminarGastoPrompt()">🗑️ Eliminar gasto</button>
+      <div style="display: flex; align-items: center; margin-top: 25px;">
+        <button type="button" id="btnDeleteExpense" class="btn" style="background: #fee2e2; color: var(--danger); border: none; display: none; font-weight:bold; padding: 12px 20px;" onclick="eliminarGastoPrompt()">🗑️ Eliminar</button>
         
         <div style="margin-left: auto; display: flex; gap: 10px;">
           <button type="button" class="btn btn-light" onclick="cerrarModalGasto()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" style="padding: 12px 24px;">Guardar gasto</button>
+          <button type="submit" class="btn btn-primary" style="padding: 12px 24px;">Guardar Comprobante</button>
         </div>
       </div>
     </form>
   </div>
 </dialog>
 
+<dialog id="modalProveedor" style="width: 100%; max-width: 400px; z-index: 10000;">
+  <div class="modal-content">
+    <h2 style="margin: 0 0 20px 0; font-size:18px;">Alta de Proveedor</h2>
+    <form onsubmit="guardarProveedor(event)">
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Razón Social / Nombre *</label>
+        <input type="text" id="suppName" required class="input-box" placeholder="Ej: Distribuidora SA">
+      </div>
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT</label>
+        <input type="text" id="suppCuit" class="input-box" placeholder="Sin guiones">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalProveedor').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar Proveedor</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
 <dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: var(--panel);">
-  <div class="modal-head" style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
     <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
     <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
   </div>
   <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
     <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Se requiere PIN de administrador para <strong id="authActionText"></strong>.</p>
-    
-    <div class="field" style="margin-bottom: 24px;">
-      <input type="password" id="adminAuthPin" required placeholder="Ingresá el PIN" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none;">
-    </div>
-
+    <input type="password" id="adminAuthPin" required placeholder="Ingresá el PIN" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none; margin-bottom: 24px;">
     <div style="display: flex; justify-content: flex-end; gap: 10px;">
       <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
-      <button type="submit" class="btn btn-danger-text" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
+      <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
     </div>
   </form>
 </dialog>
 
 <script src="core.js"></script>
 <script>
+  const API_URL = "/api";
   let dbExpenses = [];
   let dbSales = [];
+  let dbSuppliers = [];
+  
   const PIN_ADMIN = "1234";
   let pendingAdminAction = null;
   let pendingAdminParam = null;
@@ -236,22 +284,59 @@
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
-  
-  function getMonthPrefix() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  function getMonthPrefix() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
+  function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
+
+  // ── CONEXIÓN CLOUDFLARE D1 ──
+  async function initContable() {
+    mostrarCarga(true);
+    try {
+      const [resE, resS, resSup] = await Promise.all([ fetch(`${API_URL}/expenses`), fetch(`${API_URL}/sales`), fetch(`${API_URL}/suppliers`) ]);
+      if(resE.ok) dbExpenses = await resE.json();
+      if(resS.ok) dbSales = await resS.json();
+      if(resSup.ok) dbSuppliers = await resSup.json();
+    } catch (e) { console.error(e); } 
+    finally { 
+      actualizarSelectProveedores();
+      renderContable(); 
+      mostrarCarga(false); 
+    }
   }
 
-  function initContable() {
-    const keyExpenses = (typeof KEYS !== 'undefined' && KEYS.expenses) ? KEYS.expenses : 'saas_expenses';
-    const keySales = (typeof KEYS !== 'undefined' && KEYS.sales) ? KEYS.sales : 'saas_sales';
+  function actualizarSelectProveedores() {
+    const sel = document.getElementById('expSupplier');
+    sel.innerHTML = '<option value="Varios/Consumidor Final">Varios / Consumidor Final</option>' + 
+      dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  }
+
+  // ── GESTIÓN DE PROVEEDORES ──
+  function abrirModalProveedor() {
+    document.getElementById('suppName').value = '';
+    document.getElementById('suppCuit').value = '';
+    document.getElementById('modalProveedor').showModal();
+  }
+
+  async function guardarProveedor(e) {
+    e.preventDefault();
+    const sup = {
+      id: 'sup_' + Date.now(),
+      name: document.getElementById('suppName').value.trim(),
+      cuit: document.getElementById('suppCuit').value.trim(),
+      createdAt: new Date().toISOString()
+    };
     
-    dbExpenses = getData(keyExpenses, []);
-    dbSales = getData(keySales, []);
-    renderContable();
+    mostrarCarga(true);
+    try {
+      await fetch(`${API_URL}/suppliers`, { method: 'POST', body: JSON.stringify(sup) });
+      dbSuppliers.unshift(sup);
+      actualizarSelectProveedores();
+      document.getElementById('expSupplier').value = sup.id; // Lo autoselecciona
+      document.getElementById('modalProveedor').close();
+    } catch(err) { alert("Error guardando proveedor."); }
+    finally { mostrarCarga(false); }
   }
 
-  // ── LÓGICA DEL MODAL DE GASTOS ──
+  // ── LÓGICA DEL MODAL COMPROBANTES ──
   function abrirModalGasto(id = null) {
     const form = document.getElementById('expenseForm');
     const btnDel = document.getElementById('btnDeleteExpense');
@@ -262,111 +347,92 @@
     if (id) {
       const exp = dbExpenses.find(e => e.id === id);
       if (!exp) return;
-      title.textContent = "Editar gasto";
+      title.textContent = "Editar Comprobante";
       document.getElementById('expId').value = exp.id;
       document.getElementById('expDate').value = exp.date;
+      document.getElementById('expInvoiceType').value = exp.invoiceType || 'Interno';
+      document.getElementById('expInvoiceNum').value = exp.invoiceNum || '';
+      document.getElementById('expSupplier').value = exp.supplierId || 'Varios/Consumidor Final';
       document.getElementById('expAmount').value = exp.amount;
       document.getElementById('expConcept').value = exp.concept;
       document.getElementById('expCategory').value = exp.category;
       document.getElementById('expStatus').value = exp.status;
       document.getElementById('expMethod').value = exp.method;
-      document.getElementById('expDueDate').value = exp.dueDate || '';
-      document.getElementById('expNotes').value = exp.notes || '';
       
       btnDel.style.display = 'block'; 
     } else {
-      title.textContent = "Registrar gasto";
+      title.textContent = "Carga de Comprobante / Gasto";
       document.getElementById('expId').value = '';
       document.getElementById('expDate').value = todayISO();
-      
       btnDel.style.display = 'none'; 
     }
     
     document.getElementById('modalGasto').showModal();
   }
 
-  function cerrarModalGasto() {
-    document.getElementById('modalGasto').close();
-  }
+  function cerrarModalGasto() { document.getElementById('modalGasto').close(); }
 
-  function guardarGasto(e) {
+  async function guardarGasto(e) {
     e.preventDefault();
     const id = document.getElementById('expId').value || 'exp_' + Date.now();
     
     const exp = {
       id: id,
       date: document.getElementById('expDate').value,
+      invoiceType: document.getElementById('expInvoiceType').value,
+      invoiceNum: document.getElementById('expInvoiceNum').value.trim(),
+      supplierId: document.getElementById('expSupplier').value,
       amount: parseFloat(document.getElementById('expAmount').value) || 0,
       concept: document.getElementById('expConcept').value.trim(),
       category: document.getElementById('expCategory').value,
       status: document.getElementById('expStatus').value,
       method: document.getElementById('expMethod').value,
-      dueDate: document.getElementById('expDueDate').value,
-      notes: document.getElementById('expNotes').value.trim()
+      createdAt: new Date().toISOString()
     };
 
-    const idx = dbExpenses.findIndex(x => x.id === id);
-    if (idx >= 0) dbExpenses[idx] = exp;
-    else dbExpenses.unshift(exp);
-
-    const keyExpenses = (typeof KEYS !== 'undefined' && KEYS.expenses) ? KEYS.expenses : 'saas_expenses';
-    setData(keyExpenses, dbExpenses);
-    
-    cerrarModalGasto();
-    renderContable();
-    window.dispatchEvent(new Event('saas:data-updated'));
+    mostrarCarga(true);
+    try {
+      await fetch(`${API_URL}/expenses`, { method: 'POST', body: JSON.stringify(exp) });
+      const idx = dbExpenses.findIndex(x => x.id === id);
+      if (idx >= 0) dbExpenses[idx] = exp; else dbExpenses.unshift(exp);
+      cerrarModalGasto(); renderContable();
+    } catch(err) { alert("Error guardando comprobante."); }
+    finally { mostrarCarga(false); }
   }
 
   // ── ELIMINAR GASTO CON PIN ──
   function eliminarGastoPrompt() {
     const id = document.getElementById('expId').value;
     if(!id) return;
-    pedirAuthAdmin('eliminar permanentemente este registro contable', ejecutarEliminacionGasto, id);
+    pedirAuthAdmin('anular este comprobante contable', ejecutarEliminacionGasto, id);
   }
 
-  function ejecutarEliminacionGasto(id) {
-    dbExpenses = dbExpenses.filter(e => e.id !== id);
-    const keyExpenses = (typeof KEYS !== 'undefined' && KEYS.expenses) ? KEYS.expenses : 'saas_expenses';
-    setData(keyExpenses, dbExpenses);
-    
-    cerrarModalGasto();
-    renderContable();
-    window.dispatchEvent(new Event('saas:data-updated'));
-    alert("✅ Gasto eliminado correctamente.");
+  async function ejecutarEliminacionGasto(id) {
+    mostrarCarga(true);
+    try {
+      await fetch(`${API_URL}/expenses?id=${id}`, { method: 'DELETE' });
+      dbExpenses = dbExpenses.filter(e => e.id !== id);
+      cerrarModalGasto(); renderContable();
+    } catch(err) { alert("Error eliminando."); }
+    finally { mostrarCarga(false); }
   }
 
-  // ── SEGURIDAD (ADMIN PIN) - CORREGIDO ──
   function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
     document.getElementById('authActionText').textContent = accionTexto;
-    pendingAdminAction = funcionExito; 
-    pendingAdminParam = param;
+    pendingAdminAction = funcionExito; pendingAdminParam = param;
     document.getElementById('adminAuthPin').value = '';
     document.getElementById('adminAuthDialog').showModal();
     setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
   }
 
-  function cerrarAdminAuth() {
-    document.getElementById('adminAuthDialog').close();
-    pendingAdminAction = null; pendingAdminParam = null;
-  }
+  function cerrarAdminAuth() { document.getElementById('adminAuthDialog').close(); pendingAdminAction = null; pendingAdminParam = null; }
 
   function validarAdminAuth(e) {
     e.preventDefault();
     if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
-      // Guardamos en memoria rápida qué hay que hacer
-      const accion = pendingAdminAction;
-      const param = pendingAdminParam;
-      
-      // Cerramos el modal (esto limpia la memoria global)
-      cerrarAdminAuth();
-      
-      // Ejecutamos la acción desde la memoria rápida
-      if (accion) accion(param);
-    } else {
-      alert("❌ PIN de administrador incorrecto.");
-      document.getElementById('adminAuthPin').value = ''; 
-      document.getElementById('adminAuthPin').focus();
-    }
+      const accion = pendingAdminAction; const param = pendingAdminParam;
+      cerrarAdminAuth(); if (accion) accion(param);
+    } else { alert("❌ PIN incorrecto."); document.getElementById('adminAuthPin').value = ''; document.getElementById('adminAuthPin').focus(); }
   }
 
   // ── RENDERIZADO ──
@@ -375,7 +441,8 @@
     const currentMonth = getMonthPrefix();
     
     let gastosDia = 0, countDia = 0;
-    let gastosMes = 0, pendientesMes = 0;
+    let comprasDevengadasMes = 0, pendientesMes = 0, pagosMes = 0;
+    let ingresosMes = 0;
     
     const tbody = document.getElementById('tableBodyGastos');
     let rowsHtml = '';
@@ -383,86 +450,101 @@
     const sortedExpenses = [...dbExpenses].sort((a,b) => new Date(b.date) - new Date(a.date));
 
     sortedExpenses.forEach(exp => {
-      if (exp.date === today) {
-        gastosDia += exp.amount;
-        countDia++;
-      }
+      // Contadores del día
+      if (exp.date === today) { gastosDia += exp.amount; countDia++; }
+      
+      // Contadores del mes
       if (exp.date.startsWith(currentMonth)) {
-        if (exp.status === 'Pagado') gastosMes += exp.amount;
-        else pendientesMes += exp.amount;
+        comprasDevengadasMes += exp.amount; // Todo comprobante emitido este mes suma acá
+        if (exp.status === 'Pagado') pagosMes += exp.amount; // Dinero que efectivamente salió
+        else pendientesMes += exp.amount; // Deuda contraida (Pasivo)
       }
 
       const statusBadge = exp.status === 'Pagado' 
-        ? `<span style="background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold;">Pagado</span>`
-        : `<span style="background:#fef08a; color:#b45309; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold;">Pendiente</span>`;
+        ? `<span style="color:#16a34a; font-weight:bold;">Pagado</span>`
+        : `<span style="color:#b45309; font-weight:bold;">A Pagar</span>`;
+        
+      const badgeInv = exp.invoiceType === 'Gasto Interno' 
+        ? `<span style="background:var(--line); padding:2px 6px; border-radius:4px; font-size:10px;">INTERNO</span>`
+        : `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">${exp.invoiceType}</span>`;
+
+      // Buscar nombre del proveedor
+      let supName = exp.supplierId;
+      if(supName !== 'Varios/Consumidor Final') {
+        const pObj = dbSuppliers.find(s => s.id === exp.supplierId);
+        if(pObj) supName = pObj.name;
+      }
 
       const fechaParts = exp.date.split('-');
       const fechaLocal = fechaParts.length === 3 ? `${fechaParts[2]}/${fechaParts[1]}/${fechaParts[0]}` : exp.date;
 
       rowsHtml += `
       <tr>
-        <td style="color:var(--muted); font-size:13px;">${fechaLocal}</td>
-        <td><strong>${escapeHtml(exp.concept)}</strong></td>
-        <td><span style="background:var(--panel-2); padding:4px 8px; border-radius:6px; font-size:12px;">${escapeHtml(exp.category)}</span></td>
+        <td style="color:var(--muted); font-size:12px;">${fechaLocal}</td>
+        <td>${badgeInv}<br><small style="color:var(--muted)">${escapeHtml(exp.invoiceNum || 'S/N')}</small></td>
+        <td><strong>${escapeHtml(supName)}</strong></td>
+        <td>${escapeHtml(exp.concept)}<br><small style="color:var(--muted)">${escapeHtml(exp.category)}</small></td>
         <td>${statusBadge}</td>
-        <td style="text-align:right; font-weight:bold; color:var(--danger);">${currency(exp.amount)}</td>
+        <td style="text-align:right; font-weight:bold; color:var(--text);">${currency(exp.amount)}</td>
         <td style="text-align:center;">
-          <button onclick="abrirModalGasto('${exp.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px; font-weight:bold; color:var(--primary);">Editar</button>
+          <button onclick="abrirModalGasto('${exp.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:11px;">Revisar</button>
         </td>
       </tr>`;
     });
 
-    if (sortedExpenses.length === 0) {
-      rowsHtml = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted);">No hay gastos registrados.</td></tr>';
-    }
+    if (sortedExpenses.length === 0) { rowsHtml = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No hay comprobantes cargados en el libro.</td></tr>'; }
     tbody.innerHTML = rowsHtml;
 
-    let ingresosMes = 0;
-    dbSales.forEach(venta => {
-      if (venta.date.startsWith(currentMonth)) {
-        ingresosMes += venta.total;
-      }
-    });
+    dbSales.forEach(venta => { if (venta.date.startsWith(currentMonth)) { ingresosMes += venta.total; } });
 
-    const resultadoNeto = ingresosMes - gastosMes;
-
+    // Actualizar KPIs Superiores
     document.getElementById('kpiGastosDia').textContent = currency(gastosDia);
-    document.getElementById('kpiCountDia').textContent = `${countDia} movimientos hoy`;
-    document.getElementById('kpiGastosMes').textContent = currency(gastosMes);
-    document.getElementById('kpiPendientes').textContent = currency(pendientesMes);
+    document.getElementById('kpiCountDia').textContent = `${countDia} comprobantes procesados`;
+    document.getElementById('kpiGastosMes').textContent = currency(comprasDevengadasMes);
+    document.getElementById('kpiPendientes').textContent = '-' + currency(pendientesMes);
     
+    const cajaNeta = ingresosMes - pagosMes; // Ingresos de caja vs Pagos de caja
     const kpiNeto = document.getElementById('kpiNeto');
-    kpiNeto.textContent = currency(resultadoNeto);
-    kpiNeto.style.color = resultadoNeto < 0 ? 'var(--danger)' : 'var(--success)';
+    kpiNeto.textContent = currency(cajaNeta);
+    kpiNeto.style.color = cajaNeta < 0 ? 'var(--danger)' : 'var(--success)';
 
+    // Actualizar Resumen Financiero Inferior
     document.getElementById('resIngresos').textContent = currency(ingresosMes);
-    document.getElementById('resGastos').textContent = `-${currency(gastosMes)}`;
+    document.getElementById('resGastos').textContent = `-${currency(pagosMes)}`;
     document.getElementById('resPendientes').textContent = `-${currency(pendientesMes)}`;
     
     const resNeto = document.getElementById('resNeto');
-    resNeto.textContent = currency(resultadoNeto);
-    resNeto.style.color = resultadoNeto < 0 ? 'var(--danger)' : 'var(--success)';
+    resNeto.textContent = currency(cajaNeta);
+    resNeto.style.color = cajaNeta < 0 ? 'var(--danger)' : 'var(--success)';
   }
 
   function exportarExcel() {
     if(dbExpenses.length === 0) return alert("No hay movimientos para exportar.");
-    const csvData = dbExpenses.map(e => ({
-      Fecha: e.date,
-      Concepto: e.concept,
-      Categoria: e.category,
-      Estado: e.status,
-      Metodo: e.method,
-      Vencimiento: e.dueDate || '-',
-      Monto: e.amount,
-      Notas: e.notes || '-'
-    }));
+    const csvData = dbExpenses.map(e => {
+      let supName = e.supplierId;
+      if(supName !== 'Varios/Consumidor Final') {
+        const pObj = dbSuppliers.find(s => s.id === e.supplierId);
+        if(pObj) supName = pObj.name;
+      }
+      return {
+        "Fecha Emision": e.date,
+        "Comprobante": e.invoiceType,
+        "Numero": e.invoiceNum || '-',
+        "Proveedor": supName,
+        "Concepto": e.concept,
+        "Imputacion": e.category,
+        "Estado": e.status,
+        "Metodo Pago": e.method,
+        "Monto Total": e.amount
+      };
+    });
 
     const headers = Object.keys(csvData[0]);
     const csvContent = [headers.join(';'), ...csvData.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
     
     const link = document.createElement('a');
     link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
-    link.download = `Gastos_${todayISO()}.csv`;
+    link.download = `Libro_Compras_Gastos_${todayISO()}.csv`;
     link.click();
   }
 
