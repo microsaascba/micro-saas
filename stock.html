@@ -11,6 +11,8 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
@@ -86,7 +88,8 @@
         <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Stock valorizado, transferencias y remitos de mercadería.</p>
       </div>
       <div class="topbar-actions" style="display: flex; gap: 10px;">
-        <button class="btn btn-primary" onclick="abrirModalTransferencia()">⇄ Nueva Transferencia</button>
+        <button class="btn btn-outline" style="border-color: #0f766e; color: #0f766e;" onclick="abrirModalTransfMasiva()">📄 Transferencia Masiva (Excel)</button>
+        <button class="btn btn-primary" onclick="abrirModalTransferencia()">⇄ Transferencia Manual</button>
         <button class="btn btn-primary" style="background: var(--text); border:none;" onclick="abrirModalAjuste()">+ Ajuste Manual</button>
       </div>
     </header>
@@ -123,7 +126,7 @@
             <input type="text" id="searchStock" class="input-box" placeholder="🔍 Buscar producto o SKU..." style="flex: 1; min-width: 250px;" onkeyup="renderStock()">
             <select id="branchFilter" class="input-box" style="width: auto; font-weight: bold; color: var(--muted);" onchange="renderStock()">
               <option value="ALL">Todas las Sucursales</option>
-              </select>
+            </select>
           </div>
 
           <div style="overflow-x: auto;">
@@ -143,8 +146,24 @@
         </div>
 
         <div id="tab-movimientos" class="tab-content">
-          <div style="padding: 20px; text-align: center; color: var(--muted);">
-            El historial de movimientos y recepción de remitos estará disponible en la próxima actualización.
+          <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="text" class="input-box" placeholder="🔍 Buscar remito..." style="max-width: 300px;">
+          </div>
+          <div style="overflow-x: auto;">
+            <table class="excel-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Comprobante</th>
+                  <th>Ruta (Origen ➔ Destino)</th>
+                  <th>Usuario Autorizante</th>
+                  <th>Estado</th>
+                  <th style="text-align: center;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tableBodyHistory">
+                </tbody>
+            </table>
           </div>
         </div>
 
@@ -156,7 +175,7 @@
 <dialog id="modalTransferencia" style="width: 100%; max-width: 500px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;">Nueva Transferencia</h2>
+      <h2 style="margin: 0; font-size:20px;">Transferencia Manual</h2>
       <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalTransferencia').close()">✕</button>
     </div>
     <form>
@@ -181,6 +200,43 @@
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
         <button type="button" class="btn btn-light" onclick="document.getElementById('modalTransferencia').close()">Cancelar</button>
         <button type="button" class="btn btn-primary" onclick="procesarTransferencia(event)">Confirmar</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<dialog id="modalTransfMasiva" style="width: 100%; max-width: 550px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;">Transferencia Masiva (Excel)</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalTransfMasiva').close()">✕</button>
+    </div>
+    
+    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed var(--muted); margin-bottom: 20px; font-size: 12px; color: var(--text);">
+      <strong>Instrucciones:</strong> Subí un archivo .xlsx o .csv.<br>
+      La primera fila debe tener exactamente estas dos columnas para identificar la mercadería:<br><br>
+      <span style="background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; margin-right: 10px;">SKU</span>  
+      <span style="background: #e2e8f0; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold;">CANTIDAD</span>
+    </div>
+
+    <form onsubmit="procesarTransfMasiva(event)">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Origen (Sale) *</label>
+          <select id="masivaOrigen" class="input-box" required></select>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Destino (Entra) *</label>
+          <select id="masivaDestino" class="input-box" required></select>
+        </div>
+      </div>
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Archivo Excel / CSV *</label>
+        <input type="file" id="masivaFile" accept=".xlsx, .xls, .csv" required class="input-box" style="padding: 8px;">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalTransfMasiva').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="background:#0f766e; border-color:#0f766e;">Validar y Transferir</button>
       </div>
     </form>
   </div>
@@ -219,11 +275,52 @@
   </div>
 </dialog>
 
+<div id="printRemito">
+  <div class="remito-header">
+    <div>
+      <h1 style="margin: 0; font-size: 20px; font-weight: 900;">MICRO SAAS SOLUCIONES</h1>
+      <p style="margin: 2px 0 0 0; font-size: 10px; color: #555;">Documento de Traslado Interno</p>
+    </div>
+    <div style="text-align: right;">
+      <h2 class="remito-title" id="remitoTitle">REMITO N°</h2>
+      <p style="margin: 2px 0 0 0; font-size: 10px;" id="remitoDate">Fecha: </p>
+    </div>
+  </div>
+  <div class="remito-boxes">
+    <div class="remito-box">
+      <strong>Origen (Salida)</strong>
+      <h3 id="remitoOrigen">---</h3>
+      <p id="remitoAutorizante">Responsable: ---</p>
+    </div>
+    <div class="remito-box">
+      <strong>Destino (Entrada)</strong>
+      <h3 id="remitoDestino">---</h3>
+      <p>Traslado interno programado</p>
+    </div>
+  </div>
+  <table class="remito-table">
+    <thead>
+      <tr><th style="width:15%">CÓDIGO</th><th style="width:70%">DESCRIPCIÓN DEL ARTÍCULO</th><th style="width:15%; text-align:center;">CANTIDAD</th></tr>
+    </thead>
+    <tbody id="remitoItemsBody"></tbody>
+  </table>
+  <div style="font-size: 9px; color: #555; text-align: center; margin-bottom: 10px;">
+    La mercadería detallada viaja bajo responsabilidad de la empresa. Ingresar al sistema al momento de recepción.
+  </div>
+  <div class="firmas">
+    <div class="firma-line">Firma y Aclaración Origen</div>
+    <div class="firma-line">Firma y Aclaración Recepción</div>
+  </div>
+</div>
+
 <script src="core.js"></script>
 <script>
   const API_URL = "/api";
   let dbProducts = [];
   let dbBranches = [];
+  
+  // Guardamos un historial local de movimientos para el módulo
+  let historyLogs = getData('saas_movements_log', []);
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
@@ -242,6 +339,22 @@
     } catch(e) { return { "Central": prod.stock || 0 }; }
   }
 
+  function logMovement(type, origin, dest, summary, itemsArray) {
+      const log = {
+          id: 'REM-' + Math.floor(Math.random()*90000 + 10000),
+          date: new Date().toISOString(),
+          type: type,
+          origen: origin,
+          destino: dest,
+          user: localStorage.getItem('activeUser') || 'Admin',
+          summary: summary,
+          items: itemsArray // Para imprimir el remito
+      };
+      historyLogs.unshift(log);
+      setData('saas_movements_log', historyLogs);
+      renderHistory();
+  }
+
   async function initStock() {
     mostrarCarga(true);
     try {
@@ -250,13 +363,16 @@
       if (resB.ok) dbBranches = await resB.json();
     } catch (error) { console.error(error); } 
     finally {
-      // Poblar filtros
+      const ops = dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
       const filter = document.getElementById('branchFilter');
-      if(filter) {
-        filter.innerHTML = '<option value="ALL">Todas las Sucursales</option>' + dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
-      }
+      if(filter) filter.innerHTML = '<option value="ALL">Todas las Sucursales</option>' + ops;
+      
+      document.getElementById('masivaOrigen').innerHTML = ops;
+      document.getElementById('masivaDestino').innerHTML = ops;
+
       mostrarCarga(false);
       renderStock();
+      renderHistory();
     }
   }
 
@@ -264,23 +380,18 @@
     const term = document.getElementById('searchStock').value.toLowerCase();
     const branchFilterEl = document.getElementById('branchFilter');
     const thDistribucion = document.getElementById('thDistribucion');
-    
-    // VERIFICACIÓN DE IDENTIDAD Y ROL
     const role = localStorage.getItem('userRole') || 'admin';
     const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
 
-    // LÓGICA DE FILTRO INVISIBLE
     let branchToView = 'ALL';
     if (role === 'cajera' || role === 'vendedora' || role === 'pos') {
         branchToView = terminalActiva;
-        if (branchFilterEl) branchFilterEl.style.display = 'none'; // Escondemos el filtro a empleados
+        if (branchFilterEl) branchFilterEl.style.display = 'none';
     } else {
         branchToView = branchFilterEl ? branchFilterEl.value : 'ALL';
     }
 
-    if (thDistribucion) {
-        thDistribucion.textContent = branchToView === 'ALL' ? 'Stock por Sucursal' : `Stock en: ${branchToView}`;
-    }
+    if (thDistribucion) thDistribucion.textContent = branchToView === 'ALL' ? 'Stock por Sucursal' : `Stock en: ${branchToView}`;
 
     let kpiUnidades = 0, kpiBajo = 0, kpiCero = 0, kpiValorizado = 0;
     const filtrados = dbProducts.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)));
@@ -297,7 +408,6 @@
               branchHTML += `<span style="background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:6px; font-size:11px; font-weight:bold; margin-right:5px; display:inline-block; margin-bottom:4px;">${escapeHtml(branch)}: <span style="color:var(--primary);">${qty}</span></span>`;
           }
       } else {
-          // Si es cajera o filtró por un local, sacamos SOLO ese stock
           displayStock = parseInt(branches[branchToView] || 0);
           branchHTML = `<strong style="font-size:16px;">${displayStock} un.</strong>`;
       }
@@ -325,7 +435,50 @@
     if (filtrados.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No hay productos registrados.</td></tr>';
   }
 
-  // --- MODALES (CARGA DINÁMICA DE SUCURSALES) ---
+  function renderHistory() {
+      const tbody = document.getElementById('tableBodyHistory');
+      if (historyLogs.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted);">No hay movimientos registrados recientes.</td></tr>';
+          return;
+      }
+
+      tbody.innerHTML = historyLogs.map(log => {
+          const isTransf = log.type === 'Transferencia';
+          const badge = isTransf 
+              ? `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Transferencia</span>`
+              : `<span style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Ajuste</span>`;
+          
+          const d = new Date(log.date);
+          const fechaStr = `${d.toLocaleDateString('es-AR')}<br><small style="color:var(--muted)">${d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})} hs</small>`;
+
+          return `
+          <tr>
+            <td>${fechaStr}</td>
+            <td><strong>${log.id}</strong></td>
+            <td>${badge}</td>
+            <td><strong>${escapeHtml(log.origen)}</strong> ${isTransf ? '➔ <strong>'+escapeHtml(log.destino)+'</strong>' : ''}</td>
+            <td>${escapeHtml(log.summary)}</td>
+            <td style="text-align: center;">
+              ${isTransf ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick='imprimirRemito(${JSON.stringify(log).replace(/'/g, "&apos;")})'>🖨️ Remito</button>` : '-'}
+            </td>
+          </tr>`;
+      }).join('');
+  }
+
+  function imprimirRemito(log) {
+      document.getElementById('remitoTitle').textContent = `REMITO N° ${log.id}`;
+      document.getElementById('remitoDate').textContent = `Fecha: ${new Date(log.date).toLocaleString('es-AR')}`;
+      document.getElementById('remitoOrigen').textContent = log.origen;
+      document.getElementById('remitoDestino').textContent = log.destino;
+      document.getElementById('remitoAutorizante').textContent = `Responsable: ${log.user}`;
+
+      const tbody = document.getElementById('remitoItemsBody');
+      tbody.innerHTML = log.items.map(i => `<tr><td>${escapeHtml(i.code)}</td><td>${escapeHtml(i.name)}</td><td style="text-align:center; font-weight:bold;">${i.qty}</td></tr>`).join('');
+
+      window.print();
+  }
+
+  // --- MODALES (Mano a Mano y Masivo) ---
   function abrirModalAjuste() {
     document.getElementById('ajusteProducto').innerHTML = dbProducts.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
     document.getElementById('ajusteSucursal').innerHTML = dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
@@ -340,6 +493,11 @@
     document.getElementById('transfDestino').innerHTML = ops;
     document.getElementById('transfCant').value = '';
     document.getElementById('modalTransferencia').showModal();
+  }
+
+  function abrirModalTransfMasiva() {
+      document.getElementById('masivaFile').value = '';
+      document.getElementById('modalTransfMasiva').showModal();
   }
 
   async function procesarAjuste(e) {
@@ -369,6 +527,7 @@
     mostrarCarga(true);
     try {
       await fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(prod) });
+      logMovement('Ajuste', branch, '', `${tipo === 'ingreso'?'+':'-'}${cant} un. - ${prod.name}`, [{code: prod.code||'S/N', name: prod.name, qty: cant}]);
       document.getElementById('modalAjuste').close();
       renderStock();
     } catch(err) { alert("Error."); } finally { mostrarCarga(false); }
@@ -396,10 +555,99 @@
     mostrarCarga(true);
     try {
       await fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(prod) });
+      logMovement('Transferencia', origen, destino, `${cant} un. - ${prod.name}`, [{code: prod.code||'S/N', name: prod.name, qty: cant}]);
       document.getElementById('modalTransferencia').close();
       renderStock();
-      alert("Transferencia aplicada directamente (Modo rápido activado).");
+      alert("Transferencia aplicada exitosamente.");
     } catch(err) { alert("Error."); } finally { mostrarCarga(false); }
+  }
+
+  // --- PROCESAMIENTO MASIVO VIA EXCEL ---
+  async function procesarTransfMasiva(e) {
+      e.preventDefault();
+      const origen = document.getElementById('masivaOrigen').value;
+      const destino = document.getElementById('masivaDestino').value;
+      const fileInput = document.getElementById('masivaFile');
+
+      if (origen === destino) return alert("El origen y destino no pueden ser el mismo.");
+      if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo.");
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = async function(evt) {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(firstSheet);
+
+          if (rows.length === 0) return alert("El archivo está vacío o mal formateado.");
+
+          let prodUpdates = [];
+          let errores = [];
+          let itemsParaRemito = [];
+
+          rows.forEach((row, index) => {
+              const findVal = (names) => {
+                  const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
+                  return key ? row[key] : null;
+              };
+
+              const sku = String(findVal(['sku', 'codigo', 'código']) || '').trim();
+              const cant = parseInt(findVal(['cantidad', 'cant', 'stock', 'qty']));
+
+              if (!sku || isNaN(cant) || cant <= 0) return;
+
+              const prod = dbProducts.find(p => p.code == sku);
+              if (!prod) {
+                  errores.push(`Fila ${index + 2}: SKU ${sku} no existe en catálogo.`);
+                  return;
+              }
+
+              let branches = getBranches(prod);
+              if (branches[origen] === undefined || branches[origen] < cant) {
+                  errores.push(`SKU ${sku}: Faltante en ${origen} (Hay ${branches[origen]||0}, pide ${cant}).`);
+                  return;
+              }
+
+              if (branches[destino] === undefined) branches[destino] = 0;
+              
+              branches[origen] -= cant;
+              branches[destino] += cant;
+              
+              let stockTotal = 0;
+              for (let b in branches) stockTotal += branches[b];
+              
+              prodUpdates.push({ ...prod, stock_branches: branches, stock: stockTotal });
+              itemsParaRemito.push({ code: prod.code, name: prod.name, qty: cant });
+          });
+
+          if (prodUpdates.length === 0) {
+              return alert("La operación fue cancelada porque no se detectaron movimientos válidos.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
+          }
+
+          let msj = `Vas a transferir ${itemsParaRemito.length} referencias de ${origen} a ${destino}.\nUsuario Responsable: ${localStorage.getItem('activeUser') || 'Admin'}\n\n`;
+          if (errores.length > 0) msj += `⚠️ ATENCIÓN: Hubo ${errores.length} filas ignoradas por errores:\n` + errores.slice(0,3).join('\n') + `\n\n`;
+          msj += `¿Confirmás el traslado de mercadería?`;
+
+          if (!confirm(msj)) return;
+
+          mostrarCarga(true);
+          try {
+              // Procesamiento de las llamadas asíncronas
+              await Promise.all(prodUpdates.map(p => fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(p) })));
+              
+              logMovement('Transferencia', origen, destino, `Traslado masivo de ${itemsParaRemito.length} ítems.`, itemsParaRemito);
+              document.getElementById('modalTransfMasiva').close();
+              await initStock(); 
+              alert("✅ Transferencia Masiva completada y Remito generado.");
+          } catch(err) {
+              alert("Error de conexión durante el traslado masivo.");
+          } finally {
+              mostrarCarga(false);
+          }
+      };
+      reader.readAsArrayBuffer(file);
   }
 
   initStock();
