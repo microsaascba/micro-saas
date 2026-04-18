@@ -136,6 +136,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // B. Configurar Menú
     const nav = document.querySelector('.nav');
+
+    // INYECCIÓN MÁGICA: Agregar "Sucursales" si no existe en el HTML
+    if (nav && !document.querySelector('a[href="sucursales.html"]')) {
+       const sucLink = document.createElement('a'); sucLink.href = 'sucursales.html';
+       if (currentPage === 'sucursales') sucLink.classList.add('active');
+       sucLink.innerHTML = '<span class="nav-icon">🏪</span> Sucursales'; 
+       nav.appendChild(sucLink);
+    }
+
+    // Inyectar Usuarios si es Admin
     if (nav && role === 'admin' && !document.querySelector('a[href="usuarios.html"]')) {
        const usersLink = document.createElement('a'); usersLink.href = 'usuarios.html';
        if (currentPage === 'usuarios') usersLink.classList.add('active');
@@ -149,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
       logoutBtn.onclick = (e) => { e.preventDefault(); logout(); }; nav.appendChild(logoutBtn);
     }
 
-    // C. Ocultar Menús Prohibidos (MOTOR DE PERMISOS FUNCIONANDO BIEN)
+    // C. Ocultar Menús Prohibidos
     const navLinks = document.querySelectorAll('.sidebar .nav a:not(#btnLogout)');
     navLinks.forEach(link => {
       const href = link.getAttribute('href');
@@ -161,8 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
           link.style.display = 'none';
         }
         
-        // Regla Legacy
-        if (role !== 'admin' && moduleName === 'usuarios') link.style.display = 'none';
+        // Regla Legacy (Ocultamos Sucursales a cajeros/vendedores antiguos también)
+        if (role !== 'admin' && (moduleName === 'usuarios' || moduleName === 'sucursales')) link.style.display = 'none';
         if ((role === 'encargado' || role === 'pos') && (moduleName === 'dashboard' || moduleName === 'contable')) link.style.display = 'none';
         if (role === 'pos' && moduleName === 'stock') link.style.display = 'none';
       }
@@ -198,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return; 
     }
 
-    // E. Reglas de UI Legacy para POS (Ocultar botones en tablas, etc.)
+    // E. Reglas de UI Legacy para POS
     if (role === 'pos' || role === 'cajera') {
       const botonesProhibidos = ['#newProductBtn', '#importBtn', '#exportBtn', '#openAdjustBtn', '#btnOpenExpense', '#btnOpenSupplier'];
       botonesProhibidos.forEach(id => { const btn = document.querySelector(id); if (btn) btn.style.display = 'none'; });
