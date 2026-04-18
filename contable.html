@@ -26,7 +26,6 @@
     th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
     td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
 
-    /* Modales */
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
@@ -96,15 +95,35 @@
 
     <div class="layout-2col">
       <article class="card card-pad">
-        <h2 style="margin: 0 0 20px 0; font-size: 18px;">Libro de Compras y Gastos</h2>
+        <h2 style="margin: 0 0 15px 0; font-size: 18px;">Libro de Compras y Gastos</h2>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: var(--panel-2); padding: 12px; border-radius: 10px; border: 1px solid var(--line);">
+          <input type="text" id="searchExpense" class="input-box" placeholder="🔍 Buscar proveedor, concepto o N° comprobante..." onkeyup="renderContable()" style="flex: 1; min-width: 250px; border:none;">
+          <select id="filterStatus" class="input-box" onchange="renderContable()" style="width: auto; font-weight:bold; color:var(--muted);">
+            <option value="ALL">Todos los estados</option>
+            <option value="Pagado">Solo Pagados</option>
+            <option value="Pendiente">Solo A Pagar (Deuda)</option>
+          </select>
+          <select id="filterCategory" class="input-box" onchange="renderContable()" style="width: auto; font-weight:bold; color:var(--muted);">
+            <option value="ALL">Todas las Categorías</option>
+            <option value="Mercadería">Mercadería</option>
+            <option value="Servicios">Servicios</option>
+            <option value="Honorarios">Honorarios</option>
+            <option value="Sueldos">Sueldos</option>
+            <option value="Impuestos">Impuestos</option>
+            <option value="Logística">Logística</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+
         <div style="overflow-x: auto;">
           <table>
             <thead>
               <tr>
-                <th>Fecha Emisión</th>
+                <th>Fecha</th>
                 <th>Comprobante</th>
                 <th>Proveedor / Razón Social</th>
-                <th>Concepto / Imputación</th>
+                <th>Imputación</th>
                 <th>Estado</th>
                 <th style="text-align: right;">Total</th>
                 <th style="text-align: center;">Acción</th>
@@ -235,21 +254,53 @@
   </div>
 </dialog>
 
-<dialog id="modalProveedor" style="width: 100%; max-width: 400px; z-index: 10000;">
+<dialog id="modalProveedor" style="width: 100%; max-width: 600px; z-index: 10000;">
   <div class="modal-content">
-    <h2 style="margin: 0 0 20px 0; font-size:18px;">Alta de Proveedor</h2>
+    <h2 style="margin: 0 0 20px 0; font-size:18px;">Alta de Proveedor / Acreedor</h2>
     <form onsubmit="guardarProveedor(event)">
-      <div style="margin-bottom: 15px;">
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Razón Social / Nombre *</label>
-        <input type="text" id="suppName" required class="input-box" placeholder="Ej: Distribuidora SA">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Razón Social / Nombre *</label>
+          <input type="text" id="suppName" required class="input-box" placeholder="Ej: Distribuidora Central SA">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT *</label>
+          <input type="text" id="suppCuit" required class="input-box" placeholder="Sin guiones">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Condición frente al IVA</label>
+          <select id="suppIva" class="input-box">
+            <option value="Responsable Inscripto">Responsable Inscripto</option>
+            <option value="Monotributo">Monotributo</option>
+            <option value="Exento">Exento</option>
+            <option value="Consumidor Final">Consumidor Final</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Persona de Contacto</label>
+          <input type="text" id="suppContact" class="input-box" placeholder="Nombre del vendedor/agente">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Teléfono</label>
+          <input type="text" id="suppPhone" class="input-box" placeholder="Ej: 351...">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Email</label>
+          <input type="email" id="suppEmail" class="input-box" placeholder="ventas@proveedor.com">
+        </div>
+        <div style="grid-column: span 2;">
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Dirección Comercial</label>
+          <input type="text" id="suppAddress" class="input-box" placeholder="Calle, Número, Ciudad">
+        </div>
+        <div style="grid-column: span 2;">
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Observaciones / Datos Bancarios</label>
+          <textarea id="suppNotes" class="input-box" rows="2" placeholder="CBU, Alias, plazos de entrega..."></textarea>
+        </div>
       </div>
-      <div style="margin-bottom: 25px;">
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT</label>
-        <input type="text" id="suppCuit" class="input-box" placeholder="Sin guiones">
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 15px;">
         <button type="button" class="btn btn-light" onclick="document.getElementById('modalProveedor').close()">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar Proveedor</button>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Crear Proveedor</button>
       </div>
     </form>
   </div>
@@ -287,7 +338,6 @@
   function getMonthPrefix() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
   function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
 
-  // ── CONEXIÓN CLOUDFLARE D1 ──
   async function initContable() {
     mostrarCarga(true);
     try {
@@ -313,6 +363,12 @@
   function abrirModalProveedor() {
     document.getElementById('suppName').value = '';
     document.getElementById('suppCuit').value = '';
+    document.getElementById('suppIva').value = 'Responsable Inscripto';
+    document.getElementById('suppContact').value = '';
+    document.getElementById('suppPhone').value = '';
+    document.getElementById('suppEmail').value = '';
+    document.getElementById('suppAddress').value = '';
+    document.getElementById('suppNotes').value = '';
     document.getElementById('modalProveedor').showModal();
   }
 
@@ -322,6 +378,12 @@
       id: 'sup_' + Date.now(),
       name: document.getElementById('suppName').value.trim(),
       cuit: document.getElementById('suppCuit').value.trim(),
+      ivaCondition: document.getElementById('suppIva').value,
+      contactPerson: document.getElementById('suppContact').value.trim(),
+      phone: document.getElementById('suppPhone').value.trim(),
+      email: document.getElementById('suppEmail').value.trim(),
+      address: document.getElementById('suppAddress').value.trim(),
+      notes: document.getElementById('suppNotes').value.trim(),
       createdAt: new Date().toISOString()
     };
     
@@ -400,7 +462,6 @@
     finally { mostrarCarga(false); }
   }
 
-  // ── ELIMINAR GASTO CON PIN ──
   function eliminarGastoPrompt() {
     const id = document.getElementById('expId').value;
     if(!id) return;
@@ -435,11 +496,16 @@
     } else { alert("❌ PIN incorrecto."); document.getElementById('adminAuthPin').value = ''; document.getElementById('adminAuthPin').focus(); }
   }
 
-  // ── RENDERIZADO ──
+  // ── RENDERIZADO Y FILTROS ──
   function renderContable() {
     const today = todayISO();
     const currentMonth = getMonthPrefix();
     
+    // Obtener valores de los filtros
+    const searchTerm = document.getElementById('searchExpense').value.toLowerCase();
+    const filterStatus = document.getElementById('filterStatus').value;
+    const filterCategory = document.getElementById('filterCategory').value;
+
     let gastosDia = 0, countDia = 0;
     let comprasDevengadasMes = 0, pendientesMes = 0, pagosMes = 0;
     let ingresosMes = 0;
@@ -447,17 +513,36 @@
     const tbody = document.getElementById('tableBodyGastos');
     let rowsHtml = '';
 
+    // Filtrar y ordenar la base de datos
     const sortedExpenses = [...dbExpenses].sort((a,b) => new Date(b.date) - new Date(a.date));
-
-    sortedExpenses.forEach(exp => {
-      // Contadores del día
-      if (exp.date === today) { gastosDia += exp.amount; countDia++; }
+    
+    const filteredExpenses = sortedExpenses.filter(exp => {
+      // 1. Resolver el nombre del proveedor para la búsqueda
+      let supName = exp.supplierId;
+      if(supName !== 'Varios/Consumidor Final') {
+        const pObj = dbSuppliers.find(s => s.id === exp.supplierId);
+        if(pObj) supName = pObj.name;
+      }
       
-      // Contadores del mes
-      if (exp.date.startsWith(currentMonth)) {
-        comprasDevengadasMes += exp.amount; // Todo comprobante emitido este mes suma acá
-        if (exp.status === 'Pagado') pagosMes += exp.amount; // Dinero que efectivamente salió
-        else pendientesMes += exp.amount; // Deuda contraida (Pasivo)
+      // 2. Aplicar condiciones de filtro
+      const matchSearch = exp.concept.toLowerCase().includes(searchTerm) || 
+                          supName.toLowerCase().includes(searchTerm) || 
+                          (exp.invoiceNum || '').toLowerCase().includes(searchTerm);
+      const matchStatus = filterStatus === 'ALL' || exp.status === filterStatus;
+      const matchCategory = filterCategory === 'ALL' || exp.category === filterCategory;
+      
+      return matchSearch && matchStatus && matchCategory;
+    });
+
+    filteredExpenses.forEach(exp => {
+      // Calcular KPIs (Los KPIs calculan TODO el mes, no solo lo filtrado, para no marear al usuario con los saldos)
+      // *Nota: Si quisieras que los KPI cambien según el filtro, pondríamos esto abajo de filteredExpenses
+      // Para este caso, los KPI globales fijos son mejores para contabilidad.
+      
+      let supName = exp.supplierId;
+      if(supName !== 'Varios/Consumidor Final') {
+        const pObj = dbSuppliers.find(s => s.id === exp.supplierId);
+        if(pObj) supName = pObj.name;
       }
 
       const statusBadge = exp.status === 'Pagado' 
@@ -467,13 +552,6 @@
       const badgeInv = exp.invoiceType === 'Gasto Interno' 
         ? `<span style="background:var(--line); padding:2px 6px; border-radius:4px; font-size:10px;">INTERNO</span>`
         : `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">${exp.invoiceType}</span>`;
-
-      // Buscar nombre del proveedor
-      let supName = exp.supplierId;
-      if(supName !== 'Varios/Consumidor Final') {
-        const pObj = dbSuppliers.find(s => s.id === exp.supplierId);
-        if(pObj) supName = pObj.name;
-      }
 
       const fechaParts = exp.date.split('-');
       const fechaLocal = fechaParts.length === 3 ? `${fechaParts[2]}/${fechaParts[1]}/${fechaParts[0]}` : exp.date;
@@ -492,23 +570,31 @@
       </tr>`;
     });
 
-    if (sortedExpenses.length === 0) { rowsHtml = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No hay comprobantes cargados en el libro.</td></tr>'; }
+    if (filteredExpenses.length === 0) { rowsHtml = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No se encontraron comprobantes con esos filtros.</td></tr>'; }
     tbody.innerHTML = rowsHtml;
+
+    // Calcular KPIs fijos (sin importar el filtro de la tabla, para que el balance sea real)
+    sortedExpenses.forEach(exp => {
+      if (exp.date === today) { gastosDia += exp.amount; countDia++; }
+      if (exp.date.startsWith(currentMonth)) {
+        comprasDevengadasMes += exp.amount; 
+        if (exp.status === 'Pagado') pagosMes += exp.amount; 
+        else pendientesMes += exp.amount; 
+      }
+    });
 
     dbSales.forEach(venta => { if (venta.date.startsWith(currentMonth)) { ingresosMes += venta.total; } });
 
-    // Actualizar KPIs Superiores
     document.getElementById('kpiGastosDia').textContent = currency(gastosDia);
     document.getElementById('kpiCountDia').textContent = `${countDia} comprobantes procesados`;
     document.getElementById('kpiGastosMes').textContent = currency(comprasDevengadasMes);
     document.getElementById('kpiPendientes').textContent = '-' + currency(pendientesMes);
     
-    const cajaNeta = ingresosMes - pagosMes; // Ingresos de caja vs Pagos de caja
+    const cajaNeta = ingresosMes - pagosMes; 
     const kpiNeto = document.getElementById('kpiNeto');
     kpiNeto.textContent = currency(cajaNeta);
     kpiNeto.style.color = cajaNeta < 0 ? 'var(--danger)' : 'var(--success)';
 
-    // Actualizar Resumen Financiero Inferior
     document.getElementById('resIngresos').textContent = currency(ingresosMes);
     document.getElementById('resGastos').textContent = `-${currency(pagosMes)}`;
     document.getElementById('resPendientes').textContent = `-${currency(pendientesMes)}`;
