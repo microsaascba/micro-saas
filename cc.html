@@ -521,26 +521,53 @@
 
               const totalIva = totalNeto * 0.21;
               htmlTotals = `
-                <div class="print-total-line"><span>Importe Neto Gravado:</span><span>${currency(totalNeto)}</span></div>
+                <div class="print-total-line"><span>Subtotal:</span><span>${currency(totalNeto)}</span></div>
                 <div class="print-total-line"><span>IVA 21%:</span><span>${currency(totalIva)}</span></div>
                 <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
               `;
           } else {
-              // FACTURA B: Muestra precios finales
+              // FACTURA B/C: Muestra precios finales y el IVA en $0
               tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 60%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO UNIT.</th><th style="width: 15%; text-align: right;">SUBTOTAL</th></tr>`;
               
+              let totalSubtotal = 0;
               htmlItems = itemsList.map(i => {
+                  const sub = i.qty * i.price;
+                  totalSubtotal += sub;
                   return `<tr>
                     <td style="text-align:center;">${i.qty}</td>
                     <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
                     <td style="text-align:right;">${currency(i.price)}</td>
-                    <td style="text-align:right;">${currency(i.qty * i.price)}</td>
+                    <td style="text-align:right;">${currency(sub)}</td>
                   </tr>`;
               }).join('');
 
-              htmlTotals = `<div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>`;
+              htmlTotals = `
+                <div class="print-total-line"><span>Subtotal:</span><span>${currency(totalSubtotal)}</span></div>
+                <div class="print-total-line"><span>IVA:</span><span>${currency(0)}</span></div>
+                <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
+              `;
           }
       }
+
+      // SI ES UN RECIBO DE PAGO O UN AJUSTE MANUAL
+      if (!htmlItems) {
+          tableHeader.innerHTML = `<tr><th style="width: 80%;">CONCEPTO DE LA OPERACIÓN</th><th style="width: 20%; text-align: right;">IMPORTE</th></tr>`;
+          htmlItems = `<tr>
+            <td style="padding: 20px 10px;"><strong style="font-size:14px;">${escapeHtml(mov.concept)}</strong></td>
+            <td style="text-align:right; font-weight:bold; font-size:16px;">${currency(mov.amount)}</td>
+          </tr>`;
+          htmlTotals = `
+            <div class="print-total-line"><span>Subtotal:</span><span>${currency(mov.amount)}</span></div>
+            <div class="print-total-line"><span>IVA:</span><span>${currency(0)}</span></div>
+            <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
+          `;
+      }
+
+      tableBody.innerHTML = htmlItems;
+      totalsBox.innerHTML = htmlTotals;
+      document.getElementById('printSignatureArea').style.display = isPago ? 'block' : 'none';
+      
+      window.print();
 
       // SI ES UN RECIBO DE PAGO O UN AJUSTE MANUAL
       if (!htmlItems) {
