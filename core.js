@@ -164,31 +164,39 @@ function exportarAExcel(dataArray, nombreArchivo) {
         const href = link.getAttribute('href');
         if(href) {
           const moduleName = href.split('.html')[0]; 
-          // 1. Ocultar si la nueva matriz D1 no lo permite (y no es el viejo "admin" que pasa libre)
-          if (allowedModules.length > 0 && !allowedModules.includes(moduleName) && role !== 'admin') {
-            link.style.display = 'none';
-          }
-          
-          // 2. Retrocompatibilidad: Reglas rígidas viejas (por si entran con cuentas legacy)
-          if (role !== 'admin' && moduleName === 'usuarios') link.style.display = 'none';
-          if ((role === 'encargado' || role === 'pos') && (moduleName === 'dashboard' || moduleName === 'contable')) link.style.display = 'none';
-          if (role === 'pos' && moduleName === 'stock') link.style.display = 'none';
-        }
-      });
-
-      // GUARDAESPALDAS DE URL (Bloqueo si tipean la dirección a mano)
+          // ========================================================
+      // GUARDAESPALDAS DE URL Y ENRUTADOR SILENCIOSO
+      // ========================================================
       if (allowedModules.length > 0 && !allowedModules.includes(currentPage) && role !== 'admin') {
+        
+        // 1. Calculamos cuál es la "casa" o panel principal de este usuario
+        let homePage = 'dashboard.html';
+        if (role === 'administrativo') homePage = 'contable.html';
+        if (role === 'cajera' || role === 'vendedora' || role === 'pos') homePage = 'facturacion.html';
+        
+        // Si no tiene permiso para su casa por defecto, le asignamos el primer módulo que tenga permitido
+        const homeModule = homePage.replace('.html', '');
+        if (!allowedModules.includes(homeModule)) {
+            homePage = allowedModules[0] + '.html';
+        }
+
+        // 2. Si cayó en el dashboard por defecto (ej. tipeó la URL raíz) lo mandamos a su módulo en silencio
+        if (currentPage === 'dashboard') {
+            window.location.href = homePage;
+            return;
+        }
+
+        // 3. Si intentó meterse a una página prohibida a propósito, le mostramos el cartel y un botón de regreso
         document.body.innerHTML = `
           <div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif; background: #f8fafc; color: #334155;">
             <h1 style="font-size: 80px; margin: 0;">🛑</h1>
             <h2 style="font-size: 24px; margin: 10px 0;">Acceso Denegado</h2>
             <p style="margin-bottom: 20px;">Tu usuario no tiene permisos para ver este módulo.</p>
-            <button onclick="window.location.href='ventas.html'" style="padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Ir a Ventas</button>
+            <button onclick="window.location.href='${homePage}'" style="padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Ir a mi panel principal</button>
           </div>
         `;
         return; // Detiene la ejecución visual
       }
-
       // Reglas estrictas legacy para Cajeros/POS en pantallas compartidas (Ej: Productos sin Formulario Alta)
       if (role === 'pos' || role === 'cajera') {
         const botonesProhibidos = ['#newProductBtn', '#importBtn', '#exportBtn', '#openAdjustBtn', '#btnOpenExpense', '#btnOpenSupplier'];
