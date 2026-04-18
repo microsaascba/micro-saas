@@ -10,40 +10,52 @@
     body { animation: fadeIn 0.15s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
+
   <link rel="stylesheet" href="styles.css" />
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a;}
-    .pos-container { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
-    .pos-search-input { width: 100%; padding: 14px 18px; font-size: 15px; font-weight: 600; border: 2px solid var(--primary-soft); border-radius: 10px; outline: none; background: #fff; transition: 0.2s; }
-    .pos-search-input:focus { border-color: var(--primary); box-shadow: 0 4px 15px rgba(37,99,235,0.15); }
+    .pos-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; align-items: start; }
+    @media (max-width: 1000px) { .pos-layout { grid-template-columns: 1fr; } }
     
-    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 300px; overflow-y: auto; display: none; margin-top: 5px; }
+    .pos-section { background: #fff; border-radius: 12px; border: 1px solid var(--line); padding: 20px; box-shadow: var(--shadow-sm); margin-bottom: 20px; }
+    .pos-section-title { font-size: 11px; text-transform: uppercase; font-weight: 800; color: var(--muted); margin-bottom: 15px; letter-spacing: 0.5px; }
+
+    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px; width: 100%; font-family: inherit; font-size: 15px; outline: none; box-sizing: border-box; transition: 0.2s; }
+    .input-box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+
+    /* Autocomplete */
+    .autocomplete-list { position: absolute; background: #fff; border: 1px solid var(--line); border-radius: 8px; width: calc(100% - 40px); max-height: 250px; overflow-y: auto; z-index: 10; box-shadow: var(--shadow-lg); display: none; }
     .autocomplete-list.active { display: block; }
-    .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-    .autocomplete-item.selected, .autocomplete-item:hover { background: var(--primary-soft); }
-    
-    .excel-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .excel-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; border-bottom: 2px solid var(--line); border-top: 1px solid var(--line); }
-    .excel-table td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
-    .qty-control { display: flex; align-items: center; gap: 4px; justify-content: center; }
-    .qty-btn { background: var(--panel-2); border: 1px solid var(--line); width: 26px; height: 26px; border-radius: 6px; font-weight: bold; cursor: pointer; color: var(--text); }
-    .qty-input { width: 50px; text-align: center; border: 1px solid var(--primary-soft); border-radius: 6px; padding: 6px 4px; font-weight: bold; outline:none; }
-    .checkout-footer { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start; }
-    .pay-btn { border: 2px solid var(--line); background: #fff; padding: 12px 20px; border-radius: 10px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; flex: 1; }
-    .pay-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
-    .btn-charge { width: 100%; padding: 18px; font-size: 18px; font-weight: 800; border-radius: 10px; margin-top: 15px; cursor: pointer; background: var(--success); color: white; border: none; }
-    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); }
+    .autocomplete-item { padding: 12px 15px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.1s; }
+    .autocomplete-item:hover { background: var(--panel-2); }
+    .autocomplete-item:last-child { border-bottom: none; }
+
+    /* Cart */
+    .cart-item { display: grid; grid-template-columns: 3fr 120px 1fr 20px; gap: 10px; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--line); }
+    .cart-item:last-child { border-bottom: none; }
+    .qty-btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; color: var(--text); }
+    .qty-btn:hover { background: #e2e8f0; }
+
+    .payment-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .pay-btn { background: #fff; border: 1px solid var(--line); padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; color: var(--text); }
+    .pay-btn:hover { border-color: var(--primary); background: var(--panel-2); }
+    .pay-btn.active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+
+    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
   </style>
 </head>
 <body>
 
-<div id="loadingOverlay">Sincronizando con la nube...</div>
+<div id="loadingOverlay">Procesando...</div>
 
 <div class="app">
   <aside class="sidebar">
-    <div class="brand"><div class="brand-logo">M</div><div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div></div>
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong id="sidebarUserName">Usuario: Admin</strong><small>Control del negocio</small></div>
+    </div>
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
@@ -60,64 +72,68 @@
 
   <main class="content">
     <header class="topbar">
-      <div class="page-title"><h1>Nueva Factura</h1><p>Conectado a Cloudflare D1</p></div>
-      <button class="btn btn-light" onclick="cancelarVenta()">🗑️ Vaciar</button>
+      <div class="page-title">
+        <h1 style="margin:0; font-size: 26px;">Punto de Venta</h1>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;" id="lblTerminalBox">Caja activa. <span id="lblTerminalName" style="color:var(--primary); font-weight:bold;">Central</span></p>
+      </div>
     </header>
 
-    <div class="pos-container">
-      
-      <article class="card card-pad">
-        <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;">1. Cliente</label>
-        <div style="position: relative;">
-          <input type="hidden" id="clientId" value="">
-          <input type="text" id="clientName" value="Consumidor Final" autocomplete="off" 
-                 onfocus="this.value=''; verificarClienteLibre()" 
-                 oninput="verificarClienteLibre()"
-                 class="pos-search-input" placeholder="Buscar cliente...">
+    <div class="pos-layout">
+      <div>
+        <div class="pos-section" style="position: relative;">
+          <div class="pos-section-title">1. Cliente</div>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="clientSearch" class="input-box" placeholder="Consumidor Final (Buscar por nombre o DNI/CUIT)" autocomplete="off">
+          </div>
           <div id="clientResults" class="autocomplete-list"></div>
+          <div id="selectedClientBadge" style="display:none; margin-top:10px; background:var(--primary-soft); padding:10px 15px; border-radius:8px; border:1px solid var(--primary); justify-content:space-between; align-items:center;">
+            <div>
+              <strong style="color:var(--primary); font-size:15px; display:block;" id="lblClientName">Nombre</strong>
+              <small style="color:var(--primary);" id="lblClientDoc">CUIT: 123</small>
+            </div>
+            <button class="btn btn-light" style="padding:4px 8px; font-size:12px;" onclick="quitarCliente()">Cambiar</button>
+          </div>
+          <input type="hidden" id="clientName">
+          <input type="hidden" id="clientId">
+          <input type="hidden" id="clientIsB2B" value="false">
         </div>
-      </article>
 
-      <article class="card">
-        <div style="padding: 20px;">
-          <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;">2. Artículos</label>
-          <div style="position: relative;">
-            <input type="text" id="posSearch" class="pos-search-input" placeholder="🔍 Buscar por nombre o código..." autocomplete="off" autofocus>
-            <div id="searchResults" class="autocomplete-list"></div>
-          </div>
-        </div>
-        <table class="excel-table">
-          <thead>
-            <tr><th>Código</th><th>Descripción</th><th style="text-align: right;">Precio</th><th style="text-align: center;">Cant.</th><th style="text-align: right;">Subtotal</th><th></th></tr>
-          </thead>
-          <tbody id="cartBody"></tbody>
-        </table>
-      </article>
-
-      <div class="checkout-footer">
-        <article class="card card-pad">
-          <h3 style="font-size: 12px; text-transform: uppercase; color: var(--muted);">3. Pago</h3>
-          <div style="display: flex; gap: 10px;" id="payMethodsB2C">
-            <button class="pay-btn active" onclick="setPayment('Efectivo', this)">💵 Efectivo</button>
-            <button class="pay-btn" onclick="setPayment('Transferencia', this)">📱 Transf.</button>
-            <button class="pay-btn" onclick="setPayment('Tarjeta', this)">💳 Tarjeta</button>
-          </div>
-          <div id="payMethodsB2B" style="display: none;">
-            <button class="pay-btn active" style="border-color: var(--warning); color: #b45309; width: 100%;">📓 A Cuenta Corriente</button>
-          </div>
+        <div class="pos-section" style="position: relative;">
+          <div class="pos-section-title">2. Artículos</div>
+          <input type="text" id="posSearch" class="input-box" placeholder="Buscar por nombre o código de barras..." autocomplete="off">
+          <div id="searchResults" class="autocomplete-list"></div>
           
-          <div id="cuponContainer" style="display: none; margin-top: 15px;">
-            <label style="font-size: 11px; color: var(--danger); text-transform: uppercase; font-weight:bold; display:block; margin-bottom:6px;">Número de Cupón / Lote *</label>
-            <input type="number" id="cuponNumber" placeholder="Ingresá el número del comprobante" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 600; border: 2px solid var(--line); border-radius: 8px; outline: none; box-sizing: border-box;">
+          <div id="cartContainer" style="margin-top: 20px;">
+            <div style="text-align: center; padding: 30px; color: var(--muted); font-size: 14px;">
+              El comprobante está vacío.<br>Buscá un artículo para comenzar.
+            </div>
           </div>
-        </article>
+        </div>
 
-        <article class="card card-pad">
-          <div style="display:flex; justify-content: space-between; font-size: 24px; font-weight: 800;">
-            <span>Total</span><span id="txtTotal" style="color: var(--primary);">$0</span>
+        <div class="pos-section">
+          <div class="pos-section-title">3. Pago</div>
+          <div class="payment-grid" id="payGrid">
+            <button class="pay-btn active" onclick="setPayment('Efectivo')">💵 Efectivo</button>
+            <button class="pay-btn" onclick="setPayment('Transferencia')">📱 Transf.</button>
+            <button class="pay-btn" onclick="setPayment('Tarjeta')">💳 Tarjeta</button>
           </div>
-          <button class="btn-charge" id="btnCobrar" onclick="procesarVenta()">Confirmar e Imprimir (F12)</button>
-        </article>
+          <div id="extraData" style="display:none; margin-top:15px;">
+            <input type="text" id="cuponInput" class="input-box" placeholder="N° de comprobante / Lote / Cupón">
+          </div>
+          <div id="ccData" style="display:none; margin-top:15px; background:#fffdf2; border:1px solid #fef08a; padding:15px; border-radius:8px; text-align:center; color:#b45309; font-weight:bold; font-size:14px;">
+            El total se cargará a la Cuenta Corriente del cliente seleccionado.
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="pos-section" style="position: sticky; top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <span style="font-size: 24px; font-weight: 900;">Total</span>
+            <span id="cartTotal" style="font-size: 24px; font-weight: 900; color: var(--primary);">$ 0</span>
+          </div>
+          <button class="btn btn-success" style="width: 100%; padding: 18px; font-size: 16px; font-weight: bold; justify-content: center;" onclick="procesarVenta()">Confirmar e Imprimir (F12)</button>
+        </div>
       </div>
     </div>
   </main>
@@ -126,109 +142,24 @@
 <script src="core.js"></script>
 <script>
   const API_URL = "/api";
-  let dbProducts = []; let dbClients = []; let cart = [];
-  let currentPaymentMethod = 'Efectivo'; let isB2B = false;
+  let dbProducts = []; 
+  let dbClients = [];
+  let cart = [];
   let filteredProducts = [];
+  let filteredClients = [];
+  let currentPaymentMethod = 'Efectivo';
+  let isB2B = false;
 
-  function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
+  const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+  document.getElementById('lblTerminalName').textContent = terminalActiva;
+  document.getElementById('sidebarUserName').textContent = `Usuario: ${localStorage.getItem('activeUser') || 'Admin'}`;
+
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
-  function todayISO() { return new Date().toISOString().split('T')[0]; }
+  function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
+  function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
 
-  async function initPOS() {
-    mostrarCarga(true);
-    try {
-      const [resP, resC] = await Promise.all([fetch(`${API_URL}/products`), fetch(`${API_URL}/clients`)]);
-      if (!resP.ok) console.error("Error D1 Productos:", await resP.text());
-      if (!resC.ok) console.error("Error D1 Clientes:", await resC.text());
-
-      dbProducts = resP.ok ? await resP.json() : [];
-      dbClients = resC.ok ? await resC.json() : [];
-
-      console.log(`✅ D1 Conectado: ${dbProducts.length} productos y ${dbClients.length} clientes encontrados.`);
-      renderCart();
-    } catch (e) { 
-      console.error("Error de conexión:", e); 
-    } finally { 
-      mostrarCarga(false); 
-      document.getElementById('posSearch').focus(); 
-    }
-  }
-
-  document.addEventListener('click', (e) => {
-    if (!document.getElementById('posSearch').contains(e.target) && !document.getElementById('searchResults').contains(e.target)) {
-      document.getElementById('searchResults').classList.remove('active');
-    }
-    if (!document.getElementById('clientName').contains(e.target) && !document.getElementById('clientResults').contains(e.target)) {
-      document.getElementById('clientResults').classList.remove('active');
-    }
-  });
-
-  // --- BUSQUEDA CLIENTES ---
-  window.verificarClienteLibre = function() {
-    const term = document.getElementById('clientName').value.toLowerCase().trim();
-    if (term === "") { document.getElementById('clientId').value = ''; activarModoB2C(); }
-    
-    const clientResults = document.getElementById('clientResults');
-    if (term.length < 1) { clientResults.classList.remove('active'); return; }
-
-    const filtrados = dbClients.filter(c => 
-      ((c.name || '').toLowerCase().includes(term)) || 
-      ((c.cuil || '').toLowerCase().includes(term))
-    ).slice(0, 5);
-
-    clientResults.innerHTML = filtrados.length === 0 ? '<div style="padding:15px; text-align:center; color:var(--muted);">Dejar como Consumidor Final</div>' : filtrados.map(c => `
-      <div class="autocomplete-item" onclick="seleccionarClientePOS('${c.id}', '${escapeHtml(c.name)}')">
-        <div><strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small></div>
-      </div>`).join('');
-    clientResults.classList.add('active');
-  };
-
-  window.seleccionarClientePOS = function(id, name) {
-    document.getElementById('clientName').value = name;
-    document.getElementById('clientId').value = id;
-    document.getElementById('clientResults').classList.remove('active');
-    activarModoB2B();
-  };
-
-  function activarModoB2C() {
-    isB2B = false; 
-    document.getElementById('payMethodsB2C').style.display = 'flex'; 
-    document.getElementById('payMethodsB2B').style.display = 'none';
-    document.getElementById('cuponContainer').style.display = 'none'; // Aseguramos que se oculte
-    document.getElementById('btnCobrar').textContent = "Confirmar e Imprimir (F12)";
-    setPayment('Efectivo', document.querySelector('#payMethodsB2C .pay-btn'), false);
-  }
-
-  function activarModoB2B() {
-    isB2B = true; currentPaymentMethod = 'A Cuenta Corriente';
-    document.getElementById('payMethodsB2C').style.display = 'none'; 
-    document.getElementById('payMethodsB2B').style.display = 'flex';
-    document.getElementById('cuponContainer').style.display = 'none'; // Aseguramos que se oculte
-    document.getElementById('btnCobrar').textContent = "Confirmar en Cuenta Corriente (F12)";
-  }
-
-  // --- LÓGICA DE MOSTRAR/OCULTAR CUPÓN ---
-  function setPayment(method, btn, focus = true) {
-    if (isB2B) return;
-    currentPaymentMethod = method;
-    document.querySelectorAll('#payMethodsB2C .pay-btn').forEach(b => b.classList.remove('active'));
-    if(btn) btn.classList.add('active');
-    
-    const cupon = document.getElementById('cuponContainer');
-    if (method === 'Tarjeta') { 
-      cupon.style.display = 'block'; 
-      if(focus) document.getElementById('cuponNumber').focus(); 
-    } else { 
-      cupon.style.display = 'none'; 
-      document.getElementById('cuponNumber').value = ''; 
-      if(focus) document.getElementById('posSearch').focus(); 
-    }
-  }
-
-  // --- NUEVA LÓGICA: LEER SOLO EL STOCK DE ESTA SUCURSAL ---
+  // --- OBTENER STOCK DE SUCURSAL ---
   function getLocalStock(prod) {
-      const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
       if (!prod.stock_branches) return prod.stock || 0;
       try {
           const branches = JSON.parse(prod.stock_branches);
@@ -238,22 +169,30 @@
       }
   }
 
-  // --- BUSCADOR DE PRODUCTOS PARA LA CAJA ---
+  async function initPos() {
+    mostrarCarga(true);
+    try {
+      const [resProd, resCli] = await Promise.all([ fetch(`${API_URL}/products`), fetch(`${API_URL}/clients`) ]);
+      if(resProd.ok) dbProducts = await resProd.json();
+      if(resCli.ok) dbClients = await resCli.json();
+    } catch(e) { console.error(e); } 
+    finally { mostrarCarga(false); }
+  }
+
+  // --- BUSCADOR DE PRODUCTOS (CON BLOQUEO DE STOCK) ---
   document.getElementById('posSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
     const searchResults = document.getElementById('searchResults');
     if (term.length < 1) { searchResults.classList.remove('active'); return; }
 
-    filteredProducts = dbProducts.filter(p => 
-      ((p.name || '').toLowerCase().includes(term)) || 
-      ((p.code || '').toLowerCase().includes(term))
-    ).slice(0, 10);
+    filteredProducts = dbProducts.filter(p => p.status !== 'Inactivo' && (
+      (p.name || '').toLowerCase().includes(term) || (p.code || '').toLowerCase().includes(term)
+    )).slice(0, 15);
 
     if (filteredProducts.length === 0) {
         searchResults.innerHTML = '<div style="padding:15px; text-align:center; color:var(--danger); font-weight:bold;">No se encontró el producto</div>';
     } else {
         searchResults.innerHTML = filteredProducts.map((p, idx) => {
-          // Extraemos solo el stock de esta terminal
           const localStock = getLocalStock(p);
           const colorStock = localStock > 0 ? 'var(--success)' : 'var(--danger)';
           
@@ -269,78 +208,174 @@
 
   function agregarAlCarrito(idx) {
     const p = filteredProducts[idx];
-    
-    // OPCIONAL: Descomentá la siguiente línea si querés BLOQUEAR la venta si no hay stock físico
-    // if (getLocalStock(p) <= 0) return alert("⚠️ No podés vender este artículo porque no hay stock en esta sucursal.");
-
+    const localStock = getLocalStock(p);
     const existe = cart.find(i => i.id === p.id);
-    if (existe) existe.qty++; else cart.unshift({ ...p, qty: 1 });
-    document.getElementById('posSearch').value = ''; 
-    document.getElementById('searchResults').classList.remove('active');
-    document.getElementById('posSearch').focus(); renderCart();
-  }
+    const qtyDeseada = existe ? existe.qty + 1 : 1;
 
-  function agregarAlCarrito(idx) {
-    const p = filteredProducts[idx];
-    const existe = cart.find(i => i.id === p.id);
-    if (existe) existe.qty++; else cart.unshift({ ...p, qty: 1 });
-    document.getElementById('posSearch').value = ''; 
-    document.getElementById('searchResults').classList.remove('active');
-    document.getElementById('posSearch').focus(); renderCart();
-  }
-
-  function renderCart() {
-    const tbody = document.getElementById('cartBody');
-    let total = 0;
-    tbody.innerHTML = cart.map(i => {
-      const sub = i.price * i.qty; total += sub;
-      return `<tr>
-        <td style="color: var(--muted);">${i.code || '-'}</td>
-        <td><strong>${escapeHtml(i.name)}</strong></td>
-        <td style="text-align:right;">${currency(i.price)}</td>
-        <td style="text-align:center;"><input type="number" class="qty-input" value="${i.qty}" onchange="updateQty('${i.id}', this.value)"></td>
-        <td style="text-align:right; color:var(--primary);"><strong>${currency(sub)}</strong></td>
-        <td style="text-align:center;"><button onclick="quitar('${i.id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">✕</button></td>
-      </tr>`;
-    }).join('');
-    if(!cart.length) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted);">El comprobante está vacío.<br><small>Buscá un artículo para comenzar.</small></td></tr>';
-    document.getElementById('txtTotal').textContent = currency(total);
-  }
-
-  window.updateQty = (id, v) => { const i = cart.find(x => x.id === id); if(i) i.qty = parseInt(v) || 1; renderCart(); };
-  window.quitar = (id) => { cart = cart.filter(x => x.id !== id); renderCart(); };
-  window.cancelarVenta = () => { if(confirm("¿Vaciar?")) { cart = []; renderCart(); } };
-
-  // --- COBRO CON VALIDACIÓN DE CUPÓN ---
-  window.procesarVenta = async function() {
-    if(!cart.length) return;
-    if(!confirm(isB2B ? "¿Confirmar y enviar deuda a la Cuenta Corriente?" : "¿Confirmar venta e imprimir ticket?")) return;
-    
-    // VALIDACIÓN: Si es tarjeta, obligar a poner cupón
-    let cuponText = '';
-    if (!isB2B && currentPaymentMethod === 'Tarjeta') {
-      cuponText = document.getElementById('cuponNumber').value.trim();
-      if (!cuponText) { 
-        alert("⚠️ Ingresá el número de lote/cupón para poder cobrar con Tarjeta."); 
-        document.getElementById('cuponNumber').focus(); 
-        return; 
-      }
+    // BARRERA 1: BLOQUEO DE STOCK AL AGREGAR
+    if (qtyDeseada > localStock) {
+        alert(`❌ No podés vender este artículo.\n\nStock actual en ${terminalActiva}: ${localStock}\nIntentás vender: ${qtyDeseada}`);
+        document.getElementById('posSearch').value = ''; 
+        document.getElementById('searchResults').classList.remove('active');
+        document.getElementById('posSearch').focus();
+        return;
     }
 
-    mostrarCarga(true);
-    const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+    if (existe) existe.qty++; else cart.unshift({ ...p, qty: 1 });
+    
+    document.getElementById('posSearch').value = ''; 
+    document.getElementById('searchResults').classList.remove('active');
+    document.getElementById('posSearch').focus(); 
+    renderCart();
+  }
+
+  // --- CARRO Y CANTIDADES ---
+  function updateQty(id, delta) {
+    const item = cart.find(i => i.id === id);
+    if (!item) return;
+    
+    const nuevoQty = item.qty + delta;
+    if (nuevoQty <= 0) return removeCartItem(id);
+
+    // BARRERA 2: BLOQUEO DE STOCK AL SUMAR (+)
+    if (delta > 0) {
+        const pDB = dbProducts.find(p => p.id === id);
+        const localStock = getLocalStock(pDB);
+        if (nuevoQty > localStock) {
+            alert(`❌ Stock insuficiente.\nSolo tenés ${localStock} unidades en ${terminalActiva}.`);
+            return;
+        }
+    }
+
+    item.qty = nuevoQty;
+    renderCart();
+  }
+
+  function removeCartItem(id) { cart = cart.filter(i => i.id !== id); renderCart(); }
+
+  function renderCart() {
+    const c = document.getElementById('cartContainer');
+    let total = 0;
+    
+    if (cart.length === 0) {
+      c.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--muted); font-size: 14px;">El comprobante está vacío.<br>Buscá un artículo para comenzar.</div>';
+      document.getElementById('cartTotal').textContent = '$ 0';
+      return;
+    }
+
+    c.innerHTML = cart.map(i => {
+      const sub = i.qty * i.price;
+      total += sub;
+      return `
+      <div class="cart-item">
+        <div><strong style="font-size:14px; display:block;">${escapeHtml(i.name)}</strong><small style="color:var(--muted);">${i.code || '-'}</small></div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="qty-btn" onclick="updateQty('${i.id}', -1)">-</button>
+          <span style="width:20px; text-align:center; font-weight:bold;">${i.qty}</span>
+          <button class="qty-btn" onclick="updateQty('${i.id}', 1)">+</button>
+        </div>
+        <div style="text-align:right; font-weight:bold; color:var(--primary); font-size:15px;">${currency(sub)}</div>
+        <button style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;" onclick="removeCartItem('${i.id}')">✕</button>
+      </div>`;
+    }).join('');
+    
+    document.getElementById('cartTotal').textContent = currency(total);
+  }
+
+  // --- BUSCADOR DE CLIENTES ---
+  document.getElementById('clientSearch').addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase().trim();
+    const res = document.getElementById('clientResults');
+    if (term.length < 1) { res.classList.remove('active'); return; }
+
+    filteredClients = dbClients.filter(c => (c.name||'').toLowerCase().includes(term) || (c.cuil||'').includes(term)).slice(0,5);
+    
+    if(filteredClients.length === 0) {
+        res.innerHTML = '<div style="padding:15px; color:var(--muted); text-align:center;">No encontrado</div>';
+    } else {
+        res.innerHTML = filteredClients.map((c, idx) => `
+        <div class="autocomplete-item" onclick="seleccionarCliente(${idx})">
+          <div><strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small></div>
+          <div><span style="background:var(--panel-2); padding:2px 6px; border-radius:4px; font-size:11px;">${c.type==='client'?'Mayorista':'Minorista'}</span></div>
+        </div>`).join('');
+    }
+    res.classList.add('active');
+  });
+
+  function seleccionarCliente(idx) {
+    const c = filteredClients[idx];
+    document.getElementById('clientId').value = c.id;
+    document.getElementById('clientName').value = c.name;
+    isB2B = c.type === 'client';
+    document.getElementById('clientIsB2B').value = isB2B;
+    
+    document.getElementById('lblClientName').textContent = c.name;
+    document.getElementById('lblClientDoc').textContent = c.cuil ? 'CUIT/DNI: ' + c.cuil : 'Consumidor Final';
+    
+    document.getElementById('clientSearch').style.display = 'none';
+    document.getElementById('selectedClientBadge').style.display = 'flex';
+    document.getElementById('clientResults').classList.remove('active');
+    
+    if (document.querySelector('.pay-btn[onclick="setPayment(\\'A Cuenta Corriente\\')"]') == null) {
+        const btnCC = document.createElement('button');
+        btnCC.className = 'pay-btn';
+        btnCC.textContent = '📓 Cta. Corriente';
+        btnCC.onclick = () => setPayment('A Cuenta Corriente');
+        document.getElementById('payGrid').appendChild(btnCC);
+    }
+  }
+
+  function quitarCliente() {
+    document.getElementById('clientId').value = '';
+    document.getElementById('clientName').value = '';
+    isB2B = false;
+    document.getElementById('clientIsB2B').value = 'false';
+    document.getElementById('clientSearch').style.display = 'block';
+    document.getElementById('clientSearch').value = '';
+    document.getElementById('selectedClientBadge').style.display = 'none';
+    
+    const btns = document.querySelectorAll('.pay-btn');
+    btns.forEach(b => { if(b.textContent.includes('Cta. Corriente')) b.remove(); });
+    if(currentPaymentMethod === 'A Cuenta Corriente') setPayment('Efectivo');
+  }
+
+  // --- FORMAS DE PAGO ---
+  function setPayment(method) {
+    currentPaymentMethod = method;
+    document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    
+    const extra = document.getElementById('extraData');
+    const ccData = document.getElementById('ccData');
+    
+    if (method === 'Tarjeta' || method === 'Transferencia') {
+        extra.style.display = 'block'; document.getElementById('cuponInput').focus(); ccData.style.display = 'none';
+    } else if (method === 'A Cuenta Corriente') {
+        extra.style.display = 'none'; ccData.style.display = 'block';
+    } else {
+        extra.style.display = 'none'; ccData.style.display = 'none';
+    }
+  }
+
+  // --- PROCESAR VENTA ---
+  async function procesarVenta() {
+    if (cart.length === 0) return alert("El carrito está vacío.");
+    
+    let total = 0; cart.forEach(i => total += i.qty * i.price);
     const dateStr = todayISO();
     const cid = document.getElementById('clientId').value;
-
-    // Leemos la terminal activa (Si no hay, por seguridad asume 'Central')
-    const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+    const cuponText = document.getElementById('cuponInput').value.trim();
+    
+    if ((currentPaymentMethod === 'Tarjeta' || currentPaymentMethod === 'Transferencia') && !cuponText) {
+        if(!confirm("No ingresaste el N° de comprobante / Lote. ¿Continuar igual?")) return;
+    }
 
     const venta = {
       id: 'vta_' + Date.now(), 
       createdAt: new Date().toISOString(), 
       date: dateStr,
       seller: localStorage.getItem('activeUser') || 'Admin',
-      branch: terminalActiva, // <- ESTA LÍNEA ES LA CLAVE DE TODO
+      branch: terminalActiva,
       clientId: cid || 'Consumidor Final', 
       client: document.getElementById('clientName').value || 'Consumidor Final',
       method: currentPaymentMethod, 
@@ -352,31 +387,48 @@
       items: cart
     };
 
+    mostrarCarga(true);
     try {
-      const resV = await fetch(`${API_URL}/sales`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(venta) });
-      if(!resV.ok) throw new Error(await resV.text());
-      
-      if(isB2B && cid) {
-        const mov = { id: 'cc_' + Date.now(), clientId: cid, date: dateStr, type: 'debe', amount: total, concept: `Ticket #${venta.id.split('_')[1]}` };
-        const resCC = await fetch(`${API_URL}/cc_movements`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(mov) });
-        if(!resCC.ok) throw new Error("Cta Cte Error: " + await resCC.text());
-      }
+      const res = await fetch(`${API_URL}/sales`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(venta) });
+      if (res.ok) {
+         // --- ACTUALIZAR LA MEMORIA LOCAL PARA NO RECARGAR TODO ---
+         cart.forEach(itemVendido => {
+             const prodEnMemoria = dbProducts.find(p => p.id === itemVendido.id);
+             if (prodEnMemoria) {
+                 let branches = {};
+                 try { branches = JSON.parse(prodEnMemoria.stock_branches); } catch(e) { branches = { "Central": prodEnMemoria.stock || 0 }; }
+                 if (branches[terminalActiva] === undefined) branches[terminalActiva] = 0;
+                 
+                 // Descontamos de memoria
+                 branches[terminalActiva] -= itemVendido.qty;
+                 
+                 let total = 0; for(let b in branches) total += branches[b];
+                 prodEnMemoria.stock_branches = JSON.stringify(branches);
+                 prodEnMemoria.stock = total;
+             }
+         });
 
-      alert(isB2B ? "📓 Guardado en Cta. Cte." : "✅ Venta finalizada.");
-      localStorage.setItem('last_sale_to_print', JSON.stringify(venta));
+         cart = []; 
+         quitarCliente(); 
+         document.getElementById('cuponInput').value = '';
+         setPayment('Efectivo');
+         renderCart();
+         alert("✅ Venta registrada con éxito.");
+      } else { alert("Error al registrar la venta."); }
+    } catch(e) { console.error(e); alert("Error de red."); } finally { mostrarCarga(false); }
+  }
 
-      cart = []; document.getElementById('clientName').value = 'Consumidor Final'; document.getElementById('clientId').value = '';
-      if (currentPaymentMethod === 'Tarjeta') document.getElementById('cuponNumber').value = '';
-      const ventaFueB2B = isB2B;
-      activarModoB2C(); renderCart();
-      
-      if (!ventaFueB2B) window.open('factura.html', '_blank');
+  // --- ATAJOS DE TECLADO ---
+  document.addEventListener('keydown', (e) => {
+      if (e.key === 'F12') { e.preventDefault(); procesarVenta(); }
+  });
 
-    } catch(e) { alert("Error: " + e.message); }
-    finally { mostrarCarga(false); }
-  };
+  document.addEventListener('click', (e) => {
+    if(!e.target.closest('#clientSearch') && !e.target.closest('#clientResults')) document.getElementById('clientResults').classList.remove('active');
+    if(!e.target.closest('#posSearch') && !e.target.closest('#searchResults')) document.getElementById('searchResults').classList.remove('active');
+  });
 
-  initPOS();
+  initPos();
 </script>
 </body>
 </html>
