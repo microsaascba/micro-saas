@@ -20,6 +20,7 @@
     td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
+    .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
   </style>
 </head>
@@ -52,6 +53,9 @@
       <div class="page-title">
         <h1 style="margin:0; font-size: 26px;">Locales y Depósitos</h1>
         <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión de sucursales para el control de inventario.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirConfigTerminal()">🖥️ Configurar esta PC</button>
       </div>
     </header>
 
@@ -93,7 +97,6 @@
 
       <article class="card card-pad">
         <h2 style="margin: 0 0 20px 0; font-size: 18px;">Directorio de Locales</h2>
-        
         <div style="overflow-x: auto;">
           <table>
             <thead>
@@ -127,52 +130,23 @@
   </form>
 </dialog>
 
-  
-<button class="btn btn-outline" onclick="abrirConfigTerminal()">🖥️ Configurar esta PC</button>
-
 <dialog id="modalTerminal" style="width: 100%; max-width: 400px;">
-    <div class="modal-content">
-        <h2 style="margin: 0 0 10px 0; font-size:18px;">Vincular Dispositivo</h2>
-        <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Asigná esta computadora a una sucursal fija para evitar errores de facturación.</p>
-        
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seleccionar Destino</label>
-        <select id="selectTerminalBranch" class="input-box" style="margin-bottom: 25px;">
-            </select>
+  <div class="modal-content">
+    <h2 style="margin: 0 0 10px 0; font-size:18px;">Vincular Dispositivo</h2>
+    <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Asigná esta computadora a una sucursal fija para evitar errores de facturación.</p>
+    
+    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seleccionar Destino</label>
+    <select id="selectTerminalBranch" class="input-box" style="margin-bottom: 25px;"></select>
 
-        <div style="display: flex; gap: 10px; justify-content: flex-end;">
-            <button class="btn btn-light" onclick="document.getElementById('modalTerminal').close()">Cancelar</button>
-            <button class="btn btn-primary" onclick="confirmarVinculo()">Vincular esta PC</button>
-        </div>
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button class="btn btn-light" onclick="document.getElementById('modalTerminal').close()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarVinculo()">Vincular esta PC</button>
     </div>
+  </div>
 </dialog>
-
-
-  
 
 <script src="core.js"></script>
 <script>
-
-
-function abrirConfigTerminal() {
-    // Solo permitimos esto si eres Admin
-    if(localStorage.getItem('userRole') !== 'admin') return alert("Solo el administrador puede configurar terminales.");
-    
-    // Cargar el select con las sucursales existentes en dbBranches
-    const select = document.getElementById('selectTerminalBranch');
-    select.innerHTML = dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
-    
-    document.getElementById('modalTerminal').showModal();
-}
-
-function confirmarVinculo() {
-    const branch = document.getElementById('selectTerminalBranch').value;
-    if(confirm(`¿Confirmás que esta computadora pertenece a: ${branch}?`)) {
-        localStorage.setItem('terminal_assigned_branch', branch);
-        alert("✅ Terminal vinculada con éxito. El sistema ahora operará bajo esta sucursal.");
-        location.reload();
-    }
-}
-  
   const API_URL = "/api"; 
   let dbBranches = [];
   const PIN_ADMIN = "1234";
@@ -191,10 +165,25 @@ function confirmarVinculo() {
     finally { mostrarCarga(false); renderTable(); }
   }
 
+  function abrirConfigTerminal() {
+    if(localStorage.getItem('userRole') !== 'admin') return alert("Solo el administrador puede configurar terminales.");
+    const select = document.getElementById('selectTerminalBranch');
+    select.innerHTML = dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+    document.getElementById('modalTerminal').showModal();
+  }
+
+  function confirmarVinculo() {
+    const branch = document.getElementById('selectTerminalBranch').value;
+    if(confirm(`¿Confirmás que esta computadora pertenece a: ${branch}?`)) {
+      localStorage.setItem('terminal_assigned_branch', branch);
+      alert("✅ Terminal vinculada con éxito. El sistema operará bajo esta sucursal.");
+      location.reload();
+    }
+  }
+
   async function guardarSucursal(e) {
     e.preventDefault();
     const id = document.getElementById('branchId').value || 'br_' + Date.now();
-    
     const branch = {
       id: id,
       name: document.getElementById('branchName').value.trim(),
