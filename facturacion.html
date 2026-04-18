@@ -301,9 +301,19 @@
     const cid = document.getElementById('clientId').value;
 
     const venta = {
-      id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: dateStr,
-      clientId: cid || 'Consumidor Final', client: document.getElementById('clientName').value || 'Consumidor Final',
-      method: currentPaymentMethod, cupon: cuponText, subtotal: total, promoDiscount: 0, total: total, isB2B: isB2B, items: cart
+      id: 'vta_' + Date.now(), 
+      createdAt: new Date().toISOString(), // Esto graba la hora exacta
+      date: todayISO(),
+      seller: localStorage.getItem('activeUser') || 'Admin', // Esto graba el Vendedor
+      clientId: cid || 'Consumidor Final', 
+      client: document.getElementById('clientName').value || 'Consumidor Final',
+      method: currentPaymentMethod, 
+      cupon: cuponText, 
+      subtotal: total, 
+      promoDiscount: 0, 
+      total: total, 
+      isB2B: isB2B, 
+      items: cart
     };
 
     try {
