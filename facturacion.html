@@ -301,11 +301,15 @@
     const dateStr = todayISO();
     const cid = document.getElementById('clientId').value;
 
+    // Leemos la terminal activa (Si no hay, por seguridad asume 'Central')
+    const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+
     const venta = {
       id: 'vta_' + Date.now(), 
-      createdAt: new Date().toISOString(), // Esto graba la hora exacta
-      date: todayISO(),
-      seller: localStorage.getItem('activeUser') || 'Admin', // Esto graba el Vendedor
+      createdAt: new Date().toISOString(), 
+      date: dateStr,
+      seller: localStorage.getItem('activeUser') || 'Admin',
+      branch: terminalActiva, // <- ESTA LÍNEA ES LA CLAVE DE TODO
       clientId: cid || 'Consumidor Final', 
       client: document.getElementById('clientName').value || 'Consumidor Final',
       method: currentPaymentMethod, 
