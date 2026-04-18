@@ -79,7 +79,7 @@
   </div>
 
   <script>
-    async function procesarLogin(e) {
+   async function procesarLogin(e) {
       e.preventDefault();
       
       const btn = document.getElementById('btnSubmit');
@@ -97,6 +97,47 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: u, password: p })
         });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // GUARDAMOS LA LLAVE DE ACCESO EN EL NAVEGADOR
+          localStorage.setItem('activeUser', data.user.username);
+          localStorage.setItem('userRole', data.user.role);
+          localStorage.setItem('allowedModules', JSON.stringify(data.user.allowedModules));
+          
+          btn.style.background = "var(--success)";
+          btn.textContent = "¡Acceso Autorizado!";
+          
+          // --- LÓGICA DE REDIRECCIÓN INTELIGENTE ---
+          let targetPage = 'dashboard.html';
+          if (data.user.role === 'administrativo') targetPage = 'contable.html';
+          if (data.user.role === 'cajera' || data.user.role === 'vendedora' || data.user.role === 'pos') targetPage = 'facturacion.html';
+
+          // Seguridad: si el rol no es admin y le destildaron su módulo principal,
+          // lo mandamos al primer módulo que tenga tildado en su lista de permisos.
+          const moduleName = targetPage.replace('.html', '');
+          if (data.user.role !== 'admin' && data.user.allowedModules && !data.user.allowedModules.includes(moduleName)) {
+              if (data.user.allowedModules.length > 0) {
+                  targetPage = data.user.allowedModules[0] + '.html';
+              }
+          }
+          
+          // Redirigimos al módulo que le corresponde
+          setTimeout(() => { window.location.href = targetPage; }, 500);
+        } else {
+          errorMsg.textContent = data.error || "Error desconocido.";
+          errorMsg.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = "Ingresar al sistema";
+        }
+      } catch (error) {
+        errorMsg.textContent = "Error de red. Verificá tu conexión.";
+        errorMsg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = "Ingresar al sistema";
+      }
+    }
 
         const data = await response.json();
 
