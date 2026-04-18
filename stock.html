@@ -20,7 +20,7 @@
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
     
-    /* TABLA ESTILO EXCEL */
+    /* TABLA ESTILO EXCEL (PANTALLA) */
     .excel-table { width: 100%; border-collapse: collapse; text-align: left; background: #fff; }
     .excel-table th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
     .excel-table td { padding: 10px 15px; border: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
@@ -42,25 +42,36 @@
     .tab-content { display: none; animation: fadeIn 0.3s ease; }
     .tab-content.active { display: block; }
 
-    /* ESTILO DE REMITO PARA IMPRIMIR */
+    /* ESTILO DE REMITO COMPACTO PARA IMPRIMIR (ENTRAN 30+ ITEMS) */
     #printRemito { display: none; }
     @media print {
-      @page { margin: 0; size: A4 portrait; }
-      body { margin: 0; background: #fff; padding: 20mm; font-family: sans-serif; }
+      @page { margin: 15mm; size: A4 portrait; }
+      body { margin: 0; background: #fff; font-family: sans-serif; color: #000; }
       .app, dialog { display: none !important; }
-      #printRemito { display: block !important; }
-      .remito-header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 15px; margin-bottom: 20px; }
-      .remito-title { font-size: 24px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; }
-      .remito-box { border: 1px solid #000; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-      .remito-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
-      .remito-table th, .remito-table td { border: 1px solid #000; padding: 10px; text-align: left; }
-      .remito-table th { background: #f0f0f0; }
-      .firmas { display: flex; justify-content: space-between; margin-top: 50px; }
-      .firma-line { border-top: 1px solid #000; width: 40%; text-align: center; padding-top: 5px; font-size: 12px; }
+      #printRemito { display: block !important; width: 100%; }
+      
+      .remito-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
+      .remito-title { font-size: 16px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin:0;}
+      
+      .remito-boxes { display: flex; gap: 10px; margin-bottom: 15px; }
+      .remito-box { border: 1px solid #000; padding: 8px; border-radius: 4px; flex: 1; }
+      .remito-box strong { font-size: 10px; color: #333; text-transform: uppercase; }
+      .remito-box h3 { margin: 2px 0; font-size: 13px; }
+      .remito-box p { margin: 0; font-size: 10px; }
+
+      .remito-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px; }
+      .remito-table th, .remito-table td { border: 1px solid #000; padding: 4px 6px; text-align: left; }
+      .remito-table th { background: #f0f0f0; font-weight: bold; }
+      .remito-table td { height: 16px; /* Fuerza el alto mínimo para apilar filas */ }
+      
+      .firmas { display: flex; justify-content: space-between; margin-top: 30px; }
+      .firma-line { border-top: 1px solid #000; width: 40%; text-align: center; padding-top: 4px; font-size: 10px; }
     }
   </style>
 </head>
 <body>
+
+<div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -124,7 +135,7 @@
 
         <div id="tab-inventario" class="tab-content active">
           <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
-            <input type="text" class="input-box" placeholder="🔍 Buscar producto o SKU..." style="flex: 1; min-width: 250px;">
+            <input type="text" class="input-box" placeholder="🔍 Buscar producto o código..." style="flex: 1; min-width: 250px;">
             <select class="input-box" style="width: auto; font-weight: bold; color: var(--muted);">
               <option value="ALL">Todas las Sucursales</option>
               <option value="Central">Mostrar solo Central</option>
@@ -148,24 +159,24 @@
               </thead>
               <tbody>
                 <tr>
-                  <td><span class="badge-var">4545</span></td>
-                  <td><strong>Máquina de Corte Profesional</strong><br><small style="color:var(--muted)">Herramientas</small></td>
-                  <td>$ 45.000</td>
+                  <td><span class="badge-var">1001</span></td>
+                  <td><strong>Teclado Mecánico RGB</strong><br><small style="color:var(--muted)">Periféricos</small></td>
+                  <td>$ 25.000</td>
                   <td class="col-number" style="background:#f8fafc;">100</td>
                   <td class="col-number">80</td>
                   <td class="col-number" style="color:var(--danger);">0</td>
                   <td class="col-number">20</td>
-                  <td class="col-val">$ 4.500.000</td>
+                  <td class="col-val">$ 2.500.000</td>
                 </tr>
                 <tr>
-                  <td><span class="badge-var">1023</span></td>
-                  <td><strong>Tijera Filo Dulce 6"</strong><br><small style="color:var(--muted)">Tijeras</small></td>
-                  <td>$ 12.000</td>
+                  <td><span class="badge-var">1002</span></td>
+                  <td><strong>Monitor 24" Full HD</strong><br><small style="color:var(--muted)">Monitores</small></td>
+                  <td>$ 80.000</td>
                   <td class="col-number" style="background:#f8fafc;">50</td>
                   <td class="col-number">25</td>
                   <td class="col-number">25</td>
                   <td class="col-number">0</td>
-                  <td class="col-val">$ 600.000</td>
+                  <td class="col-val">$ 4.000.000</td>
                 </tr>
               </tbody>
             </table>
@@ -195,11 +206,11 @@
                   <td><strong>REM-00105</strong></td>
                   <td><span style="background:var(--primary-soft); color:var(--primary); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Transferencia</span></td>
                   <td><strong>Central</strong> ➔ <strong>Sucursal 1</strong></td>
-                  <td>5 un. - Máquina de Corte...<br><small style="color:var(--muted)">Enviado por: Admin</small></td>
+                  <td>5 un. - Teclado Mecánico RGB<br><small style="color:var(--muted)">Enviado por: Admin</small></td>
                   <td><span style="background:#fef08a; color:#b45309; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">🚚 En Tránsito</span></td>
                   <td style="text-align: center;">
                     <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="window.print()">🖨️ Imprimir Remito</button>
-                    <button class="btn btn-success" style="padding:4px 8px; font-size:11px; margin-left:5px;">✅ Recibir Mercadería</button>
+                    <button class="btn btn-success" style="padding:4px 8px; font-size:11px; margin-left:5px;">✅ Recibir</button>
                   </td>
                 </tr>
                 <tr>
@@ -207,7 +218,7 @@
                   <td><strong>AJU-0089</strong></td>
                   <td><span style="background:var(--panel-2); color:var(--text); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold; border:1px solid var(--line);">Ajuste Manual</span></td>
                   <td><strong>Central</strong></td>
-                  <td>-2 un. - Tijera Filo Dulce<br><small style="color:var(--danger)">Motivo: Producto dañado</small></td>
+                  <td>-2 un. - Monitor 24" Full HD<br><small style="color:var(--danger)">Motivo: Producto dañado</small></td>
                   <td><span style="background:#dcfce7; color:#16a34a; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">Aplicado</span></td>
                   <td style="text-align: center;">
                     <span style="color:var(--muted); font-size:11px;">Solo lectura</span>
@@ -226,53 +237,51 @@
 <div id="printRemito">
   <div class="remito-header">
     <div>
-      <h1 style="margin: 0; font-size: 28px; font-weight: 900;">VIGGO PROFESSIONAL</h1>
-      <p style="margin: 5px 0 0 0; color: #555;">Logística e Inventario Interno</p>
+      <h1 style="margin: 0; font-size: 20px; font-weight: 900;">MICRO SAAS SOLUCIONES</h1>
+      <p style="margin: 2px 0 0 0; font-size: 10px; color: #555;">Documento de Traslado Interno</p>
     </div>
     <div style="text-align: right;">
-      <div class="remito-title">REMITO INTERNO</div>
-      <h2 style="margin: 5px 0; font-size: 22px;">N° REM-00105</h2>
-      <p style="margin: 0;">Fecha: 18/04/2026 10:30 hs</p>
+      <h2 class="remito-title">REMITO N° REM-00105</h2>
+      <p style="margin: 2px 0 0 0; font-size: 10px;">Fecha: 18/04/2026 10:30 hs</p>
     </div>
   </div>
 
-  <div style="display: flex; gap: 20px;">
-    <div class="remito-box" style="flex: 1;">
-      <strong style="display:block; margin-bottom: 5px; font-size:12px; color:#555;">DEPÓSITO ORIGEN (SALE)</strong>
-      <h3 style="margin: 0; font-size: 18px;">CENTRAL</h3>
-      <p style="margin: 5px 0 0 0; font-size: 14px;">Preparado por: Admin</p>
+  <div class="remito-boxes">
+    <div class="remito-box">
+      <strong>Origen (Salida)</strong>
+      <h3>CENTRAL</h3>
+      <p>Responsable: Admin</p>
     </div>
-    <div class="remito-box" style="flex: 1;">
-      <strong style="display:block; margin-bottom: 5px; font-size:12px; color:#555;">SUCURSAL DESTINO (ENTRA)</strong>
-      <h3 style="margin: 0; font-size: 18px;">SUCURSAL 1</h3>
-      <p style="margin: 5px 0 0 0; font-size: 14px;">Transporte: Vehículo Propio</p>
+    <div class="remito-box">
+      <strong>Destino (Entrada)</strong>
+      <h3>SUCURSAL 1</h3>
+      <p>Traslado interno programado</p>
     </div>
   </div>
 
   <table class="remito-table">
     <thead>
       <tr>
-        <th style="width: 15%;">CÓDIGO</th>
-        <th style="width: 70%;">DESCRIPCIÓN DEL PRODUCTO</th>
+        <th style="width: 10%;">CÓDIGO</th>
+        <th style="width: 75%;">DESCRIPCIÓN DEL ARTÍCULO</th>
         <th style="width: 15%; text-align: center;">CANTIDAD</th>
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td>4545</td>
-        <td>Máquina de Corte Profesional</td>
-        <td style="text-align: center; font-weight: bold; font-size: 16px;">5</td>
-      </tr>
-    </tbody>
+      <tr><td>1001</td><td>Teclado Mecánico RGB</td><td style="text-align: center; font-weight: bold;">5</td></tr>
+      <tr><td>1002</td><td>Monitor 24" Full HD</td><td style="text-align: center; font-weight: bold;">2</td></tr>
+      <tr><td>1005</td><td>Mouse Inalámbrico</td><td style="text-align: center; font-weight: bold;">10</td></tr>
+      <tr><td>1008</td><td>Auriculares Bluetooth</td><td style="text-align: center; font-weight: bold;">4</td></tr>
+      </tbody>
   </table>
 
-  <div style="border: 1px dashed #000; padding: 15px; margin-bottom: 40px; font-size: 12px;">
-    <strong>Observaciones:</strong> La mercadería viaja bajo responsabilidad del chofer. Debe ser controlada e ingresada al sistema (Recibir Mercadería) inmediatamente al llegar a destino.
+  <div style="font-size: 9px; color: #555; text-align: center; margin-bottom: 10px;">
+    La mercadería detallada viaja bajo responsabilidad de la empresa. Ingresar al sistema al momento de recepción.
   </div>
 
   <div class="firmas">
-    <div class="firma-line">Firma Responsable Origen (Entrega)</div>
-    <div class="firma-line">Firma Responsable Destino (Recibe)</div>
+    <div class="firma-line">Firma y Aclaración Origen</div>
+    <div class="firma-line">Firma y Aclaración Recepción</div>
   </div>
 </div>
 <dialog id="modalTransferencia" style="width: 100%; max-width: 500px;">
@@ -288,7 +297,7 @@
       </div>
       <div style="margin-bottom: 15px;">
         <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Producto a Mover *</label>
-        <select class="input-box"><option>Máquina de Corte...</option></select>
+        <select class="input-box"><option>Teclado Mecánico RGB</option></select>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
         <div>
@@ -321,7 +330,7 @@
     <form>
       <div style="margin-bottom: 15px;">
         <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Producto *</label>
-        <select class="input-box"><option>Máquina de Corte...</option></select>
+        <select class="input-box"><option>Monitor 24" Full HD</option></select>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
         <div>
