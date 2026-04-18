@@ -4,9 +4,42 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Usuarios | Micro SaaS</title>
+  
+  <style>
+    html, body { background-color: #f0f2f7 !important; }
+    body { animation: fadeIn 0.15s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    
+    .layout-1col { max-width: 1000px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+    
+    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
+    .input-box:focus { border-color: var(--primary); }
+    
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
+    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
+    .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
+    
+    .permissions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px dashed var(--line); }
+    .perm-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); font-weight: 500; cursor: pointer; }
+    .perm-item input { accent-color: var(--primary); width: 16px; height: 16px; cursor: pointer; }
+    
+    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
+  </style>
 </head>
 <body>
+
+<div id="loadingOverlay">Sincronizando con la nube...</div>
+
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -16,192 +49,278 @@
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
       <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
       <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
-      <a href="usuarios.html"><span class="active">👥</span> Usuarios</a>
+      <a href="usuarios.html" class="active"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
-
   </aside>
 
   <main class="content">
     <header class="topbar">
       <div class="page-title">
-        <h1>Gestión de Usuarios</h1>
-        <p>Administrá el acceso y los permisos de tu equipo.</p>
+        <h1 style="margin:0; font-size: 26px;">Gestión de Usuarios</h1>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Alta de personal y control de permisos modulares.</p>
       </div>
       <div class="topbar-actions">
         <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo Usuario</button>
       </div>
     </header>
 
-    <article class="card card-pad mt-16">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Usuario</th>
-              <th>Rol / Permisos</th>
-              <th>Fecha de Creación</th>
-              <th>Estado</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody id="usersTableBody">
-            <tr><td colspan="5"><div class="empty">Cargando usuarios...</div></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </article>
+    <div class="layout-1col">
+      <article class="card card-pad">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0; font-size: 18px;">Directorio de Personal</h2>
+          <input type="text" id="searchUser" class="input-box" placeholder="Buscar usuario..." onkeyup="renderUsuarios()" style="max-width: 300px; margin: 0;">
+        </div>
+        
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Rol / Categoría</th>
+                <th>Estado</th>
+                <th>Permisos Asignados</th>
+                <th style="text-align: center;">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tableBodyUsuarios"></tbody>
+          </table>
+        </div>
+      </article>
+    </div>
   </main>
 </div>
 
-<dialog id="userDialog">
-  <div class="modal-head">
-    <h3 id="modalTitle">Nuevo Usuario</h3>
-    <button class="btn btn-light" onclick="cerrarModal()">Cerrar</button>
+<dialog id="modalUsuario" style="width: 100%; max-width: 550px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 id="userModalTitle" style="margin: 0; font-size:20px;">Alta de Usuario</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarModalUsuario()">✕</button>
+    </div>
+    
+    <form onsubmit="guardarUsuario(event)">
+      <input type="hidden" id="userId">
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Nombre de Usuario *</label>
+          <input type="text" id="userName" required class="input-box" placeholder="Ej: maria.ventas" autocomplete="off">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Contraseña *</label>
+          <input type="text" id="userPass" required class="input-box" placeholder="Definir contraseña" autocomplete="off">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Rol / Categoría *</label>
+          <select id="userRole" class="input-box" onchange="sugerirPermisos()">
+            <option value="vendedora">Vendedora / Mostrador</option>
+            <option value="cajera">Cajera</option>
+            <option value="administrativo">Administrativo</option>
+            <option value="encargado">Encargado de Sucursal</option>
+            <option value="admin">Administrador (Total)</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Estado de la cuenta</label>
+          <select id="userStatus" class="input-box">
+            <option value="1">🟢 Activo (Puede ingresar)</option>
+            <option value="0">🔴 Bloqueado (Suspendido)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 8px;">Módulos Permitidos (Control de Acceso)</label>
+        <div class="permissions-grid" id="permGrid">
+          <label class="perm-item"><input type="checkbox" name="modules" value="dashboard"> Dashboard</label>
+          <label class="perm-item"><input type="checkbox" name="modules" value="producto"> Productos</label>
+          <label class="perm-item"><input type="checkbox" name="modules" value="clientes"> Clientes</label>
+          <label class="perm-item"><input type="checkbox" name="modules" value="facturacion"> Facturación</label>
+          <label class="perm-item"><input type="checkbox" name="modules" value="ventas"> Caja/Ventas</label>
+          <label class="perm-item"><input type="checkbox" name="modules" value="cc"> Cta. Corriente</label>
+          <label class="perm-item"><input type="checkbox" name="modules" value="contable"> Contable</label>
+          <label class="perm-item"><input type="checkbox" name="modules" value="stock"> Stock</label>
+          <label class="perm-item"><input type="checkbox" name="modules" value="usuarios"> Usuarios</label>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center;">
+        <button type="button" id="btnDeleteUser" class="btn" style="background: #fee2e2; color: var(--danger); border: none; display: none; font-weight:bold; padding: 12px 20px;" onclick="eliminarUsuarioPrompt()">🗑️ Borrar</button>
+        
+        <div style="margin-left: auto; display: flex; gap: 10px;">
+          <button type="button" class="btn btn-light" onclick="cerrarModalUsuario()">Cancelar</button>
+          <button type="submit" class="btn btn-primary" style="padding: 12px 24px;">Guardar Usuario</button>
+        </div>
+      </div>
+    </form>
   </div>
-  <form class="modal-body" id="userForm">
-    <div class="form-grid">
-      <div class="field full">
-        <label>Nombre de Usuario *</label>
-        <input type="text" id="formUsername" required autocomplete="off" placeholder="Ej: cajero_tarde" />
-      </div>
-      <div class="field full">
-        <label>Contraseña <span id="passHint"></span></label>
-        <input type="text" id="formPassword" autocomplete="off" placeholder="Escribí una clave segura" />
-      </div>
-      <div class="field full">
-        <label>Rol de Acceso *</label>
-        <select id="formRole" required>
-          <option value="admin">Administrador (Acceso Total)</option>
-          <option value="encargado">Encargado (Cierra caja y gestiona stock)</option>
-          <option value="pos">Cajero / Punto de Venta (Solo puede facturar)</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-actions" style="margin-top: 20px;">
-      <button type="submit" class="btn btn-primary" id="btnSaveUser">Guardar Usuario</button>
-    </div>
-  </form>
 </dialog>
 
 <script src="core.js"></script>
 <script>
-let editingUserId = null;
-let currentUsers = [];
+  const API_URL = "/api";
+  let dbUsers = [];
+  
+  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
 
-async function loadUsers() {
-  try {
-    const res = await fetch('/api/users');
-    if (res.ok) {
-      currentUsers = await res.json();
-      renderUsers();
+  async function initUsuarios() {
+    mostrarCarga(true);
+    try {
+      const res = await fetch(`${API_URL}/users`);
+      if(res.ok) dbUsers = await res.json();
+    } catch (e) { console.error(e); } 
+    finally { 
+      renderUsuarios(); 
+      mostrarCarga(false); 
     }
-  } catch (error) {
-    console.error("Error cargando usuarios:", error);
-  }
-}
-
-function renderUsers() {
-  const tbody = document.getElementById('usersTableBody');
-  if (!currentUsers.length) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="empty">No hay usuarios registrados.</div></td></tr>';
-    return;
   }
 
-  tbody.innerHTML = currentUsers.map(u => {
-    let roleBadge = '';
-    if(u.role === 'admin') roleBadge = '<span class="badge badge-success">Administrador</span>';
-    if(u.role === 'encargado') roleBadge = '<span class="badge badge-warning">Encargado</span>';
-    if(u.role === 'pos') roleBadge = '<span class="badge badge-neutral">Punto de Venta</span>';
+  // Auto-seleccionar permisos sugeridos según el rol elegido
+  function sugerirPermisos() {
+    const rol = document.getElementById('userRole').value;
+    const checkboxes = document.querySelectorAll('input[name="modules"]');
+    checkboxes.forEach(cb => cb.checked = false); // Limpiar todos
+    
+    let permitidos = [];
+    if (rol === 'vendedora') permitidos = ['producto', 'clientes', 'facturacion', 'cc'];
+    if (rol === 'cajera') permitidos = ['facturacion', 'ventas', 'cc'];
+    if (rol === 'administrativo') permitidos = ['dashboard', 'producto', 'clientes', 'facturacion', 'ventas', 'cc', 'contable', 'stock'];
+    if (rol === 'encargado' || rol === 'admin') permitidos = ['dashboard', 'producto', 'clientes', 'facturacion', 'ventas', 'cc', 'contable', 'stock', 'usuarios'];
 
-    return `
-      <tr>
-        <td><strong>${escapeHtml(u.username)}</strong></td>
-        <td>${roleBadge}</td>
-        <td>${formatDate(u.createdAt)}</td>
-        <td><span class="badge badge-success">Activo</span></td>
-        <td>
-          <div class="row-actions">
-            <button class="mini-btn" onclick="editarUsuario('${u.id}')">Editar</button>
-            <button class="mini-btn" style="color:var(--danger); border-color:var(--danger-soft);" onclick="borrarUsuario('${u.id}', '${u.username}')">Borrar</button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
-}
+    checkboxes.forEach(cb => {
+      if(permitidos.includes(cb.value)) cb.checked = true;
+    });
+  }
 
-function abrirModalUsuario() {
-  editingUserId = null;
-  document.getElementById('modalTitle').textContent = 'Nuevo Usuario';
-  document.getElementById('formUsername').value = '';
-  document.getElementById('formPassword').value = '';
-  document.getElementById('formPassword').required = true;
-  document.getElementById('passHint').textContent = '*';
-  document.getElementById('formRole').value = 'pos';
-  document.getElementById('userDialog').showModal();
-}
-
-function cerrarModal() {
-  document.getElementById('userDialog').close();
-}
-
-function editarUsuario(id) {
-  const user = currentUsers.find(u => u.id === id);
-  if (!user) return;
-  editingUserId = id;
-  document.getElementById('modalTitle').textContent = 'Editar Usuario';
-  document.getElementById('formUsername').value = user.username;
-  document.getElementById('formPassword').value = ''; 
-  document.getElementById('formPassword').required = false; 
-  document.getElementById('passHint').textContent = '(Dejar vacío para no cambiarla)';
-  document.getElementById('formRole').value = user.role;
-  document.getElementById('userDialog').showModal();
-}
-
-document.getElementById('userForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = document.getElementById('btnSaveUser');
-  btn.textContent = "Guardando..."; btn.disabled = true;
-
-  const payload = {
-    username: document.getElementById('formUsername').value.trim(),
-    password: document.getElementById('formPassword').value.trim(),
-    role: document.getElementById('formRole').value
-  };
-
-  try {
-    if (editingUserId) {
-      payload.id = editingUserId;
-      await fetch('/api/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  function abrirModalUsuario(id = null) {
+    const title = document.getElementById('userModalTitle');
+    const btnDel = document.getElementById('btnDeleteUser');
+    document.querySelectorAll('input[name="modules"]').forEach(cb => cb.checked = false);
+    
+    if (id) {
+      const u = dbUsers.find(x => x.id === id);
+      if (!u) return;
+      title.textContent = "Editar Usuario";
+      document.getElementById('userId').value = u.id;
+      document.getElementById('userName').value = u.username;
+      document.getElementById('userPass').value = u.password;
+      document.getElementById('userRole').value = u.role;
+      document.getElementById('userStatus').value = u.active ? "1" : "0";
+      
+      (u.allowedModules || []).forEach(mod => {
+        const cb = document.querySelector(`input[name="modules"][value="${mod}"]`);
+        if(cb) cb.checked = true;
+      });
+      
+      btnDel.style.display = (u.username === 'admin') ? 'none' : 'block'; // Proteger al admin root
     } else {
-      payload.id = uid('usr');
-      await fetch('/api/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      title.textContent = "Alta de Usuario";
+      document.getElementById('userId').value = '';
+      document.getElementById('userName').value = '';
+      document.getElementById('userPass').value = '';
+      document.getElementById('userRole').value = 'vendedora';
+      document.getElementById('userStatus').value = "1";
+      sugerirPermisos();
+      btnDel.style.display = 'none'; 
     }
-    cerrarModal();
-    loadUsers();
-  } catch (error) {
-    alert("Error al guardar el usuario.");
+    
+    document.getElementById('modalUsuario').showModal();
   }
-  btn.textContent = "Guardar Usuario"; btn.disabled = false;
-});
 
-async function borrarUsuario(id, username) {
-  if (username === 'admin') return alert("El administrador principal no se puede borrar.");
-  if (!confirm(`¿Estás seguro de eliminar al usuario "${username}"?`)) return;
+  function cerrarModalUsuario() { document.getElementById('modalUsuario').close(); }
 
-  try {
-    await fetch(`/api/users?id=${id}`, { method: 'DELETE' });
-    loadUsers();
-  } catch (error) {
-    alert("Error al borrar el usuario.");
+  async function guardarUsuario(e) {
+    e.preventDefault();
+    const id = document.getElementById('userId').value || 'usr_' + Date.now();
+    
+    // Recolectar checkboxes marcados
+    const modulosSeleccionados = Array.from(document.querySelectorAll('input[name="modules"]:checked')).map(cb => cb.value);
+
+    const user = {
+      id: id,
+      username: document.getElementById('userName').value.trim(),
+      password: document.getElementById('userPass').value.trim(),
+      role: document.getElementById('userRole').value,
+      active: document.getElementById('userStatus').value === "1",
+      allowedModules: modulosSeleccionados,
+      createdAt: new Date().toISOString()
+    };
+
+    // Evitar que el admin principal se auto-quite el acceso a usuarios
+    if (user.username === 'admin' && !user.allowedModules.includes('usuarios')) {
+        alert("El usuario 'admin' principal debe tener acceso al módulo Usuarios obligatoriamente para no bloquear el sistema.");
+        return;
+    }
+
+    mostrarCarga(true);
+    try {
+      await fetch(`${API_URL}/users`, { method: 'POST', body: JSON.stringify(user) });
+      const idx = dbUsers.findIndex(x => x.id === id);
+      if (idx >= 0) dbUsers[idx] = user; else dbUsers.unshift(user);
+      cerrarModalUsuario(); renderUsuarios();
+    } catch(err) { alert("Error guardando usuario."); }
+    finally { mostrarCarga(false); }
   }
-}
 
-document.addEventListener('DOMContentLoaded', loadUsers);
+  async function eliminarUsuarioPrompt() {
+    const id = document.getElementById('userId').value;
+    if(!id) return;
+    if(!confirm("¿Borrar definitivamente este usuario? No podrá ingresar más al sistema.")) return;
+    
+    mostrarCarga(true);
+    try {
+      await fetch(`${API_URL}/users?id=${id}`, { method: 'DELETE' });
+      dbUsers = dbUsers.filter(u => u.id !== id);
+      cerrarModalUsuario(); renderUsuarios();
+    } catch(err) { alert("Error eliminando."); }
+    finally { mostrarCarga(false); }
+  }
+
+  function renderUsuarios() {
+    const term = document.getElementById('searchUser').value.toLowerCase();
+    const tbody = document.getElementById('tableBodyUsuarios');
+    
+    const filtrados = dbUsers.filter(u => u.username.toLowerCase().includes(term));
+
+    tbody.innerHTML = filtrados.map(u => {
+      const statusBadge = u.active 
+        ? `<span style="color:#16a34a; font-weight:bold;">Activo</span>`
+        : `<span style="color:#dc2626; font-weight:bold;">Bloqueado</span>`;
+        
+      const roleDisplay = u.role.charAt(0).toUpperCase() + u.role.slice(1);
+      
+      const modulesCount = (u.allowedModules || []).length;
+      const modulesDisplay = modulesCount === 9 
+        ? `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold;">Acceso Total</span>`
+        : `<span style="color:var(--muted); font-size:12px;">${modulesCount} módulos</span>`;
+
+      return `
+      <tr style="${!u.active ? 'opacity: 0.6;' : ''}">
+        <td>
+          <strong style="font-size:15px;">${escapeHtml(u.username)}</strong><br>
+          <small style="color:var(--muted); font-family:monospace;">Pass: ****</small>
+        </td>
+        <td><span style="background:var(--panel-2); padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold;">${roleDisplay}</span></td>
+        <td>${statusBadge}</td>
+        <td>${modulesDisplay}</td>
+        <td style="text-align:center;">
+          <button onclick="abrirModalUsuario('${u.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:6px 12px; cursor:pointer; font-size:12px; font-weight:bold; color:var(--primary);">Editar</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    if (filtrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No se encontraron usuarios.</td></tr>';
+    }
+  }
+
+  initUsuarios();
 </script>
 </body>
 </html>
