@@ -6,45 +6,23 @@
   <title>Dashboard | Micro SaaS</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
+    html, body { background-color: #f0f2f7 !important; }
+    body { animation: fadeIn 0.15s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
     /* ── Estilos específicos del Dashboard ── */
-    .hero {
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-      color: #fff;
-      border-radius: 24px;
-      padding: 28px;
-      display: grid;
-      grid-template-columns: 1.4fr 1fr;
-      gap: 22px;
-      box-shadow: var(--shadow-lg);
-      margin-bottom: 22px;
-      position: relative;
-      overflow: hidden;
-    }
-    .hero::after {
-      content: '';
-      position: absolute;
-      width: 320px; height: 320px;
-      right: -70px; top: -90px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,255,255,.14), transparent 60%);
-    }
+    .hero { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); color: #fff; border-radius: 24px; padding: 28px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; box-shadow: var(--shadow-lg); margin-bottom: 22px; position: relative; overflow: hidden; }
+    .hero::after { content: ''; position: absolute; width: 320px; height: 320px; right: -70px; top: -90px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.14), transparent 60%); }
     .hero h2 { margin: 0; font-size: 24px; line-height: 1.2; }
     .hero p  { margin: 10px 0 0; color: rgba(255,255,255,.8); font-size: 14px; line-height: 1.6; }
     .hero-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
-    }
+    .hero-badge { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
     .hero-badge.primary { background: rgba(255,255,255,.12); color: #fff; }
     .hero-badge.success { background: var(--success-soft); color: #166534; }
     .hero-badge.warning { background: var(--warning-soft); color: #92400e; }
 
     .quick-actions { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; position: relative; z-index: 1; }
-    .action-btn {
-      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14);
-      color: #fff; border-radius: var(--radius); padding: 14px; text-align: left;
-      cursor: pointer; transition: background .2s, transform .2s;
-    }
+    .action-btn { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: #fff; border-radius: var(--radius); padding: 14px; text-align: left; cursor: pointer; transition: background .2s, transform .2s; }
     .action-btn:hover { background: rgba(255,255,255,.14); transform: translateY(-2px); }
     .action-btn strong { display: block; font-size: 14px; margin-top: 6px; }
     .action-btn span   { font-size: 12px; color: rgba(255,255,255,.7); }
@@ -100,83 +78,24 @@
     .legend span { display: inline-flex; align-items: center; gap: 6px; }
     .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
-
-    /* ====================================================================
-       REGLAS MAGICAS: RESPONSIVE Y MENÚ HAMBURGUESA
-       ==================================================================== */
+    /* REGLAS MAGICAS: RESPONSIVE Y MENÚ HAMBURGUESA */
+    .kpi-grid-5 { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; gap: 16px !important; margin-bottom: 22px; }
+    .kpi-card { min-width: 0; word-wrap: break-word; }
+    .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
+    .topbar-left { display: flex; align-items: center; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
     
-    /* 1. Arreglo definitivo para las tarjetas del Dashboard */
-    .kpi-grid-5 { 
-      display: grid !important;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; 
-      gap: 16px !important;
-      margin-bottom: 22px;
-    }
-    .kpi-card {
-      min-width: 0; /* Evita que el texto largo estire la tarjeta */
-      word-wrap: break-word;
-    }
-
-    /* 2. Preparación del Menú Hamburguesa */
-    .mobile-toggle {
-      display: none;
-      background: none;
-      border: none;
-      font-size: 26px;
-      cursor: pointer;
-      color: var(--text);
-      padding: 0;
-      margin-right: 15px;
-    }
-
-    .topbar-left {
-      display: flex;
-      align-items: center;
-    }
-
-    .sidebar-overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 998;
-      backdrop-filter: blur(2px);
-    }
-
     @media (max-width: 1200px) {
       .hero { grid-template-columns: 1fr; }
       .two-col, .three-col, .two-col-eq { grid-template-columns: 1fr; }
     }
-
     @media (max-width: 900px) {
-      /* Encendemos el botón hamburguesa */
       .mobile-toggle { display: block; }
-      
-      /* Escondemos la barra lateral y la preparamos para deslizarse */
-      .sidebar {
-        position: fixed !important;
-        left: -300px; /* Escondida a la izquierda */
-        top: 0;
-        height: 100vh !important;
-        width: 260px !important;
-        z-index: 999;
-        flex-direction: column !important;
-        transition: left 0.3s ease;
-        box-shadow: 4px 0 25px rgba(0,0,0,0.5);
-      }
-      
-      /* Clases activas cuando se toca el menú */
+      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
       .sidebar.open { left: 0; }
       .sidebar-overlay.open { display: block; }
-      
       .nav { flex-direction: column !important; }
-      
-      /* Forzamos 2 columnas perfectas para los KPIs en celular */
-      .kpi-grid-5 { 
-        grid-template-columns: 1fr 1fr !important; 
-        gap: 12px !important; 
-      }
-      
+      .kpi-grid-5 { grid-template-columns: 1fr 1fr !important; gap: 12px !important; }
       .page-title h1 { font-size: 20px; }
       .content { padding: 15px; }
     }
@@ -193,15 +112,16 @@
       <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
     </div>
     <nav class="nav">
-      <a href="dashboard.html"><span class="active">📊</span> Dashboard</a>
+      <a href="dashboard.html" class="active"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
       <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
       <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
-   
   </aside>
 
   <main class="content">
@@ -312,50 +232,73 @@ function toggleMenu() {
   document.getElementById('sidebarOverlay').classList.toggle('open');
 }
 
-function computeState() {
-  const products        = getData(KEYS.products, []);
-  const sales           = getData(KEYS.sales, []);
-  const expenses        = getData(KEYS.expenses, []);
-  const supplierDebts   = getData(KEYS.supplierDebts, []);
-  const supplierPayments= getData(KEYS.supplierPayments, []);
-  const today           = todayISO();
-  const cm              = monthKey(today);
+// Variables globales para la Base de Datos
+let dbProducts = [];
+let dbSales = [];
+let dbExpenses = [];
 
-  const salesToday  = sales.filter(s => (s.createdAt || s.date || '').slice(0,10) === today);
-  const salesMonth  = sales.filter(s => monthKey(s.createdAt || s.date || '') === cm);
+// INICIALIZACIÓN ASÍNCRONA DESDE CLOUDFLARE D1
+async function initDashboard() {
+  try {
+    const [resP, resS, resE] = await Promise.all([
+      fetch('/api/products'),
+      fetch('/api/sales'),
+      fetch('/api/expenses')
+    ]);
+    
+    if (resP.ok) dbProducts = await resP.json();
+    if (resS.ok) dbSales = await resS.json();
+    if (resE.ok) dbExpenses = await resE.json();
+    
+    renderDashboard();
+  } catch (error) {
+    console.error("Error cargando datos de la nube:", error);
+    document.getElementById('heroTitle').textContent = "Error de conexión";
+    document.getElementById('heroText').textContent = "No se pudieron sincronizar los datos de Cloudflare D1.";
+  }
+}
+
+function computeState() {
+  // Calculamos el margen de los productos en tiempo real porque D1 no guarda la columna margen
+  dbProducts.forEach(p => {
+    p.margin = p.price > 0 ? ((p.price - (p.cost || 0)) / p.price) * 100 : 0;
+  });
+
+  const today = todayISO();
+  const cm = monthKey(today);
+
+  const salesToday  = dbSales.filter(s => (s.createdAt || s.date || '').slice(0,10) === today);
+  const salesMonth  = dbSales.filter(s => monthKey(s.createdAt || s.date || '') === cm);
   const incomeToday = salesToday.reduce((a,s) => a + saleTotal(s), 0);
   const incomeMonth = salesMonth.reduce((a,s) => a + saleTotal(s), 0);
 
-  const mExpenses   = expenses.filter(e => monthKey(e.date) === cm && e.status === 'pagado').reduce((a,e) => a + toNum(e.amount), 0);
-  const mSupplPay   = supplierPayments.filter(p => monthKey(p.date) === cm).reduce((a,p) => a + toNum(p.amount), 0);
-  const monthOutflows = mExpenses + mSupplPay;
-  const netMonth    = incomeMonth - monthOutflows;
+  // Egresos Pagados
+  const mExpenses = dbExpenses.filter(e => monthKey(e.date) === cm && (e.status || '').toLowerCase() === 'pagado').reduce((a,e) => a + toNum(e.amount), 0);
+  const monthOutflows = mExpenses; // Simplificado: Todo egreso sale de la tabla expenses
+  const netMonth = incomeMonth - monthOutflows;
 
-  const avgMargin   = products.length ? products.reduce((a,p) => a + toNum(p.margin), 0) / products.length : 0;
-  const lowMargin   = [...products].filter(p => toNum(p.margin) < 20).sort((a,b)=>toNum(a.margin)-toNum(b.margin)).slice(0,3);
-  const lowStock    = [...products].filter(p => toNum(p.stock) <= toNum(p.stockMin || 3) && p.status !== 'Inactivo').sort((a,b)=>toNum(a.stock)-toNum(b.stock)).slice(0,3);
+  const avgMargin = dbProducts.length ? dbProducts.reduce((a,p) => a + toNum(p.margin), 0) / dbProducts.length : 0;
+  const lowMargin = [...dbProducts].filter(p => toNum(p.margin) < 20).sort((a,b)=>toNum(a.margin)-toNum(b.margin)).slice(0,3);
+  const lowStock  = [...dbProducts].filter(p => toNum(p.stock) <= toNum(p.stockMin || 3) && p.status !== 'Inactivo').sort((a,b)=>toNum(a.stock)-toNum(b.stock)).slice(0,3);
 
   const topMap = {};
   salesMonth.forEach(sale => (sale.items || []).forEach(item => {
     const k = item.name || 'Producto';
     if (!topMap[k]) topMap[k] = { name: k, units: 0, revenue: 0 };
-    topMap[k].units += toNum(item.quantity);
-    topMap[k].revenue += toNum(item.subtotal) || toNum(item.quantity) * toNum(item.price);
+    topMap[k].units += toNum(item.quantity || item.qty); // item.qty es como lo manda facturación
+    topMap[k].revenue += toNum(item.subtotal) || toNum(item.quantity || item.qty) * toNum(item.price);
   }));
   const topProducts = Object.values(topMap).sort((a,b)=>b.units-a.units).slice(0,3);
 
-  const latestSales = [...sales].sort((a,b)=>(b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||'')).slice(0,4);
+  const latestSales = [...dbSales].sort((a,b)=>(b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||'')).slice(0,4);
   const latestExpenses = [
-    ...expenses.map(e => ({ type:'Gasto',  date:e.date, title:e.concept,      detail:e.category||'Gasto',       amount:-Math.abs(toNum(e.amount)) })),
-    ...supplierPayments.map(p => ({ type:'Pago', date:p.date, title:p.supplierName, detail:p.concept||'Pago a proveedor', amount:-Math.abs(toNum(p.amount)) }))
+    ...dbExpenses.map(e => ({ type:'Gasto', date:e.date, title:e.concept, detail:e.category||'Gasto', amount:-Math.abs(toNum(e.amount)) }))
   ].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4);
 
-  const supplierDebtPending = Math.max(0,
-    supplierDebts.reduce((a,d) => a + toNum(d.amount), 0) -
-    supplierPayments.reduce((a,p) => a + toNum(p.amount), 0)
-  );
+  // Deudas pendientes (gastos no pagados)
+  const supplierDebtPending = dbExpenses.filter(e => (e.status || '').toLowerCase() === 'pendiente').reduce((a,e) => a + toNum(e.amount), 0);
 
-  return { products, sales, incomeToday, incomeMonth, monthOutflows, netMonth, avgMargin, lowMargin, lowStock, topProducts, latestSales, latestExpenses, supplierDebtPending };
+  return { products: dbProducts, sales: dbSales, incomeToday, incomeMonth, monthOutflows, netMonth, avgMargin, lowMargin, lowStock, topProducts, latestSales, latestExpenses, supplierDebtPending };
 }
 
 function renderHero(s) {
@@ -371,9 +314,6 @@ function renderHero(s) {
     <span class="hero-badge ${s.avgMargin >= 25 ? 'success' : 'warning'}">Margen ${percent(s.avgMargin)}</span>
     <span class="hero-badge ${s.lowStock.length ? 'warning' : 'success'}">${s.lowStock.length} con stock bajo</span>
   `;
-  document.getElementById('sidebarState').textContent = s.netMonth >= 0
-    ? `Ingresos ${currency(s.incomeMonth)} vs egresos ${currency(s.monthOutflows)}. Positivo.`
-    : `Egresos superan ingresos por ${currency(Math.abs(s.netMonth))}.`;
 }
 
 function renderKpis(s) {
@@ -417,7 +357,7 @@ function renderNarrative(s) {
 function renderAlerts(s) {
   const alerts = [];
   if (s.lowStock.length)          alerts.push({ cls:'red',   title:`${s.lowStock.length} con stock crítico`, text:s.lowStock.map(p=>p.name).join(', ') + ' necesitan reposición.', cta:'Ver stock', href:'stock.html' });
-  if (s.supplierDebtPending > 0)  alerts.push({ cls:'amber', title:'Pagos a proveedores pendientes', text:`Monto pendiente: ${currency(s.supplierDebtPending)}.`, cta:'Revisar', href:'contable.html' });
+  if (s.supplierDebtPending > 0)  alerts.push({ cls:'amber', title:'Pagos pendientes', text:`Monto pendiente a pagar: ${currency(s.supplierDebtPending)}.`, cta:'Revisar', href:'contable.html' });
   if (s.lowMargin.length)         alerts.push({ cls:'blue',  title:'Productos con margen bajo', text:s.lowMargin.map(p=>p.name).join(', ') + ' están dejando poca rentabilidad.', cta:'Ver pricing', href:'producto.html' });
   if (!alerts.length)             alerts.push({ cls:'blue',  title:'Sin alertas críticas', text:'El sistema no detectó problemas importantes.', cta:'Dashboard', href:'dashboard.html' });
 
@@ -500,9 +440,8 @@ function renderDashboard() {
   renderActivity(s);
 }
 
-window.addEventListener('storage', renderDashboard);
-window.addEventListener('saas:data-updated', renderDashboard);
-renderDashboard();
+// Iniciar carga al abrir
+initDashboard();
 </script>
 </body>
 </html>
