@@ -4,9 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ventas y cierre de Caja | Micro SaaS</title>
+  
+  <style>
+    html, body { background-color: #f0f2f7 !important; }
+    body { animation: fadeIn 0.15s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+
   <link rel="stylesheet" href="styles.css" />
   <style>
-    /* El único estilo extra necesario es para el layout de dos columnas tipo "Productos" */
+    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    
     .ventas-layout {
       display: grid;
       grid-template-columns: 300px 1fr;
@@ -17,9 +26,20 @@
     @media (max-width: 1000px) {
       .ventas-layout { grid-template-columns: 1fr; }
     }
+
+    /* Indicador de carga */
+    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
+    
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
+    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
   </style>
 </head>
 <body>
+
+<div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
   
@@ -31,20 +51,21 @@
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
       <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
-      <a href="ventas.html"><span class="ventas">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="ventas.html" class="active"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
-    
   </aside>
 
   <main class="content">
     <header class="topbar">
       <div class="page-title">
         <h1 style="margin:0; font-size: 26px;">Ventas y Caja</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Historial de transacciones, anulación de tickets y arqueo de caja del turno.</p>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Historial de transacciones y arqueo de caja (Conectado a D1).</p>
       </div>
       <div class="topbar-actions">
         <button class="btn btn-success" onclick="exportarExcelPrompt()">⬇ Exportar Excel</button>
@@ -139,6 +160,8 @@
 
 <script src="core.js"></script>
 <script>
+  const API_URL = "/api";
+  
   // ── ESTADO GLOBAL Y SEGURIDAD ──
   let dbProducts = []; 
   let dbSales = [];
@@ -149,11 +172,25 @@
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
+  function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
 
-  function initData() {
-    dbProducts = getData(KEYS.products, []); 
-    dbSales = getData(KEYS.sales, []);
-    renderHistorialYcaja();
+  // ── INICIALIZACIÓN (Cargar desde D1) ──
+  async function initData() {
+    mostrarCarga(true);
+    try {
+      const [resSales, resProd] = await Promise.all([
+        fetch(`${API_URL}/sales`),
+        fetch(`${API_URL}/products`)
+      ]);
+      
+      if(resSales.ok) dbSales = await resSales.json();
+      if(resProd.ok) dbProducts = await resProd.json();
+    } catch(e) {
+      console.error("Error conectando a la nube:", e);
+    } finally {
+      mostrarCarga(false);
+      renderHistorialYcaja();
+    }
   }
 
   // ── MODAL SEGURIDAD (ADMIN PIN) ──
@@ -186,6 +223,7 @@
   // ── RENDERIZADO TABLA Y KPIS ──
   function renderHistorialYcaja() {
     const today = todayISO();
+    // Filtramos las ventas para que muestren solo las de HOY
     const ventasHoy = dbSales.filter(s => s.date === today || (s.createdAt && s.createdAt.startsWith(today)));
     
     // Rellenar Tabla
@@ -196,11 +234,13 @@
       tbody.innerHTML = ventasHoy.map(v => {
         const hora = v.createdAt ? new Date(v.createdAt).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'}) : '-';
         const cuponDisplay = v.cupon ? ` <span style="font-size:11px; color:var(--muted); display:block;">Cupón: ${escapeHtml(v.cupon)}</span>` : '';
+        const displayClient = (v.clientId && v.isB2B) ? `<span title="B2B">🏢 ${escapeHtml(v.clientId)}</span>` : escapeHtml(v.client || 'Consumidor Final');
+
         return `
         <tr>
           <td style="padding: 12px 16px; border-bottom: 1px solid var(--line);">${hora}</td>
           <td style="padding: 12px 16px; border-bottom: 1px solid var(--line); color:var(--muted); font-size:12px;">#${v.id.replace('vta_','')}</td>
-          <td style="padding: 12px 16px; border-bottom: 1px solid var(--line);"><strong>${escapeHtml(v.client)}</strong></td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid var(--line);"><strong>${displayClient}</strong></td>
           <td style="padding: 12px 16px; border-bottom: 1px solid var(--line);"><span class="badge badge-neutral" style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:12px;">${v.method}</span>${cuponDisplay}</td>
           <td style="padding: 12px 16px; border-bottom: 1px solid var(--line); text-align:right; font-weight:800; color:var(--success);">${currency(v.total)}</td>
           <td style="padding: 12px 16px; border-bottom: 1px solid var(--line); text-align:center;">
@@ -210,7 +250,7 @@
       }).join('');
     }
 
-    // Calcular Totales
+    // Calcular Totales (solo suman a caja los métodos tradicionales, no la cuenta corriente B2B)
     let totEfectivo = 0, totTransf = 0, totTarjeta = 0;
     ventasHoy.forEach(v => {
       if (v.method === 'Efectivo') totEfectivo += v.total;
@@ -225,24 +265,48 @@
   }
 
   // ── ACCIONES PROTEGIDAS POR PIN ──
-  function anularVentaPrompt(id) { pedirAuthAdmin('anular este comprobante', ejecutarAnulacionVenta, id); }
+  function anularVentaPrompt(id) { pedirAuthAdmin('anular este comprobante y devolver stock', ejecutarAnulacionVenta, id); }
   function imprimirCierrePrompt() { pedirAuthAdmin('cerrar la caja del turno', ejecutarCierreCaja); }
   function exportarExcelPrompt() { pedirAuthAdmin('descargar el historial en Excel', exportarHistorialExcel); }
 
-  function ejecutarAnulacionVenta(id) {
-    const venta = dbSales.find(v => v.id === id);
-    if(venta) {
-      // Devolver stock
-      venta.items.forEach(item => { const pDB = dbProducts.find(p => p.id === item.id); if (pDB) pDB.stock += item.qty; });
-      setData(KEYS.products, dbProducts);
+  async function ejecutarAnulacionVenta(id) {
+    mostrarCarga(true);
+    try {
+      const venta = dbSales.find(v => v.id === id);
+      
+      // 1. Devolver el stock en la nube (D1)
+      if (venta && venta.items && venta.items.length > 0) {
+        for (let item of venta.items) {
+          const pDB = dbProducts.find(p => p.id === item.id);
+          if (pDB) {
+            pDB.stock += item.qty; // Devolvemos stock
+            // Le mandamos un POST/PUT a /api/products para actualizar el producto
+            await fetch(`${API_URL}/products`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(pDB)
+            });
+          }
+        }
+      }
+
+      // 2. Borrar la venta en la nube (D1)
+      const res = await fetch(`${API_URL}/sales?id=${id}`, { method: 'DELETE' });
+      
+      if (res.ok) {
+        dbSales = dbSales.filter(v => v.id !== id); 
+        renderHistorialYcaja(); 
+        alert("✅ Venta anulada con éxito. El comprobante se eliminó y el stock fue devuelto.");
+      } else {
+        alert("Error al intentar anular la venta en la base de datos.");
+      }
+
+    } catch (e) {
+      console.error(e);
+      alert("Error de red al intentar anular la venta.");
+    } finally {
+      mostrarCarga(false);
     }
-    // Borrar venta
-    dbSales = dbSales.filter(v => v.id !== id); 
-    setData(KEYS.sales, dbSales);
-    
-    renderHistorialYcaja(); 
-    window.dispatchEvent(new Event('saas:data-updated'));
-    alert("✅ Venta anulada con éxito. El stock fue devuelto.");
   }
 
   function ejecutarCierreCaja() {
@@ -251,7 +315,7 @@
     const tar = document.getElementById('cajaTarjeta').textContent;
     const total = document.getElementById('cajaTotal').textContent;
     
-    alert(`🖨️ TICKET DE CIERRE (Simulación)\n\nEfectivo en Caja: ${ef}\nTransferencias: ${trans}\nTarjetas/Posnet: ${tar}\n------------------\nTOTAL FACTURADO: ${total}\n\n✅ Turno finalizado.`);
+    alert(`🖨️ TICKET DE CIERRE (Simulación)\n\nEfectivo en Caja: ${ef}\nTransferencias: ${trans}\nTarjetas/Posnet: ${tar}\n------------------\nTOTAL FACTURADO (En Caja): ${total}\n\n✅ Turno finalizado.`);
   }
 
   function exportarHistorialExcel() {
@@ -262,7 +326,8 @@
     const dataArray = ventasHoy.map(v => ({
       "Fecha/Hora": new Date(v.createdAt).toLocaleString('es-AR'),
       "ID Comprobante": v.id,
-      "Cliente": v.client,
+      "Cliente": v.client || 'Consumidor Final',
+      "ID Cliente (B2B)": v.clientId || '-',
       "Método Pago": v.method,
       "Cupón": v.cupon || '-',
       "Subtotal": v.subtotal,
@@ -278,6 +343,7 @@
     link.click();
   }
 
+  // Inicializar al abrir la página
   initData();
 </script>
 </body>
