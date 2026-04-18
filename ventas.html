@@ -226,55 +226,63 @@
     }
   }
 
-  // --- LÓGICA DE ANULACIÓN MULTI-SUCURSAL ---
+  // --- LÓGICA DE ANULACIÓN BLINDADA (STOCK + CUENTA CORRIENTE) ---
   async function ejecutarAnulacionVenta(id) {
     mostrarCarga(true);
     try {
       const venta = dbSales.find(v => v.id === id);
+      if (!venta) return alert("Venta no encontrada.");
       
-      // DEVOLUCIÓN DE STOCK MULTI-SUCURSAL
-      if (venta && venta.items && venta.items.length > 0) {
-        const sucursalVenta = venta.branch || 'Central'; // Buscamos de qué sucursal salió la venta
+      // 1. DEVOLUCIÓN DE STOCK MULTI-SUCURSAL
+      if (venta.items && venta.items.length > 0) {
+        const sucursalVenta = venta.branch || 'Central';
         
         for (let item of venta.items) {
           const pDB = dbProducts.find(p => p.id === item.id);
           if (pDB) {
             let branches = {};
-            try { 
-                branches = JSON.parse(pDB.stock_branches); 
-            } catch(e) { 
-                branches = { "Central": pDB.stock || 0 }; 
-            }
+            try { branches = JSON.parse(pDB.stock_branches); } catch(e) { branches = { "Central": pDB.stock || 0 }; }
             
-            // Le devolvemos el stock a la sucursal que hizo la venta
             if (branches[sucursalVenta] === undefined) branches[sucursalVenta] = 0;
             branches[sucursalVenta] += item.qty;
             
-            // Recalculamos el total
             let stockTotal = 0;
             for (let b in branches) stockTotal += branches[b];
             
             pDB.stock_branches = JSON.stringify(branches);
             pDB.stock = stockTotal;
 
-            // Actualizamos en D1
             await fetch(`${API_URL}/products`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pDB) });
           }
         }
       }
+
+      // 2. ELIMINAR CARGO EN CUENTA CORRIENTE (Si aplica)
+      if (venta.method === 'A Cuenta Corriente' || venta.method === 'Cuenta Corriente') {
+          // Buscamos todos los movimientos de CC para encontrar el de esta venta
+          const resCc = await fetch(`${API_URL}/cc_movements`);
+          if (resCc.ok) {
+              const movsCc = await resCc.json();
+              // Buscamos el movimiento que en su concepto diga "Ticket #ID"
+              const movAEliminar = movsCc.find(m => m.concept.includes(`Ticket #${venta.id}`));
+              
+              if (movAEliminar) {
+                  await fetch(`${API_URL}/cc_movements?id=${movAEliminar.id}`, { method: 'DELETE' });
+              }
+          }
+      }
       
-      // ELIMINAMOS LA VENTA
+      // 3. ELIMINAMOS LA VENTA
       const res = await fetch(`${API_URL}/sales?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
         dbSales = dbSales.filter(v => v.id !== id); 
         renderHistorialYcaja(); 
-        alert(`✅ Venta anulada con éxito.\nEl stock fue devuelto a la sucursal: ${venta.branch || 'Central'}.`);
+        alert(`✅ Venta anulada con éxito.\nEl stock fue devuelto y, de corresponder, se descontó la deuda de la cuenta corriente.`);
       } else { 
           alert("Error al intentar anular la venta en la base de datos."); 
       }
     } catch (e) { console.error(e); alert("Error de red."); } finally { mostrarCarga(false); }
   }
-
   // Los prompts de botones llaman a la función pedirAuthAdmin (que ahora sí sabe quiénes son las funciones objetivo)
   function anularVentaPrompt(id) { pedirAuthAdmin('anular este comprobante y devolver stock', ejecutarAnulacionVenta, id); }
   function imprimirCierrePrompt() { pedirAuthAdmin('cerrar la caja e imprimir ticket Z', ejecutarCierreCaja); }
