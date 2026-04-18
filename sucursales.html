@@ -127,7 +127,8 @@
   </form>
 </dialog>
 
-  <button class="btn btn-outline" onclick="abrirConfigTerminal()">🖥️ Configurar esta PC</button>
+  
+<button class="btn btn-outline" onclick="abrirConfigTerminal()">🖥️ Configurar esta PC</button>
 
 <dialog id="modalTerminal" style="width: 100%; max-width: 400px;">
     <div class="modal-content">
@@ -145,7 +146,13 @@
     </div>
 </dialog>
 
+
+  
+
+<script src="core.js"></script>
 <script>
+
+
 function abrirConfigTerminal() {
     // Solo permitimos esto si eres Admin
     if(localStorage.getItem('userRole') !== 'admin') return alert("Solo el administrador puede configurar terminales.");
@@ -165,10 +172,7 @@ function confirmarVinculo() {
         location.reload();
     }
 }
-</script>
-
-<script src="core.js"></script>
-<script>
+  
   const API_URL = "/api"; 
   let dbBranches = [];
   const PIN_ADMIN = "1234";
