@@ -111,9 +111,11 @@
       </div>
 
       <div class="pos-checkout-panel">
-        <div class="field" style="margin-bottom: 24px;">
+        <div class="field" style="margin-bottom: 24px; position: relative;">
           <label style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; display: block;">Cliente</label>
-          <input type="text" id="clientName" value="Consumidor Final" style="background: var(--panel-2); border: 1px solid var(--line); font-weight: 600; padding: 12px; width: 100%; border-radius: 10px; outline: none;">
+          <input type="hidden" id="clientId" value="">
+          <input type="text" id="clientName" value="Consumidor Final" autocomplete="off" style="background: var(--panel-2); border: 1px solid var(--line); font-weight: 600; padding: 12px; width: 100%; border-radius: 10px; outline: none;">
+          <div id="clientResults" class="autocomplete-list" style="left:0; right:0; top: 100%;"></div>
         </div>
 
         <div style="flex: 1;">
@@ -149,6 +151,7 @@
 <script src="core.js"></script>
 <script>
   let dbProducts = []; let dbSales = []; let cart = [];
+  let dbClients = []; // Agregado para el buscador de clientes
   let currentPaymentMethod = 'Efectivo';
   let filteredProducts = []; let selectedSearchIndex = -1;
 
@@ -159,9 +162,15 @@
   function initPOS() {
     dbProducts = getData(KEYS.products, []); 
     dbSales = getData(KEYS.sales, []);
+    
+    // Cargar clientes en la memoria de la caja
+    const keyCli = (typeof KEYS !== 'undefined' && KEYS.clients) ? KEYS.clients : 'saas_clients';
+    dbClients = getData(keyCli, []);
+
     renderCart(); document.getElementById('posSearch').focus();
   }
 
+  // ── BUSCADOR DE PRODUCTOS ──
   const searchInput = document.getElementById('posSearch');
   const searchResults = document.getElementById('searchResults');
 
@@ -174,7 +183,7 @@
 
   searchInput.addEventListener('keydown', (e) => {
     if (!searchResults.classList.contains('active')) return;
-    const items = document.querySelectorAll('.autocomplete-item');
+    const items = document.querySelectorAll('#searchResults .autocomplete-item');
     if (e.key === 'ArrowDown') { e.preventDefault(); selectedSearchIndex = (selectedSearchIndex + 1) % items.length; updateSearchSelection(items); } 
     else if (e.key === 'ArrowUp') { e.preventDefault(); selectedSearchIndex = (selectedSearchIndex - 1 + items.length) % items.length; updateSearchSelection(items); } 
     else if (e.key === 'Enter') {
@@ -183,6 +192,46 @@
       else if (filteredProducts.length > 0) agregarAlCarrito(filteredProducts[0]);
     }
   });
+
+  // ── NUEVO: BUSCADOR DE CLIENTES ──
+  const clientInput = document.getElementById('clientName');
+  const clientResults = document.getElementById('clientResults');
+
+  clientInput.addEventListener('input', (e) => {
+    document.getElementById('clientId').value = ''; // Resetea el ID si borra a mano
+    const term = e.target.value.toLowerCase().trim();
+    if (term.length < 1) { clientResults.classList.remove('active'); return; }
+    
+    const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term) || (c.cuit && c.cuit.toLowerCase().includes(term))).slice(0, 5);
+    
+    if (filtrados.length === 0) {
+      clientResults.innerHTML = '<div style="padding:15px; color:var(--muted); text-align:center;">Cliente no encontrado</div>';
+    } else {
+      clientResults.innerHTML = filtrados.map(c => `
+        <div class="autocomplete-item" onclick="seleccionarClientePOS('${c.id}', '${escapeHtml(c.name)}')">
+          <div>
+            <div style="font-weight:700;">${escapeHtml(c.name)}</div>
+            <div style="font-size:12px; color:var(--muted);">${c.cuit ? 'CUIT: ' + escapeHtml(c.cuit) : c.type}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+    clientResults.classList.add('active');
+  });
+
+  window.seleccionarClientePOS = function(id, name) {
+    clientInput.value = name;
+    document.getElementById('clientId').value = id;
+    clientResults.classList.remove('active');
+  };
+
+  // Ocultar desplegables si hacemos clic afuera
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) { searchResults.classList.remove('active'); }
+    if (!clientInput.contains(e.target) && !clientResults.contains(e.target)) { clientResults.classList.remove('active'); }
+  });
+
+  // ── FIN BUSCADOR CLIENTES ──
 
   function renderSearchResults() {
     if (filteredProducts.length === 0) {
@@ -243,36 +292,22 @@
   function quitarDelCarrito(id) { cart = cart.filter(x => x.id !== id); renderCart(); searchInput.focus(); }
   function cancelarVenta() { if (confirm("¿Vaciar carrito?")) { cart = []; renderCart(); searchInput.focus(); } }
 
-  // ── MOTOR DE PROMOCIONES INTELIGENTE ──
   function calcularTotales() {
     let subtotal = 0, promoDiscountTotal = 0;
     
-    // Primero calculamos el subtotal puro
     cart.forEach(item => { item.promoApplied = 0; subtotal += (item.price * item.qty); });
 
-    // Segundo recorrido: aplicamos descuentos según las reglas
     cart.forEach(item => {
       let d = 0;
       const type = item.promoType;
       const val = parseFloat(item.promoValue) || 0;
 
-      if (type === '2x1') {
-        // Por cada par, se descuenta 1 entero (100%)
-        d = Math.floor(item.qty / 2) * item.price;
-      } 
-      else if (type === '2da_unidad') {
-        // Por cada par, se descuenta el porcentaje indicado del precio de 1 unidad
-        d = Math.floor(item.qty / 2) * (item.price * (val / 100));
-      } 
-      else if (type === 'descuento_directo') {
-        // Descuento a todas las unidades de este producto
-        d = (item.price * item.qty) * (val / 100);
-      } 
+      if (type === '2x1') { d = Math.floor(item.qty / 2) * item.price; } 
+      else if (type === '2da_unidad') { d = Math.floor(item.qty / 2) * (item.price * (val / 100)); } 
+      else if (type === 'descuento_directo') { d = (item.price * item.qty) * (val / 100); } 
       else if (type === 'combo' && item.promoLinked) {
-        // Busca si el producto vinculado está en el carrito
         const linkedItem = cart.find(c => c.id === item.promoLinked);
         if (linkedItem) {
-          // El combo aplica a la cantidad de pares formados.
           const cantCombosFormados = Math.min(item.qty, linkedItem.qty);
           d = cantCombosFormados * (item.price * (val / 100));
         }
@@ -353,6 +388,7 @@
         <div style="font-size:12px; font-weight:normal;">Comprobante X</div>
       </div>
       <div style="margin-bottom:10px;">Fecha: ${new Date(venta.createdAt).toLocaleString('es-AR')}</div>
+      <div style="margin-bottom:10px; font-weight:bold;">Cliente: ${escapeHtml(venta.client)}</div>
       <div class="ticket-divider"></div>
       ${itemsHTML}
       <div class="ticket-divider"></div>
@@ -366,13 +402,11 @@
     `;
   }
 
-  // EVENTO DE TECLADO PARA F12 Y F2
   document.addEventListener('keydown', (e) => {
     if (e.key === 'F12') { e.preventDefault(); procesarVenta(); }
     if (e.key === 'F2') { e.preventDefault(); searchInput.focus(); }
   });
 
-  // CONFIRMACIÓN RÁPIDA E IMPRESIÓN DIRECTA
   function procesarVenta() {
     if (cart.length === 0) return;
     if (!confirm("¿Confirmar venta e imprimir ticket?")) return;
@@ -385,9 +419,12 @@
 
     const { subtotal, promoDiscountTotal, totalPagar } = calcularTotales();
     const cliente = document.getElementById('clientName').value.trim() || 'Consumidor Final';
+    const clienteId = document.getElementById('clientId').value;
 
     const nuevaVenta = {
-      id: 'vta_' + Date.now(), date: todayISO(), createdAt: new Date().toISOString(), client: cliente, method: currentPaymentMethod, cupon: cuponText, subtotal: subtotal, promoDiscount: promoDiscountTotal, total: totalPagar,
+      id: 'vta_' + Date.now(), date: todayISO(), createdAt: new Date().toISOString(), 
+      client: cliente, clientId: clienteId, // Acá guarda el ID
+      method: currentPaymentMethod, cupon: cuponText, subtotal: subtotal, promoDiscount: promoDiscountTotal, total: totalPagar,
       items: cart.map(i => ({ id: i.id, name: i.name, code: i.code, price: i.price, qty: i.qty, subtotal: (i.price * i.qty) - (i.promoApplied||0) }))
     };
 
@@ -398,7 +435,10 @@
     document.getElementById('printTicketArea').innerHTML = generarTicketHTML(nuevaVenta);
     window.print();
     
-    cart = []; document.getElementById('clientName').value = 'Consumidor Final';
+    // Limpieza post-venta
+    cart = []; 
+    document.getElementById('clientName').value = 'Consumidor Final';
+    document.getElementById('clientId').value = '';
     if(currentPaymentMethod === 'Tarjeta') document.getElementById('cuponNumber').value = '';
     renderCart(); searchInput.focus();
   }
