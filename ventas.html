@@ -70,7 +70,7 @@
         <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Historial de transacciones y arqueo de caja Z.</p>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-success" onclick="exportarExcelConsolidado()">⬇ Exportar Excel</button>
+        <button class="btn btn-success" onclick="abrirModalExportarVentas()">⬇ Exportar Reporte</button>
       </div>
     </header>
 
@@ -165,6 +165,46 @@
   </form>
 </dialog>
 
+<dialog id="modalExportarVentas" style="width: 100%; max-width: 500px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;">Exportar Reporte de Ventas</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalExportarVentas').close()">✕</button>
+    </div>
+    <form onsubmit="ejecutarExportacionAvanzada(event)">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Desde *</label>
+          <input type="date" id="exportDesde" class="input-box" required>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Hasta *</label>
+          <input type="date" id="exportHasta" class="input-box" required>
+        </div>
+      </div>
+      
+      <div style="margin-bottom: 15px;" id="boxExportSucursal">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Sucursal *</label>
+        <select id="exportSucursal" class="input-box" required></select>
+      </div>
+
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Tipo de Reporte *</label>
+        <select id="exportTipo" class="input-box" required>
+          <option value="resumen">Consolidado (1 fila por Factura/Ticket)</option>
+          <option value="detallado">Detallado (1 fila por Artículo vendido)</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalExportarVentas').close()">Cancelar</button>
+        <button type="submit" class="btn btn-success">Generar Excel</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+  
 <script src="core.js"></script>
 <script>
  const API_URL = "/api";
@@ -363,52 +403,108 @@
     window.print();
   }
 
-  // EXPORTACIÓN A EXCEL CONSOLIDADAY INTELIGENTE
-  function exportarExcelConsolidado() {
-    const today = todayISO();
-    
-    const role = localStorage.getItem('userRole') || 'admin';
-    const terminalActiva = localStorage.getItem('terminal_assigned_branch');
-    
-    let ventasHoy = dbSales.filter(s => s.date === today || (s.createdAt && s.createdAt.startsWith(today)));
-    if (role !== 'admin' && terminalActiva) {
-        ventasHoy = ventasHoy.filter(s => s.branch === terminalActiva);
-    }
-    
-    if(!ventasHoy.length) return alert("No hay ventas hoy para exportar en esta caja.");
-
-    // Datos individuales
-    let csvContent = "Fecha;Hora;Sucursal;Comprobante;Vendedor;Cliente;Metodo Pago;Cupon;Subtotal;Descuento;Total Final\n";
-    
-    let totEfectivo = 0, totTransf = 0, totTarjeta = 0;
-
-    ventasHoy.forEach(v => {
-      const fechaObj = new Date(v.createdAt);
-      const fecha = fechaObj.toLocaleDateString('es-AR');
-      const hora = fechaObj.toLocaleTimeString('es-AR');
-      const vendedor = v.seller || 'Admin';
-      const sucursalVenta = v.branch || 'Central';
-      const cuponStr = v.cupon ? `="${v.cupon}"` : '-'; 
+  // --- MOTOR DE REPORTES EXCEL AVANZADOS ---
+  async function abrirModalExportarVentas() {
+      document.getElementById('exportDesde').value = todayISO();
+      document.getElementById('exportHasta').value = todayISO();
       
-      csvContent += `"${fecha}";"${hora}";"${sucursalVenta}";"${v.id}";"${vendedor}";"${v.client || 'Consumidor Final'}";"${v.method}";${cuponStr};"${v.subtotal}";"${v.promoDiscount || 0}";"${v.total}"\n`;
+      const role = localStorage.getItem('userRole') || 'admin';
+      const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+      const selectSuc = document.getElementById('exportSucursal');
+      
+      if (role === 'admin') {
+          selectSuc.disabled = false;
+          selectSuc.innerHTML = '<option value="ALL">Todas las Sucursales</option>';
+          // Buscamos las sucursales en vivo para el Admin
+          try {
+              const res = await fetch(`${API_URL}/branches`);
+              if (res.ok) {
+                  const branches = await res.json();
+                  branches.forEach(b => {
+                      selectSuc.innerHTML += `<option value="${b.name}">${b.name}</option>`;
+                  });
+              }
+          } catch(e) { console.error(e); }
+      } else {
+          // Si es cajero/encargado, bloqueamos el select en su propia sucursal
+          selectSuc.innerHTML = `<option value="${terminalActiva}">${terminalActiva}</option>`;
+          selectSuc.disabled = true;
+      }
+      
+      document.getElementById('modalExportarVentas').showModal();
+  }
 
-      if (v.method === 'Efectivo') totEfectivo += v.total;
-      else if (v.method === 'Transferencia') totTransf += v.total;
-      else if (v.method === 'Tarjeta') totTarjeta += v.total;
-    });
-
-    // Filas de consolidación (Resumen al pie)
-    csvContent += `\n;;;;;;;;;;\n`; 
-    csvContent += `;;;;;;;;;"TOTAL EFECTIVO";"${totEfectivo}"\n`;
-    csvContent += `;;;;;;;;;"TOTAL TRANSFERENCIA";"${totTransf}"\n`;
-    csvContent += `;;;;;;;;;"TOTAL TARJETAS";"${totTarjeta}"\n`;
-    csvContent += `;;;;;;;;;"TOTAL CAJA DEL DIA";"${totEfectivo + totTransf + totTarjeta}"\n`;
-
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `Liquidacion_Caja_${terminalActiva || 'Global'}_${today}.csv`;
-    link.click();
+  function ejecutarExportacionAvanzada(e) {
+      e.preventDefault();
+      const desde = document.getElementById('exportDesde').value;
+      const hasta = document.getElementById('exportHasta').value;
+      const sucursal = document.getElementById('exportSucursal').value;
+      const tipo = document.getElementById('exportTipo').value;
+      
+      // 1. Filtrar base de datos
+      let ventasFiltradas = dbSales.filter(s => {
+          const date = s.date || (s.createdAt ? s.createdAt.split('T')[0] : '');
+          return date >= desde && date <= hasta;
+      });
+      
+      if (sucursal !== 'ALL') {
+          ventasFiltradas = ventasFiltradas.filter(s => s.branch === sucursal);
+      }
+      
+      if (ventasFiltradas.length === 0) {
+          alert("No hay ventas registradas en este rango y sucursal.");
+          return;
+      }
+      
+      let dataExport = [];
+      
+      // 2. Armar el array de datos según el tipo elegido
+      if (tipo === 'resumen') {
+          // Reporte Financiero (Tickets)
+          dataExport = ventasFiltradas.map(v => {
+              const d = new Date(v.createdAt);
+              return {
+                  "Fecha": v.date || d.toLocaleDateString('es-AR'),
+                  "Hora": d.toLocaleTimeString('es-AR'),
+                  "Sucursal": v.branch || 'Central',
+                  "Comprobante": v.id,
+                  "Vendedor": v.seller || 'Admin',
+                  "Cliente": v.client || 'Consumidor Final',
+                  "Metodo Pago": v.method,
+                  "Cupon": v.cupon || '-',
+                  "Subtotal": v.subtotal,
+                  "Descuento": v.promoDiscount || 0,
+                  "Total Final": v.total
+              };
+          });
+      } else {
+          // Reporte Comercial (Artículos desplegados)
+          ventasFiltradas.forEach(v => {
+              const d = new Date(v.createdAt);
+              // Como tu backend manda itemsJSON parseado desde sales.js, lo iteramos directo
+              const items = typeof v.items === 'string' ? JSON.parse(v.items) : (v.items || []);
+              
+              items.forEach(i => {
+                  dataExport.push({
+                      "Fecha": v.date || d.toLocaleDateString('es-AR'),
+                      "Sucursal": v.branch || 'Central',
+                      "Comprobante": v.id,
+                      "Vendedor": v.seller || 'Admin',
+                      "Cliente": v.client || 'Consumidor Final',
+                      "Metodo Pago": v.method,
+                      "SKU": i.code || '-',
+                      "Producto": i.name,
+                      "Cantidad": i.qty,
+                      "Precio Unitario": i.price,
+                      "Subtotal Item": i.qty * i.price
+                  });
+              });
+          });
+      }
+      
+      // 3. Exportar usando la función global de core.js
+      exportarAExcel(dataExport, `Reporte_Ventas_${tipo.toUpperCase()}_${desde}_al_${hasta}`);
+      document.getElementById('modalExportarVentas').close();
   }
 
   initData();
