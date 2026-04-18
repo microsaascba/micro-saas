@@ -253,4 +253,34 @@ document.addEventListener('DOMContentLoaded', () => {
       if (twoCol) twoCol.style.gridTemplateColumns = '1fr';
     }
   }
+
+   
+
+   // --- ARREGLO VISUAL DEL MENÚ LATERAL (SIDEBAR) ---
+    const globalCss = document.createElement('style');
+    globalCss.innerHTML = `
+      /* Pasamos el overflow al body para no romper el sticky */
+      html, body { overflow-x: hidden !important; }
+      
+      /* Le devolvemos la libertad al contenedor app */
+      .app { overflow-x: visible !important; align-items: start !important; }
+      
+      /* Forzamos al menú a pegarse al techo y permitir scroll interno */
+      .sidebar { 
+          height: 100vh !important; 
+          position: sticky !important; 
+          top: 0 !important; 
+          overflow-y: auto !important; /* Muestra barra de scroll si el menú es muy largo */
+          display: flex !important; 
+          flex-direction: column !important; 
+      }
+      
+      /* Estilizamos la barrita de scroll del menú para que quede elegante */
+      .sidebar::-webkit-scrollbar { width: 5px; }
+      .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+      .sidebar::-webkit-scrollbar-track { background: transparent; }
+    `;
+    document.head.appendChild(globalCss);
+
+   
 });
