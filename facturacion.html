@@ -1,24 +1,21 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Facturación | Micro SaaS</title>
-
+  
   <style>
     html, body { background-color: #f0f2f7 !important; }
     body { animation: fadeIn 0.15s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
   <link rel="stylesheet" href="styles.css" />
-  
-  
   <style>
-                       
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a;}
     
-    /* ── NUEVO LAYOUT VERTICAL ERP ── */
     .pos-container { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
     .mb-4 { margin-bottom: 20px; }
     
@@ -32,7 +29,6 @@
     .autocomplete-item.selected, .autocomplete-item:hover { background: var(--primary-soft); }
     .prod-promo { font-size: 11px; background: var(--warning-soft); color: var(--warning); padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 8px; }
 
-    /* ── TABLA ESTILO EXCEL ── */
     .excel-table { width: 100%; border-collapse: collapse; text-align: left; }
     .excel-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; border-bottom: 2px solid var(--line); border-top: 1px solid var(--line); }
     .excel-table td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
@@ -46,7 +42,6 @@
     input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
 
-    /* ── PANEL INFERIOR (Cierre) ── */
     .checkout-footer { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start; }
     @media (max-width: 900px) { .checkout-footer { grid-template-columns: 1fr; } }
     
@@ -64,7 +59,6 @@
 
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px;}
 
-    /* ── IMPRESIÓN ── */
     #printTicketArea { display: none; }
     @media print {
       @page { margin: 0; size: 80mm auto; }
@@ -113,7 +107,6 @@
     </header>
 
     <div class="pos-container">
-      
       <article class="card card-pad">
         <div class="pos-search-box" style="margin: 0;">
           <label style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; display: block;">1. Seleccionar Cliente</label>
@@ -147,27 +140,22 @@
                 <th style="width: 5%; text-align: center;">Del</th>
               </tr>
             </thead>
-            <tbody id="cartBody">
-              </tbody>
+            <tbody id="cartBody"></tbody>
           </table>
         </div>
       </article>
 
       <div class="checkout-footer">
-        
         <article class="card card-pad">
           <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--muted); text-transform: uppercase;">3. Condiciones de Pago</h3>
-          
           <div class="pay-methods" id="payMethodsB2C">
             <button class="pay-btn active" onclick="setPayment('Efectivo', this)">💵 Efectivo</button>
             <button class="pay-btn" onclick="setPayment('Transferencia', this)">📱 Transf.</button>
             <button class="pay-btn" onclick="setPayment('Tarjeta', this)">💳 Tarjeta</button>
           </div>
-          
           <div class="pay-methods" id="payMethodsB2B" style="display: none;">
             <button class="pay-btn pay-btn-b2b active" style="display: block;">📓 Enviar a Cuenta Corriente</button>
           </div>
-
           <div id="cuponContainer" style="display: none; margin-top: 15px;">
             <label style="font-size: 11px; color: var(--danger); text-transform: uppercase; font-weight:bold;">Número de Cupón / Lote *</label>
             <input type="number" id="cuponNumber" placeholder="Ingresá el número del comprobante" style="background: #fff; border: 2px solid var(--line); font-weight: 600; padding: 12px; width: 100%; box-sizing: border-box; margin-top: 6px; border-radius: 8px;">
@@ -180,10 +168,8 @@
             <span>Descuentos y Promos</span><span id="txtPromoDiscount">-$0</span>
           </div>
           <div class="totals-row grand-total"><span>Total</span><span id="txtTotal" style="color: var(--primary);">$0</span></div>
-          
           <button class="btn-charge" onclick="procesarVenta()">Confirmar e Imprimir (F12)</button>
         </article>
-
       </div>
     </div>
   </main>
@@ -203,7 +189,6 @@
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
 
-  // ── INICIALIZACIÓN (Carga desde la nube) ──
   async function initPOS() {
     mostrarCarga(true);
     try {
@@ -215,7 +200,6 @@
     finally { mostrarCarga(false); document.getElementById('posSearch').focus(); }
   }
 
-  // ── 1. BUSCADOR DE CLIENTES ──
   const clientInput = document.getElementById('clientName');
   const clientResults = document.getElementById('clientResults');
 
@@ -225,11 +209,9 @@
         document.getElementById('clientId').value = '';
         activarModoB2C(); 
     }
-    
     if (term.length < 1) { clientResults.classList.remove('active'); return; }
     
     const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term) || (c.cuil && c.cuil.includes(term))).slice(0, 5);
-    
     clientResults.innerHTML = filtrados.length === 0 ? '<div style="padding:15px; text-align:center; color:var(--muted);">Dejar como Consumidor Final</div>' : filtrados.map(c => `
         <div class="autocomplete-item" onclick="seleccionarClientePOS('${c.id}', '${escapeHtml(c.name)}')">
           <div><strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small></div>
@@ -240,10 +222,8 @@
   };
 
   window.seleccionarClientePOS = function(id, name) {
-    clientInput.value = name;
-    document.getElementById('clientId').value = id;
-    clientResults.classList.remove('active');
-    activarModoB2B();
+    clientInput.value = name; document.getElementById('clientId').value = id;
+    clientResults.classList.remove('active'); activarModoB2B();
   };
 
   function activarModoB2C() {
@@ -254,8 +234,7 @@
   }
 
   function activarModoB2B() {
-    isB2B = true;
-    currentPaymentMethod = 'A Cuenta Corriente';
+    isB2B = true; currentPaymentMethod = 'A Cuenta Corriente';
     document.getElementById('payMethodsB2C').style.display = 'none';
     document.getElementById('payMethodsB2B').style.display = 'flex';
     document.getElementById('cuponContainer').style.display = 'none';
@@ -272,7 +251,6 @@
     else { cupon.style.display = 'none'; document.getElementById('cuponNumber').value = ''; if(debeEnfocar) document.getElementById('posSearch').focus(); }
   }
 
-  // ── 2. BUSCADOR DE PRODUCTOS ──
   const searchInput = document.getElementById('posSearch');
   const searchResults = document.getElementById('searchResults');
 
@@ -324,7 +302,6 @@
     if (!clientInput.contains(e.target) && !clientResults.contains(e.target)) clientResults.classList.remove('active');
   });
 
-  // ── 3. CARRITO (TABLA EXCEL) ──
   function agregarAlCarrito(prod) {
     const existe = cart.find(item => item.id === prod.id);
     if (existe) { if (existe.qty < prod.stock) existe.qty++; else alert("Límite de stock."); } 
@@ -332,26 +309,22 @@
     searchInput.value = ''; searchResults.classList.remove('active'); searchInput.focus(); renderCart();
   }
 
-  // Modificar cantidad con botones +/-
   window.modificarCantidad = function(id, delta) {
     const item = cart.find(x => x.id === id);
     if (!item) return;
     let nueva = item.qty + delta;
     if (nueva < 1) nueva = 1; 
     if (nueva > item.stock) { alert(`Sólo quedan ${item.stock} unidades en stock.`); nueva = item.stock; }
-    item.qty = nueva; 
-    renderCart();
+    item.qty = nueva; renderCart();
   };
 
-  // Modificar cantidad tipeando directo en la celda (Se activa con onchange)
   window.setCantidadManual = function(id, inputElement) {
     const item = cart.find(x => x.id === id);
     if (!item) return;
     let num = parseInt(inputElement.value);
     if (isNaN(num) || num < 1) num = 1;
     if (num > item.stock) { alert(`El stock máximo es ${item.stock}.`); num = item.stock; }
-    item.qty = num; 
-    renderCart();
+    item.qty = num; renderCart();
   };
 
   function quitar(id) { cart = cart.filter(x => x.id !== id); renderCart(); }
@@ -360,7 +333,6 @@
   function calcularTotales() {
     let subtotal = 0, promoDiscountTotal = 0;
     cart.forEach(item => { item.promoApplied = 0; subtotal += (item.price * item.qty); });
-
     cart.forEach(item => {
       let d = 0; const type = item.promoType; const val = parseFloat(item.promoValue) || 0;
       if (type === '2x1') { d = Math.floor(item.qty / 2) * item.price; } 
@@ -388,9 +360,7 @@
           let razon = (item.promoType === '2x1') ? '2x1' : (item.promoType === '2da_unidad') ? `2da al ${item.promoValue}%` : (item.promoType === 'combo') ? `COMBO` : `${item.promoValue}% OFF`;
           tagHtml = `<br><span style="font-size:10px; color:var(--danger); font-weight:bold; background:#fee2e2; padding:2px 6px; border-radius:4px;">PROMO ${razon}: -${currency(item.promoApplied)}</span>`;
         }
-
         const subtotalFila = (item.price * item.qty) - (item.promoApplied||0);
-
         return `
         <tr>
           <td style="color:var(--muted); font-size:12px;">${item.code || '-'}</td>
@@ -415,7 +385,6 @@
     document.getElementById('txtTotal').textContent = currency(totalPagar);
   }
 
-  // ── 4. GUARDAR VENTA E IMPRIMIR ──
   document.addEventListener('keydown', (e) => {
     if (e.key === 'F12') { e.preventDefault(); procesarVenta(); }
     if (e.key === 'F2') { e.preventDefault(); searchInput.focus(); }
@@ -435,7 +404,7 @@
     const { subtotal, promoDiscountTotal, totalPagar } = calcularTotales();
     const cliente = clientInput.value || 'Consumidor Final';
     const cid = document.getElementById('clientId').value;
-    const dateStr = todayISO();
+    const dateStr = new Date().toISOString().split('T')[0];
 
     const venta = {
       id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: dateStr,
@@ -445,41 +414,33 @@
     };
 
     try {
-      // 1. Guardar Venta
       const resVenta = await fetch(`${API_URL}/sales`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(venta) });
+      if(!resVenta.ok) throw new Error("Error guardando Venta: " + await resVenta.text());
       
-      // 2. Si es B2B, mandar a Cta Cte
       if (isB2B && cid) {
         const mov = { id: 'cc_' + Date.now(), clientId: cid, date: dateStr, type: 'debe', amount: totalPagar, concept: `Ticket #${venta.id.split('_')[1]}` };
-        await fetch(`${API_URL}/cc_movements`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(mov) });
+        const resCC = await fetch(`${API_URL}/cc_movements`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(mov) });
+        if(!resCC.ok) throw new Error("Error en Cta Cte: " + await resCC.text());
       }
 
-      // 3. Descontar Stock en DB
       for(let item of cart) {
         const dbProd = dbProducts.find(p => p.id === item.id);
         if(dbProd) {
           dbProd.stock -= item.qty;
-          await fetch(`${API_URL}/products`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dbProd) });
+          const resProd = await fetch(`${API_URL}/products`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dbProd) });
+          if(!resProd.ok) throw new Error("Error descontando stock: " + await resProd.text());
         }
       }
 
-      // Finalizar: Guardar en local temporal para imprimir y limpiar pantalla
       localStorage.setItem('last_sale_to_print', JSON.stringify(venta));
-      
-      cart = []; 
-      clientInput.value = 'Consumidor Final'; 
-      document.getElementById('clientId').value = '';
+      cart = []; clientInput.value = 'Consumidor Final'; document.getElementById('clientId').value = '';
       if(currentPaymentMethod === 'Tarjeta') document.getElementById('cuponNumber').value = '';
-      activarModoB2C(); 
-      renderCart(); 
-      searchInput.focus();
-
-      // Abrir Factura
+      activarModoB2C(); renderCart(); searchInput.focus();
       window.open('factura.html', '_blank');
 
     } catch(e) { 
       console.error(e);
-      alert("Error de conexión al procesar la venta."); 
+      alert("ATENCIÓN: Falló el cobro.\n\nMotivo:\n" + e.message); 
     } finally { 
       mostrarCarga(false); 
     }
