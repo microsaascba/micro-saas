@@ -14,56 +14,42 @@
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
-    
     .layout-1col { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
-    
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
     
-    /* TABLA ESTILO EXCEL (PANTALLA) */
     .excel-table { width: 100%; border-collapse: collapse; text-align: left; background: #fff; }
     .excel-table th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
     .excel-table td { padding: 10px 15px; border: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
     .excel-table tbody tr:hover { background-color: #f8fafc; }
     .col-number { text-align: right; font-weight: 600; font-family: monospace; font-size: 14px;}
     .col-val { text-align: right; font-weight: 800; color: var(--primary); }
-
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
-    
-    /* SISTEMA DE PESTAÑAS */
     .tabs { display: flex; gap: 20px; border-bottom: 2px solid var(--line); margin-bottom: 20px; }
     .tab-btn { background: none; border: none; padding: 10px 5px; font-size: 15px; font-weight: bold; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: 0.2s; }
-    .tab-btn:hover { color: var(--text); }
     .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
     .tab-content { display: none; animation: fadeIn 0.3s ease; }
     .tab-content.active { display: block; }
-
-    /* ESTILO DE REMITO COMPACTO PARA IMPRIMIR (ENTRAN 30+ ITEMS) */
     #printRemito { display: none; }
+    
     @media print {
       @page { margin: 15mm; size: A4 portrait; }
       body { margin: 0; background: #fff; font-family: sans-serif; color: #000; }
       .app, dialog { display: none !important; }
       #printRemito { display: block !important; width: 100%; }
-      
       .remito-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
       .remito-title { font-size: 16px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin:0;}
-      
       .remito-boxes { display: flex; gap: 10px; margin-bottom: 15px; }
       .remito-box { border: 1px solid #000; padding: 8px; border-radius: 4px; flex: 1; }
       .remito-box strong { font-size: 10px; color: #333; text-transform: uppercase; }
       .remito-box h3 { margin: 2px 0; font-size: 13px; }
       .remito-box p { margin: 0; font-size: 10px; }
-
       .remito-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px; }
       .remito-table th, .remito-table td { border: 1px solid #000; padding: 4px 6px; text-align: left; }
       .remito-table th { background: #f0f0f0; font-weight: bold; }
-      .remito-table td { height: 16px; /* Fuerza el alto mínimo para apilar filas */ }
-      
       .firmas { display: flex; justify-content: space-between; margin-top: 30px; }
       .firma-line { border-top: 1px solid #000; width: 40%; text-align: center; padding-top: 4px; font-size: 10px; }
     }
@@ -100,7 +86,6 @@
         <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Stock valorizado, transferencias y remitos de mercadería.</p>
       </div>
       <div class="topbar-actions" style="display: flex; gap: 10px;">
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);">⬇ Exportar Excel Valorizado</button>
         <button class="btn btn-primary" onclick="abrirModalTransferencia()">⇄ Nueva Transferencia</button>
         <button class="btn btn-primary" style="background: var(--text); border:none;" onclick="abrirModalAjuste()">+ Ajuste Manual</button>
       </div>
@@ -108,20 +93,20 @@
 
     <div class="kpi-grid">
       <article class="card card-pad">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Unidades Totales</div>
-        <div id="kpiUnidades" style="font-size:28px; font-weight:800; color:var(--text);">1.450</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Unidades Visibles</div>
+        <div id="kpiUnidades" style="font-size:28px; font-weight:800; color:var(--text);">0</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--primary);">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Capital Inmovilizado (Costo)</div>
-        <div id="kpiValorizado" style="font-size:28px; font-weight:800; color:var(--primary);">$ 2.450.000</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Capital Inmovilizado</div>
+        <div id="kpiValorizado" style="font-size:28px; font-weight:800; color:var(--primary);">$ 0</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--warning);">
-        <div style="font-size:11px; color:var(--warning); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Transferencias en Tránsito</div>
-        <div id="kpiTransito" style="font-size:28px; font-weight:800; color:var(--warning);">2</div>
+        <div style="font-size:11px; color:var(--warning); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Productos Faltantes</div>
+        <div id="kpiBajo" style="font-size:28px; font-weight:800; color:var(--warning);">0</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--danger);">
-        <div style="font-size:11px; color:var(--danger); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Productos Agotados</div>
-        <div id="kpiCero" style="font-size:28px; font-weight:800; color:var(--danger);">5</div>
+        <div style="font-size:11px; color:var(--danger); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Agotados (Stock Cero)</div>
+        <div id="kpiCero" style="font-size:28px; font-weight:800; color:var(--danger);">0</div>
       </article>
     </div>
 
@@ -135,12 +120,10 @@
 
         <div id="tab-inventario" class="tab-content active">
           <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
-            <input type="text" class="input-box" placeholder="🔍 Buscar producto o código..." style="flex: 1; min-width: 250px;">
-            <select class="input-box" style="width: auto; font-weight: bold; color: var(--muted);">
+            <input type="text" id="searchStock" class="input-box" placeholder="🔍 Buscar producto o SKU..." style="flex: 1; min-width: 250px;" onkeyup="renderStock()">
+            <select id="branchFilter" class="input-box" style="width: auto; font-weight: bold; color: var(--muted);" onchange="renderStock()">
               <option value="ALL">Todas las Sucursales</option>
-              <option value="Central">Mostrar solo Central</option>
-              <option value="Sucursal 1">Mostrar solo Sucursal 1</option>
-            </select>
+              </select>
           </div>
 
           <div style="overflow-x: auto;">
@@ -150,82 +133,18 @@
                   <th>Código</th>
                   <th>Producto / Descripción</th>
                   <th>Costo Unit.</th>
-                  <th style="background:#e2e8f0; color:#0f172a;">STOCK TOTAL</th>
-                  <th>Central</th>
-                  <th>Sucursal 1</th>
-                  <th>Sucursal 2</th>
-                  <th style="background:#e0e7ff; color:#1d4ed8; text-align:right;">VALORIZADO ($)</th>
+                  <th id="thDistribucion" style="background:#e2e8f0; color:#0f172a; text-align:center;">Distribución</th>
+                  <th style="background:#e0e7ff; color:#1d4ed8; text-align:right;">Valorizado ($)</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td><span class="badge-var">1001</span></td>
-                  <td><strong>Teclado Mecánico RGB</strong><br><small style="color:var(--muted)">Periféricos</small></td>
-                  <td>$ 25.000</td>
-                  <td class="col-number" style="background:#f8fafc;">100</td>
-                  <td class="col-number">80</td>
-                  <td class="col-number" style="color:var(--danger);">0</td>
-                  <td class="col-number">20</td>
-                  <td class="col-val">$ 2.500.000</td>
-                </tr>
-                <tr>
-                  <td><span class="badge-var">1002</span></td>
-                  <td><strong>Monitor 24" Full HD</strong><br><small style="color:var(--muted)">Monitores</small></td>
-                  <td>$ 80.000</td>
-                  <td class="col-number" style="background:#f8fafc;">50</td>
-                  <td class="col-number">25</td>
-                  <td class="col-number">25</td>
-                  <td class="col-number">0</td>
-                  <td class="col-val">$ 4.000.000</td>
-                </tr>
-              </tbody>
+              <tbody id="tableBodyStock"></tbody>
             </table>
           </div>
         </div>
 
         <div id="tab-movimientos" class="tab-content">
-          <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="text" class="input-box" placeholder="🔍 Buscar por N° de Remito, Origen o Destino..." style="max-width: 400px;">
-          </div>
-          <div style="overflow-x: auto;">
-            <table class="excel-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>N° Comprobante</th>
-                  <th>Tipo Mov.</th>
-                  <th>Ruta (Origen ➔ Destino)</th>
-                  <th>Detalle / Producto</th>
-                  <th>Estado</th>
-                  <th style="text-align: center;">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>18/04/2026<br><small style="color:var(--muted)">10:30 hs</small></td>
-                  <td><strong>REM-00105</strong></td>
-                  <td><span style="background:var(--primary-soft); color:var(--primary); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Transferencia</span></td>
-                  <td><strong>Central</strong> ➔ <strong>Sucursal 1</strong></td>
-                  <td>5 un. - Teclado Mecánico RGB<br><small style="color:var(--muted)">Enviado por: Admin</small></td>
-                  <td><span style="background:#fef08a; color:#b45309; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">🚚 En Tránsito</span></td>
-                  <td style="text-align: center;">
-                    <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="window.print()">🖨️ Imprimir Remito</button>
-                    <button class="btn btn-success" style="padding:4px 8px; font-size:11px; margin-left:5px;">✅ Recibir</button>
-                  </td>
-                </tr>
-                <tr>
-                  <td>17/04/2026<br><small style="color:var(--muted)">15:45 hs</small></td>
-                  <td><strong>AJU-0089</strong></td>
-                  <td><span style="background:var(--panel-2); color:var(--text); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold; border:1px solid var(--line);">Ajuste Manual</span></td>
-                  <td><strong>Central</strong></td>
-                  <td>-2 un. - Monitor 24" Full HD<br><small style="color:var(--danger)">Motivo: Producto dañado</small></td>
-                  <td><span style="background:#dcfce7; color:#16a34a; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">Aplicado</span></td>
-                  <td style="text-align: center;">
-                    <span style="color:var(--muted); font-size:11px;">Solo lectura</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div style="padding: 20px; text-align: center; color: var(--muted);">
+            El historial de movimientos y recepción de remitos estará disponible en la próxima actualización.
           </div>
         </div>
 
@@ -234,88 +153,34 @@
   </main>
 </div>
 
-<div id="printRemito">
-  <div class="remito-header">
-    <div>
-      <h1 style="margin: 0; font-size: 20px; font-weight: 900;">MICRO SAAS SOLUCIONES</h1>
-      <p style="margin: 2px 0 0 0; font-size: 10px; color: #555;">Documento de Traslado Interno</p>
-    </div>
-    <div style="text-align: right;">
-      <h2 class="remito-title">REMITO N° REM-00105</h2>
-      <p style="margin: 2px 0 0 0; font-size: 10px;">Fecha: 18/04/2026 10:30 hs</p>
-    </div>
-  </div>
-
-  <div class="remito-boxes">
-    <div class="remito-box">
-      <strong>Origen (Salida)</strong>
-      <h3>CENTRAL</h3>
-      <p>Responsable: Admin</p>
-    </div>
-    <div class="remito-box">
-      <strong>Destino (Entrada)</strong>
-      <h3>SUCURSAL 1</h3>
-      <p>Traslado interno programado</p>
-    </div>
-  </div>
-
-  <table class="remito-table">
-    <thead>
-      <tr>
-        <th style="width: 10%;">CÓDIGO</th>
-        <th style="width: 75%;">DESCRIPCIÓN DEL ARTÍCULO</th>
-        <th style="width: 15%; text-align: center;">CANTIDAD</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td>1001</td><td>Teclado Mecánico RGB</td><td style="text-align: center; font-weight: bold;">5</td></tr>
-      <tr><td>1002</td><td>Monitor 24" Full HD</td><td style="text-align: center; font-weight: bold;">2</td></tr>
-      <tr><td>1005</td><td>Mouse Inalámbrico</td><td style="text-align: center; font-weight: bold;">10</td></tr>
-      <tr><td>1008</td><td>Auriculares Bluetooth</td><td style="text-align: center; font-weight: bold;">4</td></tr>
-      </tbody>
-  </table>
-
-  <div style="font-size: 9px; color: #555; text-align: center; margin-bottom: 10px;">
-    La mercadería detallada viaja bajo responsabilidad de la empresa. Ingresar al sistema al momento de recepción.
-  </div>
-
-  <div class="firmas">
-    <div class="firma-line">Firma y Aclaración Origen</div>
-    <div class="firma-line">Firma y Aclaración Recepción</div>
-  </div>
-</div>
 <dialog id="modalTransferencia" style="width: 100%; max-width: 500px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;">Nueva Transferencia (Generar Remito)</h2>
+      <h2 style="margin: 0; font-size:20px;">Nueva Transferencia</h2>
       <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalTransferencia').close()">✕</button>
     </div>
-    
     <form>
-      <div style="background: #fff8f1; padding: 10px; border-radius: 8px; border: 1px dashed #f59e0b; margin-bottom: 15px; font-size: 12px; color: #b45309;">
-        El stock quedará <strong>"En Tránsito"</strong> hasta que la sucursal de destino presione "Recibir Mercadería".
-      </div>
       <div style="margin-bottom: 15px;">
         <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Producto a Mover *</label>
-        <select class="input-box"><option>Teclado Mecánico RGB</option></select>
+        <select id="transfProducto" class="input-box" required></select>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
         <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Origen (Sale de) *</label>
-          <select class="input-box"><option>Central</option></select>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Origen (Sale) *</label>
+          <select id="transfOrigen" class="input-box" required></select>
         </div>
         <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Destino (Entra a) *</label>
-          <select class="input-box"><option>Sucursal 1</option></select>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Destino (Entra) *</label>
+          <select id="transfDestino" class="input-box" required></select>
         </div>
       </div>
       <div style="margin-bottom: 25px;">
         <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Cantidad *</label>
-        <input type="number" class="input-box" placeholder="Ej: 5">
+        <input type="number" id="transfCant" class="input-box" min="1" required>
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
         <button type="button" class="btn btn-light" onclick="document.getElementById('modalTransferencia').close()">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="document.getElementById('modalTransferencia').close()">Emitir Remito</button>
+        <button type="button" class="btn btn-primary" onclick="procesarTransferencia(event)">Confirmar</button>
       </div>
     </form>
   </div>
@@ -324,31 +189,31 @@
 <dialog id="modalAjuste" style="width: 100%; max-width: 500px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;">Ajuste Manual de Stock</h2>
+      <h2 style="margin: 0; font-size:20px;">Ajuste Manual</h2>
       <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalAjuste').close()">✕</button>
     </div>
     <form>
       <div style="margin-bottom: 15px;">
         <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Producto *</label>
-        <select class="input-box"><option>Monitor 24" Full HD</option></select>
+        <select id="ajusteProducto" class="input-box" required></select>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Depósito *</label>
-          <select class="input-box"><option>Central</option></select>
+          <select id="ajusteSucursal" class="input-box" required></select>
         </div>
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Tipo Ajuste *</label>
-          <select class="input-box"><option>Ingreso (+)</option><option>Egreso (-)</option></select>
+          <select id="ajusteTipo" class="input-box"><option value="ingreso">Ingreso (+)</option><option value="egreso">Egreso (-)</option></select>
         </div>
       </div>
       <div style="margin-bottom: 15px;">
         <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Cantidad *</label>
-        <input type="number" class="input-box">
+        <input type="number" id="ajusteCant" class="input-box" required>
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
         <button type="button" class="btn btn-light" onclick="document.getElementById('modalAjuste').close()">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="document.getElementById('modalAjuste').close()">Aplicar Ajuste</button>
+        <button type="button" class="btn btn-primary" onclick="procesarAjuste(event)">Aplicar Ajuste</button>
       </div>
     </form>
   </div>
@@ -356,17 +221,188 @@
 
 <script src="core.js"></script>
 <script>
-  // LÓGICA DE DISEÑO: Pestañas
+  const API_URL = "/api";
+  let dbProducts = [];
+  let dbBranches = [];
+
+  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
   function switchTab(tabId, btnElement) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    
     btnElement.classList.add('active');
     document.getElementById(tabId).classList.add('active');
   }
 
-  function abrirModalTransferencia() { document.getElementById('modalTransferencia').showModal(); }
-  function abrirModalAjuste() { document.getElementById('modalAjuste').showModal(); }
+  function getBranches(prod) {
+    if (!prod.stock_branches) return { "Central": prod.stock || 0 };
+    try {
+      const parsed = JSON.parse(prod.stock_branches);
+      return typeof parsed === 'object' ? parsed : { "Central": prod.stock || 0 };
+    } catch(e) { return { "Central": prod.stock || 0 }; }
+  }
+
+  async function initStock() {
+    mostrarCarga(true);
+    try {
+      const [resP, resB] = await Promise.all([fetch(`${API_URL}/products`), fetch(`${API_URL}/branches`)]);
+      if (resP.ok) dbProducts = await resP.json();
+      if (resB.ok) dbBranches = await resB.json();
+    } catch (error) { console.error(error); } 
+    finally {
+      // Poblar filtros
+      const filter = document.getElementById('branchFilter');
+      if(filter) {
+        filter.innerHTML = '<option value="ALL">Todas las Sucursales</option>' + dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+      }
+      mostrarCarga(false);
+      renderStock();
+    }
+  }
+
+  function renderStock() {
+    const term = document.getElementById('searchStock').value.toLowerCase();
+    const branchFilterEl = document.getElementById('branchFilter');
+    const thDistribucion = document.getElementById('thDistribucion');
+    
+    // VERIFICACIÓN DE IDENTIDAD Y ROL
+    const role = localStorage.getItem('userRole') || 'admin';
+    const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+
+    // LÓGICA DE FILTRO INVISIBLE
+    let branchToView = 'ALL';
+    if (role === 'cajera' || role === 'vendedora' || role === 'pos') {
+        branchToView = terminalActiva;
+        if (branchFilterEl) branchFilterEl.style.display = 'none'; // Escondemos el filtro a empleados
+    } else {
+        branchToView = branchFilterEl ? branchFilterEl.value : 'ALL';
+    }
+
+    if (thDistribucion) {
+        thDistribucion.textContent = branchToView === 'ALL' ? 'Stock por Sucursal' : `Stock en: ${branchToView}`;
+    }
+
+    let kpiUnidades = 0, kpiBajo = 0, kpiCero = 0, kpiValorizado = 0;
+    const filtrados = dbProducts.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)));
+    const tbody = document.getElementById('tableBodyStock');
+    
+    tbody.innerHTML = filtrados.map(p => {
+      const branches = getBranches(p);
+      let displayStock = 0;
+      let branchHTML = '';
+
+      if (branchToView === 'ALL') {
+          for (const [branch, qty] of Object.entries(branches)) {
+              displayStock += parseInt(qty);
+              branchHTML += `<span style="background:#f1f5f9; border:1px solid #cbd5e1; padding:2px 6px; border-radius:6px; font-size:11px; font-weight:bold; margin-right:5px; display:inline-block; margin-bottom:4px;">${escapeHtml(branch)}: <span style="color:var(--primary);">${qty}</span></span>`;
+          }
+      } else {
+          // Si es cajera o filtró por un local, sacamos SOLO ese stock
+          displayStock = parseInt(branches[branchToView] || 0);
+          branchHTML = `<strong style="font-size:16px;">${displayStock} un.</strong>`;
+      }
+
+      kpiUnidades += displayStock;
+      kpiValorizado += (displayStock * (p.cost || 0));
+      if (displayStock <= 3 && displayStock > 0) kpiBajo++;
+      if (displayStock === 0) kpiCero++;
+
+      return `
+      <tr>
+        <td><span style="color:var(--muted); font-family:monospace; font-size: 11px;">${p.code || '-'}</span></td>
+        <td><strong>${escapeHtml(p.name)}</strong><br><small style="color:var(--muted)">${escapeHtml(p.category || '')}</small></td>
+        <td>${currency(p.cost)}</td>
+        <td style="text-align:center; background:#f8fafc;">${branchHTML}</td>
+        <td style="text-align:right; font-weight:800; color:var(--primary);">${currency(displayStock * (p.cost || 0))}</td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('kpiUnidades').textContent = kpiUnidades;
+    document.getElementById('kpiValorizado').textContent = currency(kpiValorizado);
+    document.getElementById('kpiBajo').textContent = kpiBajo;
+    document.getElementById('kpiCero').textContent = kpiCero;
+    
+    if (filtrados.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No hay productos registrados.</td></tr>';
+  }
+
+  // --- MODALES (CARGA DINÁMICA DE SUCURSALES) ---
+  function abrirModalAjuste() {
+    document.getElementById('ajusteProducto').innerHTML = dbProducts.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    document.getElementById('ajusteSucursal').innerHTML = dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+    document.getElementById('ajusteCant').value = '';
+    document.getElementById('modalAjuste').showModal();
+  }
+
+  function abrirModalTransferencia() {
+    document.getElementById('transfProducto').innerHTML = dbProducts.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    const ops = dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+    document.getElementById('transfOrigen').innerHTML = ops;
+    document.getElementById('transfDestino').innerHTML = ops;
+    document.getElementById('transfCant').value = '';
+    document.getElementById('modalTransferencia').showModal();
+  }
+
+  async function procesarAjuste(e) {
+    e.preventDefault();
+    const prodId = document.getElementById('ajusteProducto').value;
+    const branch = document.getElementById('ajusteSucursal').value;
+    const tipo = document.getElementById('ajusteTipo').value;
+    const cant = parseInt(document.getElementById('ajusteCant').value);
+    
+    if(isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
+
+    const prod = dbProducts.find(p => p.id === prodId);
+    let branches = getBranches(prod);
+    if (branches[branch] === undefined) branches[branch] = 0;
+
+    if (tipo === 'ingreso') branches[branch] += cant;
+    else {
+      if (branches[branch] < cant) return alert("Stock insuficiente para restar.");
+      branches[branch] -= cant;
+    }
+
+    let stockTotal = 0;
+    for (let b in branches) stockTotal += branches[b];
+    prod.stock_branches = branches; 
+    prod.stock = stockTotal;
+
+    mostrarCarga(true);
+    try {
+      await fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(prod) });
+      document.getElementById('modalAjuste').close();
+      renderStock();
+    } catch(err) { alert("Error."); } finally { mostrarCarga(false); }
+  }
+
+  async function procesarTransferencia(e) {
+    e.preventDefault();
+    const prodId = document.getElementById('transfProducto').value;
+    const origen = document.getElementById('transfOrigen').value;
+    const destino = document.getElementById('transfDestino').value;
+    const cant = parseInt(document.getElementById('transfCant').value);
+
+    if(origen === destino || isNaN(cant) || cant <= 0) return alert("Error en datos de origen/destino.");
+
+    const prod = dbProducts.find(p => p.id === prodId);
+    let branches = getBranches(prod);
+
+    if (branches[origen] === undefined || branches[origen] < cant) return alert(`No hay stock suficiente en ${origen}.`);
+    if (branches[destino] === undefined) branches[destino] = 0;
+
+    branches[origen] -= cant;
+    branches[destino] += cant;
+    prod.stock_branches = branches;
+
+    mostrarCarga(true);
+    try {
+      await fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(prod) });
+      document.getElementById('modalTransferencia').close();
+      renderStock();
+      alert("Transferencia aplicada directamente (Modo rápido activado).");
+    } catch(err) { alert("Error."); } finally { mostrarCarga(false); }
+  }
+
+  initStock();
 </script>
 </body>
 </html>
