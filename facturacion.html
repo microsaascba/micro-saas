@@ -226,7 +226,19 @@
     }
   }
 
-  // --- BUSQUEDA PRODUCTOS ---
+  // --- NUEVA LÓGICA: LEER SOLO EL STOCK DE ESTA SUCURSAL ---
+  function getLocalStock(prod) {
+      const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+      if (!prod.stock_branches) return prod.stock || 0;
+      try {
+          const branches = JSON.parse(prod.stock_branches);
+          return parseInt(branches[terminalActiva] || 0);
+      } catch(e) {
+          return prod.stock || 0;
+      }
+  }
+
+  // --- BUSCADOR DE PRODUCTOS PARA LA CAJA ---
   document.getElementById('posSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
     const searchResults = document.getElementById('searchResults');
@@ -240,14 +252,33 @@
     if (filteredProducts.length === 0) {
         searchResults.innerHTML = '<div style="padding:15px; text-align:center; color:var(--danger); font-weight:bold;">No se encontró el producto</div>';
     } else {
-        searchResults.innerHTML = filteredProducts.map((p, idx) => `
+        searchResults.innerHTML = filteredProducts.map((p, idx) => {
+          // Extraemos solo el stock de esta terminal
+          const localStock = getLocalStock(p);
+          const colorStock = localStock > 0 ? 'var(--success)' : 'var(--danger)';
+          
+          return `
           <div class="autocomplete-item" onclick="agregarAlCarrito(${idx})">
-            <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code || 'S/N'} | Stock: ${p.stock}</small></div>
+            <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code || 'S/N'} | <span style="color:${colorStock}; font-weight:bold;">Stock en Local: ${localStock}</span></small></div>
             <div style="font-weight:800; color:var(--primary);">${currency(p.price)}</div>
-          </div>`).join('');
+          </div>`;
+        }).join('');
     }
     searchResults.classList.add('active');
   });
+
+  function agregarAlCarrito(idx) {
+    const p = filteredProducts[idx];
+    
+    // OPCIONAL: Descomentá la siguiente línea si querés BLOQUEAR la venta si no hay stock físico
+    // if (getLocalStock(p) <= 0) return alert("⚠️ No podés vender este artículo porque no hay stock en esta sucursal.");
+
+    const existe = cart.find(i => i.id === p.id);
+    if (existe) existe.qty++; else cart.unshift({ ...p, qty: 1 });
+    document.getElementById('posSearch').value = ''; 
+    document.getElementById('searchResults').classList.remove('active');
+    document.getElementById('posSearch').focus(); renderCart();
+  }
 
   function agregarAlCarrito(idx) {
     const p = filteredProducts[idx];
