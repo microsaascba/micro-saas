@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Facturación | Micro SaaS</title>
+  <title>Punto de Venta | Micro SaaS</title>
   
   <style>
     html, body { background-color: #f0f2f7 !important; }
@@ -18,28 +18,27 @@
     
     .pos-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; align-items: start; }
     @media (max-width: 1000px) { .pos-layout { grid-template-columns: 1fr; } }
-    
-    .pos-section { background: #fff; border-radius: 12px; border: 1px solid var(--line); padding: 20px; box-shadow: var(--shadow-sm); margin-bottom: 20px; }
-    .pos-section-title { font-size: 11px; text-transform: uppercase; font-weight: 800; color: var(--muted); margin-bottom: 15px; letter-spacing: 0.5px; }
 
-    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px; width: 100%; font-family: inherit; font-size: 15px; outline: none; box-sizing: border-box; transition: 0.2s; }
-    .input-box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; transition: 0.2s; }
+    .input-box:focus { border-color: var(--primary); }
 
-    /* Autocomplete */
-    .autocomplete-list { position: absolute; background: #fff; border: 1px solid var(--line); border-radius: 8px; width: calc(100% - 40px); max-height: 250px; overflow-y: auto; z-index: 10; box-shadow: var(--shadow-lg); display: none; }
+    /* Buscadores Desplegables (Autocomplete) */
+    .autocomplete-wrapper { position: relative; width: 100%; }
+    .autocomplete-list { position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid var(--line); border-radius: 8px; width: 100%; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: var(--shadow-lg); display: none; margin-top: 5px; }
     .autocomplete-list.active { display: block; }
     .autocomplete-item { padding: 12px 15px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.1s; }
     .autocomplete-item:hover { background: var(--panel-2); }
     .autocomplete-item:last-child { border-bottom: none; }
 
-    /* Cart */
-    .cart-item { display: grid; grid-template-columns: 3fr 120px 1fr 20px; gap: 10px; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--line); }
+    /* Carrito de Compras */
+    .cart-item { display: grid; grid-template-columns: 3fr 100px 1fr 30px; gap: 10px; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--line); }
     .cart-item:last-child { border-bottom: none; }
     .qty-btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; color: var(--text); }
     .qty-btn:hover { background: #e2e8f0; }
 
-    .payment-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-    .pay-btn { background: #fff; border: 1px solid var(--line); padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; color: var(--text); }
+    /* Botones de Pago */
+    .payment-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
+    .pay-btn { background: #fff; border: 1px solid var(--line); padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; color: var(--text); font-size: 13px; }
     .pay-btn:hover { border-color: var(--primary); background: var(--panel-2); }
     .pay-btn.active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
 
@@ -48,7 +47,7 @@
 </head>
 <body>
 
-<div id="loadingOverlay">Procesando...</div>
+<div id="loadingOverlay">Procesando Venta...</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -74,66 +73,73 @@
     <header class="topbar">
       <div class="page-title">
         <h1 style="margin:0; font-size: 26px;">Punto de Venta</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;" id="lblTerminalBox">Caja activa. <span id="lblTerminalName" style="color:var(--primary); font-weight:bold;">Central</span></p>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Terminal Activa: <strong style="color:var(--primary);" id="lblTerminalTop">Cargando...</strong></p>
       </div>
     </header>
 
     <div class="pos-layout">
-      <div>
-        <div class="pos-section" style="position: relative;">
-          <div class="pos-section-title">1. Cliente</div>
-          <div style="display: flex; gap: 10px;">
-            <input type="text" id="clientSearch" class="input-box" placeholder="Consumidor Final (Buscar por nombre o DNI/CUIT)" autocomplete="off">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        
+        <article class="card card-pad">
+          <h2 style="margin: 0 0 15px 0; font-size: 16px; color: var(--text);">👤 Cliente</h2>
+          <div class="autocomplete-wrapper">
+            <input type="text" id="clientSearch" class="input-box" placeholder="Consumidor Final (Buscar por nombre o DNI/CUIT)..." autocomplete="off">
+            <div id="clientResults" class="autocomplete-list"></div>
           </div>
-          <div id="clientResults" class="autocomplete-list"></div>
-          <div id="selectedClientBadge" style="display:none; margin-top:10px; background:var(--primary-soft); padding:10px 15px; border-radius:8px; border:1px solid var(--primary); justify-content:space-between; align-items:center;">
+          
+          <div id="selectedClientBadge" style="display:none; margin-top:15px; background:var(--primary-soft); padding:15px; border-radius:8px; border:1px solid var(--primary); justify-content:space-between; align-items:center;">
             <div>
-              <strong style="color:var(--primary); font-size:15px; display:block;" id="lblClientName">Nombre</strong>
+              <strong style="color:var(--primary); font-size:16px; display:block;" id="lblClientName">Nombre</strong>
               <small style="color:var(--primary);" id="lblClientDoc">CUIT: 123</small>
             </div>
-            <button class="btn btn-light" style="padding:4px 8px; font-size:12px;" onclick="quitarCliente()">Cambiar</button>
+            <button class="btn btn-light" style="padding:6px 12px; font-size:12px; border: 1px solid var(--primary);" onclick="quitarCliente()">Cambiar</button>
           </div>
           <input type="hidden" id="clientName">
           <input type="hidden" id="clientId">
           <input type="hidden" id="clientIsB2B" value="false">
-        </div>
+        </article>
 
-        <div class="pos-section" style="position: relative;">
-          <div class="pos-section-title">2. Artículos</div>
-          <input type="text" id="posSearch" class="input-box" placeholder="Buscar por nombre o código de barras..." autocomplete="off">
-          <div id="searchResults" class="autocomplete-list"></div>
+        <article class="card card-pad">
+          <h2 style="margin: 0 0 15px 0; font-size: 16px; color: var(--text);">📦 Carga de Artículos</h2>
+          <div class="autocomplete-wrapper">
+            <input type="text" id="posSearch" class="input-box" placeholder="🔍 Buscar por nombre o SKU..." autocomplete="off">
+            <div id="searchResults" class="autocomplete-list"></div>
+          </div>
           
-          <div id="cartContainer" style="margin-top: 20px;">
-            <div style="text-align: center; padding: 30px; color: var(--muted); font-size: 14px;">
+          <div id="cartContainer" style="margin-top: 25px; min-height: 150px;">
+            <div style="text-align: center; padding: 40px; color: var(--muted); font-size: 14px; border: 1px dashed var(--line); border-radius: 8px;">
               El comprobante está vacío.<br>Buscá un artículo para comenzar.
             </div>
           </div>
-        </div>
+        </article>
 
-        <div class="pos-section">
-          <div class="pos-section-title">3. Pago</div>
+        <article class="card card-pad">
+          <h2 style="margin: 0 0 5px 0; font-size: 16px; color: var(--text);">💳 Método de Pago</h2>
           <div class="payment-grid" id="payGrid">
             <button class="pay-btn active" onclick="setPayment('Efectivo')">💵 Efectivo</button>
-            <button class="pay-btn" onclick="setPayment('Transferencia')">📱 Transf.</button>
-            <button class="pay-btn" onclick="setPayment('Tarjeta')">💳 Tarjeta</button>
+            <button class="pay-btn" onclick="setPayment('Transferencia')">📱 Transferencia</button>
+            <button class="pay-btn" onclick="setPayment('Tarjeta')">💳 Tarjeta / Posnet</button>
           </div>
+          
           <div id="extraData" style="display:none; margin-top:15px;">
-            <input type="text" id="cuponInput" class="input-box" placeholder="N° de comprobante / Lote / Cupón">
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); margin-bottom: 5px; display: block;">N° Comprobante / Cupón / Lote</label>
+            <input type="text" id="cuponInput" class="input-box" placeholder="Ej: 452454">
           </div>
           <div id="ccData" style="display:none; margin-top:15px; background:#fffdf2; border:1px solid #fef08a; padding:15px; border-radius:8px; text-align:center; color:#b45309; font-weight:bold; font-size:14px;">
-            El total se cargará a la Cuenta Corriente del cliente seleccionado.
+            📓 El total de la venta se cargará a la Cuenta Corriente del cliente.
           </div>
-        </div>
+        </article>
+
       </div>
 
       <div>
-        <div class="pos-section" style="position: sticky; top: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <span style="font-size: 24px; font-weight: 900;">Total</span>
-            <span id="cartTotal" style="font-size: 24px; font-weight: 900; color: var(--primary);">$ 0</span>
+        <article class="card card-pad" style="position: sticky; top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--line); padding-bottom: 20px;">
+            <span style="font-size: 20px; font-weight: 900; color: var(--muted);">TOTAL</span>
+            <span id="cartTotal" style="font-size: 32px; font-weight: 900; color: var(--primary);">$ 0</span>
           </div>
-          <button class="btn btn-success" style="width: 100%; padding: 18px; font-size: 16px; font-weight: bold; justify-content: center;" onclick="procesarVenta()">Confirmar e Imprimir (F12)</button>
-        </div>
+          <button class="btn btn-success" style="width: 100%; padding: 20px; font-size: 16px; font-weight: bold; justify-content: center;" onclick="procesarVenta()">Confirmar Venta (F12)</button>
+        </article>
       </div>
     </div>
   </main>
@@ -151,21 +157,21 @@
   let isB2B = false;
 
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
-  document.getElementById('lblTerminalName').textContent = terminalActiva;
-  document.getElementById('sidebarUserName').textContent = `Usuario: ${localStorage.getItem('activeUser') || 'Admin'}`;
+  document.getElementById('lblTerminalTop').textContent = terminalActiva;
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
+  function todayISO() { return new Date().toISOString().split('T')[0]; }
 
   // --- OBTENER STOCK DE SUCURSAL ---
   function getLocalStock(prod) {
-      if (!prod.stock_branches) return prod.stock || 0;
+      if (!prod.stock_branches) return parseInt(prod.stock || 0);
       try {
           const branches = JSON.parse(prod.stock_branches);
           return parseInt(branches[terminalActiva] || 0);
       } catch(e) {
-          return prod.stock || 0;
+          return parseInt(prod.stock || 0);
       }
   }
 
@@ -179,11 +185,15 @@
     finally { mostrarCarga(false); }
   }
 
-  // --- BUSCADOR DE PRODUCTOS (CON BLOQUEO DE STOCK) ---
+  // --- BUSCADOR DE PRODUCTOS (CON BLOQUEO DE STOCK NEGATIVO) ---
   document.getElementById('posSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
     const searchResults = document.getElementById('searchResults');
-    if (term.length < 1) { searchResults.classList.remove('active'); return; }
+    
+    if (term.length < 1) { 
+        searchResults.classList.remove('active'); 
+        return; 
+    }
 
     filteredProducts = dbProducts.filter(p => p.status !== 'Inactivo' && (
       (p.name || '').toLowerCase().includes(term) || (p.code || '').toLowerCase().includes(term)
@@ -194,12 +204,17 @@
     } else {
         searchResults.innerHTML = filteredProducts.map((p, idx) => {
           const localStock = getLocalStock(p);
-          const colorStock = localStock > 0 ? 'var(--success)' : 'var(--danger)';
+          const stockAviso = localStock > 0 
+              ? `<span style="color:var(--success); font-weight:bold;">Stock Local: ${localStock}</span>`
+              : `<span style="color:var(--danger); font-weight:bold;">¡Agotado en local! (0)</span>`;
           
           return `
           <div class="autocomplete-item" onclick="agregarAlCarrito(${idx})">
-            <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code || 'S/N'} | <span style="color:${colorStock}; font-weight:bold;">Stock en Local: ${localStock}</span></small></div>
-            <div style="font-weight:800; color:var(--primary);">${currency(p.price)}</div>
+            <div>
+                <strong style="font-size:14px;">${escapeHtml(p.name)}</strong><br>
+                <small style="color:var(--muted);">${p.code || 'S/N'} | ${stockAviso}</small>
+            </div>
+            <div style="font-weight:800; color:var(--text); font-size:15px;">${currency(p.price)}</div>
           </div>`;
         }).join('');
     }
@@ -212,9 +227,9 @@
     const existe = cart.find(i => i.id === p.id);
     const qtyDeseada = existe ? existe.qty + 1 : 1;
 
-    // BARRERA 1: BLOQUEO DE STOCK AL AGREGAR
+    // 🛑 BARRERA DE STOCK 1: No deja agregar si supera el stock local
     if (qtyDeseada > localStock) {
-        alert(`❌ No podés vender este artículo.\n\nStock actual en ${terminalActiva}: ${localStock}\nIntentás vender: ${qtyDeseada}`);
+        alert(`❌ STOCK INSUFICIENTE\n\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés agregar más cantidad al comprobante.`);
         document.getElementById('posSearch').value = ''; 
         document.getElementById('searchResults').classList.remove('active');
         document.getElementById('posSearch').focus();
@@ -237,12 +252,12 @@
     const nuevoQty = item.qty + delta;
     if (nuevoQty <= 0) return removeCartItem(id);
 
-    // BARRERA 2: BLOQUEO DE STOCK AL SUMAR (+)
+    // 🛑 BARRERA DE STOCK 2: Protege los botones de (+)
     if (delta > 0) {
         const pDB = dbProducts.find(p => p.id === id);
         const localStock = getLocalStock(pDB);
         if (nuevoQty > localStock) {
-            alert(`❌ Stock insuficiente.\nSolo tenés ${localStock} unidades en ${terminalActiva}.`);
+            alert(`❌ STOCK INSUFICIENTE\nSolo tenés ${localStock} unidades disponibles en ${terminalActiva}.`);
             return;
         }
     }
@@ -258,7 +273,7 @@
     let total = 0;
     
     if (cart.length === 0) {
-      c.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--muted); font-size: 14px;">El comprobante está vacío.<br>Buscá un artículo para comenzar.</div>';
+      c.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted); font-size: 14px; border: 1px dashed var(--line); border-radius: 8px;">El comprobante está vacío.<br>Buscá un artículo para comenzar.</div>';
       document.getElementById('cartTotal').textContent = '$ 0';
       return;
     }
@@ -268,14 +283,19 @@
       total += sub;
       return `
       <div class="cart-item">
-        <div><strong style="font-size:14px; display:block;">${escapeHtml(i.name)}</strong><small style="color:var(--muted);">${i.code || '-'}</small></div>
+        <div>
+            <strong style="font-size:14px; display:block;">${escapeHtml(i.name)}</strong>
+            <small style="color:var(--muted);">${i.code || '-'}</small>
+        </div>
         <div style="display:flex; align-items:center; gap:8px;">
           <button class="qty-btn" onclick="updateQty('${i.id}', -1)">-</button>
-          <span style="width:20px; text-align:center; font-weight:bold;">${i.qty}</span>
+          <span style="width:25px; text-align:center; font-weight:bold;">${i.qty}</span>
           <button class="qty-btn" onclick="updateQty('${i.id}', 1)">+</button>
         </div>
-        <div style="text-align:right; font-weight:bold; color:var(--primary); font-size:15px;">${currency(sub)}</div>
-        <button style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px;" onclick="removeCartItem('${i.id}')">✕</button>
+        <div style="text-align:right; font-weight:bold; color:var(--text); font-size:15px;">${currency(sub)}</div>
+        <div style="text-align:right;">
+            <button style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px; font-weight:bold;" onclick="removeCartItem('${i.id}')">✕</button>
+        </div>
       </div>`;
     }).join('');
     
@@ -291,12 +311,12 @@
     filteredClients = dbClients.filter(c => (c.name||'').toLowerCase().includes(term) || (c.cuil||'').includes(term)).slice(0,5);
     
     if(filteredClients.length === 0) {
-        res.innerHTML = '<div style="padding:15px; color:var(--muted); text-align:center;">No encontrado</div>';
+        res.innerHTML = '<div style="padding:15px; color:var(--muted); text-align:center;">Cliente no encontrado</div>';
     } else {
         res.innerHTML = filteredClients.map((c, idx) => `
         <div class="autocomplete-item" onclick="seleccionarCliente(${idx})">
           <div><strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small></div>
-          <div><span style="background:var(--panel-2); padding:2px 6px; border-radius:4px; font-size:11px;">${c.type==='client'?'Mayorista':'Minorista'}</span></div>
+          <div><span style="background:var(--panel-2); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">${c.type==='client'?'Mayorista':'Minorista'}</span></div>
         </div>`).join('');
     }
     res.classList.add('active');
@@ -316,6 +336,7 @@
     document.getElementById('selectedClientBadge').style.display = 'flex';
     document.getElementById('clientResults').classList.remove('active');
     
+    // Inyectar botón de Cuenta Corriente
     if (document.querySelector('.pay-btn[onclick="setPayment(\\'A Cuenta Corriente\\')"]') == null) {
         const btnCC = document.createElement('button');
         btnCC.className = 'pay-btn';
@@ -359,7 +380,7 @@
 
   // --- PROCESAR VENTA ---
   async function procesarVenta() {
-    if (cart.length === 0) return alert("El carrito está vacío.");
+    if (cart.length === 0) return alert("El comprobante está vacío.");
     
     let total = 0; cart.forEach(i => total += i.qty * i.price);
     const dateStr = todayISO();
@@ -367,7 +388,7 @@
     const cuponText = document.getElementById('cuponInput').value.trim();
     
     if ((currentPaymentMethod === 'Tarjeta' || currentPaymentMethod === 'Transferencia') && !cuponText) {
-        if(!confirm("No ingresaste el N° de comprobante / Lote. ¿Continuar igual?")) return;
+        if(!confirm("⚠️ No ingresaste el N° de comprobante o cupón.\n¿Querés registrar la venta igual?")) return;
     }
 
     const venta = {
@@ -391,7 +412,7 @@
     try {
       const res = await fetch(`${API_URL}/sales`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(venta) });
       if (res.ok) {
-         // --- ACTUALIZAR LA MEMORIA LOCAL PARA NO RECARGAR TODO ---
+         // Descuento visual del stock en memoria (evita refrescar toda la página)
          cart.forEach(itemVendido => {
              const prodEnMemoria = dbProducts.find(p => p.id === itemVendido.id);
              if (prodEnMemoria) {
@@ -399,7 +420,6 @@
                  try { branches = JSON.parse(prodEnMemoria.stock_branches); } catch(e) { branches = { "Central": prodEnMemoria.stock || 0 }; }
                  if (branches[terminalActiva] === undefined) branches[terminalActiva] = 0;
                  
-                 // Descontamos de memoria
                  branches[terminalActiva] -= itemVendido.qty;
                  
                  let total = 0; for(let b in branches) total += branches[b];
@@ -418,14 +438,16 @@
     } catch(e) { console.error(e); alert("Error de red."); } finally { mostrarCarga(false); }
   }
 
-  // --- ATAJOS DE TECLADO ---
+  // --- ATAJOS Y CERRADO DE POPUPS ---
   document.addEventListener('keydown', (e) => {
       if (e.key === 'F12') { e.preventDefault(); procesarVenta(); }
   });
 
   document.addEventListener('click', (e) => {
-    if(!e.target.closest('#clientSearch') && !e.target.closest('#clientResults')) document.getElementById('clientResults').classList.remove('active');
-    if(!e.target.closest('#posSearch') && !e.target.closest('#searchResults')) document.getElementById('searchResults').classList.remove('active');
+    if(!e.target.closest('.autocomplete-wrapper')) {
+        document.getElementById('clientResults').classList.remove('active');
+        document.getElementById('searchResults').classList.remove('active');
+    }
   });
 
   initPos();
