@@ -14,49 +14,25 @@
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a;}
-    
     .pos-container { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
-    .mb-4 { margin-bottom: 20px; }
-    
     .pos-search-box { position: relative; margin-bottom: 15px; }
     .pos-search-input { width: 100%; padding: 14px 18px; font-size: 15px; font-weight: 600; border: 2px solid var(--primary-soft); border-radius: 10px; outline: none; background: #fff; transition: 0.2s; }
     .pos-search-input:focus { border-color: var(--primary); box-shadow: 0 4px 15px rgba(37,99,235,0.15); }
-    
     .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 300px; overflow-y: auto; display: none; margin-top: 5px; }
     .autocomplete-list.active { display: block; }
     .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
     .autocomplete-item.selected, .autocomplete-item:hover { background: var(--primary-soft); }
-    .prod-promo { font-size: 11px; background: var(--warning-soft); color: var(--warning); padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 8px; }
-
     .excel-table { width: 100%; border-collapse: collapse; text-align: left; }
     .excel-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; border-bottom: 2px solid var(--line); border-top: 1px solid var(--line); }
     .excel-table td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
-    .excel-table tr:hover td { background: #f8fafc; }
-    
     .qty-control { display: flex; align-items: center; gap: 4px; justify-content: center; }
-    .qty-btn { background: var(--panel-2); border: 1px solid var(--line); width: 26px; height: 26px; border-radius: 6px; font-weight: bold; cursor: pointer; color: var(--text); transition: 0.2s; }
-    .qty-btn:hover { background: var(--line); }
-    .qty-input { width: 50px; text-align: center; border: 1px solid var(--primary-soft); border-radius: 6px; padding: 6px 4px; font-weight: bold; outline:none; font-size: 14px; color: var(--primary); }
-    .qty-input:focus { border-color: var(--primary); background: var(--primary-soft); }
-    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type=number] { -moz-appearance: textfield; }
-
+    .qty-btn { background: var(--panel-2); border: 1px solid var(--line); width: 26px; height: 26px; border-radius: 6px; font-weight: bold; cursor: pointer; color: var(--text); }
+    .qty-input { width: 50px; text-align: center; border: 1px solid var(--primary-soft); border-radius: 6px; padding: 6px 4px; font-weight: bold; outline:none; }
     .checkout-footer { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start; }
-    @media (max-width: 900px) { .checkout-footer { grid-template-columns: 1fr; } }
-    
-    .pay-methods { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
-    .pay-btn { border: 2px solid var(--line); background: #fff; padding: 12px 20px; border-radius: 10px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; font-size: 14px; transition: 0.2s; flex: 1; min-width: 120px; }
+    .pay-btn { border: 2px solid var(--line); background: #fff; padding: 12px 20px; border-radius: 10px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; flex: 1; }
     .pay-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
-    .pay-btn-b2b { border-color: var(--warning); background: var(--warning-soft); color: #b45309; display: none; width: 100%; }
-
-    .totals-box { background: var(--panel-2); padding: 20px; border-radius: 12px; border: 1px solid var(--line); }
-    .totals-row { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 12px; color: var(--muted); }
-    .totals-row.grand-total { font-size: 32px; font-weight: 800; color: var(--text); border-top: 2px dashed var(--line); padding-top: 16px; margin-top: 8px; }
-    
-    .btn-charge { width: 100%; padding: 18px; font-size: 18px; font-weight: 800; border-radius: 10px; margin-top: 15px; cursor: pointer; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3); background: var(--success); color: white; border: none; transition: 0.2s; }
-    .btn-charge:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4); }
-
-    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px;}
+    .btn-charge { width: 100%; padding: 18px; font-size: 18px; font-weight: 800; border-radius: 10px; margin-top: 15px; cursor: pointer; background: var(--success); color: white; border: none; }
+    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); }
   </style>
 </head>
 <body>
@@ -65,96 +41,65 @@
 
 <div class="app">
   <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
-    </div>
+    <div class="brand"><div class="brand-logo">M</div><div class="brand-text"><strong>Admin</strong></div></div>
     <nav class="nav">
-      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
-      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
-      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
-      <a href="facturacion.html" class="active"><span class="nav-icon">🛒</span> Facturación</a>
-      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-      <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
-      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
-      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
-      <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
+      <a href="dashboard.html">📊 Dashboard</a>
+      <a href="producto.html">📦 Productos</a>
+      <a href="clientes.html">🏢 Clientes</a>
+      <a href="facturacion.html" class="active">🛒 Facturación</a>
+      <a href="ventas.html">🧾 Ventas</a>
+      <a href="cc.html">📓 Cuentas Corrientes</a>
     </nav>
   </aside>
 
   <main class="content">
     <header class="topbar">
-      <div class="page-title">
-        <h1 style="margin:0; font-size: 26px;">Nueva Factura</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Emisión de comprobantes y carga de ítems.</p>
-      </div>
-      <div class="topbar-actions">
-        <button class="btn btn-light" style="border-color: var(--danger); color: var(--danger);" onclick="cancelarVenta()">🗑️ Vaciar</button>
-      </div>
+      <div class="page-title"><h1>Nueva Factura</h1><p>Conectado a Cloudflare D1</p></div>
+      <button class="btn btn-light" onclick="cancelarVenta()">🗑️ Vaciar</button>
     </header>
 
     <div class="pos-container">
       <article class="card card-pad">
-        <div class="pos-search-box" style="margin: 0;">
-          <label style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; display: block;">1. Seleccionar Cliente</label>
-          <input type="hidden" id="clientId" value="">
-          <input type="text" id="clientName" value="Consumidor Final" autocomplete="off" 
-                 onfocus="this.value=''; verificarClienteLibre()" 
-                 oninput="verificarClienteLibre()"
-                 class="pos-search-input" style="background: var(--panel-2);" placeholder="Buscar cliente por nombre o CUIT...">
-          <div id="clientResults" class="autocomplete-list"></div>
-        </div>
+        <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;">1. Cliente</label>
+        <input type="hidden" id="clientId" value="">
+        <input type="text" id="clientName" value="Consumidor Final" autocomplete="off" 
+               onfocus="this.value=''; verificarClienteLibre()" 
+               oninput="verificarClienteLibre()"
+               class="pos-search-input" placeholder="Buscar cliente...">
+        <div id="clientResults" class="autocomplete-list"></div>
       </article>
 
       <article class="card">
-        <div style="padding: 20px 20px 0 20px;">
-          <label style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; display: block;">2. Cargar Artículos</label>
-          <div class="pos-search-box">
-            <input type="text" id="posSearch" class="pos-search-input" placeholder="🔍 Buscá por nombre, código o escaneá..." autocomplete="off" autofocus>
-            <div id="searchResults" class="autocomplete-list"></div>
-          </div>
+        <div style="padding: 20px;">
+          <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;">2. Artículos</label>
+          <input type="text" id="posSearch" class="pos-search-input" placeholder="🔍 Buscar por nombre o código..." autocomplete="off" autofocus>
+          <div id="searchResults" class="autocomplete-list"></div>
         </div>
-
-        <div style="overflow-x: auto;">
-          <table class="excel-table">
-            <thead>
-              <tr>
-                <th style="width: 15%;">Código</th>
-                <th style="width: 40%;">Descripción del Artículo</th>
-                <th style="width: 15%; text-align: right;">Precio Unit.</th>
-                <th style="width: 15%; text-align: center;">Cantidad</th>
-                <th style="width: 10%; text-align: right;">Subtotal</th>
-                <th style="width: 5%; text-align: center;">Del</th>
-              </tr>
-            </thead>
-            <tbody id="cartBody"></tbody>
-          </table>
-        </div>
+        <table class="excel-table">
+          <thead>
+            <tr><th>Código</th><th>Descripción</th><th style="text-align: right;">Precio</th><th style="text-align: center;">Cant.</th><th style="text-align: right;">Subtotal</th><th></th></tr>
+          </thead>
+          <tbody id="cartBody"></tbody>
+        </table>
       </article>
 
       <div class="checkout-footer">
         <article class="card card-pad">
-          <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--muted); text-transform: uppercase;">3. Condiciones de Pago</h3>
-          <div class="pay-methods" id="payMethodsB2C">
+          <h3 style="font-size: 12px; text-transform: uppercase; color: var(--muted);">3. Pago</h3>
+          <div style="display: flex; gap: 10px;" id="payMethodsB2C">
             <button class="pay-btn active" onclick="setPayment('Efectivo', this)">💵 Efectivo</button>
             <button class="pay-btn" onclick="setPayment('Transferencia', this)">📱 Transf.</button>
             <button class="pay-btn" onclick="setPayment('Tarjeta', this)">💳 Tarjeta</button>
           </div>
-          <div class="pay-methods" id="payMethodsB2B" style="display: none;">
-            <button class="pay-btn pay-btn-b2b active" style="display: block;">📓 Enviar a Cuenta Corriente</button>
-          </div>
-          <div id="cuponContainer" style="display: none; margin-top: 15px;">
-            <label style="font-size: 11px; color: var(--danger); text-transform: uppercase; font-weight:bold;">Número de Cupón / Lote *</label>
-            <input type="number" id="cuponNumber" placeholder="Ingresá el número del comprobante" style="background: #fff; border: 2px solid var(--line); font-weight: 600; padding: 12px; width: 100%; box-sizing: border-box; margin-top: 6px; border-radius: 8px;">
+          <div id="payMethodsB2B" style="display: none;">
+            <button class="pay-btn active" style="border-color: var(--warning); color: #b45309; width: 100%;">📓 A Cuenta Corriente</button>
           </div>
         </article>
 
-        <article class="card card-pad totals-box">
-          <div class="totals-row"><span>Subtotal Bruto</span><span id="txtSubtotal">$0</span></div>
-          <div class="totals-row" id="rowPromoDiscount" style="display: none; color: var(--danger); font-weight: bold;">
-            <span>Descuentos y Promos</span><span id="txtPromoDiscount">-$0</span>
+        <article class="card card-pad">
+          <div style="display:flex; justify-content: space-between; font-size: 24px; font-weight: 800;">
+            <span>Total</span><span id="txtTotal" style="color: var(--primary);">$0</span>
           </div>
-          <div class="totals-row grand-total"><span>Total</span><span id="txtTotal" style="color: var(--primary);">$0</span></div>
           <button class="btn-charge" id="btnCobrar" onclick="procesarVenta()">Confirmar e Imprimir (F12)</button>
         </article>
       </div>
@@ -162,13 +107,11 @@
   </main>
 </div>
 
-<script src="core.js"></script>
 <script>
   const API_URL = "/api";
   let dbProducts = []; let dbClients = []; let cart = [];
-  let currentPaymentMethod = 'Efectivo';
-  let isB2B = false;
-  let filteredProducts = []; let selectedSearchIndex = -1;
+  let currentPaymentMethod = 'Efectivo'; let isB2B = false;
+  let filteredProducts = [];
 
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -178,140 +121,119 @@
     mostrarCarga(true);
     try {
       const [resP, resC] = await Promise.all([fetch(`${API_URL}/products`), fetch(`${API_URL}/clients`)]);
-      if(resP.ok) dbProducts = await resP.json();
-      if(resC.ok) dbClients = await resC.json();
+      dbProducts = resP.ok ? await resP.json() : [];
+      dbClients = resC.ok ? await resC.json() : [];
       renderCart();
     } catch (e) { console.error("Error cargando D1", e); }
     finally { mostrarCarga(false); document.getElementById('posSearch').focus(); }
   }
 
-  const clientInput = document.getElementById('clientName');
-  const clientResults = document.getElementById('clientResults');
-
+  // --- BUSQUEDA CLIENTES ---
   window.verificarClienteLibre = function() {
-    const term = clientInput.value.toLowerCase().trim();
-    if (term === "") { 
-        document.getElementById('clientId').value = '';
-        activarModoB2C(); 
-    }
-    if (term.length < 1) { clientResults.classList.remove('active'); return; }
-    
+    const term = document.getElementById('clientName').value.toLowerCase().trim();
+    if (term === "") { document.getElementById('clientId').value = ''; activarModoB2C(); }
     const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term) || (c.cuil && c.cuil.includes(term))).slice(0, 5);
-    clientResults.innerHTML = filtrados.length === 0 ? '<div style="padding:15px; text-align:center; color:var(--muted);">Dejar como Consumidor Final</div>' : filtrados.map(c => `
-        <div class="autocomplete-item" onclick="seleccionarClientePOS('${c.id}', '${escapeHtml(c.name)}')">
-          <div><strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small></div>
-          <span class="badge badge-neutral" style="font-size:10px;">${c.type==='client'?'B2B Mayorista':'B2C Minorista'}</span>
-        </div>
-      `).join('');
-    clientResults.classList.add('active');
+    document.getElementById('clientResults').innerHTML = filtrados.map(c => `
+      <div class="autocomplete-item" onclick="seleccionarClientePOS('${c.id}', '${escapeHtml(c.name)}')">
+        <div><strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small></div>
+      </div>`).join('');
+    document.getElementById('clientResults').classList.add('active');
   };
 
   window.seleccionarClientePOS = function(id, name) {
-    clientInput.value = name; document.getElementById('clientId').value = id;
-    clientResults.classList.remove('active'); activarModoB2B();
+    document.getElementById('clientName').value = name;
+    document.getElementById('clientId').value = id;
+    document.getElementById('clientResults').classList.remove('active');
+    activarModoB2B();
   };
 
   function activarModoB2C() {
-    isB2B = false;
-    document.getElementById('payMethodsB2C').style.display = 'flex';
-    document.getElementById('payMethodsB2B').style.display = 'none';
+    isB2B = false; document.getElementById('payMethodsB2C').style.display = 'flex'; document.getElementById('payMethodsB2B').style.display = 'none';
     document.getElementById('btnCobrar').textContent = "Confirmar e Imprimir (F12)";
-    setPayment('Efectivo', document.querySelector('#payMethodsB2C .pay-btn'), false); 
+    setPayment('Efectivo', document.querySelector('#payMethodsB2C .pay-btn'), false);
   }
 
   function activarModoB2B() {
     isB2B = true; currentPaymentMethod = 'A Cuenta Corriente';
-    document.getElementById('payMethodsB2C').style.display = 'none';
-    document.getElementById('payMethodsB2B').style.display = 'flex';
-    document.getElementById('cuponContainer').style.display = 'none';
+    document.getElementById('payMethodsB2C').style.display = 'none'; document.getElementById('payMethodsB2B').style.display = 'flex';
     document.getElementById('btnCobrar').textContent = "Confirmar en Cuenta Corriente (F12)";
   }
 
-  function setPayment(method, btnElement, debeEnfocar = true) {
+  function setPayment(method, btn, focus = true) {
     if (isB2B) return;
     currentPaymentMethod = method;
     document.querySelectorAll('#payMethodsB2C .pay-btn').forEach(b => b.classList.remove('active'));
-    if(btnElement) btnElement.classList.add('active');
-    
-    const cupon = document.getElementById('cuponContainer');
-    if (method === 'Tarjeta') { cupon.style.display = 'block'; if(debeEnfocar) document.getElementById('cuponNumber').focus(); } 
-    else { cupon.style.display = 'none'; document.getElementById('cuponNumber').value = ''; if(debeEnfocar) document.getElementById('posSearch').focus(); }
+    if(btn) btn.classList.add('active');
+    if(focus) document.getElementById('posSearch').focus();
   }
 
-  const searchInput = document.getElementById('posSearch');
-  const searchResults = document.getElementById('searchResults');
-
-  searchInput.addEventListener('input', (e) => {
+  // --- BUSQUEDA PRODUCTOS ---
+  document.getElementById('posSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
-    if (term.length < 1) { searchResults.classList.remove('active'); return; }
-    filteredProducts = dbProducts.filter(p => (p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term))) && p.stock > 0).slice(0, 10);
-    renderSearchResults();
+    if (term.length < 1) { document.getElementById('searchResults').classList.remove('active'); return; }
+    filteredProducts = dbProducts.filter(p => (p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)))).slice(0, 10);
+    document.getElementById('searchResults').innerHTML = filteredProducts.map((p, idx) => `
+      <div class="autocomplete-item" onclick="agregarAlCarrito(${idx})">
+        <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code || 'S/N'} | Stock: ${p.stock}</small></div>
+        <div style="font-weight:800; color:var(--primary);">${currency(p.price)}</div>
+      </div>`).join('');
+    document.getElementById('searchResults').classList.add('active');
   });
 
-  searchInput.addEventListener('keydown', (e) => {
-    if (!searchResults.classList.contains('active')) return;
-    const items = document.querySelectorAll('#searchResults .autocomplete-item');
-    if (e.key === 'ArrowDown') { e.preventDefault(); selectedSearchIndex = (selectedSearchIndex + 1) % items.length; updateSearchSelection(items); } 
-    else if (e.key === 'ArrowUp') { e.preventDefault(); selectedSearchIndex = (selectedSearchIndex - 1 + items.length) % items.length; updateSearchSelection(items); } 
-    else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (selectedSearchIndex >= 0 && selectedSearchIndex < filteredProducts.length) agregarAlCarrito(filteredProducts[selectedSearchIndex]); 
-      else if (filteredProducts.length > 0) agregarAlCarrito(filteredProducts[0]);
-    }
-  });
-
-  function renderSearchResults() {
-    if (filteredProducts.length === 0) {
-      searchResults.innerHTML = '<div style="padding:15px; text-align:center; color:var(--danger); font-weight:bold;">Sin stock disponible o no existe</div>';
-    } else {
-      searchResults.innerHTML = filteredProducts.map((p, idx) => {
-        const promoHtml = (p.promoType && p.promoType !== 'none') ? `<span class="prod-promo">PROMO</span>` : '';
-        return `
-        <div class="autocomplete-item" onclick="agregarAlCarrito(filteredProducts[${idx}])">
-          <div><strong style="font-size:14px;">${escapeHtml(p.name)}</strong> ${promoHtml}<br><small style="color:var(--muted);">${p.code || 'S/N'} | Stock: ${p.stock}</small></div>
-          <div style="font-weight:800; color:var(--primary); font-size:15px;">${currency(p.price)}</div>
-        </div>
-      `}).join('');
-    }
-    searchResults.classList.add('active');
+  function agregarAlCarrito(idx) {
+    const p = filteredProducts[idx];
+    const existe = cart.find(i => i.id === p.id);
+    if (existe) existe.qty++; else cart.unshift({ ...p, qty: 1 });
+    document.getElementById('posSearch').value = ''; document.getElementById('searchResults').classList.remove('active');
+    document.getElementById('posSearch').focus(); renderCart();
   }
 
-  function updateSearchSelection(items) {
-    items.forEach(item => item.classList.remove('selected'));
-    if (selectedSearchIndex >= 0) {
-      items[selectedSearchIndex].classList.add('selected');
-      items[selectedSearchIndex].scrollIntoView({ block: "nearest" });
-    }
+  function renderCart() {
+    const tbody = document.getElementById('cartBody');
+    let total = 0;
+    tbody.innerHTML = cart.map(i => {
+      const sub = i.price * i.qty; total += sub;
+      return `<tr><td>${i.code || '-'}</td><td><strong>${escapeHtml(i.name)}</strong></td><td style="text-align:right;">${currency(i.price)}</td>
+        <td style="text-align:center;"><input type="number" class="qty-input" value="${i.qty}" onchange="updateQty('${i.id}', this.value)"></td>
+        <td style="text-align:right;"><strong>${currency(sub)}</strong></td>
+        <td style="text-align:center;"><button onclick="quitar('${i.id}')" style="background:none; border:none; color:red; cursor:pointer;">✕</button></td></tr>`;
+    }).join('');
+    if(!cart.length) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">Carrito vacío</td></tr>';
+    document.getElementById('txtTotal').textContent = currency(total);
   }
 
-  document.addEventListener('click', (e) => {
-    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) searchResults.classList.remove('active');
-    if (!clientInput.contains(e.target) && !clientResults.contains(e.target)) clientResults.classList.remove('active');
-  });
+  window.updateQty = (id, v) => { const i = cart.find(x => x.id === id); if(i) i.qty = parseInt(v) || 1; renderCart(); };
+  window.quitar = (id) => { cart = cart.filter(x => x.id !== id); renderCart(); };
+  window.cancelarVenta = () => { if(confirm("¿Vaciar?")) { cart = []; renderCart(); } };
 
-  function agregarAlCarrito(prod) {
-    const existe = cart.find(item => item.id === prod.id);
-    if (existe) { if (existe.qty < prod.stock) existe.qty++; else alert("Límite de stock."); } 
-    else { cart.unshift({ ...prod, qty: 1 }); }
-    searchInput.value = ''; searchResults.classList.remove('active'); searchInput.focus(); renderCart();
-  }
+  window.procesarVenta = async function() {
+    if(!cart.length) return;
+    if(!confirm("¿Confirmar venta?")) return;
+    mostrarCarga(true);
+    const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+    const venta = {
+      id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: new Date().toISOString().split('T')[0],
+      clientId: document.getElementById('clientId').value || 'Consumidor Final',
+      method: currentPaymentMethod, subtotal: total, promoDiscount: 0, total: total, isB2B: isB2B, items: cart
+    };
 
-  window.modificarCantidad = function(id, delta) {
-    const item = cart.find(x => x.id === id);
-    if (!item) return;
-    let nueva = item.qty + delta;
-    if (nueva < 1) nueva = 1; 
-    if (nueva > item.stock) { alert(`Sólo quedan ${item.stock} unidades en stock.`); nueva = item.stock; }
-    item.qty = nueva; renderCart();
+    try {
+      const resV = await fetch(`${API_URL}/sales`, { method: 'POST', body: JSON.stringify(venta) });
+      if(!resV.ok) throw new Error(await resV.text());
+      
+      if(isB2B && venta.clientId !== 'Consumidor Final') {
+        const mov = { id: 'cc_' + Date.now(), clientId: venta.clientId, date: venta.date, type: 'debe', amount: total, concept: `Ticket #${venta.id.split('_')[1]}` };
+        await fetch(`${API_URL}/cc_movements`, { method: 'POST', body: JSON.stringify(mov) });
+      }
+
+      alert(isB2B ? "📓 Guardado en Cta. Cte." : "✅ Venta finalizada.");
+      cart = []; document.getElementById('clientName').value = 'Consumidor Final'; document.getElementById('clientId').value = '';
+      activarModoB2C(); renderCart();
+    } catch(e) { alert("Error: " + e.message); }
+    finally { mostrarCarga(false); }
   };
 
-  window.setCantidadManual = function(id, inputElement) {
-    const item = cart.find(x => x.id === id);
-    if (!item) return;
-    let num = parseInt(inputElement.value);
-    if (isNaN(num) || num < 1) num = 1;
-    if (num > item.stock) { alert(`El stock máximo es ${item.stock}.`); num = item.stock; }
-    item.qty = num; renderCart();
-  };
-
-  function quitar(id) { cart
+  initPOS();
+</script>
+</body>
+</html>
