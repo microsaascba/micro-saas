@@ -30,7 +30,7 @@
     }
 
     .brand-logo-large {
-      background: var(--primary);
+      background: var(--primary, #2563eb);
       color: white;
       width: 60px; height: 60px;
       border-radius: 14px;
@@ -39,19 +39,19 @@
       margin: 0 auto 20px auto;
     }
 
-    .login-title { margin: 0 0 5px; font-size: 22px; color: var(--text); }
-    .login-sub { margin: 0 0 30px; font-size: 14px; color: var(--muted); }
+    .login-title { margin: 0 0 5px; font-size: 22px; color: var(--text, #1e293b); }
+    .login-sub { margin: 0 0 30px; font-size: 14px; color: var(--muted, #64748b); }
 
     .input-group { text-align: left; margin-bottom: 20px; }
-    .input-group label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
-    .input-box { width: 100%; padding: 14px; border: 2px solid var(--line); border-radius: 10px; font-size: 15px; outline: none; transition: 0.2s; box-sizing: border-box; }
-    .input-box:focus { border-color: var(--primary); }
+    .input-group label { display: block; font-size: 12px; font-weight: 700; color: var(--muted, #64748b); margin-bottom: 6px; text-transform: uppercase; }
+    .input-box { width: 100%; padding: 14px; border: 2px solid var(--line, #e2e8f0); border-radius: 10px; font-size: 15px; outline: none; transition: 0.2s; box-sizing: border-box; }
+    .input-box:focus { border-color: var(--primary, #2563eb); }
 
-    .btn-login { width: 100%; padding: 16px; font-size: 16px; font-weight: bold; background: var(--primary); color: white; border: none; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+    .btn-login { width: 100%; padding: 16px; font-size: 16px; font-weight: bold; background: var(--primary, #2563eb); color: white; border: none; border-radius: 10px; cursor: pointer; transition: 0.2s; }
     .btn-login:hover { background: #1d4ed8; }
-    .btn-login:disabled { background: var(--muted); cursor: not-allowed; }
+    .btn-login:disabled { background: var(--muted, #64748b); cursor: not-allowed; }
 
-    #errorMsg { color: var(--danger); background: var(--danger-soft); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-bottom: 20px; display: none; }
+    #errorMsg { color: #dc2626; background: #fee2e2; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-bottom: 20px; display: none; }
   </style>
 </head>
 <body>
@@ -79,7 +79,7 @@
   </div>
 
   <script>
-   async function procesarLogin(e) {
+    async function procesarLogin(e) {
       e.preventDefault();
       
       const btn = document.getElementById('btnSubmit');
@@ -105,8 +105,9 @@
           localStorage.setItem('activeUser', data.user.username);
           localStorage.setItem('userRole', data.user.role);
           localStorage.setItem('allowedModules', JSON.stringify(data.user.allowedModules));
+          localStorage.setItem('saas_logged_in', 'true'); // Retrocompatibilidad para core.js
           
-          btn.style.background = "var(--success)";
+          btn.style.background = "#16a34a"; // Verde éxito
           btn.textContent = "¡Acceso Autorizado!";
           
           // --- LÓGICA DE REDIRECCIÓN INTELIGENTE ---
@@ -114,44 +115,23 @@
           if (data.user.role === 'administrativo') targetPage = 'contable.html';
           if (data.user.role === 'cajera' || data.user.role === 'vendedora' || data.user.role === 'pos') targetPage = 'facturacion.html';
 
-          // Seguridad: si el rol no es admin y le destildaron su módulo principal,
-          // lo mandamos al primer módulo que tenga tildado en su lista de permisos.
+          // Seguridad: Si no tiene permiso a la página objetivo, le damos la primera que tenga permitida
           const moduleName = targetPage.replace('.html', '');
           if (data.user.role !== 'admin' && data.user.allowedModules && !data.user.allowedModules.includes(moduleName)) {
               if (data.user.allowedModules.length > 0) {
                   targetPage = data.user.allowedModules[0] + '.html';
+              } else {
+                  errorMsg.textContent = "Tu usuario no tiene ningún módulo asignado.";
+                  errorMsg.style.display = 'block';
+                  btn.disabled = false;
+                  btn.textContent = "Ingresar al sistema";
+                  btn.style.background = "";
+                  return;
               }
           }
           
           // Redirigimos al módulo que le corresponde
           setTimeout(() => { window.location.href = targetPage; }, 500);
-        } else {
-          errorMsg.textContent = data.error || "Error desconocido.";
-          errorMsg.style.display = 'block';
-          btn.disabled = false;
-          btn.textContent = "Ingresar al sistema";
-        }
-      } catch (error) {
-        errorMsg.textContent = "Error de red. Verificá tu conexión.";
-        errorMsg.style.display = 'block';
-        btn.disabled = false;
-        btn.textContent = "Ingresar al sistema";
-      }
-    }
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-          // GUARDAMOS LA LLAVE DE ACCESO EN EL NAVEGADOR
-          localStorage.setItem('activeUser', data.user.username);
-          localStorage.setItem('userRole', data.user.role);
-          localStorage.setItem('allowedModules', JSON.stringify(data.user.allowedModules));
-          
-          btn.style.background = "var(--success)";
-          btn.textContent = "¡Acceso Autorizado!";
-          
-          // Redirigimos al panel
-          setTimeout(() => { window.location.href = 'dashboard.html'; }, 500);
         } else {
           errorMsg.textContent = data.error || "Error desconocido.";
           errorMsg.style.display = 'block';
