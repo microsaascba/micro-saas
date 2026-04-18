@@ -15,13 +15,15 @@
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a;}
     .pos-container { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
-    .pos-search-box { position: relative; margin-bottom: 15px; }
+    
     .pos-search-input { width: 100%; padding: 14px 18px; font-size: 15px; font-weight: 600; border: 2px solid var(--primary-soft); border-radius: 10px; outline: none; background: #fff; transition: 0.2s; }
     .pos-search-input:focus { border-color: var(--primary); box-shadow: 0 4px 15px rgba(37,99,235,0.15); }
+    
     .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 300px; overflow-y: auto; display: none; margin-top: 5px; }
     .autocomplete-list.active { display: block; }
     .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
     .autocomplete-item.selected, .autocomplete-item:hover { background: var(--primary-soft); }
+    
     .excel-table { width: 100%; border-collapse: collapse; text-align: left; }
     .excel-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; border-bottom: 2px solid var(--line); border-top: 1px solid var(--line); }
     .excel-table td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
@@ -41,10 +43,7 @@
 
 <div class="app">
   <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
-    </div>
+    <div class="brand"><div class="brand-logo">M</div><div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div></div>
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
@@ -65,21 +64,26 @@
     </header>
 
     <div class="pos-container">
+      
       <article class="card card-pad">
         <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;">1. Cliente</label>
-        <input type="hidden" id="clientId" value="">
-        <input type="text" id="clientName" value="Consumidor Final" autocomplete="off" 
-               onfocus="this.value=''; verificarClienteLibre()" 
-               oninput="verificarClienteLibre()"
-               class="pos-search-input" placeholder="Buscar cliente...">
-        <div id="clientResults" class="autocomplete-list"></div>
+        <div style="position: relative;">
+          <input type="hidden" id="clientId" value="">
+          <input type="text" id="clientName" value="Consumidor Final" autocomplete="off" 
+                 onfocus="this.value=''; verificarClienteLibre()" 
+                 oninput="verificarClienteLibre()"
+                 class="pos-search-input" placeholder="Buscar cliente...">
+          <div id="clientResults" class="autocomplete-list"></div>
+        </div>
       </article>
 
       <article class="card">
         <div style="padding: 20px;">
           <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;">2. Artículos</label>
-          <input type="text" id="posSearch" class="pos-search-input" placeholder="🔍 Buscar por nombre o código..." autocomplete="off" autofocus>
-          <div id="searchResults" class="autocomplete-list"></div>
+          <div style="position: relative;">
+            <input type="text" id="posSearch" class="pos-search-input" placeholder="🔍 Buscar por nombre o código..." autocomplete="off" autofocus>
+            <div id="searchResults" class="autocomplete-list"></div>
+          </div>
         </div>
         <table class="excel-table">
           <thead>
@@ -125,13 +129,10 @@
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
 
-  // ── 1. INICIALIZACIÓN CON DIAGNÓSTICO ──
   async function initPOS() {
     mostrarCarga(true);
     try {
       const [resP, resC] = await Promise.all([fetch(`${API_URL}/products`), fetch(`${API_URL}/clients`)]);
-      
-      // Si hay un error 500 en el backend, lo avisamos por consola
       if (!resP.ok) console.error("Error D1 Productos:", await resP.text());
       if (!resC.ok) console.error("Error D1 Clientes:", await resC.text());
 
@@ -148,7 +149,17 @@
     }
   }
 
-  // ── 2. BUSQUEDA DE CLIENTES (A prueba de fallos) ──
+  // Cerrar menús desplegables si se hace clic afuera
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('posSearch').contains(e.target) && !document.getElementById('searchResults').contains(e.target)) {
+      document.getElementById('searchResults').classList.remove('active');
+    }
+    if (!document.getElementById('clientName').contains(e.target) && !document.getElementById('clientResults').contains(e.target)) {
+      document.getElementById('clientResults').classList.remove('active');
+    }
+  });
+
+  // --- BUSQUEDA CLIENTES ---
   window.verificarClienteLibre = function() {
     const term = document.getElementById('clientName').value.toLowerCase().trim();
     if (term === "") { document.getElementById('clientId').value = ''; activarModoB2C(); }
@@ -156,7 +167,6 @@
     const clientResults = document.getElementById('clientResults');
     if (term.length < 1) { clientResults.classList.remove('active'); return; }
 
-    // El "(c.name || '')" evita que el código explote si un cliente se guardó sin nombre
     const filtrados = dbClients.filter(c => 
       ((c.name || '').toLowerCase().includes(term)) || 
       ((c.cuil || '').toLowerCase().includes(term))
@@ -199,13 +209,12 @@
     if(focus) document.getElementById('posSearch').focus();
   }
 
-  // ── 3. BUSQUEDA DE PRODUCTOS (A prueba de fallos y sin filtro de stock) ──
+  // --- BUSQUEDA PRODUCTOS ---
   document.getElementById('posSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
     const searchResults = document.getElementById('searchResults');
     if (term.length < 1) { searchResults.classList.remove('active'); return; }
 
-    // Quitamos la restricción de stock > 0 temporalmente
     filteredProducts = dbProducts.filter(p => 
       ((p.name || '').toLowerCase().includes(term)) || 
       ((p.code || '').toLowerCase().includes(term))
@@ -232,22 +241,21 @@
     document.getElementById('posSearch').focus(); renderCart();
   }
 
-  // ── 4. LÓGICA DE CARRITO Y COBRO ──
   function renderCart() {
     const tbody = document.getElementById('cartBody');
     let total = 0;
     tbody.innerHTML = cart.map(i => {
       const sub = i.price * i.qty; total += sub;
       return `<tr>
-        <td>${i.code || '-'}</td>
+        <td style="color: var(--muted);">${i.code || '-'}</td>
         <td><strong>${escapeHtml(i.name)}</strong></td>
         <td style="text-align:right;">${currency(i.price)}</td>
         <td style="text-align:center;"><input type="number" class="qty-input" value="${i.qty}" onchange="updateQty('${i.id}', this.value)"></td>
-        <td style="text-align:right;"><strong>${currency(sub)}</strong></td>
-        <td style="text-align:center;"><button onclick="quitar('${i.id}')" style="background:none; border:none; color:red; cursor:pointer;">✕</button></td>
+        <td style="text-align:right; color:var(--primary);"><strong>${currency(sub)}</strong></td>
+        <td style="text-align:center;"><button onclick="quitar('${i.id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">✕</button></td>
       </tr>`;
     }).join('');
-    if(!cart.length) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">Carrito vacío</td></tr>';
+    if(!cart.length) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted);">El comprobante está vacío.<br><small>Buscá un artículo para comenzar.</small></td></tr>';
     document.getElementById('txtTotal').textContent = currency(total);
   }
 
@@ -292,9 +300,6 @@
     } catch(e) { alert("Error: " + e.message); }
     finally { mostrarCarga(false); }
   };
-
-  initPOS();
-</script>
 
   initPOS();
 </script>
