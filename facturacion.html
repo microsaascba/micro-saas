@@ -19,35 +19,54 @@
     .pos-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; align-items: start; }
     @media (max-width: 1000px) { .pos-layout { grid-template-columns: 1fr; } }
 
-    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; transition: 0.2s; }
+    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
 
-    /* Buscadores Desplegables (Autocomplete) */
-    .autocomplete-wrapper { position: relative; width: 100%; }
-    .autocomplete-list { position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid var(--line); border-radius: 8px; width: 100%; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: var(--shadow-lg); display: none; margin-top: 5px; }
+    /* ESTILOS ORIGINALES DEL USUARIO RESTAURADOS */
+    .autocomplete-wrapper { position: relative; width: 100%; margin-bottom: 15px; }
+    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 300px; overflow-y: auto; display: none; margin-top: 5px; }
     .autocomplete-list.active { display: block; }
-    .autocomplete-item { padding: 12px 15px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.1s; }
-    .autocomplete-item:hover { background: var(--panel-2); }
-    .autocomplete-item:last-child { border-bottom: none; }
+    .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .autocomplete-item.selected, .autocomplete-item:hover { background: var(--primary-soft); }
 
-    /* Carrito de Compras */
-    .cart-item { display: grid; grid-template-columns: 3fr 100px 1fr 30px; gap: 10px; align-items: center; padding: 15px 0; border-bottom: 1px solid var(--line); }
-    .cart-item:last-child { border-bottom: none; }
-    .qty-btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; color: var(--text); }
-    .qty-btn:hover { background: #e2e8f0; }
+    .pos-table-container { flex: 1; overflow-y: auto; background: #fff; min-height: 250px; border: 1px solid var(--line); border-radius: 12px; }
+    .pos-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .pos-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--line); }
+    .pos-table td { padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 
-    /* Botones de Pago */
-    .payment-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 15px; }
-    .pay-btn { background: #fff; border: 1px solid var(--line); padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; color: var(--text); font-size: 13px; }
-    .pay-btn:hover { border-color: var(--primary); background: var(--panel-2); }
-    .pay-btn.active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+    .pos-checkout-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: flex; flex-direction: column; }
+    .totals-row { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 12px; color: var(--muted); }
+    .totals-row.discount { color: var(--danger); font-weight: bold; }
+    .totals-row.grand-total { font-size: 36px; font-weight: 800; color: var(--text); border-top: 2px dashed var(--line); padding-top: 16px; margin-top: 8px; }
 
+    .pay-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+    .pay-btn { border: 2px solid var(--line); background: #fff; padding: 14px 8px; border-radius: 12px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; font-size: 14px; }
+    .pay-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+
+    .btn-charge { width: 100%; padding: 20px; font-size: 20px; font-weight: 800; border-radius: 12px; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3); background: var(--success); color: white; border: none; }
+
+    .qty-control { display: flex; align-items: center; gap: 6px; }
+    .qty-btn { background: var(--line); border: none; width: 28px; height: 28px; border-radius: 6px; font-weight: bold; cursor: pointer; display:grid; place-items:center; }
+    .qty-input { width: 45px; text-align: center; border: 1px solid var(--line); border-radius: 6px; padding: 4px; font-weight: bold; outline:none; }
+    
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
+
+    #printTicketArea { display: none; }
+    @media print {
+      @page { margin: 0; size: 80mm auto; }
+      body { margin: 0; background: #fff; }
+      body * { visibility: hidden; }
+      #printTicketArea, #printTicketArea * { visibility: visible; }
+      #printTicketArea { position: absolute; left: 0; top: 0; width: 80mm; font-family: monospace; font-size: 12px; padding: 5mm; color: #000; display: block !important; }
+      .ticket-header { text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 16px; }
+      .ticket-line { display: flex; justify-content: space-between; margin-bottom: 5px; }
+      .ticket-divider { border-top: 1px dashed #000; margin: 10px 0; }
+    }
   </style>
 </head>
 <body>
 
-<div id="loadingOverlay">Procesando Venta...</div>
+<div id="loadingOverlay">Procesando...</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -73,76 +92,97 @@
     <header class="topbar">
       <div class="page-title">
         <h1 style="margin:0; font-size: 26px;">Punto de Venta</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Terminal Activa: <strong style="color:var(--primary);" id="lblTerminalTop">Cargando...</strong></p>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Caja activa: <strong id="lblTerminalTop" style="color:var(--primary);">Central</strong></p>
       </div>
     </header>
 
     <div class="pos-layout">
-      <div style="display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 15px;">
         
-        <article class="card card-pad">
-          <h2 style="margin: 0 0 15px 0; font-size: 16px; color: var(--text);">👤 Cliente</h2>
-          <div class="autocomplete-wrapper">
-            <input type="text" id="clientSearch" class="input-box" placeholder="Consumidor Final (Buscar por nombre o DNI/CUIT)..." autocomplete="off">
-            <div id="clientResults" class="autocomplete-list"></div>
-          </div>
-          
-          <div id="selectedClientBadge" style="display:none; margin-top:15px; background:var(--primary-soft); padding:15px; border-radius:8px; border:1px solid var(--primary); justify-content:space-between; align-items:center;">
+        <div class="autocomplete-wrapper">
+          <input type="text" id="clientSearch" class="input-box" placeholder="Buscar Cliente por nombre o CUIT (Dejar vacío para Consumidor Final)..." autocomplete="off">
+          <div id="clientResults" class="autocomplete-list"></div>
+          <div id="selectedClientBadge" style="display:none; margin-top:10px; background:var(--primary-soft); padding:10px 15px; border-radius:8px; border:1px solid var(--primary); justify-content:space-between; align-items:center;">
             <div>
-              <strong style="color:var(--primary); font-size:16px; display:block;" id="lblClientName">Nombre</strong>
+              <strong style="color:var(--primary); font-size:15px; display:block;" id="lblClientName">Nombre</strong>
               <small style="color:var(--primary);" id="lblClientDoc">CUIT: 123</small>
             </div>
-            <button class="btn btn-light" style="padding:6px 12px; font-size:12px; border: 1px solid var(--primary);" onclick="quitarCliente()">Cambiar</button>
+            <button class="btn btn-light" style="padding:4px 8px; font-size:12px;" onclick="quitarCliente()">Cambiar</button>
           </div>
           <input type="hidden" id="clientName">
           <input type="hidden" id="clientId">
           <input type="hidden" id="clientIsB2B" value="false">
-        </article>
+        </div>
 
-        <article class="card card-pad">
-          <h2 style="margin: 0 0 15px 0; font-size: 16px; color: var(--text);">📦 Carga de Artículos</h2>
-          <div class="autocomplete-wrapper">
-            <input type="text" id="posSearch" class="input-box" placeholder="🔍 Buscar por nombre o SKU..." autocomplete="off">
-            <div id="searchResults" class="autocomplete-list"></div>
-          </div>
-          
-          <div id="cartContainer" style="margin-top: 25px; min-height: 150px;">
-            <div style="text-align: center; padding: 40px; color: var(--muted); font-size: 14px; border: 1px dashed var(--line); border-radius: 8px;">
-              El comprobante está vacío.<br>Buscá un artículo para comenzar.
-            </div>
-          </div>
-        </article>
-
-        <article class="card card-pad">
-          <h2 style="margin: 0 0 5px 0; font-size: 16px; color: var(--text);">💳 Método de Pago</h2>
-          <div class="payment-grid" id="payGrid">
-            <button class="pay-btn active" onclick="setPayment('Efectivo')">💵 Efectivo</button>
-            <button class="pay-btn" onclick="setPayment('Transferencia')">📱 Transferencia</button>
-            <button class="pay-btn" onclick="setPayment('Tarjeta')">💳 Tarjeta / Posnet</button>
-          </div>
-          
-          <div id="extraData" style="display:none; margin-top:15px;">
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); margin-bottom: 5px; display: block;">N° Comprobante / Cupón / Lote</label>
-            <input type="text" id="cuponInput" class="input-box" placeholder="Ej: 452454">
-          </div>
-          <div id="ccData" style="display:none; margin-top:15px; background:#fffdf2; border:1px solid #fef08a; padding:15px; border-radius:8px; text-align:center; color:#b45309; font-weight:bold; font-size:14px;">
-            📓 El total de la venta se cargará a la Cuenta Corriente del cliente.
-          </div>
-        </article>
-
+        <div class="autocomplete-wrapper">
+          <input type="text" id="posSearch" class="input-box" placeholder="Buscar Producto por nombre o código de barras..." autocomplete="off">
+          <div id="searchResults" class="autocomplete-list"></div>
+        </div>
+        
+        <div class="pos-table-container">
+          <table class="pos-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th style="text-align:center;">Cant.</th>
+                <th style="text-align:right;">Precio</th>
+                <th style="text-align:right;">Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cartContainer">
+              <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">El comprobante está vacío.<br>Buscá un artículo para comenzar.</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div>
-        <article class="card card-pad" style="position: sticky; top: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--line); padding-bottom: 20px;">
-            <span style="font-size: 20px; font-weight: 900; color: var(--muted);">TOTAL</span>
-            <span id="cartTotal" style="font-size: 32px; font-weight: 900; color: var(--primary);">$ 0</span>
-          </div>
-          <button class="btn btn-success" style="width: 100%; padding: 20px; font-size: 16px; font-weight: bold; justify-content: center;" onclick="procesarVenta()">Confirmar Venta (F12)</button>
-        </article>
+      <div class="pos-checkout-panel">
+        <div class="totals-row">
+          <span>Subtotal</span>
+          <span id="lblSubtotal">$0</span>
+        </div>
+        <div class="totals-row discount">
+          <span>Descuento</span>
+          <span>$0</span>
+        </div>
+        <div class="totals-row grand-total">
+          <span>Total</span>
+          <span id="cartTotal">$0</span>
+        </div>
+
+        <h4 style="margin: 20px 0 10px; color: var(--text);">Método de Pago</h4>
+        <div class="pay-methods" id="payGrid">
+          <button class="pay-btn active" onclick="setPayment('Efectivo')">Efectivo</button>
+          <button class="pay-btn" onclick="setPayment('Transferencia')">Transf.</button>
+          <button class="pay-btn" onclick="setPayment('Tarjeta')">Tarjeta</button>
+        </div>
+
+        <div id="extraData" style="display:none; margin-bottom:15px;">
+          <input type="text" id="cuponInput" class="input-box" placeholder="N° de comprobante / Cupón">
+        </div>
+        <div id="ccData" style="display:none; margin-bottom:15px; background:#fffdf2; border:1px solid #fef08a; padding:15px; border-radius:8px; text-align:center; color:#b45309; font-weight:bold; font-size:14px;">
+          El total se cargará a la Cuenta Corriente del cliente.
+        </div>
+
+        <button class="btn-charge" onclick="procesarVenta()">COBRAR (F12)</button>
       </div>
     </div>
   </main>
+</div>
+
+<div id="printTicketArea">
+  <div class="ticket-header">MICRO SAAS SOLUCIONES</div>
+  <div class="ticket-line"><span>Fecha:</span><span id="ticFecha"></span></div>
+  <div class="ticket-line"><span>Ticket:</span><span id="ticNum"></span></div>
+  <div class="ticket-line"><span>Atendió:</span><span id="ticUser"></span></div>
+  <div class="ticket-divider"></div>
+  <div id="ticItems"></div>
+  <div class="ticket-divider"></div>
+  <div class="ticket-line" style="font-weight:bold; font-size:14px;"><span>TOTAL:</span><span id="ticTotal"></span></div>
+  <div class="ticket-line"><span>Pago:</span><span id="ticMethod"></span></div>
+  <div class="ticket-divider"></div>
+  <div style="text-align:center; font-size:10px; margin-top:10px;">¡Gracias por su compra!</div>
 </div>
 
 <script src="core.js"></script>
@@ -158,13 +198,14 @@
 
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
   document.getElementById('lblTerminalTop').textContent = terminalActiva;
+  document.getElementById('sidebarUserName').textContent = `Usuario: ${localStorage.getItem('activeUser') || 'Admin'}`;
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
 
-  // --- OBTENER STOCK DE SUCURSAL ---
+  // --- OBTENER STOCK CORRECTO POR SUCURSAL ---
   function getLocalStock(prod) {
       if (!prod.stock_branches) return parseInt(prod.stock || 0);
       try {
@@ -185,36 +226,31 @@
     finally { mostrarCarga(false); }
   }
 
-  // --- BUSCADOR DE PRODUCTOS (CON BLOQUEO DE STOCK NEGATIVO) ---
+  // --- BUSCADOR DE PRODUCTOS (CON PROTECCIÓN DE STOCK) ---
   document.getElementById('posSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
     const searchResults = document.getElementById('searchResults');
     
-    if (term.length < 1) { 
-        searchResults.classList.remove('active'); 
-        return; 
-    }
+    if (term.length < 1) { searchResults.classList.remove('active'); return; }
 
     filteredProducts = dbProducts.filter(p => p.status !== 'Inactivo' && (
       (p.name || '').toLowerCase().includes(term) || (p.code || '').toLowerCase().includes(term)
-    )).slice(0, 15);
+    )).slice(0, 10);
 
     if (filteredProducts.length === 0) {
         searchResults.innerHTML = '<div style="padding:15px; text-align:center; color:var(--danger); font-weight:bold;">No se encontró el producto</div>';
     } else {
         searchResults.innerHTML = filteredProducts.map((p, idx) => {
           const localStock = getLocalStock(p);
-          const stockAviso = localStock > 0 
-              ? `<span style="color:var(--success); font-weight:bold;">Stock Local: ${localStock}</span>`
-              : `<span style="color:var(--danger); font-weight:bold;">¡Agotado en local! (0)</span>`;
+          const colorStock = localStock > 0 ? 'var(--success)' : 'var(--danger)';
           
           return `
           <div class="autocomplete-item" onclick="agregarAlCarrito(${idx})">
             <div>
-                <strong style="font-size:14px;">${escapeHtml(p.name)}</strong><br>
-                <small style="color:var(--muted);">${p.code || 'S/N'} | ${stockAviso}</small>
+              <strong>${escapeHtml(p.name)}</strong><br>
+              <small style="color:var(--muted);">${p.code || 'S/N'} | <span style="color:${colorStock}; font-weight:bold;">Stock en local: ${localStock}</span></small>
             </div>
-            <div style="font-weight:800; color:var(--text); font-size:15px;">${currency(p.price)}</div>
+            <div style="font-weight:800; color:var(--primary); font-size:15px;">${currency(p.price)}</div>
           </div>`;
         }).join('');
     }
@@ -227,9 +263,9 @@
     const existe = cart.find(i => i.id === p.id);
     const qtyDeseada = existe ? existe.qty + 1 : 1;
 
-    // 🛑 BARRERA DE STOCK 1: No deja agregar si supera el stock local
+    // REGLA DE ORO: NO FACTURAR SIN STOCK
     if (qtyDeseada > localStock) {
-        alert(`❌ STOCK INSUFICIENTE\n\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés agregar más cantidad al comprobante.`);
+        alert(`❌ STOCK INSUFICIENTE\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés facturar en negativo.`);
         document.getElementById('posSearch').value = ''; 
         document.getElementById('searchResults').classList.remove('active');
         document.getElementById('posSearch').focus();
@@ -252,7 +288,7 @@
     const nuevoQty = item.qty + delta;
     if (nuevoQty <= 0) return removeCartItem(id);
 
-    // 🛑 BARRERA DE STOCK 2: Protege los botones de (+)
+    // REGLA DE ORO: NO FACTURAR SIN STOCK AL USAR EL BOTÓN (+)
     if (delta > 0) {
         const pDB = dbProducts.find(p => p.id === id);
         const localStock = getLocalStock(pDB);
@@ -273,8 +309,9 @@
     let total = 0;
     
     if (cart.length === 0) {
-      c.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted); font-size: 14px; border: 1px dashed var(--line); border-radius: 8px;">El comprobante está vacío.<br>Buscá un artículo para comenzar.</div>';
-      document.getElementById('cartTotal').textContent = '$ 0';
+      c.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">El comprobante está vacío.<br>Buscá un artículo para comenzar.</td></tr>';
+      document.getElementById('cartTotal').textContent = '$0';
+      document.getElementById('lblSubtotal').textContent = '$0';
       return;
     }
 
@@ -282,24 +319,28 @@
       const sub = i.qty * i.price;
       total += sub;
       return `
-      <div class="cart-item">
-        <div>
-            <strong style="font-size:14px; display:block;">${escapeHtml(i.name)}</strong>
-            <small style="color:var(--muted);">${i.code || '-'}</small>
-        </div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <button class="qty-btn" onclick="updateQty('${i.id}', -1)">-</button>
-          <span style="width:25px; text-align:center; font-weight:bold;">${i.qty}</span>
-          <button class="qty-btn" onclick="updateQty('${i.id}', 1)">+</button>
-        </div>
-        <div style="text-align:right; font-weight:bold; color:var(--text); font-size:15px;">${currency(sub)}</div>
-        <div style="text-align:right;">
-            <button style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px; font-weight:bold;" onclick="removeCartItem('${i.id}')">✕</button>
-        </div>
-      </div>`;
+      <tr>
+        <td>
+          <strong style="font-size:14px;">${escapeHtml(i.name)}</strong><br>
+          <small style="color:var(--muted);">${i.code || '-'}</small>
+        </td>
+        <td style="text-align:center;">
+          <div class="qty-control" style="justify-content:center;">
+            <button class="qty-btn" onclick="updateQty('${i.id}', -1)">-</button>
+            <input type="text" class="qty-input" value="${i.qty}" readonly>
+            <button class="qty-btn" onclick="updateQty('${i.id}', 1)">+</button>
+          </div>
+        </td>
+        <td style="text-align:right;">${currency(i.price)}</td>
+        <td style="text-align:right; font-weight:bold; color:var(--text);">${currency(sub)}</td>
+        <td style="text-align:center;">
+          <button style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; font-weight:bold;" onclick="removeCartItem('${i.id}')">✕</button>
+        </td>
+      </tr>`;
     }).join('');
     
     document.getElementById('cartTotal').textContent = currency(total);
+    document.getElementById('lblSubtotal').textContent = currency(total);
   }
 
   // --- BUSCADOR DE CLIENTES ---
@@ -336,11 +377,10 @@
     document.getElementById('selectedClientBadge').style.display = 'flex';
     document.getElementById('clientResults').classList.remove('active');
     
-    // Inyectar botón de Cuenta Corriente
     if (document.querySelector('.pay-btn[onclick="setPayment(\\'A Cuenta Corriente\\')"]') == null) {
         const btnCC = document.createElement('button');
         btnCC.className = 'pay-btn';
-        btnCC.textContent = '📓 Cta. Corriente';
+        btnCC.textContent = 'Cta. Corriente';
         btnCC.onclick = () => setPayment('A Cuenta Corriente');
         document.getElementById('payGrid').appendChild(btnCC);
     }
@@ -378,7 +418,7 @@
     }
   }
 
-  // --- PROCESAR VENTA ---
+  // --- PROCESAR VENTA Y GUARDAR EN NUBE ---
   async function procesarVenta() {
     if (cart.length === 0) return alert("El comprobante está vacío.");
     
@@ -391,8 +431,9 @@
         if(!confirm("⚠️ No ingresaste el N° de comprobante o cupón.\n¿Querés registrar la venta igual?")) return;
     }
 
+    const ventaId = 'vta_' + Date.now();
     const venta = {
-      id: 'vta_' + Date.now(), 
+      id: ventaId, 
       createdAt: new Date().toISOString(), 
       date: dateStr,
       seller: localStorage.getItem('activeUser') || 'Admin',
@@ -412,7 +453,7 @@
     try {
       const res = await fetch(`${API_URL}/sales`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(venta) });
       if (res.ok) {
-         // Descuento visual del stock en memoria (evita refrescar toda la página)
+         // Descuento visual en la memoria
          cart.forEach(itemVendido => {
              const prodEnMemoria = dbProducts.find(p => p.id === itemVendido.id);
              if (prodEnMemoria) {
@@ -422,23 +463,43 @@
                  
                  branches[terminalActiva] -= itemVendido.qty;
                  
-                 let total = 0; for(let b in branches) total += branches[b];
+                 let t = 0; for(let b in branches) t += branches[b];
                  prodEnMemoria.stock_branches = JSON.stringify(branches);
-                 prodEnMemoria.stock = total;
+                 prodEnMemoria.stock = t;
              }
          });
 
+         // IMPRIMIR TICKET (Solo si no es cuenta corriente)
+         if (currentPaymentMethod !== 'A Cuenta Corriente') {
+            document.getElementById('ticFecha').textContent = new Date().toLocaleString('es-AR');
+            document.getElementById('ticNum').textContent = ventaId.replace('vta_','');
+            document.getElementById('ticUser').textContent = venta.seller;
+            document.getElementById('ticMethod').textContent = currentPaymentMethod;
+            document.getElementById('ticTotal').textContent = currency(total);
+            
+            document.getElementById('ticItems').innerHTML = cart.map(i => `
+              <div class="ticket-line">
+                <span>${i.qty}x ${escapeHtml(i.name)}</span>
+                <span>${currency(i.qty * i.price)}</span>
+              </div>
+            `).join('');
+            
+            window.print();
+         } else {
+            alert("✅ Venta cargada exitosamente a la Cuenta Corriente.");
+         }
+
+         // Limpiar Caja
          cart = []; 
          quitarCliente(); 
          document.getElementById('cuponInput').value = '';
          setPayment('Efectivo');
          renderCart();
-         alert("✅ Venta registrada con éxito.");
       } else { alert("Error al registrar la venta."); }
     } catch(e) { console.error(e); alert("Error de red."); } finally { mostrarCarga(false); }
   }
 
-  // --- ATAJOS Y CERRADO DE POPUPS ---
+  // --- ATAJOS Y CIERRES ---
   document.addEventListener('keydown', (e) => {
       if (e.key === 'F12') { e.preventDefault(); procesarVenta(); }
   });
