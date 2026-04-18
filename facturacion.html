@@ -3,77 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Punto de Venta | Micro SaaS</title>
+  <title>Facturación | Micro SaaS</title>
   
   <style>
     html, body { background-color: #f0f2f7 !important; }
     body { animation: fadeIn 0.15s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
-
   <link rel="stylesheet" href="styles.css" />
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a;}
+    .pos-container { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
     
-    .pos-layout { display: grid; grid-template-columns: 1fr 350px; gap: 20px; align-items: start; }
-    @media (max-width: 1000px) { .pos-layout { grid-template-columns: 1fr; } }
-
-    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
-    .input-box:focus { border-color: var(--primary); }
-
-    /* ESTILOS ORIGINALES DEL USUARIO RESTAURADOS */
-    .autocomplete-wrapper { position: relative; width: 100%; margin-bottom: 15px; }
-    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 300px; overflow-y: auto; display: none; margin-top: 5px; }
+    .pos-search-input { width: 100%; padding: 14px 18px; font-size: 15px; font-weight: 600; border: 2px solid var(--primary-soft); border-radius: 10px; outline: none; background: #fff; transition: 0.2s; }
+    .pos-search-input:focus { border-color: var(--primary); box-shadow: 0 4px 15px rgba(37,99,235,0.15); }
+    
+    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 300px; overflow-y: auto; display: none; margin-top: 5px; }
     .autocomplete-list.active { display: block; }
     .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
     .autocomplete-item.selected, .autocomplete-item:hover { background: var(--primary-soft); }
-
-    .pos-table-container { flex: 1; overflow-y: auto; background: #fff; min-height: 250px; border: 1px solid var(--line); border-radius: 12px; }
-    .pos-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .pos-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--line); }
-    .pos-table td { padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-
-    .pos-checkout-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; display: flex; flex-direction: column; }
-    .totals-row { display: flex; justify-content: space-between; font-size: 15px; margin-bottom: 12px; color: var(--muted); }
-    .totals-row.discount { color: var(--danger); font-weight: bold; }
-    .totals-row.grand-total { font-size: 36px; font-weight: 800; color: var(--text); border-top: 2px dashed var(--line); padding-top: 16px; margin-top: 8px; }
-
-    .pay-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-    .pay-btn { border: 2px solid var(--line); background: #fff; padding: 14px 8px; border-radius: 12px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; font-size: 14px; }
-    .pay-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
-
-    .btn-charge { width: 100%; padding: 20px; font-size: 20px; font-weight: 800; border-radius: 12px; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3); background: var(--success); color: white; border: none; }
-
-    .qty-control { display: flex; align-items: center; gap: 6px; }
-    .qty-btn { background: var(--line); border: none; width: 28px; height: 28px; border-radius: 6px; font-weight: bold; cursor: pointer; display:grid; place-items:center; }
-    .qty-input { width: 45px; text-align: center; border: 1px solid var(--line); border-radius: 6px; padding: 4px; font-weight: bold; outline:none; }
     
-    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
-
-    #printTicketArea { display: none; }
-    @media print {
-      @page { margin: 0; size: 80mm auto; }
-      body { margin: 0; background: #fff; }
-      body * { visibility: hidden; }
-      #printTicketArea, #printTicketArea * { visibility: visible; }
-      #printTicketArea { position: absolute; left: 0; top: 0; width: 80mm; font-family: monospace; font-size: 12px; padding: 5mm; color: #000; display: block !important; }
-      .ticket-header { text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 16px; }
-      .ticket-line { display: flex; justify-content: space-between; margin-bottom: 5px; }
-      .ticket-divider { border-top: 1px dashed #000; margin: 10px 0; }
-    }
+    .excel-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .excel-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; border-bottom: 2px solid var(--line); border-top: 1px solid var(--line); }
+    .excel-table td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
+    .qty-control { display: flex; align-items: center; gap: 4px; justify-content: center; }
+    .qty-btn { background: var(--panel-2); border: 1px solid var(--line); width: 26px; height: 26px; border-radius: 6px; font-weight: bold; cursor: pointer; color: var(--text); }
+    .qty-input { width: 50px; text-align: center; border: 1px solid var(--primary-soft); border-radius: 6px; padding: 6px 4px; font-weight: bold; outline:none; }
+    .checkout-footer { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start; }
+    .pay-btn { border: 2px solid var(--line); background: #fff; padding: 12px 20px; border-radius: 10px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; flex: 1; }
+    .pay-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+    .btn-charge { width: 100%; padding: 18px; font-size: 18px; font-weight: 800; border-radius: 10px; margin-top: 15px; cursor: pointer; background: var(--success); color: white; border: none; }
+    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); }
   </style>
 </head>
 <body>
 
-<div id="loadingOverlay">Procesando...</div>
+<div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
   <aside class="sidebar">
-    <div class="brand">
-      <div class="brand-logo">M</div>
-      <div class="brand-text"><strong id="sidebarUserName">Usuario: Admin</strong><small>Control del negocio</small></div>
-    </div>
+    <div class="brand"><div class="brand-logo">M</div><div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div></div>
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
@@ -83,129 +53,91 @@
       <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
-      <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
   </aside>
 
   <main class="content">
     <header class="topbar">
-      <div class="page-title">
-        <h1 style="margin:0; font-size: 26px;">Punto de Venta</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Caja activa: <strong id="lblTerminalTop" style="color:var(--primary);">Central</strong></p>
-      </div>
+      <div class="page-title"><h1>Nueva Factura</h1><p>Conectado a Cloudflare D1</p></div>
+      <button class="btn btn-light" onclick="cancelarVenta()">🗑️ Vaciar</button>
     </header>
 
-    <div class="pos-layout">
-      <div style="display: flex; flex-direction: column; gap: 15px;">
-        
-        <div class="autocomplete-wrapper">
-          <input type="text" id="clientSearch" class="input-box" placeholder="Buscar Cliente por nombre o CUIT (Dejar vacío para Consumidor Final)..." autocomplete="off">
+    <div class="pos-container">
+      
+      <article class="card card-pad">
+        <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;">1. Cliente</label>
+        <div style="position: relative;">
+          <input type="hidden" id="clientId" value="">
+          <input type="text" id="clientName" value="Consumidor Final" autocomplete="off" 
+                 onfocus="this.value=''; verificarClienteLibre()" 
+                 oninput="verificarClienteLibre()"
+                 class="pos-search-input" placeholder="Buscar cliente...">
           <div id="clientResults" class="autocomplete-list"></div>
-          <div id="selectedClientBadge" style="display:none; margin-top:10px; background:var(--primary-soft); padding:10px 15px; border-radius:8px; border:1px solid var(--primary); justify-content:space-between; align-items:center;">
-            <div>
-              <strong style="color:var(--primary); font-size:15px; display:block;" id="lblClientName">Nombre</strong>
-              <small style="color:var(--primary);" id="lblClientDoc">CUIT: 123</small>
-            </div>
-            <button class="btn btn-light" style="padding:4px 8px; font-size:12px;" onclick="quitarCliente()">Cambiar</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <div style="padding: 20px;">
+          <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;">2. Artículos</label>
+          <div style="position: relative;">
+            <input type="text" id="posSearch" class="pos-search-input" placeholder="🔍 Buscar por nombre o código..." autocomplete="off" autofocus>
+            <div id="searchResults" class="autocomplete-list"></div>
           </div>
-          <input type="hidden" id="clientName">
-          <input type="hidden" id="clientId">
-          <input type="hidden" id="clientIsB2B" value="false">
         </div>
+        <table class="excel-table">
+          <thead>
+            <tr><th>Código</th><th>Descripción</th><th style="text-align: right;">Precio</th><th style="text-align: center;">Cant.</th><th style="text-align: right;">Subtotal</th><th></th></tr>
+          </thead>
+          <tbody id="cartBody"></tbody>
+        </table>
+      </article>
 
-        <div class="autocomplete-wrapper">
-          <input type="text" id="posSearch" class="input-box" placeholder="Buscar Producto por nombre o código de barras..." autocomplete="off">
-          <div id="searchResults" class="autocomplete-list"></div>
-        </div>
-        
-        <div class="pos-table-container">
-          <table class="pos-table">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th style="text-align:center;">Cant.</th>
-                <th style="text-align:right;">Precio</th>
-                <th style="text-align:right;">Subtotal</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="cartContainer">
-              <tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">El comprobante está vacío.<br>Buscá un artículo para comenzar.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <div class="checkout-footer">
+        <article class="card card-pad">
+          <h3 style="font-size: 12px; text-transform: uppercase; color: var(--muted);">3. Pago</h3>
+          <div style="display: flex; gap: 10px;" id="payMethodsB2C">
+            <button class="pay-btn active" onclick="setPayment('Efectivo', this)">💵 Efectivo</button>
+            <button class="pay-btn" onclick="setPayment('Transferencia', this)">📱 Transf.</button>
+            <button class="pay-btn" onclick="setPayment('Tarjeta', this)">💳 Tarjeta</button>
+          </div>
+          <div id="payMethodsB2B" style="display: none;">
+            <button class="pay-btn active" style="border-color: var(--warning); color: #b45309; width: 100%;">📓 A Cuenta Corriente</button>
+          </div>
+          
+          <div id="cuponContainer" style="display: none; margin-top: 15px;">
+            <label style="font-size: 11px; color: var(--danger); text-transform: uppercase; font-weight:bold; display:block; margin-bottom:6px;">Número de Cupón / Lote *</label>
+            <input type="number" id="cuponNumber" placeholder="Ingresá el número del comprobante" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 600; border: 2px solid var(--line); border-radius: 8px; outline: none; box-sizing: border-box;">
+          </div>
+        </article>
 
-      <div class="pos-checkout-panel">
-        <div class="totals-row">
-          <span>Subtotal</span>
-          <span id="lblSubtotal">$0</span>
-        </div>
-        <div class="totals-row discount">
-          <span>Descuento</span>
-          <span>$0</span>
-        </div>
-        <div class="totals-row grand-total">
-          <span>Total</span>
-          <span id="cartTotal">$0</span>
-        </div>
-
-        <h4 style="margin: 20px 0 10px; color: var(--text);">Método de Pago</h4>
-        <div class="pay-methods" id="payGrid">
-          <button class="pay-btn active" onclick="setPayment('Efectivo')">Efectivo</button>
-          <button class="pay-btn" onclick="setPayment('Transferencia')">Transf.</button>
-          <button class="pay-btn" onclick="setPayment('Tarjeta')">Tarjeta</button>
-        </div>
-
-        <div id="extraData" style="display:none; margin-bottom:15px;">
-          <input type="text" id="cuponInput" class="input-box" placeholder="N° de comprobante / Cupón">
-        </div>
-        <div id="ccData" style="display:none; margin-bottom:15px; background:#fffdf2; border:1px solid #fef08a; padding:15px; border-radius:8px; text-align:center; color:#b45309; font-weight:bold; font-size:14px;">
-          El total se cargará a la Cuenta Corriente del cliente.
-        </div>
-
-        <button class="btn-charge" onclick="procesarVenta()">COBRAR (F12)</button>
+        <article class="card card-pad">
+          <div style="display:flex; justify-content: space-between; font-size: 24px; font-weight: 800;">
+            <span>Total</span><span id="txtTotal" style="color: var(--primary);">$0</span>
+          </div>
+          <button class="btn-charge" id="btnCobrar" onclick="procesarVenta()">Confirmar e Imprimir (F12)</button>
+        </article>
       </div>
     </div>
   </main>
 </div>
 
-<div id="printTicketArea">
-  <div class="ticket-header">MICRO SAAS SOLUCIONES</div>
-  <div class="ticket-line"><span>Fecha:</span><span id="ticFecha"></span></div>
-  <div class="ticket-line"><span>Ticket:</span><span id="ticNum"></span></div>
-  <div class="ticket-line"><span>Atendió:</span><span id="ticUser"></span></div>
-  <div class="ticket-divider"></div>
-  <div id="ticItems"></div>
-  <div class="ticket-divider"></div>
-  <div class="ticket-line" style="font-weight:bold; font-size:14px;"><span>TOTAL:</span><span id="ticTotal"></span></div>
-  <div class="ticket-line"><span>Pago:</span><span id="ticMethod"></span></div>
-  <div class="ticket-divider"></div>
-  <div style="text-align:center; font-size:10px; margin-top:10px;">¡Gracias por su compra!</div>
-</div>
-
 <script src="core.js"></script>
 <script>
   const API_URL = "/api";
-  let dbProducts = []; 
-  let dbClients = [];
-  let cart = [];
+  let dbProducts = []; let dbClients = []; let cart = [];
+  let currentPaymentMethod = 'Efectivo'; let isB2B = false;
   let filteredProducts = [];
-  let filteredClients = [];
-  let currentPaymentMethod = 'Efectivo';
-  let isB2B = false;
 
+  // VARIABLE DE SUCURSAL GLOBAL
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
-  document.getElementById('lblTerminalTop').textContent = terminalActiva;
-  document.getElementById('sidebarUserName').textContent = `Usuario: ${localStorage.getItem('activeUser') || 'Admin'}`;
 
-  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
-  function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
+  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
 
-  // --- OBTENER STOCK CORRECTO POR SUCURSAL ---
+  // FUNCIÓN PARA LEER STOCK DEL LOCAL
   function getLocalStock(prod) {
       if (!prod.stock_branches) return parseInt(prod.stock || 0);
       try {
@@ -216,26 +148,107 @@
       }
   }
 
-  async function initPos() {
+  async function initPOS() {
     mostrarCarga(true);
     try {
-      const [resProd, resCli] = await Promise.all([ fetch(`${API_URL}/products`), fetch(`${API_URL}/clients`) ]);
-      if(resProd.ok) dbProducts = await resProd.json();
-      if(resCli.ok) dbClients = await resCli.json();
-    } catch(e) { console.error(e); } 
-    finally { mostrarCarga(false); }
+      const [resP, resC] = await Promise.all([fetch(`${API_URL}/products`), fetch(`${API_URL}/clients`)]);
+      if (!resP.ok) console.error("Error D1 Productos:", await resP.text());
+      if (!resC.ok) console.error("Error D1 Clientes:", await resC.text());
+
+      dbProducts = resP.ok ? await resP.json() : [];
+      dbClients = resC.ok ? await resC.json() : [];
+
+      console.log(`✅ D1 Conectado: ${dbProducts.length} productos y ${dbClients.length} clientes encontrados.`);
+      renderCart();
+    } catch (e) { 
+      console.error("Error de conexión:", e); 
+    } finally { 
+      mostrarCarga(false); 
+      document.getElementById('posSearch').focus(); 
+    }
   }
 
-  // --- BUSCADOR DE PRODUCTOS (CON PROTECCIÓN DE STOCK) ---
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('posSearch').contains(e.target) && !document.getElementById('searchResults').contains(e.target)) {
+      document.getElementById('searchResults').classList.remove('active');
+    }
+    if (!document.getElementById('clientName').contains(e.target) && !document.getElementById('clientResults').contains(e.target)) {
+      document.getElementById('clientResults').classList.remove('active');
+    }
+  });
+
+  // --- BUSQUEDA CLIENTES ---
+  window.verificarClienteLibre = function() {
+    const term = document.getElementById('clientName').value.toLowerCase().trim();
+    if (term === "") { document.getElementById('clientId').value = ''; activarModoB2C(); }
+    
+    const clientResults = document.getElementById('clientResults');
+    if (term.length < 1) { clientResults.classList.remove('active'); return; }
+
+    const filtrados = dbClients.filter(c => 
+      ((c.name || '').toLowerCase().includes(term)) || 
+      ((c.cuil || '').toLowerCase().includes(term))
+    ).slice(0, 5);
+
+    clientResults.innerHTML = filtrados.length === 0 ? '<div style="padding:15px; text-align:center; color:var(--muted);">Dejar como Consumidor Final</div>' : filtrados.map(c => `
+      <div class="autocomplete-item" onclick="seleccionarClientePOS('${c.id}', '${escapeHtml(c.name)}')">
+        <div><strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small></div>
+      </div>`).join('');
+    clientResults.classList.add('active');
+  };
+
+  window.seleccionarClientePOS = function(id, name) {
+    document.getElementById('clientName').value = name;
+    document.getElementById('clientId').value = id;
+    document.getElementById('clientResults').classList.remove('active');
+    activarModoB2B();
+  };
+
+  function activarModoB2C() {
+    isB2B = false; 
+    document.getElementById('payMethodsB2C').style.display = 'flex'; 
+    document.getElementById('payMethodsB2B').style.display = 'none';
+    document.getElementById('cuponContainer').style.display = 'none';
+    document.getElementById('btnCobrar').textContent = "Confirmar e Imprimir (F12)";
+    setPayment('Efectivo', document.querySelector('#payMethodsB2C .pay-btn'), false);
+  }
+
+  function activarModoB2B() {
+    isB2B = true; currentPaymentMethod = 'A Cuenta Corriente';
+    document.getElementById('payMethodsB2C').style.display = 'none'; 
+    document.getElementById('payMethodsB2B').style.display = 'flex';
+    document.getElementById('cuponContainer').style.display = 'none';
+    document.getElementById('btnCobrar').textContent = "Confirmar en Cuenta Corriente (F12)";
+  }
+
+  // --- LÓGICA DE MOSTRAR/OCULTAR CUPÓN ---
+  function setPayment(method, btn, focus = true) {
+    if (isB2B) return;
+    currentPaymentMethod = method;
+    document.querySelectorAll('#payMethodsB2C .pay-btn').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    
+    const cupon = document.getElementById('cuponContainer');
+    if (method === 'Tarjeta') { 
+      cupon.style.display = 'block'; 
+      if(focus) document.getElementById('cuponNumber').focus(); 
+    } else { 
+      cupon.style.display = 'none'; 
+      document.getElementById('cuponNumber').value = ''; 
+      if(focus) document.getElementById('posSearch').focus(); 
+    }
+  }
+
+  // --- BUSQUEDA PRODUCTOS ---
   document.getElementById('posSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
     const searchResults = document.getElementById('searchResults');
-    
     if (term.length < 1) { searchResults.classList.remove('active'); return; }
 
-    filteredProducts = dbProducts.filter(p => p.status !== 'Inactivo' && (
-      (p.name || '').toLowerCase().includes(term) || (p.code || '').toLowerCase().includes(term)
-    )).slice(0, 10);
+    filteredProducts = dbProducts.filter(p => 
+      ((p.name || '').toLowerCase().includes(term)) || 
+      ((p.code || '').toLowerCase().includes(term))
+    ).slice(0, 10);
 
     if (filteredProducts.length === 0) {
         searchResults.innerHTML = '<div style="padding:15px; text-align:center; color:var(--danger); font-weight:bold;">No se encontró el producto</div>';
@@ -246,11 +259,8 @@
           
           return `
           <div class="autocomplete-item" onclick="agregarAlCarrito(${idx})">
-            <div>
-              <strong>${escapeHtml(p.name)}</strong><br>
-              <small style="color:var(--muted);">${p.code || 'S/N'} | <span style="color:${colorStock}; font-weight:bold;">Stock en local: ${localStock}</span></small>
-            </div>
-            <div style="font-weight:800; color:var(--primary); font-size:15px;">${currency(p.price)}</div>
+            <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code || 'S/N'} | <span style="color:${colorStock}; font-weight:bold;">Stock Local: ${localStock}</span></small></div>
+            <div style="font-weight:800; color:var(--primary);">${currency(p.price)}</div>
           </div>`;
         }).join('');
     }
@@ -263,255 +273,113 @@
     const existe = cart.find(i => i.id === p.id);
     const qtyDeseada = existe ? existe.qty + 1 : 1;
 
-    // REGLA DE ORO: NO FACTURAR SIN STOCK
+    // PROTECCIÓN DE STOCK NEGATIVO
     if (qtyDeseada > localStock) {
-        alert(`❌ STOCK INSUFICIENTE\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés facturar en negativo.`);
-        document.getElementById('posSearch').value = ''; 
+        alert(`❌ STOCK INSUFICIENTE\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés facturar sin stock físico.`);
+        document.getElementById('posSearch').value = '';
         document.getElementById('searchResults').classList.remove('active');
         document.getElementById('posSearch').focus();
         return;
     }
 
     if (existe) existe.qty++; else cart.unshift({ ...p, qty: 1 });
-    
     document.getElementById('posSearch').value = ''; 
     document.getElementById('searchResults').classList.remove('active');
-    document.getElementById('posSearch').focus(); 
-    renderCart();
+    document.getElementById('posSearch').focus(); renderCart();
   }
-
-  // --- CARRO Y CANTIDADES ---
-  function updateQty(id, delta) {
-    const item = cart.find(i => i.id === id);
-    if (!item) return;
-    
-    const nuevoQty = item.qty + delta;
-    if (nuevoQty <= 0) return removeCartItem(id);
-
-    // REGLA DE ORO: NO FACTURAR SIN STOCK AL USAR EL BOTÓN (+)
-    if (delta > 0) {
-        const pDB = dbProducts.find(p => p.id === id);
-        const localStock = getLocalStock(pDB);
-        if (nuevoQty > localStock) {
-            alert(`❌ STOCK INSUFICIENTE\nSolo tenés ${localStock} unidades disponibles en ${terminalActiva}.`);
-            return;
-        }
-    }
-
-    item.qty = nuevoQty;
-    renderCart();
-  }
-
-  function removeCartItem(id) { cart = cart.filter(i => i.id !== id); renderCart(); }
 
   function renderCart() {
-    const c = document.getElementById('cartContainer');
+    const tbody = document.getElementById('cartBody');
     let total = 0;
-    
-    if (cart.length === 0) {
-      c.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">El comprobante está vacío.<br>Buscá un artículo para comenzar.</td></tr>';
-      document.getElementById('cartTotal').textContent = '$0';
-      document.getElementById('lblSubtotal').textContent = '$0';
-      return;
-    }
-
-    c.innerHTML = cart.map(i => {
-      const sub = i.qty * i.price;
-      total += sub;
-      return `
-      <tr>
-        <td>
-          <strong style="font-size:14px;">${escapeHtml(i.name)}</strong><br>
-          <small style="color:var(--muted);">${i.code || '-'}</small>
-        </td>
-        <td style="text-align:center;">
-          <div class="qty-control" style="justify-content:center;">
-            <button class="qty-btn" onclick="updateQty('${i.id}', -1)">-</button>
-            <input type="text" class="qty-input" value="${i.qty}" readonly>
-            <button class="qty-btn" onclick="updateQty('${i.id}', 1)">+</button>
-          </div>
-        </td>
+    tbody.innerHTML = cart.map(i => {
+      const sub = i.price * i.qty; total += sub;
+      return `<tr>
+        <td style="color: var(--muted);">${i.code || '-'}</td>
+        <td><strong>${escapeHtml(i.name)}</strong></td>
         <td style="text-align:right;">${currency(i.price)}</td>
-        <td style="text-align:right; font-weight:bold; color:var(--text);">${currency(sub)}</td>
-        <td style="text-align:center;">
-          <button style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:16px; font-weight:bold;" onclick="removeCartItem('${i.id}')">✕</button>
-        </td>
+        <td style="text-align:center;"><input type="number" class="qty-input" value="${i.qty}" onchange="updateQty('${i.id}', this.value)"></td>
+        <td style="text-align:right; color:var(--primary);"><strong>${currency(sub)}</strong></td>
+        <td style="text-align:center;"><button onclick="quitar('${i.id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">✕</button></td>
       </tr>`;
     }).join('');
-    
-    document.getElementById('cartTotal').textContent = currency(total);
-    document.getElementById('lblSubtotal').textContent = currency(total);
+    if(!cart.length) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted);">El comprobante está vacío.<br><small>Buscá un artículo para comenzar.</small></td></tr>';
+    document.getElementById('txtTotal').textContent = currency(total);
   }
 
-  // --- BUSCADOR DE CLIENTES ---
-  document.getElementById('clientSearch').addEventListener('input', (e) => {
-    const term = e.target.value.toLowerCase().trim();
-    const res = document.getElementById('clientResults');
-    if (term.length < 1) { res.classList.remove('active'); return; }
+  window.updateQty = (id, v) => { 
+    const i = cart.find(x => x.id === id); 
+    if(i) {
+        const nuevaCant = parseInt(v) || 1;
+        const pDB = dbProducts.find(p => p.id === id);
+        const localStock = getLocalStock(pDB);
 
-    filteredClients = dbClients.filter(c => (c.name||'').toLowerCase().includes(term) || (c.cuil||'').includes(term)).slice(0,5);
-    
-    if(filteredClients.length === 0) {
-        res.innerHTML = '<div style="padding:15px; color:var(--muted); text-align:center;">Cliente no encontrado</div>';
-    } else {
-        res.innerHTML = filteredClients.map((c, idx) => `
-        <div class="autocomplete-item" onclick="seleccionarCliente(${idx})">
-          <div><strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small></div>
-          <div><span style="background:var(--panel-2); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold;">${c.type==='client'?'Mayorista':'Minorista'}</span></div>
-        </div>`).join('');
+        // PROTECCIÓN DE STOCK NEGATIVO EN EL CARRITO
+        if (nuevaCant > localStock) {
+            alert(`❌ STOCK INSUFICIENTE\nSolo tenés ${localStock} unidades disponibles en ${terminalActiva}.`);
+            renderCart(); // Resetea visualmente al número viejo
+            return;
+        }
+        i.qty = nuevaCant;
     }
-    res.classList.add('active');
-  });
+    renderCart(); 
+  };
+  
+  window.quitar = (id) => { cart = cart.filter(x => x.id !== id); renderCart(); };
+  window.cancelarVenta = () => { if(confirm("¿Vaciar?")) { cart = []; renderCart(); } };
 
-  function seleccionarCliente(idx) {
-    const c = filteredClients[idx];
-    document.getElementById('clientId').value = c.id;
-    document.getElementById('clientName').value = c.name;
-    isB2B = c.type === 'client';
-    document.getElementById('clientIsB2B').value = isB2B;
+  // --- COBRO CON VALIDACIÓN DE CUPÓN ---
+  window.procesarVenta = async function() {
+    if(!cart.length) return;
+    if(!confirm(isB2B ? "¿Confirmar y enviar deuda a la Cuenta Corriente?" : "¿Confirmar venta e imprimir ticket?")) return;
     
-    document.getElementById('lblClientName').textContent = c.name;
-    document.getElementById('lblClientDoc').textContent = c.cuil ? 'CUIT/DNI: ' + c.cuil : 'Consumidor Final';
-    
-    document.getElementById('clientSearch').style.display = 'none';
-    document.getElementById('selectedClientBadge').style.display = 'flex';
-    document.getElementById('clientResults').classList.remove('active');
-    
-    if (document.querySelector('.pay-btn[onclick="setPayment(\\'A Cuenta Corriente\\')"]') == null) {
-        const btnCC = document.createElement('button');
-        btnCC.className = 'pay-btn';
-        btnCC.textContent = 'Cta. Corriente';
-        btnCC.onclick = () => setPayment('A Cuenta Corriente');
-        document.getElementById('payGrid').appendChild(btnCC);
+    // VALIDACIÓN: Si es tarjeta, obligar a poner cupón
+    let cuponText = '';
+    if (!isB2B && currentPaymentMethod === 'Tarjeta') {
+      cuponText = document.getElementById('cuponNumber').value.trim();
+      if (!cuponText) { 
+        alert("⚠️ Ingresá el número de lote/cupón para poder cobrar con Tarjeta."); 
+        document.getElementById('cuponNumber').focus(); 
+        return; 
+      }
     }
-  }
-
-  function quitarCliente() {
-    document.getElementById('clientId').value = '';
-    document.getElementById('clientName').value = '';
-    isB2B = false;
-    document.getElementById('clientIsB2B').value = 'false';
-    document.getElementById('clientSearch').style.display = 'block';
-    document.getElementById('clientSearch').value = '';
-    document.getElementById('selectedClientBadge').style.display = 'none';
-    
-    const btns = document.querySelectorAll('.pay-btn');
-    btns.forEach(b => { if(b.textContent.includes('Cta. Corriente')) b.remove(); });
-    if(currentPaymentMethod === 'A Cuenta Corriente') setPayment('Efectivo');
-  }
-
-  // --- FORMAS DE PAGO ---
-  function setPayment(method) {
-    currentPaymentMethod = method;
-    document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
-    event.currentTarget.classList.add('active');
-    
-    const extra = document.getElementById('extraData');
-    const ccData = document.getElementById('ccData');
-    
-    if (method === 'Tarjeta' || method === 'Transferencia') {
-        extra.style.display = 'block'; document.getElementById('cuponInput').focus(); ccData.style.display = 'none';
-    } else if (method === 'A Cuenta Corriente') {
-        extra.style.display = 'none'; ccData.style.display = 'block';
-    } else {
-        extra.style.display = 'none'; ccData.style.display = 'none';
-    }
-  }
-
-  // --- PROCESAR VENTA Y GUARDAR EN NUBE ---
-  async function procesarVenta() {
-    if (cart.length === 0) return alert("El comprobante está vacío.");
-    
-    let total = 0; cart.forEach(i => total += i.qty * i.price);
-    const dateStr = todayISO();
-    const cid = document.getElementById('clientId').value;
-    const cuponText = document.getElementById('cuponInput').value.trim();
-    
-    if ((currentPaymentMethod === 'Tarjeta' || currentPaymentMethod === 'Transferencia') && !cuponText) {
-        if(!confirm("⚠️ No ingresaste el N° de comprobante o cupón.\n¿Querés registrar la venta igual?")) return;
-    }
-
-    const ventaId = 'vta_' + Date.now();
-    const venta = {
-      id: ventaId, 
-      createdAt: new Date().toISOString(), 
-      date: dateStr,
-      seller: localStorage.getItem('activeUser') || 'Admin',
-      branch: terminalActiva,
-      clientId: cid || 'Consumidor Final', 
-      client: document.getElementById('clientName').value || 'Consumidor Final',
-      method: currentPaymentMethod, 
-      cupon: cuponText, 
-      subtotal: total, 
-      promoDiscount: 0, 
-      total: total, 
-      isB2B: isB2B, 
-      items: cart
-    };
 
     mostrarCarga(true);
+    const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+    const dateStr = todayISO();
+    const cid = document.getElementById('clientId').value;
+
+    const venta = {
+      id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: dateStr,
+      branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
+      clientId: cid || 'Consumidor Final', client: document.getElementById('clientName').value || 'Consumidor Final',
+      method: currentPaymentMethod, cupon: cuponText, subtotal: total, promoDiscount: 0, total: total, isB2B: isB2B, items: cart
+    };
+
     try {
-      const res = await fetch(`${API_URL}/sales`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(venta) });
-      if (res.ok) {
-         // Descuento visual en la memoria
-         cart.forEach(itemVendido => {
-             const prodEnMemoria = dbProducts.find(p => p.id === itemVendido.id);
-             if (prodEnMemoria) {
-                 let branches = {};
-                 try { branches = JSON.parse(prodEnMemoria.stock_branches); } catch(e) { branches = { "Central": prodEnMemoria.stock || 0 }; }
-                 if (branches[terminalActiva] === undefined) branches[terminalActiva] = 0;
-                 
-                 branches[terminalActiva] -= itemVendido.qty;
-                 
-                 let t = 0; for(let b in branches) t += branches[b];
-                 prodEnMemoria.stock_branches = JSON.stringify(branches);
-                 prodEnMemoria.stock = t;
-             }
-         });
+      const resV = await fetch(`${API_URL}/sales`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(venta) });
+      if(!resV.ok) throw new Error(await resV.text());
+      
+      if(isB2B && cid) {
+        const mov = { id: 'cc_' + Date.now(), clientId: cid, date: dateStr, type: 'debe', amount: total, concept: `Ticket #${venta.id.split('_')[1]}` };
+        const resCC = await fetch(`${API_URL}/cc_movements`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(mov) });
+        if(!resCC.ok) throw new Error("Cta Cte Error: " + await resCC.text());
+      }
 
-         // IMPRIMIR TICKET (Solo si no es cuenta corriente)
-         if (currentPaymentMethod !== 'A Cuenta Corriente') {
-            document.getElementById('ticFecha').textContent = new Date().toLocaleString('es-AR');
-            document.getElementById('ticNum').textContent = ventaId.replace('vta_','');
-            document.getElementById('ticUser').textContent = venta.seller;
-            document.getElementById('ticMethod').textContent = currentPaymentMethod;
-            document.getElementById('ticTotal').textContent = currency(total);
-            
-            document.getElementById('ticItems').innerHTML = cart.map(i => `
-              <div class="ticket-line">
-                <span>${i.qty}x ${escapeHtml(i.name)}</span>
-                <span>${currency(i.qty * i.price)}</span>
-              </div>
-            `).join('');
-            
-            window.print();
-         } else {
-            alert("✅ Venta cargada exitosamente a la Cuenta Corriente.");
-         }
+      alert(isB2B ? "📓 Guardado en Cta. Cte." : "✅ Venta finalizada.");
+      localStorage.setItem('last_sale_to_print', JSON.stringify(venta));
 
-         // Limpiar Caja
-         cart = []; 
-         quitarCliente(); 
-         document.getElementById('cuponInput').value = '';
-         setPayment('Efectivo');
-         renderCart();
-      } else { alert("Error al registrar la venta."); }
-    } catch(e) { console.error(e); alert("Error de red."); } finally { mostrarCarga(false); }
-  }
+      cart = []; document.getElementById('clientName').value = 'Consumidor Final'; document.getElementById('clientId').value = '';
+      if (currentPaymentMethod === 'Tarjeta') document.getElementById('cuponNumber').value = '';
+      const ventaFueB2B = isB2B;
+      activarModoB2C(); renderCart();
+      
+      if (!ventaFueB2B) window.open('factura.html', '_blank');
 
-  // --- ATAJOS Y CIERRES ---
-  document.addEventListener('keydown', (e) => {
-      if (e.key === 'F12') { e.preventDefault(); procesarVenta(); }
-  });
+    } catch(e) { alert("Error: " + e.message); }
+    finally { mostrarCarga(false); }
+  };
 
-  document.addEventListener('click', (e) => {
-    if(!e.target.closest('.autocomplete-wrapper')) {
-        document.getElementById('clientResults').classList.remove('active');
-        document.getElementById('searchResults').classList.remove('active');
-    }
-  });
-
-  initPos();
+  initPOS();
 </script>
 </body>
 </html>
