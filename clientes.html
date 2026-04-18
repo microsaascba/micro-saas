@@ -4,30 +4,37 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Clientes | Micro SaaS</title>
+  
+  <style>
+    html, body { background-color: #f0f2f7 !important; }
+    body { animation: fadeIn 0.15s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+
   <link rel="stylesheet" href="styles.css" />
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    
     .layout-2col { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
     @media (max-width: 1000px) { .layout-2col { grid-template-columns: 1fr; } }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .full-width { grid-column: span 2; }
+    
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
+    
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
-    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
-    .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
-    .badge-may { background: #e0e7ff; color: #0f766e; }
-    .badge-min { background: #f3f4f6; color: #475569; }
+    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
+    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     
-    /* Indicador de carga */
-    .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
+    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
   </style>
 </head>
 <body>
 
-<div id="loadingOverlay" class="loading-overlay">Sincronizando con la nube...</div>
+<div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -63,34 +70,39 @@
         
         <form id="clientForm" onsubmit="guardarCliente(event)">
           <input type="hidden" id="cliId">
-          <div class="form-grid">
-            <div class="full-width">
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Razón Social / Nombre *</label>
-              <input type="text" id="cliName" class="input-box" required placeholder="Ej: Supermercados SA">
-            </div>
+          
+          <div style="margin-bottom: 15px;">
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Razón Social / Nombre *</label>
+            <input type="text" id="cliName" class="input-box" required placeholder="Ej: Supermercados SA">
+          </div>
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
             <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">CUIT / DNI</label>
+              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT / DNI</label>
               <input type="text" id="cliCuil" class="input-box" placeholder="Sin guiones">
             </div>
             <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Teléfono</label>
+              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Teléfono</label>
               <input type="text" id="cliPhone" class="input-box" placeholder="Ej: 351...">
             </div>
-            <div class="full-width">
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Dirección</label>
-              <input type="text" id="cliAddress" class="input-box" placeholder="Calle, Número, Ciudad">
-            </div>
-            <div class="full-width">
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Tipo de Cliente</label>
-              <select id="cliType" class="input-box">
-                <option value="Minorista">Minorista (Consumidor)</option>
-                <option value="Mayorista">Mayorista (B2B)</option>
-              </select>
-            </div>
           </div>
-          <div style="margin-top: 20px; display: flex; gap: 10px;">
+
+          <div style="margin-bottom: 15px;">
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Dirección</label>
+            <input type="text" id="cliAddress" class="input-box" placeholder="Calle, Número, Ciudad">
+          </div>
+
+          <div style="margin-bottom: 25px;">
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Tipo de Cliente</label>
+            <select id="cliType" class="input-box">
+              <option value="minorista">Minorista (Consumidor)</option>
+              <option value="mayorista">Mayorista (Cuenta Corriente)</option>
+            </select>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
             <button type="button" class="btn btn-light" style="flex:1;" onclick="limpiarFormulario()">Cancelar</button>
-            <button type="submit" class="btn btn-primary" style="flex:2;">Guardar Cliente</button>
+            <button type="submit" class="btn btn-primary" style="flex:2;" id="btnSave">Guardar Cliente</button>
           </div>
         </form>
       </article>
@@ -98,6 +110,7 @@
       <article class="card card-pad">
         <h2 style="margin: 0 0 20px 0; font-size: 18px;">Directorio Activo</h2>
         <input type="text" id="searchTable" class="input-box" placeholder="Buscar por nombre o CUIT..." onkeyup="renderTable()" style="margin-bottom: 20px;">
+        
         <div style="overflow-x: auto;">
           <table>
             <thead>
@@ -117,27 +130,40 @@
   </main>
 </div>
 
+<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: var(--panel);">
+  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
+    <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
+  </div>
+  <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
+    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Se requiere PIN de administrador para <strong id="authActionText"></strong>.</p>
+    <input type="password" id="adminAuthPin" required placeholder="Ingresá el PIN" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
+      <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="core.js"></script>
+
 <script>
   const API_URL = "/api"; 
   let dbClients = [];
+  const PIN_ADMIN = "1234";
+  let pendingAdminAction = null;
+  let pendingAdminParam = null;
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  
-  function mostrarCarga(mostrar) {
-    document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none';
-  }
+  function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
 
-  function todayISO() { return new Date().toISOString().split('T')[0]; }
-
-  // --- CARGAR DESDE LA NUBE ---
+  // --- CARGAR CLIENTES DESDE LA NUBE ---
   async function initClients() {
     mostrarCarga(true);
     try {
       const response = await fetch(`${API_URL}/clients`);
       if (response.ok) {
         dbClients = await response.json();
-      } else {
-        console.error("Error cargando clientes de la DB");
       }
     } catch (error) {
       console.error("Error de conexión:", error);
@@ -147,47 +173,39 @@
     }
   }
 
-  // --- GUARDAR EN LA NUBE ---
+  // --- GUARDAR CLIENTE EN LA NUBE ---
   async function guardarCliente(e) {
     e.preventDefault();
-    const idInput = document.getElementById('cliId').value;
-    const isNew = !idInput;
-    const id = idInput || 'cli_' + Date.now();
     
-    // Alineamos los datos exactamente a lo que espera tu API clients.js
+    const id = document.getElementById('cliId').value || 'cli_' + Date.now();
+    
     const client = {
       id: id,
       name: document.getElementById('cliName').value.trim(),
-      contact: document.getElementById('cliName').value.trim(), // Dummy
       cuil: document.getElementById('cliCuil').value.trim(),
       phone: document.getElementById('cliPhone').value.trim(),
-      email: 'sin@email.com', // Dummy necesario para el backend B2B
       address: document.getElementById('cliAddress').value.trim(),
-      fee: 0,
-      dueDate: todayISO(),
-      type: document.getElementById('cliType').value
+      type: document.getElementById('cliType').value,
+      createdAt: new Date().toISOString()
     };
 
     mostrarCarga(true);
     try {
-      // Si es nuevo mandamos POST, si existe mandamos PUT
-      const method = isNew ? 'POST' : 'PUT';
       const response = await fetch(`${API_URL}/clients`, {
-        method: method,
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(client)
       });
-
-      if (response.ok) {
+      
+      if(response.ok) {
         const idx = dbClients.findIndex(c => c.id === id);
         if (idx >= 0) dbClients[idx] = client; else dbClients.unshift(client);
         limpiarFormulario();
         renderTable();
-        alert("✅ Cliente guardado en la nube exitosamente.");
       } else {
         alert("Error al guardar en la nube.");
       }
-    } catch (error) {
+    } catch(error) {
       console.error("Error guardando:", error);
       alert("Error de conexión. Intentá de nuevo.");
     } finally {
@@ -204,32 +222,8 @@
     document.getElementById('cliCuil').value = c.cuil || '';
     document.getElementById('cliPhone').value = c.phone || '';
     document.getElementById('cliAddress').value = c.address || '';
-    
-    // Si viene del Master y es tipo 'client', lo mostramos como Mayorista
-    const selectType = (c.type === 'client') ? 'Mayorista' : c.type;
-    document.getElementById('cliType').value = selectType || 'Minorista';
-  }
-
-  async function eliminarCliente(id) {
-    if(!confirm("¿Eliminar permanentemente este cliente de la nube?")) return;
-    mostrarCarga(true);
-    try {
-      const response = await fetch(`${API_URL}/clients?id=${id}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        dbClients = dbClients.filter(c => c.id !== id);
-        renderTable();
-      } else {
-        alert("Error al eliminar el cliente.");
-      }
-    } catch (error) {
-      console.error("Error eliminando:", error);
-      alert("Error de conexión.");
-    } finally {
-      mostrarCarga(false);
-    }
+    document.getElementById('cliType').value = c.type || 'minorista';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function limpiarFormulario() {
@@ -238,30 +232,85 @@
     document.getElementById('cliId').value = '';
   }
 
+  // --- ELIMINAR CLIENTE CON PIN ---
+  function eliminarClientePrompt(id) {
+    pedirAuthAdmin('borrar permanentemente este cliente de la nube', ejecutarEliminacionCliente, id);
+  }
+
+  async function ejecutarEliminacionCliente(id) {
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/clients?id=${id}`, { method: 'DELETE' });
+
+      if (response.ok) {
+        dbClients = dbClients.filter(c => c.id !== id);
+        renderTable();
+      } else {
+        alert("Error al eliminar de la base de datos.");
+      }
+    } catch(error) {
+      console.error("Error eliminando:", error);
+      alert("Error de conexión.");
+    } finally {
+      mostrarCarga(false);
+    }
+  }
+
+  function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
+    document.getElementById('authActionText').textContent = accionTexto;
+    pendingAdminAction = funcionExito; 
+    pendingAdminParam = param;
+    document.getElementById('adminAuthPin').value = '';
+    document.getElementById('adminAuthDialog').showModal();
+    setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
+  }
+
+  function cerrarAdminAuth() {
+    document.getElementById('adminAuthDialog').close();
+    pendingAdminAction = null; pendingAdminParam = null;
+  }
+
+  function validarAdminAuth(e) {
+    e.preventDefault();
+    if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
+      const accion = pendingAdminAction; const param = pendingAdminParam;
+      cerrarAdminAuth(); if (accion) accion(param);
+    } else {
+      alert("❌ PIN de administrador incorrecto.");
+      document.getElementById('adminAuthPin').value = ''; 
+      document.getElementById('adminAuthPin').focus();
+    }
+  }
+
   function renderTable() {
     const term = document.getElementById('searchTable').value.toLowerCase();
     const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term) || (c.cuil && c.cuil.toLowerCase().includes(term)));
-    const tbody = document.getElementById('tableBody');
     
+    const tbody = document.getElementById('tableBody');
     tbody.innerHTML = filtrados.map(c => {
-      // Soporte para los que vienen del Master
-      const displayType = (c.type === 'client') ? 'MAYORISTA' : (c.type || 'MINORISTA').toUpperCase();
-      const badge = (displayType === 'MAYORISTA') ? '<span class="badge badge-may">Mayorista</span>' : '<span class="badge badge-min">Minorista</span>';
-      
+      const badgeTipo = c.type === 'mayorista' 
+        ? `<span style="background:#e0e7ff; color:#1d4ed8; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; text-transform:uppercase;">Mayorista</span>`
+        : `<span style="background:var(--panel-2); color:var(--text); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; text-transform:uppercase; border:1px solid var(--line);">Minorista</span>`;
+
       return `
       <tr>
         <td><strong>${escapeHtml(c.name)}</strong></td>
-        <td style="color:var(--muted);">${escapeHtml(c.cuil) || '-'}</td>
-        <td style="font-size:12px; color:var(--muted);">${escapeHtml(c.phone) || '-'}<br>${escapeHtml(c.address) || ''}</td>
-        <td>${badge}</td>
+        <td><span style="color:var(--muted);">${escapeHtml(c.cuil || '-')}</span></td>
+        <td>
+          <div style="font-size:12px;">${escapeHtml(c.phone || '-')}</div>
+          <small style="color:var(--muted);">${escapeHtml(c.address || '-')}</small>
+        </td>
+        <td>${badgeTipo}</td>
         <td style="text-align: center;">
           <button onclick="editarCliente('${c.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; margin-right:5px;">Editar</button>
-          <button onclick="eliminarCliente('${c.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Borrar</button>
+          <button onclick="eliminarClientePrompt('${c.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Borrar</button>
         </td>
       </tr>`
     }).join('');
     
-    if (filtrados.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No hay clientes registrados en la nube.</td></tr>';
+    if (filtrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No hay clientes registrados.</td></tr>';
+    }
   }
 
   initClients();
