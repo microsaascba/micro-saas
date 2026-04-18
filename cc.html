@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cuentas Corrientes | Micro SaaS</title>
+  
+  <style>
+    html, body { background-color: #f0f2f7 !important; }
+    body { animation: fadeIn 0.15s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+  
   <link rel="stylesheet" href="styles.css" />
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
@@ -26,9 +33,14 @@
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
+    
+    /* Indicador de carga */
+    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
   </style>
 </head>
 <body>
+
+<div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -53,7 +65,7 @@
     <header class="topbar">
       <div class="page-title">
         <h1 style="margin:0; font-size: 26px;">Cuentas Corrientes</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Seguimiento de deudas y cobranzas de clientes B2B.</p>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Seguimiento de deudas y cobranzas en D1.</p>
       </div>
     </header>
 
@@ -133,27 +145,43 @@
 
 <script src="core.js"></script>
 <script>
+  const API_URL = "/api";
   let dbClients = [];
-  let dbCcMovements = []; // Array universal para deudas y pagos manuales
+  let dbCcMovements = []; 
   let selectedClientId = null;
 
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
+  
+  function mostrarCarga(mostrar) {
+    document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none';
+  }
 
-  function initCC() {
-    const keyCli = (typeof KEYS !== 'undefined' && KEYS.clients) ? KEYS.clients : 'saas_clients';
-    const keyCc = (typeof KEYS !== 'undefined' && KEYS.cc_movements) ? KEYS.cc_movements : 'saas_cc_movements';
-    
-    dbClients = getData(keyCli, []);
-    dbCcMovements = getData(keyCc, []);
-    renderClientList();
+  // --- CONECTAR A LA NUBE (D1) ---
+  async function initCC() {
+    mostrarCarga(true);
+    try {
+      // Hacemos el pedido a D1 de clientes y movimientos de cuenta corriente al mismo tiempo
+      const [resCli, resCc] = await Promise.all([
+        fetch(`${API_URL}/clients`),
+        fetch(`${API_URL}/cc_movements`)
+      ]);
+      
+      if(resCli.ok) dbClients = await resCli.json();
+      if(resCc.ok) dbCcMovements = await resCc.json();
+      
+    } catch (error) {
+      console.error("Error de conexión:", error);
+    } finally {
+      mostrarCarga(false);
+      renderClientList();
+      if (selectedClientId) renderLedger();
+    }
   }
 
   // --- CÁLCULO DE SALDOS ---
   function getClientBalance(clientId) {
-    // Acá en el futuro también vamos a sumar las VENTAS (Facturación) que digan "Cuenta Corriente"
-    // Por ahora, procesa los movimientos manuales.
     let saldo = 0;
     const movs = dbCcMovements.filter(m => m.clientId === clientId);
     movs.forEach(m => {
@@ -178,7 +206,7 @@
       <div class="client-list-item ${isSelected}" onclick="seleccionarCliente('${c.id}')">
         <div>
           <strong style="display:block; font-size:14px; color:var(--text);">${escapeHtml(c.name)}</strong>
-          <span style="font-size:11px; color:var(--muted);">${c.type}</span>
+          <span style="font-size:11px; color:var(--muted);">${c.type === 'client' ? 'Mayorista' : 'Minorista'}</span>
         </div>
         <div style="text-align:right;">
           <strong style="color:${colorSaldo}; font-size:15px;">${currency(saldo)}</strong>
@@ -186,12 +214,12 @@
       </div>`;
     }).join('');
     
-    if(filtrados.length === 0) listDiv.innerHTML = '<div style="padding:20px; text-align:center; color:var(--muted); font-size:13px;">No hay clientes. Cargalos en el módulo Clientes.</div>';
+    if(filtrados.length === 0) listDiv.innerHTML = '<div style="padding:20px; text-align:center; color:var(--muted); font-size:13px;">No hay clientes registrados en la nube.</div>';
   }
 
   function seleccionarCliente(id) {
     selectedClientId = id;
-    renderClientList(); // Para repintar el color de selección
+    renderClientList(); 
     
     const c = dbClients.find(x => x.id === id);
     if (!c) return;
@@ -200,7 +228,7 @@
     document.getElementById('ledgerPanel').style.display = 'block';
     
     document.getElementById('lblCliName').textContent = c.name;
-    document.getElementById('lblCliInfo').textContent = `${c.cuit ? 'CUIT: '+c.cuit : 'Sin CUIT'} - ${c.type}`;
+    document.getElementById('lblCliInfo').textContent = `${c.cuil ? 'CUIT: '+c.cuil : 'Sin CUIT'} - ${c.type === 'client' ? 'Mayorista' : 'Minorista'}`;
     
     renderLedger();
   }
@@ -237,7 +265,7 @@
     boxSaldo.style.color = saldoFinal > 0 ? 'var(--danger)' : (saldoFinal < 0 ? 'var(--success)' : 'var(--text)');
   }
 
-  // --- MODAL MOVIMIENTOS ---
+  // --- MODAL MOVIMIENTOS Y GUARDADO EN NUBE ---
   function abrirModalMovimiento(tipo) {
     if(!selectedClientId) return;
     document.getElementById('movType').value = tipo;
@@ -252,7 +280,7 @@
 
   function cerrarModalMov() { document.getElementById('modalMov').close(); }
 
-  function guardarMovimiento(e) {
+  async function guardarMovimiento(e) {
     e.preventDefault();
     if(!selectedClientId) return;
     
@@ -265,13 +293,28 @@
       concept: document.getElementById('movConcept').value.trim()
     };
     
-    dbCcMovements.unshift(mov);
-    const keyCc = (typeof KEYS !== 'undefined' && KEYS.cc_movements) ? KEYS.cc_movements : 'saas_cc_movements';
-    setData(keyCc, dbCcMovements);
-    
-    cerrarModalMov();
-    renderClientList(); // Actualiza los numeritos de la izquierda
-    renderLedger();     // Actualiza la tabla de la derecha
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/cc_movements`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mov)
+      });
+      
+      if(response.ok) {
+        dbCcMovements.unshift(mov);
+        cerrarModalMov();
+        renderClientList(); 
+        renderLedger();     
+      } else {
+        alert("Error al procesar el movimiento en D1.");
+      }
+    } catch(err) {
+      console.error("Error guardando:", err);
+      alert("Error de conexión. Intentá de nuevo.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   initCC();
