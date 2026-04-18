@@ -141,7 +141,7 @@
             <thead style="background: var(--panel-2);">
               <tr>
                 <th>Fecha</th>
-                <th>Concepto</th>
+                <th>Concepto / Factura</th>
                 <th style="text-align: right;">Debe (Cargo)</th>
                 <th style="text-align: right;">Haber (Pago)</th>
                 <th style="text-align: center;">Acciones</th>
@@ -160,6 +160,37 @@
     </div>
   </main>
 </div>
+
+<dialog id="modalDetalleFac" style="width: 100%; max-width: 650px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;" id="detalleFacTitle">Detalle de Factura</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalDetalleFac').close()">✕</button>
+    </div>
+    
+    <div style="overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 15px;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+        <thead style="background: var(--panel-2);">
+          <tr>
+            <th style="padding: 10px; border-bottom: 1px solid var(--line); text-align:center;">Cant.</th>
+            <th style="padding: 10px; border-bottom: 1px solid var(--line);">Producto</th>
+            <th style="padding: 10px; border-bottom: 1px solid var(--line); text-align: right;">P. Unitario</th>
+            <th style="padding: 10px; border-bottom: 1px solid var(--line); text-align: right;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="detalleFacBody"></tbody>
+      </table>
+    </div>
+    
+    <div style="text-align: right; font-size: 18px; margin-bottom: 20px;">
+      Total Facturado: <strong style="color: var(--primary);" id="detalleFacTotal">$0.00</strong>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end;">
+      <button type="button" class="btn btn-primary" id="btnImprimirDesdeModal">📄 Descargar PDF</button>
+    </div>
+  </div>
+</dialog>
 
 <div id="printSection">
   
@@ -249,9 +280,7 @@
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
   
-  function mostrarCarga(mostrar) {
-    document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none';
-  }
+  function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
 
   async function initCC() {
     mostrarCarga(true);
@@ -262,7 +291,15 @@
       
       if(resCli.ok) dbClients = await resCli.json();
       if(resCc.ok) dbCcMovements = await resCc.json();
-      if(resSales.ok) dbSales = await resSales.json();
+      
+      if(resSales.ok) {
+          dbSales = await resSales.json();
+          // ORDENAMOS Y ASIGNAMOS N° DE FACTURA CONSECUTIVO A PARTIR DE 1000
+          dbSales.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+          dbSales.forEach((s, index) => {
+              s.factNum = 1000 + index;
+          });
+      }
       
     } catch (error) { console.error("Error de conexión:", error); } 
     finally {
@@ -335,19 +372,40 @@
       const isHaber = m.type === 'haber';
       const formatDate = m.date.split('-').reverse().join('/');
       
+      let displayConcept = escapeHtml(m.concept);
+      let isFacturaClickable = false;
+
+      // CRUZAR ID PARA OBTENER NUMERO DE FACTURA
+      if (!isHaber && m.concept.toLowerCase().includes('ticket #')) {
+          const ticketNumber = m.concept.split('#')[1]?.trim();
+          const saleObj = dbSales.find(s => s.id.includes(ticketNumber));
+          
+          if (saleObj) {
+              displayConcept = `Fact. ${saleObj.factNum}`;
+              isFacturaClickable = true;
+          }
+      }
+
+      // Si es factura, el concepto es azul y clickeable
+      const conceptHtml = isFacturaClickable 
+          ? `<a href="#" onclick="verDetalleFactura('${m.id}'); return false;" style="color:var(--primary); font-weight:800; text-decoration:none; border-bottom:1px dashed var(--primary);">📄 ${displayConcept}</a>` 
+          : `<strong>${displayConcept}</strong>`;
+
       html += `
       <tr>
         <td style="color:var(--muted); font-size:12px;">${formatDate}</td>
-        <td><strong>${escapeHtml(m.concept)}</strong></td>
+        <td>${conceptHtml}</td>
         <td style="text-align:right;" class="${isDebe ? 'ledger-debe' : ''}">${isDebe ? currency(m.amount) : '-'}</td>
         <td style="text-align:right;" class="${isHaber ? 'ledger-haber' : ''}">${isHaber ? currency(m.amount) : '-'}</td>
         <td style="text-align:center;">
-          <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="prepararImpresion('${m.id}')">🖨️ Imprimir</button>
+          <button class="btn-outline" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="prepararImpresion('${m.id}')">
+             📄 PDF
+          </button>
         </td>
       </tr>`;
     });
     
-    if (movs.length === 0) html = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">Sin movimientos.</td></tr>';
+    if (movs.length === 0) html = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">Sin movimientos en la cuenta.</td></tr>';
     
     tbody.innerHTML = html;
     
@@ -357,12 +415,41 @@
     boxSaldo.style.color = saldoFinal > 0 ? 'var(--danger)' : (saldoFinal < 0 ? 'var(--success)' : 'var(--text)');
   }
 
-  // --- MOTOR DE FACTURACIÓN (PDF INTELIGENTE) ---
-  function generarNumFactura() {
-      // Simula un número de factura consecutivo 0001-XXXXXXXX
-      return "0001-" + String(Math.floor(Math.random() * 900000) + 100000).padStart(8, '0');
+  // --- POP UP CON DETALLE DE FACTURA ---
+  function verDetalleFactura(movId) {
+      const mov = dbCcMovements.find(m => m.id === movId);
+      if(!mov) return;
+
+      const ticketNumber = mov.concept.split('#')[1]?.trim();
+      const saleObj = dbSales.find(s => s.id.includes(ticketNumber));
+      
+      if(saleObj && saleObj.items) {
+          const itemsList = typeof saleObj.items === 'string' ? JSON.parse(saleObj.items) : saleObj.items;
+          
+          document.getElementById('detalleFacTitle').textContent = `Detalle Factura N° ${saleObj.factNum}`;
+          
+          document.getElementById('detalleFacBody').innerHTML = itemsList.map(i => `
+            <tr>
+              <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:center; font-weight:bold;">${i.qty}</td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--line);">${escapeHtml(i.name)}</td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:right;">${currency(i.price)}</td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:right; font-weight:bold;">${currency(i.price * i.qty)}</td>
+            </tr>
+          `).join('');
+
+          document.getElementById('detalleFacTotal').textContent = currency(mov.amount);
+          
+          // Configurar el botón de imprimir del Modal
+          document.getElementById('btnImprimirDesdeModal').onclick = () => {
+              document.getElementById('modalDetalleFac').close();
+              prepararImpresion(movId);
+          };
+
+          document.getElementById('modalDetalleFac').showModal();
+      }
   }
 
+  // --- MOTOR DE FACTURACIÓN (PDF) ---
   function prepararImpresion(movId) {
       const mov = dbCcMovements.find(m => m.id === movId);
       const cli = dbClients.find(c => c.id === selectedClientId);
@@ -371,20 +458,30 @@
       const isPago = mov.type === 'haber';
       const isFacturaA = (!isPago && cli.type === 'client'); // Mayorista = RI = Factura A
       
+      let numeroComprobante = "0001-" + String(Math.floor(Math.random() * 900000) + 100000).padStart(8, '0');
+      let saleObj = null;
+
       // 1. HEADER DEL DOCUMENTO
       if (isPago) {
-          document.getElementById('printDocTitle').textContent = 'RECIBO';
+          document.getElementById('printDocTitle').textContent = 'RECIBO OFICIAL';
           document.getElementById('printDocLetter').textContent = 'X';
           document.getElementById('printDocCod').textContent = 'Doc. no válido como factura';
-          document.getElementById('printSaleCond').textContent = 'Cobranza';
+          document.getElementById('printSaleCond').textContent = 'Cobranza de Cta. Cte.';
       } else {
           document.getElementById('printDocTitle').textContent = 'FACTURA';
           document.getElementById('printDocLetter').textContent = isFacturaA ? 'A' : 'B';
           document.getElementById('printDocCod').textContent = isFacturaA ? 'Cod. 001' : 'Cod. 006';
           document.getElementById('printSaleCond').textContent = 'Cuenta Corriente';
+          
+          // Buscar el N° de factura consecutivo real
+          const ticketNumber = mov.concept.split('#')[1]?.trim();
+          saleObj = dbSales.find(s => s.id.includes(ticketNumber));
+          if(saleObj) {
+             numeroComprobante = "0001-" + String(saleObj.factNum).padStart(8, '0');
+          }
       }
       
-      document.getElementById('printDocNum').textContent = generarNumFactura();
+      document.getElementById('printDocNum').textContent = numeroComprobante;
       document.getElementById('printDate').textContent = mov.date.split('-').reverse().join('/');
       
       // 2. DATOS DEL CLIENTE
@@ -401,59 +498,53 @@
       let htmlItems = '';
       let htmlTotals = '';
 
-      // SI ES VENTA CON TICKET Y FACTURA A (Desglose de IVA)
-      if (!isPago && mov.concept.toLowerCase().includes('ticket #')) {
-          const ticketNumber = mov.concept.split('#')[1]?.trim();
-          const sale = dbSales.find(s => String(s.id) === ticketNumber);
+      if (!isPago && saleObj && saleObj.items) {
+          const itemsList = typeof saleObj.items === 'string' ? JSON.parse(saleObj.items) : saleObj.items;
           
-          if (sale && sale.items) {
-              const itemsList = typeof sale.items === 'string' ? JSON.parse(sale.items) : sale.items;
+          if (isFacturaA) {
+              // FACTURA A: Muestra precios Netos (sin 21%)
+              tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 50%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO NETO</th><th style="width: 10%; text-align: right;">% IVA</th><th style="width: 15%; text-align: right;">SUBTOTAL NETO</th></tr>`;
               
-              if (isFacturaA) {
-                  // FACTURA A: Muestra precios Netos (sin 21%)
-                  tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 50%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO NETO</th><th style="width: 10%; text-align: right;">% IVA</th><th style="width: 15%; text-align: right;">SUBTOTAL NETO</th></tr>`;
-                  
-                  let totalNeto = 0;
-                  htmlItems = itemsList.map(i => {
-                      const precioNeto = i.price / 1.21;
-                      const subNeto = (i.price / 1.21) * i.qty;
-                      totalNeto += subNeto;
-                      return `<tr>
-                        <td style="text-align:center;">${i.qty}</td>
-                        <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
-                        <td style="text-align:right;">${currency(precioNeto)}</td>
-                        <td style="text-align:right;">21%</td>
-                        <td style="text-align:right;">${currency(subNeto)}</td>
-                      </tr>`;
-                  }).join('');
+              let totalNeto = 0;
+              htmlItems = itemsList.map(i => {
+                  const precioNeto = i.price / 1.21;
+                  const subNeto = (i.price / 1.21) * i.qty;
+                  totalNeto += subNeto;
+                  return `<tr>
+                    <td style="text-align:center;">${i.qty}</td>
+                    <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
+                    <td style="text-align:right;">${currency(precioNeto)}</td>
+                    <td style="text-align:right;">21%</td>
+                    <td style="text-align:right;">${currency(subNeto)}</td>
+                  </tr>`;
+              }).join('');
 
-                  const totalIva = totalNeto * 0.21;
-                  htmlTotals = `
-                    <div class="print-total-line"><span>Importe Neto Gravado:</span><span>${currency(totalNeto)}</span></div>
-                    <div class="print-total-line"><span>IVA 21%:</span><span>${currency(totalIva)}</span></div>
-                    <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
-                  `;
-              } else {
-                  // FACTURA B: Muestra precios finales
-                  tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 60%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO UNIT.</th><th style="width: 15%; text-align: right;">SUBTOTAL</th></tr>`;
-                  
-                  htmlItems = itemsList.map(i => {
-                      return `<tr>
-                        <td style="text-align:center;">${i.qty}</td>
-                        <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
-                        <td style="text-align:right;">${currency(i.price)}</td>
-                        <td style="text-align:right;">${currency(i.qty * i.price)}</td>
-                      </tr>`;
-                  }).join('');
+              const totalIva = totalNeto * 0.21;
+              htmlTotals = `
+                <div class="print-total-line"><span>Importe Neto Gravado:</span><span>${currency(totalNeto)}</span></div>
+                <div class="print-total-line"><span>IVA 21%:</span><span>${currency(totalIva)}</span></div>
+                <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
+              `;
+          } else {
+              // FACTURA B: Muestra precios finales
+              tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 60%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO UNIT.</th><th style="width: 15%; text-align: right;">SUBTOTAL</th></tr>`;
+              
+              htmlItems = itemsList.map(i => {
+                  return `<tr>
+                    <td style="text-align:center;">${i.qty}</td>
+                    <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
+                    <td style="text-align:right;">${currency(i.price)}</td>
+                    <td style="text-align:right;">${currency(i.qty * i.price)}</td>
+                  </tr>`;
+              }).join('');
 
-                  htmlTotals = `<div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>`;
-              }
+              htmlTotals = `<div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>`;
           }
       }
 
-      // SI NO HAY DETALLE O ES UN RECIBO DE PAGO
+      // SI ES UN RECIBO DE PAGO O UN AJUSTE MANUAL
       if (!htmlItems) {
-          tableHeader.innerHTML = `<tr><th style="width: 80%;">CONCEPTO</th><th style="width: 20%; text-align: right;">IMPORTE</th></tr>`;
+          tableHeader.innerHTML = `<tr><th style="width: 80%;">CONCEPTO DE LA OPERACIÓN</th><th style="width: 20%; text-align: right;">IMPORTE</th></tr>`;
           htmlItems = `<tr>
             <td style="padding: 20px 10px;"><strong style="font-size:14px;">${escapeHtml(mov.concept)}</strong></td>
             <td style="text-align:right; font-weight:bold; font-size:16px;">${currency(mov.amount)}</td>
@@ -461,27 +552,20 @@
           htmlTotals = `<div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>`;
       }
 
-      // Renderizar
       tableBody.innerHTML = htmlItems;
       totalsBox.innerHTML = htmlTotals;
-      
-      // Mostrar firma si es recibo
       document.getElementById('printSignatureArea').style.display = isPago ? 'block' : 'none';
       
-      // Lanzamos impresión
       window.print();
   }
 
-  // --- MODAL MOVIMIENTOS ---
   function abrirModalMovimiento(tipo) {
     if(!selectedClientId) return;
     document.getElementById('movType').value = tipo;
     document.getElementById('movAmount').value = '';
     document.getElementById('movConcept').value = tipo === 'haber' ? 'Pago recibido a cuenta' : 'Cargo manual / Ajuste';
-    
     document.getElementById('modalTitle').textContent = tipo === 'haber' ? 'Ingresar Cobranza' : 'Cargar Deuda';
     document.getElementById('btnSaveMov').style.background = tipo === 'haber' ? 'var(--success)' : 'var(--danger)';
-    
     document.getElementById('modalMov').showModal();
   }
 
@@ -505,12 +589,10 @@
       const response = await fetch(`${API_URL}/cc_movements`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mov)
       });
-      
       if(response.ok) {
         dbCcMovements.unshift(mov);
         cerrarModalMov();
-        renderClientList(); 
-        renderLedger();     
+        renderClientList(); renderLedger();     
       } else { alert("Error al procesar en D1."); }
     } catch(err) { alert("Error de conexión."); } finally { mostrarCarga(false); }
   }
