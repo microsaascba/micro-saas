@@ -19,6 +19,7 @@
     .layout-1col { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
+    .input-box:disabled { background-color: #f8fafc; color: var(--muted); cursor: not-allowed; }
     
     .excel-table { width: 100%; border-collapse: collapse; text-align: left; background: #fff; }
     .excel-table th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
@@ -91,7 +92,7 @@
         <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Ingreso de facturas de compra, remitos y estado de depósitos.</p>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="descargarExcelValorizado()">⬇ Exportar Valorizado</button>
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="descargarExcelValorizado()">⬇ Exportar Valorizado PVP</button>
         <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalIngresoMasivo()">📥 Ingreso Masivo (Excel)</button>
         <button class="btn btn-primary" onclick="abrirModalIngresoCompra()">📥 Ingreso Factura (Manual)</button>
         <button class="btn btn-primary" style="background: #0f766e; border:none;" onclick="abrirModalTransferencia()">⇄ Transferir</button>
@@ -105,7 +106,7 @@
         <div id="kpiUnidades" style="font-size:28px; font-weight:800; color:var(--text);">0</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--primary);">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Capital Inmovilizado</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Valorización Inventario (PVP)</div>
         <div id="kpiValorizado" style="font-size:28px; font-weight:800; color:var(--primary);">$ 0</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--warning);">
@@ -177,23 +178,16 @@
       <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalIngresoCompra').close()">✕</button>
     </div>
     <form id="formIngresoCompra">
-      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px;">
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Proveedor *</label>
-          <select id="ingresoProveedor" class="input-box" required></select>
+          <select id="ingresoProveedor" class="input-box" required onchange="cargarFacturasProv('ingreso')"></select>
         </div>
         <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Tipo Factura *</label>
-          <select id="ingresoTipoFac" class="input-box">
-            <option value="Factura A">Factura A</option>
-            <option value="Factura B">Factura B</option>
-            <option value="Factura C">Factura C</option>
-            <option value="Remito">Remito / R</option>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Factura a imputar (Contabilidad) *</label>
+          <select id="ingresoFactura" class="input-box" required disabled>
+            <option value="">Seleccioná un proveedor primero...</option>
           </select>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">N° Comprobante *</label>
-          <input type="text" id="ingresoNumFac" class="input-box" required placeholder="0001-1234">
         </div>
       </div>
       
@@ -207,7 +201,7 @@
           <select id="ingresoDestino" class="input-box" required></select>
         </div>
         <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Cantidad Ingresada *</label>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Cant. Ingresada *</label>
           <input type="number" id="ingresoCant" class="input-box" min="1" required placeholder="Ej: 50">
         </div>
       </div>
@@ -235,22 +229,16 @@
     </div>
 
     <form id="formIngresoMasivo">
-      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px;">
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Proveedor *</label>
-          <select id="masivaProv" class="input-box" required></select>
+          <select id="masivaProv" class="input-box" required onchange="cargarFacturasProv('masivo')"></select>
         </div>
         <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Tipo Factura *</label>
-          <select id="masivaTipoFac" class="input-box">
-            <option value="Factura A">Factura A</option>
-            <option value="Factura B">Factura B</option>
-            <option value="Remito">Remito / R</option>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Factura a imputar (Contabilidad) *</label>
+          <select id="masivaFactura" class="input-box" required disabled>
+             <option value="">Seleccioná un proveedor primero...</option>
           </select>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">N° Comprobante *</label>
-          <input type="text" id="masivaNumFac" class="input-box" required placeholder="0001-1234">
         </div>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
@@ -381,8 +369,8 @@
   let dbProducts = [];
   let dbBranches = [];
   let dbSuppliers = [];
+  let dbExpenses = []; // Para cruzar las facturas
   
-  // Guardamos un historial local de movimientos
   let historyLogs = getData('saas_movements_log', []);
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -421,10 +409,16 @@
   async function initStock() {
     mostrarCarga(true);
     try {
-      const [resP, resB, resS] = await Promise.all([fetch(`${API_URL}/products`), fetch(`${API_URL}/branches`), fetch(`${API_URL}/suppliers`)]);
+      const [resP, resB, resS, resE] = await Promise.all([
+          fetch(`${API_URL}/products`), 
+          fetch(`${API_URL}/branches`), 
+          fetch(`${API_URL}/suppliers`),
+          fetch(`${API_URL}/expenses`)
+      ]);
       if (resP.ok) dbProducts = await resP.json();
       if (resB.ok) dbBranches = await resB.json();
       if (resS.ok) dbSuppliers = await resS.json();
+      if (resE.ok) dbExpenses = await resE.json();
     } catch (error) { console.error(error); } 
     finally {
       // Poblar filtros y selects
@@ -435,7 +429,8 @@
       const destElements = ['masivaDestino', 'ingresoDestino', 'transfOrigen', 'transfDestino', 'ajusteSucursal'];
       destElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = branchOptions; });
 
-      const supplierOptions = dbSuppliers.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+      // Proveedores usan el ID para poder cruzar con la tabla expenses
+      const supplierOptions = '<option value="">Seleccioná...</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
       document.getElementById('ingresoProveedor').innerHTML = supplierOptions;
       document.getElementById('masivaProv').innerHTML = supplierOptions;
 
@@ -448,6 +443,32 @@
       renderStock();
       renderHistory();
     }
+  }
+
+  function cargarFacturasProv(tipo) {
+      const provId = document.getElementById(tipo === 'ingreso' ? 'ingresoProveedor' : 'masivaProv').value;
+      const facSelect = document.getElementById(tipo === 'ingreso' ? 'ingresoFactura' : 'masivaFactura');
+
+      if (!provId) {
+          facSelect.innerHTML = '<option value="">Seleccioná un proveedor primero...</option>';
+          facSelect.disabled = true;
+          return;
+      }
+
+      // Buscar las facturas de ESTE proveedor en Contabilidad
+      const facturasDelProveedor = dbExpenses.filter(e => e.supplierId === provId);
+
+      if (facturasDelProveedor.length === 0) {
+          facSelect.innerHTML = '<option value="">No hay facturas cargadas para este proveedor en Contabilidad</option>';
+          facSelect.disabled = true;
+          return;
+      }
+
+      facSelect.innerHTML = '<option value="">Seleccioná la factura cruzada...</option>' + facturasDelProveedor.map(f => {
+          const nombreFac = `${f.invoiceType || 'Comprobante'} ${f.invoiceNum || 'S/N'}`;
+          return `<option value="${nombreFac}">${nombreFac} - (Valor factura: ${currency(f.amount)})</option>`;
+      }).join('');
+      facSelect.disabled = false;
   }
 
   function renderStock() {
@@ -466,11 +487,11 @@
         branchToView = branchFilterEl ? branchFilterEl.value : 'ALL';
     }
 
-    // Construcción Dinámica de Columnas (Estilo Excel)
+    // Construcción Dinámica de Columnas
     let theadHtml = `<tr>
       <th>Código</th>
       <th>Producto / Descripción</th>
-      <th>Costo Unit.</th>
+      <th>Precio Venta</th>
       <th style="background:#e2e8f0; color:#0f172a; text-align:center;">STOCK TOTAL</th>`;
     
     if (branchToView === 'ALL') {
@@ -478,7 +499,7 @@
     } else {
         theadHtml += `<th style="text-align:center;">${escapeHtml(branchToView)}</th>`;
     }
-    theadHtml += `<th style="background:#e0e7ff; color:#1d4ed8; text-align:right;">Valorizado ($)</th></tr>`;
+    theadHtml += `<th style="background:#e0e7ff; color:#1d4ed8; text-align:right;">Valorizado (PVP)</th></tr>`;
     thead.innerHTML = theadHtml;
 
     let kpiUnidades = 0, kpiBajo = 0, kpiCero = 0, kpiValorizado = 0;
@@ -507,7 +528,7 @@
       }
 
       kpiUnidades += displayStockForKPI;
-      kpiValorizado += (displayStockForKPI * (p.cost || 0));
+      kpiValorizado += (displayStockForKPI * (p.price || 0)); // VALORIZADO A PRECIO DE VENTA
       if (displayStockForKPI <= 3 && displayStockForKPI > 0) kpiBajo++;
       if (displayStockForKPI === 0) kpiCero++;
 
@@ -515,10 +536,10 @@
       <tr>
         <td><span style="color:var(--muted); font-family:monospace; font-size: 11px;">${p.code || '-'}</span></td>
         <td><strong>${escapeHtml(p.name)}</strong><br><small style="color:var(--muted)">${escapeHtml(p.category || '')}</small></td>
-        <td>${currency(p.cost)}</td>
+        <td>${currency(p.price)}</td>
         <td class="col-number" style="background:#f8fafc;">${stockTotalGlobal}</td>
         ${branchCellsHtml}
-        <td class="col-val">${currency(displayStockForKPI * (p.cost || 0))}</td>
+        <td class="col-val">${currency(displayStockForKPI * (p.price || 0))}</td>
       </tr>`;
     }).join('');
 
@@ -580,7 +601,7 @@
       window.print();
   }
 
-  // --- EXPORTAR EXCEL VALORIZADO ---
+  // --- EXPORTAR EXCEL VALORIZADO A PVP ---
   function descargarExcelValorizado() {
       if(dbProducts.length === 0) return alert("No hay datos.");
       
@@ -593,14 +614,14 @@
               "SKU": p.code || '',
               "Producto": p.name,
               "Categoria": p.category || '',
-              "Costo Unit.": p.cost || 0,
+              "Precio Venta": p.price || 0,
               "STOCK TOTAL": stockTotalGlobal
           };
 
           // Agregar columna por cada sucursal
           dbBranches.forEach(b => { rowData[b.name] = parseInt(branches[b.name] || 0); });
           
-          rowData["VALORIZADO TOTAL"] = stockTotalGlobal * (p.cost || 0);
+          rowData["VALORIZADO (PVP)"] = stockTotalGlobal * (p.price || 0);
           return rowData;
       });
 
@@ -608,16 +629,22 @@
       const csvContent = [headers.join(';'), ...rows.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
       const link = document.createElement('a');
       link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
-      link.download = `Inventario_Valorizado_${todayISO()}.csv`;
+      link.download = `Inventario_Valorizado_PVP_${todayISO()}.csv`;
       link.click();
   }
 
-  // --- MODALES (Mano a Mano y Masivo) ---
+  // --- MODALES ---
   function abrirModalAjuste() { document.getElementById('modalAjuste').showModal(); }
   function abrirModalTransferencia() { document.getElementById('modalTransferencia').showModal(); }
-  function abrirModalIngresoCompra() { document.getElementById('modalIngresoCompra').showModal(); }
+  function abrirModalIngresoCompra() { 
+      document.getElementById('ingresoFactura').innerHTML = '<option value="">Seleccioná un proveedor primero...</option>';
+      document.getElementById('ingresoFactura').disabled = true;
+      document.getElementById('modalIngresoCompra').showModal(); 
+  }
   function abrirModalIngresoMasivo() { 
       document.getElementById('masivaFile').value = ''; 
+      document.getElementById('masivaFactura').innerHTML = '<option value="">Seleccioná un proveedor primero...</option>';
+      document.getElementById('masivaFactura').disabled = true;
       document.getElementById('modalIngresoMasivo').showModal(); 
   }
 
@@ -626,10 +653,14 @@
     const prodId = document.getElementById('ingresoProducto').value;
     const destino = document.getElementById('ingresoDestino').value;
     const cant = parseInt(document.getElementById('ingresoCant').value);
-    const prov = document.getElementById('ingresoProveedor').value;
-    const fac = document.getElementById('ingresoTipoFac').value + " " + document.getElementById('ingresoNumFac').value;
+    const provId = document.getElementById('ingresoProveedor').value;
+    const fac = document.getElementById('ingresoFactura').value;
     
+    if(!provId || !fac) return alert("Seleccioná el proveedor y la factura cruzada.");
     if(isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
+
+    const provObj = dbSuppliers.find(s => s.id === provId);
+    const provName = provObj ? provObj.name : 'Proveedor';
 
     const prod = dbProducts.find(p => p.id === prodId);
     let branches = getBranches(prod);
@@ -644,7 +675,7 @@
     mostrarCarga(true);
     try {
       await fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(prod) });
-      logMovement('Ingreso Compra', `${prov} (${fac})`, destino, `${cant} un. - ${prod.name}`, [{code: prod.code||'S/N', name: prod.name, qty: cant}], true);
+      logMovement('Ingreso Compra', `${provName}`, destino, `Factura cruzada: ${fac}`, [{code: prod.code||'S/N', name: prod.name, qty: cant}], true);
       document.getElementById('formIngresoCompra').reset();
       document.getElementById('modalIngresoCompra').close();
       renderStock();
@@ -655,11 +686,15 @@
   async function procesarIngresoMasivo(e) {
       e.preventDefault();
       const destino = document.getElementById('masivaDestino').value;
-      const prov = document.getElementById('masivaProv').value;
-      const fac = document.getElementById('masivaTipoFac').value + " " + document.getElementById('masivaNumFac').value;
+      const provId = document.getElementById('masivaProv').value;
+      const fac = document.getElementById('masivaFactura').value;
       const fileInput = document.getElementById('masivaFile');
 
-      if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo.");
+      if(!provId || !fac) return alert("Seleccioná el proveedor y la factura cruzada.");
+      if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
+
+      const provObj = dbSuppliers.find(s => s.id === provId);
+      const provName = provObj ? provObj.name : 'Proveedor';
 
       const file = fileInput.files[0];
       const reader = new FileReader();
@@ -703,14 +738,14 @@
 
           if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron productos válidos.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
 
-          let msj = `Vas a ingresar ${itemsParaRemito.length} referencias a ${destino}.\nFactura: ${fac}\n`;
+          let msj = `Vas a ingresar ${itemsParaRemito.length} referencias a ${destino}.\nCruzado con: ${fac}\n`;
           if (errores.length > 0) msj += `⚠️ Hubo ${errores.length} filas ignoradas por errores:\n` + errores.slice(0,3).join('\n') + `\n`;
           if (!confirm(msj + `\n¿Confirmás el ingreso de mercadería?`)) return;
 
           mostrarCarga(true);
           try {
               await Promise.all(prodUpdates.map(p => fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(p) })));
-              logMovement('Ingreso Compra', `${prov} (${fac})`, destino, `Carga masiva de ${itemsParaRemito.length} ítems.`, itemsParaRemito, true);
+              logMovement('Ingreso Compra', `${provName}`, destino, `Carga masiva vinculada a: ${fac}`, itemsParaRemito, true);
               document.getElementById('modalIngresoMasivo').close();
               await initStock(); 
               alert("✅ Ingreso Masivo completado. Remito interno generado.");
@@ -774,7 +809,7 @@
     mostrarCarga(true);
     try {
       await fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(prod) });
-      logMovement('Transferencia', origen, destino, `${cant} un. - ${prod.name}`, [{code: prod.code||'S/N', name: prod.name, qty: cant}]);
+      logMovement('Transferencia', origen, destino, `Traslado interno`, [{code: prod.code||'S/N', name: prod.name, qty: cant}]);
       document.getElementById('modalTransferencia').close();
       renderStock();
     } catch(err) { alert("Error."); } finally { mostrarCarga(false); }
