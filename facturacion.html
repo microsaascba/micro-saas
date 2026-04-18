@@ -32,8 +32,11 @@
     .totals-row.grand-total { font-size: 36px; font-weight: 800; color: var(--text); border-top: 2px dashed var(--line); padding-top: 16px; margin-top: 8px; }
 
     .pay-methods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
-    .pay-btn { border: 2px solid var(--line); background: #fff; padding: 14px 8px; border-radius: 12px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; font-size: 14px; }
+    .pay-btn { border: 2px solid var(--line); background: #fff; padding: 14px 8px; border-radius: 12px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; font-size: 14px; transition: 0.2s; }
     .pay-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
+    
+    /* Botón exclusivo B2B */
+    .pay-btn-b2b { grid-column: span 3; border-color: var(--warning); background: var(--warning-soft); color: #b45309; display: none; }
 
     .btn-charge { width: 100%; padding: 20px; font-size: 20px; font-weight: 800; border-radius: 12px; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(22, 163, 74, 0.3); background: var(--success); color: white; border: none; }
     
@@ -68,8 +71,10 @@
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
       <a href="facturacion.html" class="active"><span class="nav-icon">🛒</span> Facturación</a>
       <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
@@ -80,7 +85,7 @@
     <header class="topbar">
       <div class="page-title">
         <h1 style="margin:0; font-size: 24px;">Facturación</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Emisión rápida y motor de ofertas automáticas.</p>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Emisión rápida, B2B y ofertas automáticas.</p>
       </div>
       <div class="topbar-actions">
         <button class="btn btn-outline" onclick="cancelarVenta()">Vaciar Carrito</button>
@@ -114,7 +119,7 @@
         <div class="field" style="margin-bottom: 24px; position: relative;">
           <label style="font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; display: block;">Cliente</label>
           <input type="hidden" id="clientId" value="">
-          <input type="text" id="clientName" value="Consumidor Final" autocomplete="off" style="background: var(--panel-2); border: 1px solid var(--line); font-weight: 600; padding: 12px; width: 100%; border-radius: 10px; outline: none;">
+          <input type="text" id="clientName" value="Consumidor Final" autocomplete="off" style="background: var(--panel-2); border: 1px solid var(--line); font-weight: 600; padding: 12px; width: 100%; border-radius: 10px; outline: none;" oninput="verificarClienteLibre()">
           <div id="clientResults" class="autocomplete-list" style="left:0; right:0; top: 100%;"></div>
         </div>
 
@@ -128,10 +133,15 @@
 
         <div style="margin-top: 30px;">
           <label style="display:block; margin-bottom:12px; font-size:12px; font-weight:700; color:var(--muted); text-transform: uppercase;">Método de Pago</label>
-          <div class="pay-methods">
+          
+          <div class="pay-methods" id="payMethodsB2C">
             <button class="pay-btn active" onclick="setPayment('Efectivo', this)">💵 Efectivo</button>
             <button class="pay-btn" onclick="setPayment('Transferencia', this)">📱 Transf.</button>
             <button class="pay-btn" onclick="setPayment('Tarjeta', this)">💳 Tarjeta</button>
+          </div>
+          
+          <div class="pay-methods" id="payMethodsB2B" style="display: none;">
+            <button class="pay-btn pay-btn-b2b active" style="display: block;">📓 A Cuenta Corriente</button>
           </div>
 
           <div id="cuponContainer" style="display: none; margin-bottom: 15px;">
@@ -151,8 +161,12 @@
 <script src="core.js"></script>
 <script>
   let dbProducts = []; let dbSales = []; let cart = [];
-  let dbClients = []; // Agregado para el buscador de clientes
+  let dbClients = []; 
+  let dbCcMovements = []; // Para enviar deudas a Cta Cte
+  
   let currentPaymentMethod = 'Efectivo';
+  let isB2B = false; // Bandera para saber en qué modo estamos
+  
   let filteredProducts = []; let selectedSearchIndex = -1;
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -163,9 +177,11 @@
     dbProducts = getData(KEYS.products, []); 
     dbSales = getData(KEYS.sales, []);
     
-    // Cargar clientes en la memoria de la caja
     const keyCli = (typeof KEYS !== 'undefined' && KEYS.clients) ? KEYS.clients : 'saas_clients';
     dbClients = getData(keyCli, []);
+    
+    const keyCc = (typeof KEYS !== 'undefined' && KEYS.cc_movements) ? KEYS.cc_movements : 'saas_cc_movements';
+    dbCcMovements = getData(keyCc, []);
 
     renderCart(); document.getElementById('posSearch').focus();
   }
@@ -193,19 +209,22 @@
     }
   });
 
-  // ── NUEVO: BUSCADOR DE CLIENTES ──
+  // ── BUSCADOR DE CLIENTES Y LÓGICA B2B/B2C ──
   const clientInput = document.getElementById('clientName');
   const clientResults = document.getElementById('clientResults');
 
-  clientInput.addEventListener('input', (e) => {
-    document.getElementById('clientId').value = ''; // Resetea el ID si borra a mano
-    const term = e.target.value.toLowerCase().trim();
+  // Si el usuario escribe a mano en la caja, asume que es Consumidor Final y habilita Efectivo/Tarjeta
+  window.verificarClienteLibre = function() {
+    document.getElementById('clientId').value = '';
+    activarModoB2C();
+    
+    const term = clientInput.value.toLowerCase().trim();
     if (term.length < 1) { clientResults.classList.remove('active'); return; }
     
     const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term) || (c.cuit && c.cuit.toLowerCase().includes(term))).slice(0, 5);
     
     if (filtrados.length === 0) {
-      clientResults.innerHTML = '<div style="padding:15px; color:var(--muted); text-align:center;">Cliente no encontrado</div>';
+      clientResults.innerHTML = '<div style="padding:15px; color:var(--muted); text-align:center;">Registrar como consumidor final</div>';
     } else {
       clientResults.innerHTML = filtrados.map(c => `
         <div class="autocomplete-item" onclick="seleccionarClientePOS('${c.id}', '${escapeHtml(c.name)}')">
@@ -217,15 +236,31 @@
       `).join('');
     }
     clientResults.classList.add('active');
-  });
+  };
 
+  // Si el usuario ELIGE un cliente de la lista, se bloquean los pagos y queda "A Cuenta Corriente"
   window.seleccionarClientePOS = function(id, name) {
     clientInput.value = name;
     document.getElementById('clientId').value = id;
     clientResults.classList.remove('active');
+    activarModoB2B();
   };
 
-  // Ocultar desplegables si hacemos clic afuera
+  function activarModoB2C() {
+    isB2B = false;
+    document.getElementById('payMethodsB2C').style.display = 'grid';
+    document.getElementById('payMethodsB2B').style.display = 'none';
+    setPayment('Efectivo', document.querySelector('.pay-btn')); // Resetea a efectivo
+  }
+
+  function activarModoB2B() {
+    isB2B = true;
+    currentPaymentMethod = 'A Cuenta Corriente';
+    document.getElementById('payMethodsB2C').style.display = 'none';
+    document.getElementById('payMethodsB2B').style.display = 'grid';
+    document.getElementById('cuponContainer').style.display = 'none';
+  }
+
   document.addEventListener('click', (e) => {
     if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) { searchResults.classList.remove('active'); }
     if (!clientInput.contains(e.target) && !clientResults.contains(e.target)) { clientResults.classList.remove('active'); }
@@ -366,8 +401,10 @@
   }
 
   function setPayment(method, btnElement) {
+    if (isB2B) return; // Si es B2B, no se puede cambiar de método
+    
     currentPaymentMethod = method;
-    document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#payMethodsB2C .pay-btn').forEach(b => b.classList.remove('active'));
     btnElement.classList.add('active'); 
     const cuponContainer = document.getElementById('cuponContainer');
     if (method === 'Tarjeta') { cuponContainer.style.display = 'block'; document.getElementById('cuponNumber').focus(); } 
@@ -407,12 +444,13 @@
     if (e.key === 'F2') { e.preventDefault(); searchInput.focus(); }
   });
 
+  // ── CONFIRMACIÓN Y PROCESAMIENTO DE VENTA (HÍBRIDO B2C/B2B) ──
   function procesarVenta() {
     if (cart.length === 0) return;
     if (!confirm("¿Confirmar venta e imprimir ticket?")) return;
 
     let cuponText = '';
-    if (currentPaymentMethod === 'Tarjeta') {
+    if (!isB2B && currentPaymentMethod === 'Tarjeta') {
       cuponText = document.getElementById('cuponNumber').value.trim();
       if (!cuponText || isNaN(cuponText)) { alert("⚠️ Ingresá el número de cupón numérico."); document.getElementById('cuponNumber').focus(); return; }
     }
@@ -423,23 +461,47 @@
 
     const nuevaVenta = {
       id: 'vta_' + Date.now(), date: todayISO(), createdAt: new Date().toISOString(), 
-      client: cliente, clientId: clienteId, // Acá guarda el ID
+      client: cliente, clientId: clienteId, 
       method: currentPaymentMethod, cupon: cuponText, subtotal: subtotal, promoDiscount: promoDiscountTotal, total: totalPagar,
+      isB2B: isB2B, // Marca la venta como corporativa
       items: cart.map(i => ({ id: i.id, name: i.name, code: i.code, price: i.price, qty: i.qty, subtotal: (i.price * i.qty) - (i.promoApplied||0) }))
     };
 
+    // 1. Guardar la venta en el historial general (Sirve para ver salidas de stock)
     dbSales.unshift(nuevaVenta); setData(KEYS.sales, dbSales);
+    
+    // 2. Descontar Stock
     cart.forEach(cartItem => { const pDB = dbProducts.find(p => p.id === cartItem.id); if (pDB) pDB.stock -= cartItem.qty; });
-    setData(KEYS.products, dbProducts); window.dispatchEvent(new Event('saas:data-updated'));
+    setData(KEYS.products, dbProducts); 
 
+    // 3. SI ES B2B -> Generar deuda automática en la Cuenta Corriente
+    if (isB2B && clienteId) {
+      const nuevoCargoCC = {
+        id: 'cc_' + Date.now(),
+        clientId: clienteId,
+        date: todayISO(),
+        type: 'debe', // Genera una deuda a favor del negocio
+        amount: totalPagar,
+        concept: `Ticket #${nuevaVenta.id.split('_')[1]}`
+      };
+      dbCcMovements.unshift(nuevoCargoCC);
+      const keyCc = (typeof KEYS !== 'undefined' && KEYS.cc_movements) ? KEYS.cc_movements : 'saas_cc_movements';
+      setData(keyCc, dbCcMovements);
+    }
+
+    window.dispatchEvent(new Event('saas:data-updated'));
+
+    // Imprimir Ticket
     document.getElementById('printTicketArea').innerHTML = generarTicketHTML(nuevaVenta);
     window.print();
     
-    // Limpieza post-venta
+    // Limpieza post-venta y volver a modo mostrador B2C
     cart = []; 
     document.getElementById('clientName').value = 'Consumidor Final';
     document.getElementById('clientId').value = '';
+    activarModoB2C(); // Resetea métodos de pago a Efectivo
     if(currentPaymentMethod === 'Tarjeta') document.getElementById('cuponNumber').value = '';
+    
     renderCart(); searchInput.focus();
   }
 
