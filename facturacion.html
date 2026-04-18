@@ -113,6 +113,7 @@
   </main>
 </div>
 
+<script src="core.js"></script>
 <script>
   const API_URL = "/api";
   let dbProducts = []; let dbClients = []; let cart = [];
@@ -122,28 +123,50 @@
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+  function todayISO() { return new Date().toISOString().split('T')[0]; }
 
+  // ── 1. INICIALIZACIÓN CON DIAGNÓSTICO ──
   async function initPOS() {
     mostrarCarga(true);
     try {
       const [resP, resC] = await Promise.all([fetch(`${API_URL}/products`), fetch(`${API_URL}/clients`)]);
+      
+      // Si hay un error 500 en el backend, lo avisamos por consola
+      if (!resP.ok) console.error("Error D1 Productos:", await resP.text());
+      if (!resC.ok) console.error("Error D1 Clientes:", await resC.text());
+
       dbProducts = resP.ok ? await resP.json() : [];
       dbClients = resC.ok ? await resC.json() : [];
+
+      console.log(`✅ D1 Conectado: ${dbProducts.length} productos y ${dbClients.length} clientes encontrados.`);
       renderCart();
-    } catch (e) { console.error("Error cargando D1", e); }
-    finally { mostrarCarga(false); document.getElementById('posSearch').focus(); }
+    } catch (e) { 
+      console.error("Error de conexión:", e); 
+    } finally { 
+      mostrarCarga(false); 
+      document.getElementById('posSearch').focus(); 
+    }
   }
 
-  // --- BUSQUEDA CLIENTES ---
+  // ── 2. BUSQUEDA DE CLIENTES (A prueba de fallos) ──
   window.verificarClienteLibre = function() {
     const term = document.getElementById('clientName').value.toLowerCase().trim();
     if (term === "") { document.getElementById('clientId').value = ''; activarModoB2C(); }
-    const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term) || (c.cuil && c.cuil.includes(term))).slice(0, 5);
-    document.getElementById('clientResults').innerHTML = filtrados.map(c => `
+    
+    const clientResults = document.getElementById('clientResults');
+    if (term.length < 1) { clientResults.classList.remove('active'); return; }
+
+    // El "(c.name || '')" evita que el código explote si un cliente se guardó sin nombre
+    const filtrados = dbClients.filter(c => 
+      ((c.name || '').toLowerCase().includes(term)) || 
+      ((c.cuil || '').toLowerCase().includes(term))
+    ).slice(0, 5);
+
+    clientResults.innerHTML = filtrados.length === 0 ? '<div style="padding:15px; text-align:center; color:var(--muted);">Dejar como Consumidor Final</div>' : filtrados.map(c => `
       <div class="autocomplete-item" onclick="seleccionarClientePOS('${c.id}', '${escapeHtml(c.name)}')">
         <div><strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small></div>
       </div>`).join('');
-    document.getElementById('clientResults').classList.add('active');
+    clientResults.classList.add('active');
   };
 
   window.seleccionarClientePOS = function(id, name) {
@@ -154,14 +177,17 @@
   };
 
   function activarModoB2C() {
-    isB2B = false; document.getElementById('payMethodsB2C').style.display = 'flex'; document.getElementById('payMethodsB2B').style.display = 'none';
+    isB2B = false; 
+    document.getElementById('payMethodsB2C').style.display = 'flex'; 
+    document.getElementById('payMethodsB2B').style.display = 'none';
     document.getElementById('btnCobrar').textContent = "Confirmar e Imprimir (F12)";
     setPayment('Efectivo', document.querySelector('#payMethodsB2C .pay-btn'), false);
   }
 
   function activarModoB2B() {
     isB2B = true; currentPaymentMethod = 'A Cuenta Corriente';
-    document.getElementById('payMethodsB2C').style.display = 'none'; document.getElementById('payMethodsB2B').style.display = 'flex';
+    document.getElementById('payMethodsB2C').style.display = 'none'; 
+    document.getElementById('payMethodsB2B').style.display = 'flex';
     document.getElementById('btnCobrar').textContent = "Confirmar en Cuenta Corriente (F12)";
   }
 
@@ -173,36 +199,53 @@
     if(focus) document.getElementById('posSearch').focus();
   }
 
-  // --- BUSQUEDA PRODUCTOS ---
+  // ── 3. BUSQUEDA DE PRODUCTOS (A prueba de fallos y sin filtro de stock) ──
   document.getElementById('posSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
-    if (term.length < 1) { document.getElementById('searchResults').classList.remove('active'); return; }
-    filteredProducts = dbProducts.filter(p => (p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)))).slice(0, 10);
-    document.getElementById('searchResults').innerHTML = filteredProducts.map((p, idx) => `
-      <div class="autocomplete-item" onclick="agregarAlCarrito(${idx})">
-        <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code || 'S/N'} | Stock: ${p.stock}</small></div>
-        <div style="font-weight:800; color:var(--primary);">${currency(p.price)}</div>
-      </div>`).join('');
-    document.getElementById('searchResults').classList.add('active');
+    const searchResults = document.getElementById('searchResults');
+    if (term.length < 1) { searchResults.classList.remove('active'); return; }
+
+    // Quitamos la restricción de stock > 0 temporalmente
+    filteredProducts = dbProducts.filter(p => 
+      ((p.name || '').toLowerCase().includes(term)) || 
+      ((p.code || '').toLowerCase().includes(term))
+    ).slice(0, 10);
+
+    if (filteredProducts.length === 0) {
+        searchResults.innerHTML = '<div style="padding:15px; text-align:center; color:var(--danger); font-weight:bold;">No se encontró el producto</div>';
+    } else {
+        searchResults.innerHTML = filteredProducts.map((p, idx) => `
+          <div class="autocomplete-item" onclick="agregarAlCarrito(${idx})">
+            <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code || 'S/N'} | Stock: ${p.stock}</small></div>
+            <div style="font-weight:800; color:var(--primary);">${currency(p.price)}</div>
+          </div>`).join('');
+    }
+    searchResults.classList.add('active');
   });
 
   function agregarAlCarrito(idx) {
     const p = filteredProducts[idx];
     const existe = cart.find(i => i.id === p.id);
     if (existe) existe.qty++; else cart.unshift({ ...p, qty: 1 });
-    document.getElementById('posSearch').value = ''; document.getElementById('searchResults').classList.remove('active');
+    document.getElementById('posSearch').value = ''; 
+    document.getElementById('searchResults').classList.remove('active');
     document.getElementById('posSearch').focus(); renderCart();
   }
 
+  // ── 4. LÓGICA DE CARRITO Y COBRO ──
   function renderCart() {
     const tbody = document.getElementById('cartBody');
     let total = 0;
     tbody.innerHTML = cart.map(i => {
       const sub = i.price * i.qty; total += sub;
-      return `<tr><td>${i.code || '-'}</td><td><strong>${escapeHtml(i.name)}</strong></td><td style="text-align:right;">${currency(i.price)}</td>
+      return `<tr>
+        <td>${i.code || '-'}</td>
+        <td><strong>${escapeHtml(i.name)}</strong></td>
+        <td style="text-align:right;">${currency(i.price)}</td>
         <td style="text-align:center;"><input type="number" class="qty-input" value="${i.qty}" onchange="updateQty('${i.id}', this.value)"></td>
         <td style="text-align:right;"><strong>${currency(sub)}</strong></td>
-        <td style="text-align:center;"><button onclick="quitar('${i.id}')" style="background:none; border:none; color:red; cursor:pointer;">✕</button></td></tr>`;
+        <td style="text-align:center;"><button onclick="quitar('${i.id}')" style="background:none; border:none; color:red; cursor:pointer;">✕</button></td>
+      </tr>`;
     }).join('');
     if(!cart.length) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px;">Carrito vacío</td></tr>';
     document.getElementById('txtTotal').textContent = currency(total);
@@ -214,30 +257,44 @@
 
   window.procesarVenta = async function() {
     if(!cart.length) return;
-    if(!confirm("¿Confirmar venta?")) return;
+    if(!confirm(isB2B ? "¿Confirmar y enviar deuda a la Cuenta Corriente?" : "¿Confirmar venta e imprimir ticket?")) return;
+    
     mostrarCarga(true);
     const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+    const dateStr = todayISO();
+    const cid = document.getElementById('clientId').value;
+
     const venta = {
-      id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: new Date().toISOString().split('T')[0],
-      clientId: document.getElementById('clientId').value || 'Consumidor Final',
+      id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: dateStr,
+      clientId: cid || 'Consumidor Final', client: document.getElementById('clientName').value || 'Consumidor Final',
       method: currentPaymentMethod, subtotal: total, promoDiscount: 0, total: total, isB2B: isB2B, items: cart
     };
 
     try {
-      const resV = await fetch(`${API_URL}/sales`, { method: 'POST', body: JSON.stringify(venta) });
+      const resV = await fetch(`${API_URL}/sales`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(venta) });
       if(!resV.ok) throw new Error(await resV.text());
       
-      if(isB2B && venta.clientId !== 'Consumidor Final') {
-        const mov = { id: 'cc_' + Date.now(), clientId: venta.clientId, date: venta.date, type: 'debe', amount: total, concept: `Ticket #${venta.id.split('_')[1]}` };
-        await fetch(`${API_URL}/cc_movements`, { method: 'POST', body: JSON.stringify(mov) });
+      if(isB2B && cid) {
+        const mov = { id: 'cc_' + Date.now(), clientId: cid, date: dateStr, type: 'debe', amount: total, concept: `Ticket #${venta.id.split('_')[1]}` };
+        const resCC = await fetch(`${API_URL}/cc_movements`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(mov) });
+        if(!resCC.ok) throw new Error("Cta Cte Error: " + await resCC.text());
       }
 
       alert(isB2B ? "📓 Guardado en Cta. Cte." : "✅ Venta finalizada.");
+      localStorage.setItem('last_sale_to_print', JSON.stringify(venta));
+
       cart = []; document.getElementById('clientName').value = 'Consumidor Final'; document.getElementById('clientId').value = '';
+      const ventaFueB2B = isB2B;
       activarModoB2C(); renderCart();
+      
+      if (!ventaFueB2B) window.open('factura.html', '_blank');
+
     } catch(e) { alert("Error: " + e.message); }
     finally { mostrarCarga(false); }
   };
+
+  initPOS();
+</script>
 
   initPOS();
 </script>
