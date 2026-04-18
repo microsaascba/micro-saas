@@ -20,10 +20,14 @@
     .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
     .badge-may { background: #e0e7ff; color: #0f766e; }
     .badge-min { background: #f3f4f6; color: #475569; }
-    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
+    
+    /* Indicador de carga */
+    .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
   </style>
 </head>
 <body>
+
+<div id="loadingOverlay" class="loading-overlay">Sincronizando con la nube...</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -48,7 +52,7 @@
     <header class="topbar">
       <div class="page-title">
         <h1 style="margin:0; font-size: 26px;">Clientes B2B / B2C</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Directorio de clientes para ventas y cuentas corrientes.</p>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Directorio de clientes conectado a Cloudflare D1.</p>
       </div>
     </header>
 
@@ -66,7 +70,7 @@
             </div>
             <div>
               <label style="font-size: 12px; font-weight: bold; color: var(--muted);">CUIT / DNI</label>
-              <input type="text" id="cliCuit" class="input-box" placeholder="Sin guiones">
+              <input type="text" id="cliCuil" class="input-box" placeholder="Sin guiones">
             </div>
             <div>
               <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Teléfono</label>
@@ -113,38 +117,82 @@
   </main>
 </div>
 
-<script src="core.js"></script>
 <script>
+  const API_URL = "/api"; 
   let dbClients = [];
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-  function initClients() {
-    const key = (typeof KEYS !== 'undefined' && KEYS.clients) ? KEYS.clients : 'saas_clients';
-    dbClients = getData(key, []);
-    renderTable();
+  
+  function mostrarCarga(mostrar) {
+    document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none';
   }
 
-  function guardarCliente(e) {
+  function todayISO() { return new Date().toISOString().split('T')[0]; }
+
+  // --- CARGAR DESDE LA NUBE ---
+  async function initClients() {
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/clients`);
+      if (response.ok) {
+        dbClients = await response.json();
+      } else {
+        console.error("Error cargando clientes de la DB");
+      }
+    } catch (error) {
+      console.error("Error de conexión:", error);
+    } finally {
+      mostrarCarga(false);
+      renderTable();
+    }
+  }
+
+  // --- GUARDAR EN LA NUBE ---
+  async function guardarCliente(e) {
     e.preventDefault();
-    const id = document.getElementById('cliId').value || 'cli_' + Date.now();
+    const idInput = document.getElementById('cliId').value;
+    const isNew = !idInput;
+    const id = idInput || 'cli_' + Date.now();
+    
+    // Alineamos los datos exactamente a lo que espera tu API clients.js
     const client = {
       id: id,
       name: document.getElementById('cliName').value.trim(),
-      cuit: document.getElementById('cliCuit').value.trim(),
+      contact: document.getElementById('cliName').value.trim(), // Dummy
+      cuil: document.getElementById('cliCuil').value.trim(),
       phone: document.getElementById('cliPhone').value.trim(),
+      email: 'sin@email.com', // Dummy necesario para el backend B2B
       address: document.getElementById('cliAddress').value.trim(),
+      fee: 0,
+      dueDate: todayISO(),
       type: document.getElementById('cliType').value
     };
 
-    const idx = dbClients.findIndex(c => c.id === id);
-    if (idx >= 0) dbClients[idx] = client; else dbClients.unshift(client);
+    mostrarCarga(true);
+    try {
+      // Si es nuevo mandamos POST, si existe mandamos PUT
+      const method = isNew ? 'POST' : 'PUT';
+      const response = await fetch(`${API_URL}/clients`, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(client)
+      });
 
-    const key = (typeof KEYS !== 'undefined' && KEYS.clients) ? KEYS.clients : 'saas_clients';
-    setData(key, dbClients);
-    limpiarFormulario();
-    renderTable();
-    window.dispatchEvent(new Event('saas:data-updated'));
+      if (response.ok) {
+        const idx = dbClients.findIndex(c => c.id === id);
+        if (idx >= 0) dbClients[idx] = client; else dbClients.unshift(client);
+        limpiarFormulario();
+        renderTable();
+        alert("✅ Cliente guardado en la nube exitosamente.");
+      } else {
+        alert("Error al guardar en la nube.");
+      }
+    } catch (error) {
+      console.error("Error guardando:", error);
+      alert("Error de conexión. Intentá de nuevo.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   function editarCliente(id) {
@@ -153,18 +201,35 @@
     document.getElementById('formTitle').textContent = "Editar Cliente";
     document.getElementById('cliId').value = c.id;
     document.getElementById('cliName').value = c.name;
-    document.getElementById('cliCuit').value = c.cuit || '';
+    document.getElementById('cliCuil').value = c.cuil || '';
     document.getElementById('cliPhone').value = c.phone || '';
     document.getElementById('cliAddress').value = c.address || '';
-    document.getElementById('cliType').value = c.type || 'Minorista';
+    
+    // Si viene del Master y es tipo 'client', lo mostramos como Mayorista
+    const selectType = (c.type === 'client') ? 'Mayorista' : c.type;
+    document.getElementById('cliType').value = selectType || 'Minorista';
   }
 
-  function eliminarCliente(id) {
-    if(!confirm("¿Eliminar este cliente? Asegurate de que no tenga deudas en Cta Cte.")) return;
-    dbClients = dbClients.filter(c => c.id !== id);
-    const key = (typeof KEYS !== 'undefined' && KEYS.clients) ? KEYS.clients : 'saas_clients';
-    setData(key, dbClients);
-    renderTable();
+  async function eliminarCliente(id) {
+    if(!confirm("¿Eliminar permanentemente este cliente de la nube?")) return;
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/clients?id=${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        dbClients = dbClients.filter(c => c.id !== id);
+        renderTable();
+      } else {
+        alert("Error al eliminar el cliente.");
+      }
+    } catch (error) {
+      console.error("Error eliminando:", error);
+      alert("Error de conexión.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   function limpiarFormulario() {
@@ -175,15 +240,18 @@
 
   function renderTable() {
     const term = document.getElementById('searchTable').value.toLowerCase();
-    const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term) || (c.cuit && c.cuit.toLowerCase().includes(term)));
+    const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term) || (c.cuil && c.cuil.toLowerCase().includes(term)));
     const tbody = document.getElementById('tableBody');
     
     tbody.innerHTML = filtrados.map(c => {
-      const badge = c.type === 'Mayorista' ? '<span class="badge badge-may">Mayorista</span>' : '<span class="badge badge-min">Minorista</span>';
+      // Soporte para los que vienen del Master
+      const displayType = (c.type === 'client') ? 'MAYORISTA' : (c.type || 'MINORISTA').toUpperCase();
+      const badge = (displayType === 'MAYORISTA') ? '<span class="badge badge-may">Mayorista</span>' : '<span class="badge badge-min">Minorista</span>';
+      
       return `
       <tr>
         <td><strong>${escapeHtml(c.name)}</strong></td>
-        <td style="color:var(--muted);">${escapeHtml(c.cuit) || '-'}</td>
+        <td style="color:var(--muted);">${escapeHtml(c.cuil) || '-'}</td>
         <td style="font-size:12px; color:var(--muted);">${escapeHtml(c.phone) || '-'}<br>${escapeHtml(c.address) || ''}</td>
         <td>${badge}</td>
         <td style="text-align: center;">
@@ -193,7 +261,7 @@
       </tr>`
     }).join('');
     
-    if (filtrados.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No hay clientes registrados.</td></tr>';
+    if (filtrados.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No hay clientes registrados en la nube.</td></tr>';
   }
 
   initClients();
