@@ -32,9 +32,14 @@
     /* Modales */
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
+    
+    /* Indicador de carga */
+    .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
   </style>
 </head>
 <body>
+
+<div id="loadingOverlay" class="loading-overlay">Sincronizando con la nube...</div>
 
 <div class="app">
   <aside class="sidebar">
@@ -45,8 +50,10 @@
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html" class="active"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
       <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
       <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
@@ -57,7 +64,7 @@
     <header class="topbar">
       <div class="page-title">
         <h1 style="margin:0; font-size: 26px;">Productos</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión integral del catálogo, márgenes y estrategias promocionales.</p>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión integral del catálogo, conectado a Cloudflare D1.</p>
       </div>
     </header>
 
@@ -91,21 +98,32 @@
 
             <div>
               <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Costo unitario *</label>
-              <input type="number" id="prodCost" class="input-box" required min="0" step="0.01" value="0" oninput="calcularMargen()">
+              <input type="number" id="prodCost" class="input-box" required min="0" step="0.01" value="0" oninput="calcularRentabilidad()">
             </div>
             <div>
               <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Gastos asociados</label>
-              <input type="number" id="prodExpenses" class="input-box" min="0" step="0.01" value="0" oninput="calcularMargen()">
+              <input type="number" id="prodExpenses" class="input-box" min="0" step="0.01" value="0" oninput="calcularRentabilidad()">
             </div>
             
             <div>
               <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Precio de Venta *</label>
-              <input type="number" id="prodPrice" class="input-box" required min="0" step="0.01" value="0" oninput="calcularMargen()">
+              <input type="number" id="prodPrice" class="input-box" required min="0" step="0.01" value="0" oninput="calcularRentabilidad()">
             </div>
             <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Margen calculado</label>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Utilidad Bruta ($)</label>
+              <input type="text" id="prodProfit" class="input-box" disabled value="$0.00">
+            </div>
+
+            <div>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Margen (sobre venta)</label>
               <input type="text" id="prodMargin" class="input-box" disabled value="0.0%">
             </div>
+            <div>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Mark up (sobre costo)</label>
+              <input type="text" id="prodMarkup" class="input-box" disabled value="0.0%">
+            </div>
+
+            <div class="full-width" style="border-top: 1px dashed var(--line); margin-top: 5px; padding-top: 10px;"></div>
 
             <div>
               <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Código / SKU</label>
@@ -156,7 +174,7 @@
 
           <div style="margin-top: 20px; display: flex; gap: 10px;">
             <button type="button" class="btn btn-light" style="flex:1;" onclick="limpiarFormulario()">Cancelar</button>
-            <button type="submit" class="btn btn-primary" style="flex:2;">Guardar Producto</button>
+            <button type="submit" class="btn btn-primary" style="flex:2;" id="btnSave">Guardar Producto</button>
           </div>
         </form>
       </article>
@@ -203,8 +221,12 @@
   </form>
 </dialog>
 
-<script src="core.js"></script>
 <script>
+  // ====================================================================
+  // URL RELATIVA PARA CLOUDFLARE PAGES FUNCTIONS
+  // ====================================================================
+  const API_URL = "/api"; 
+  
   let dbProducts = [];
   const PIN_ADMIN = "1234";
   let pendingAdminAction = null;
@@ -212,40 +234,62 @@
 
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-  function initProducts() {
-    dbProducts = getData(KEYS.products, []);
-    actualizarSelectCombos();
-    renderTable();
+  
+  function mostrarCarga(mostrar) {
+    document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none';
   }
 
-  // --- LÓGICA DE RENTABILIDAD ---
-  function calcularMargen() {
+  // --- CARGAR PRODUCTOS DESDE LA NUBE ---
+  async function initProducts() {
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/products`);
+      if (response.ok) {
+        dbProducts = await response.json();
+      } else {
+        console.error("Error al cargar la base de datos");
+      }
+    } catch (error) {
+      console.error("Error de conexión:", error);
+    } finally {
+      mostrarCarga(false);
+      actualizarSelectCombos();
+      renderTable();
+    }
+  }
+
+  // --- RENTABILIDAD ---
+  function calcularRentabilidad() {
     const cost = parseFloat(document.getElementById('prodCost').value) || 0;
     const expenses = parseFloat(document.getElementById('prodExpenses').value) || 0;
     const price = parseFloat(document.getElementById('prodPrice').value) || 0;
     
+    const profitBox = document.getElementById('prodProfit');
     const marginBox = document.getElementById('prodMargin');
+    const markupBox = document.getElementById('prodMarkup');
     
-    if (price > 0) {
-      const totalCost = cost + expenses;
-      const margin = ((price - totalCost) / price) * 100;
+    const totalCost = cost + expenses;
+    const profit = price - totalCost;
+
+    profitBox.value = currency(profit);
+    profitBox.style.color = profit < 0 ? "var(--danger)" : "var(--success)";
+
+    if (price > 0 && totalCost > 0) {
+      const margin = (profit / price) * 100;
+      const markup = (profit / totalCost) * 100;
       marginBox.value = margin.toFixed(1) + '%';
-      
-      if (margin < 0) {
-        marginBox.style.color = "var(--danger)";
-        marginBox.style.borderColor = "var(--danger)";
-      } else {
-        marginBox.style.color = "var(--success)";
-        marginBox.style.borderColor = "transparent";
-      }
+      markupBox.value = markup.toFixed(1) + '%';
+      marginBox.style.color = margin < 0 ? "var(--danger)" : "var(--success)";
+      markupBox.style.color = markup < 0 ? "var(--danger)" : "var(--success)";
+    } else if (price > 0 && totalCost === 0) {
+      marginBox.value = "100.0%"; marginBox.style.color = "var(--success)";
+      markupBox.value = "∞"; markupBox.style.color = "var(--success)";
     } else {
-      marginBox.value = "0.0%";
-      marginBox.style.color = "var(--muted)";
+      marginBox.value = "0.0%"; marginBox.style.color = "var(--muted)";
+      markupBox.value = "0.0%"; markupBox.style.color = "var(--muted)";
     }
   }
 
-  // --- LÓGICA PROMOCIONES ---
   function togglePromoFields() {
     const type = document.getElementById('promoType').value;
     const valueBox = document.getElementById('promoValueBox');
@@ -261,15 +305,13 @@
       dbProducts.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
   }
 
-  // --- CRUD PRODUCTOS ---
-  function guardarProducto(e) {
+  // --- GUARDAR PRODUCTO EN LA NUBE ---
+  async function guardarProducto(e) {
     e.preventDefault();
-    const id = document.getElementById('prodId').value || 'prod_' + Date.now();
     const type = document.getElementById('promoType').value;
+    if (type === 'combo' && !document.getElementById('promoLinked').value) return alert("Seleccione un producto para el combo.");
     
-    if (type === 'combo' && !document.getElementById('promoLinked').value) {
-      return alert("Debe seleccionar un producto para armar el combo.");
-    }
+    const id = document.getElementById('prodId').value || 'prod_' + Date.now();
     
     const prod = {
       id: id,
@@ -288,14 +330,29 @@
       promoLinked: document.getElementById('promoLinked').value
     };
 
-    const idx = dbProducts.findIndex(p => p.id === id);
-    if (idx >= 0) dbProducts[idx] = prod; else dbProducts.unshift(prod);
-
-    setData(KEYS.products, dbProducts);
-    limpiarFormulario();
-    actualizarSelectCombos();
-    renderTable();
-    window.dispatchEvent(new Event('saas:data-updated'));
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prod)
+      });
+      
+      if(response.ok) {
+        const idx = dbProducts.findIndex(p => p.id === id);
+        if (idx >= 0) dbProducts[idx] = prod; else dbProducts.unshift(prod);
+        limpiarFormulario();
+        actualizarSelectCombos();
+        renderTable();
+      } else {
+        alert("Error al guardar en la nube.");
+      }
+    } catch(error) {
+      console.error("Error guardando:", error);
+      alert("Error de conexión. Intentá de nuevo.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   function editarProducto(id) {
@@ -318,7 +375,7 @@
     document.getElementById('promoValue').value = p.promoValue || '';
     document.getElementById('promoLinked').value = p.promoLinked || '';
     
-    calcularMargen();
+    calcularRentabilidad();
     togglePromoFields();
   }
 
@@ -326,23 +383,40 @@
     document.getElementById('formTitle').textContent = "Alta de producto";
     document.getElementById('productForm').reset();
     document.getElementById('prodId').value = '';
-    document.getElementById('prodMargin').value = '0.0%';
-    document.getElementById('prodMargin').style.color = "var(--muted)";
+    document.getElementById('prodProfit').value = '$0.00'; document.getElementById('prodProfit').style.color = "var(--muted)";
+    document.getElementById('prodMargin').value = '0.0%'; document.getElementById('prodMargin').style.color = "var(--muted)";
+    document.getElementById('prodMarkup').value = '0.0%'; document.getElementById('prodMarkup').style.color = "var(--muted)";
     togglePromoFields();
   }
 
-  // --- SEGURIDAD: ELIMINAR CON PIN ---
+  // --- ELIMINAR PRODUCTO DE LA NUBE (CON PIN) ---
   function eliminarProductoPrompt(id) {
-    pedirAuthAdmin('borrar permanentemente este producto del sistema', ejecutarEliminacionProducto, id);
+    pedirAuthAdmin('borrar permanentemente este producto de la nube', ejecutarEliminacionProducto, id);
   }
 
-  function ejecutarEliminacionProducto(id) {
-    dbProducts = dbProducts.filter(p => p.id !== id);
-    setData(KEYS.products, dbProducts);
-    actualizarSelectCombos();
-    renderTable();
-    window.dispatchEvent(new Event('saas:data-updated'));
-    alert("✅ Producto eliminado correctamente.");
+  async function ejecutarEliminacionProducto(id) {
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/products`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id })
+      });
+
+      if (response.ok) {
+        dbProducts = dbProducts.filter(p => p.id !== id);
+        actualizarSelectCombos();
+        renderTable();
+        alert("✅ Producto eliminado correctamente de la nube.");
+      } else {
+        alert("Error al eliminar de la base de datos.");
+      }
+    } catch(error) {
+      console.error("Error eliminando:", error);
+      alert("Error de conexión.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
@@ -373,26 +447,24 @@
     }
   }
 
-  // --- RENDER TABLA ---
   function renderTable() {
     const term = document.getElementById('searchTable').value.toLowerCase();
     const filtrados = dbProducts.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)));
     
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = filtrados.map(p => {
-      // Insignias de Promoción
       let promoLabel = '';
       if (p.promoType === '2x1') promoLabel = '<span class="badge-promo">2x1</span>';
       else if (p.promoType === '2da_unidad') promoLabel = `<span class="badge-promo">2da al ${p.promoValue}%</span>`;
       else if (p.promoType === 'descuento_directo') promoLabel = `<span class="badge-promo">${p.promoValue}% OFF</span>`;
       else if (p.promoType === 'combo') promoLabel = `<span class="badge-promo">COMBO</span>`;
 
-      // Insignias de Variación
       let varLabel = '';
       if (p.color) varLabel += `<span class="badge-var">${escapeHtml(p.color)}</span>`;
       if (p.size) varLabel += `<span class="badge-var">${escapeHtml(p.size)}</span>`;
 
       const costoTotal = (p.cost || 0) + (p.expenses || 0);
+      const utilidad = (p.price || 0) - costoTotal;
       const isInactive = p.status === 'Inactivo';
 
       return `
@@ -407,7 +479,10 @@
           </div>
         </td>
         <td><span style="color:var(--muted);">${currency(costoTotal)}</span></td>
-        <td><strong>${currency(p.price)}</strong></td>
+        <td>
+          <strong>${currency(p.price)}</strong><br>
+          <small style="color:${utilidad < 0 ? 'var(--danger)' : 'var(--success)'}; font-size:10px; font-weight:bold;">UB: ${currency(utilidad)}</small>
+        </td>
         <td>
           <span style="background:${p.stock>5?'#dcfce7':'#fee2e2'}; color:${p.stock>5?'#16a34a':'#dc2626'}; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:12px;">
             ${p.stock}
@@ -415,7 +490,6 @@
         </td>
         <td style="text-align: center;">
           <button onclick="editarProducto('${p.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; margin-right:5px;">Editar</button>
-          
           <button onclick="eliminarProductoPrompt('${p.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Borrar</button>
         </td>
       </tr>`
