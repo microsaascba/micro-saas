@@ -36,32 +36,45 @@
     
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
 
-    /* ESTILOS DE LA PLANTILLA DE IMPRESIÓN / PDF */
+    /* ESTILOS DE FACTURA OFICIAL PARA IMPRESIÓN */
     #printSection { display: none; }
     
     @media print {
       @page { margin: 15mm; size: A4 portrait; }
-      body { margin: 0; background: #fff; font-family: sans-serif; color: #000; }
+      body { margin: 0; background: #fff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #000; }
       .app, dialog { display: none !important; }
       #printSection { display: block !important; width: 100%; }
       
-      .print-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-      .print-title { font-size: 20px; font-weight: 900; letter-spacing: 1px; margin: 0; }
-      .print-doc-type { font-size: 24px; font-weight: 900; text-transform: uppercase; color: #333; margin:0;}
+      .print-header-grid { display: grid; grid-template-columns: 1fr 60px 1fr; border: 1px solid #000; border-radius: 8px; margin-bottom: 20px; position: relative; }
       
-      .print-info-box { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; }
-      .print-info-box div { flex: 1; }
-      .print-info-box h3 { margin: 0 0 5px 0; font-size: 14px; color: #555; text-transform: uppercase;}
-      .print-info-box p { margin: 0; font-size: 16px; font-weight: bold; }
-
-      .print-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }
-      .print-table th, .print-table td { border: 1px solid #ddd; padding: 10px; text-align: left; }
-      .print-table th { background: #f0f0f0; font-weight: bold; }
+      /* Bloque Izquierdo (Datos Empresa) */
+      .print-company { padding: 15px; border-right: 1px solid #000; }
+      .print-company h1 { margin: 0; font-size: 22px; font-weight: 900; }
+      .print-company p { margin: 2px 0; font-size: 11px; }
       
-      .print-total { text-align: right; font-size: 20px; margin-top: 15px; }
+      /* Bloque Central (Letra Factura A/B/C/X) */
+      .print-letter-box { display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; margin-top: -1px; margin-bottom: -1px;}
+      .print-letter { font-size: 40px; font-weight: 900; border: 1px solid #000; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: #fff; margin-top: 10px;}
+      .print-cod { font-size: 9px; margin-top: 2px; font-weight: bold;}
       
-      .print-signatures { display: flex; justify-content: space-between; margin-top: 80px; }
-      .print-sig-line { border-top: 1px solid #000; width: 40%; text-align: center; padding-top: 5px; font-size: 12px; }
+      /* Bloque Derecho (Datos Factura) */
+      .print-doc-details { padding: 15px; border-left: 1px solid #000; text-align: left; }
+      .print-doc-type { font-size: 24px; font-weight: 900; margin: 0 0 5px 0; letter-spacing: 2px; }
+      .print-doc-details p { margin: 3px 0; font-size: 12px; }
+      
+      /* Datos del Cliente */
+      .print-client-box { border: 1px solid #000; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; font-size: 12px; gap: 5px;}
+      .print-client-box p { margin: 3px 0; }
+      
+      /* Tabla de Artículos */
+      .print-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; border: 1px solid #000;}
+      .print-table th, .print-table td { border: 1px solid #000; padding: 6px 10px; text-align: left; }
+      .print-table th { background: #e5e7eb; font-weight: bold; text-align: center; }
+      
+      /* Totales */
+      .print-totals-box { width: 40%; margin-left: auto; border: 1px solid #000; border-radius: 8px; padding: 10px; font-size: 13px; }
+      .print-total-line { display: flex; justify-content: space-between; margin-bottom: 5px; }
+      .print-total-final { display: flex; justify-content: space-between; font-size: 18px; font-weight: 900; margin-top: 10px; border-top: 2px solid #000; padding-top: 5px; }
     }
   </style>
 </head>
@@ -149,52 +162,56 @@
 </div>
 
 <div id="printSection">
-  <div class="print-header">
-    <div>
-      <h1 class="print-title">MICRO SAAS SOLUCIONES</h1>
-      <p style="margin: 2px 0 0 0; font-size: 12px; color: #555;">Documento de Cuenta Corriente</p>
+  
+  <div class="print-header-grid">
+    <div class="print-company">
+      <h1>MICRO SAAS SOLUCIONES</h1>
+      <p><strong>Razón Social:</strong> Tu Empresa S.R.L.</p>
+      <p><strong>Domicilio Comercial:</strong> Av. Siempre Viva 123, Ciudad</p>
+      <p><strong>Condición frente al IVA:</strong> Responsable Inscripto</p>
     </div>
-    <div style="text-align: right;">
-      <h2 class="print-doc-type" id="printDocType">COMPROBANTE</h2>
-      <p style="margin: 5px 0 0 0; font-size: 12px;" id="printDate">Fecha: --/--/----</p>
-      <p style="margin: 0; font-size: 10px; color: #777;" id="printRef">Ref: ---</p>
+    
+    <div class="print-letter-box">
+      <div class="print-letter" id="printDocLetter">B</div>
+      <div class="print-cod" id="printDocCod">Cod. 006</div>
+    </div>
+    
+    <div class="print-doc-details">
+      <h2 class="print-doc-type" id="printDocTitle">FACTURA</h2>
+      <p><strong>N° Comprobante:</strong> <span id="printDocNum">0001-00000000</span></p>
+      <p><strong>Fecha de Emisión:</strong> <span id="printDate">--/--/----</span></p>
+      <p><strong>CUIT:</strong> 30-12345678-9</p>
+      <p><strong>Ingresos Brutos:</strong> 12345678</p>
     </div>
   </div>
 
-  <div class="print-info-box">
+  <div class="print-client-box">
     <div>
-      <h3>Cliente</h3>
-      <p id="printCliName">Nombre Cliente</p>
-      <span style="font-size:12px; color:#555;" id="printCliDoc">CUIT/DNI: ---</span>
+      <p><strong>Cliente:</strong> <span id="printCliName">Nombre Cliente</span></p>
+      <p><strong>Domicilio:</strong> <span id="printCliAddr">-</span></p>
     </div>
-    <div style="text-align: right;">
-      <h3>Operador</h3>
-      <p id="printUser">Admin</p>
+    <div>
+      <p><strong>CUIT/DNI:</strong> <span id="printCliDoc">---</span></p>
+      <p><strong>Condición frente al IVA:</strong> <span id="printCliIva">Consumidor Final</span></p>
+      <p><strong>Condición de Venta:</strong> <span id="printSaleCond">Cuenta Corriente</span></p>
     </div>
   </div>
 
   <table class="print-table">
     <thead id="printTableHeader">
-      <tr>
-        <th style="width: 15%;">CANT</th>
-        <th style="width: 55%;">DESCRIPCIÓN</th>
-        <th style="width: 15%; text-align: right;">P. UNITARIO</th>
-        <th style="width: 15%; text-align: right;">SUBTOTAL</th>
-      </tr>
-    </thead>
+      </thead>
     <tbody id="printTableBody">
       </tbody>
   </table>
 
-  <div class="print-total">
-    <span style="color:#555; font-size:14px; text-transform:uppercase; margin-right:15px;" id="printTotalLabel">TOTAL DE LA OPERACIÓN:</span>
-    <strong id="printTotalAmount" style="font-size:24px;">$ 0.00</strong>
+  <div class="print-totals-box" id="printTotalsBox">
+    </div>
+  
+  <div id="printSignatureArea" style="display:none; text-align:center; margin-top:60px;">
+    <p>___________________________________</p>
+    <p style="font-size: 12px; color: #555;">Firma y Aclaración - Recibí Conforme</p>
   </div>
 
-  <div class="print-signatures">
-    <div class="print-sig-line">Firma Cliente / Conforme</div>
-    <div class="print-sig-line">Firma y Aclaración (Comercio)</div>
-  </div>
 </div>
 <dialog id="modalMov" style="width: 100%; max-width: 400px;">
   <div class="modal-content">
@@ -225,7 +242,7 @@
   const API_URL = "/api";
   let dbClients = [];
   let dbCcMovements = []; 
-  let dbSales = []; // Agregamos la tabla de ventas para cruzar los tickets
+  let dbSales = []; 
   let selectedClientId = null;
 
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
@@ -236,31 +253,25 @@
     document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none';
   }
 
-  // --- CONECTAR A LA NUBE (D1) ---
   async function initCC() {
     mostrarCarga(true);
     try {
-      // Hacemos pedido a D1 de Clientes, Cuentas Corrientes y Ventas
       const [resCli, resCc, resSales] = await Promise.all([
-        fetch(`${API_URL}/clients`),
-        fetch(`${API_URL}/cc_movements`),
-        fetch(`${API_URL}/sales`)
+        fetch(`${API_URL}/clients`), fetch(`${API_URL}/cc_movements`), fetch(`${API_URL}/sales`)
       ]);
       
       if(resCli.ok) dbClients = await resCli.json();
       if(resCc.ok) dbCcMovements = await resCc.json();
       if(resSales.ok) dbSales = await resSales.json();
       
-    } catch (error) {
-      console.error("Error de conexión:", error);
-    } finally {
+    } catch (error) { console.error("Error de conexión:", error); } 
+    finally {
       mostrarCarga(false);
       renderClientList();
       if (selectedClientId) renderLedger();
     }
   }
 
-  // --- CÁLCULO DE SALDOS ---
   function getClientBalance(clientId) {
     let saldo = 0;
     const movs = dbCcMovements.filter(m => m.clientId === clientId);
@@ -271,7 +282,6 @@
     return saldo;
   }
 
-  // --- RENDERIZADO ---
   function renderClientList() {
     const term = document.getElementById('searchCli').value.toLowerCase();
     const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term));
@@ -294,7 +304,7 @@
       </div>`;
     }).join('');
     
-    if(filtrados.length === 0) listDiv.innerHTML = '<div style="padding:20px; text-align:center; color:var(--muted); font-size:13px;">No hay clientes registrados en la nube.</div>';
+    if(filtrados.length === 0) listDiv.innerHTML = '<div style="padding:20px; text-align:center; color:var(--muted); font-size:13px;">No hay clientes.</div>';
   }
 
   function seleccionarCliente(id) {
@@ -337,7 +347,7 @@
       </tr>`;
     });
     
-    if (movs.length === 0) html = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">Sin movimientos en la cuenta.</td></tr>';
+    if (movs.length === 0) html = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">Sin movimientos.</td></tr>';
     
     tbody.innerHTML = html;
     
@@ -347,70 +357,122 @@
     boxSaldo.style.color = saldoFinal > 0 ? 'var(--danger)' : (saldoFinal < 0 ? 'var(--success)' : 'var(--text)');
   }
 
-  // --- MOTOR DE IMPRESIÓN PDF (MAGIA DE CRUCE CON VENTAS) ---
+  // --- MOTOR DE FACTURACIÓN (PDF INTELIGENTE) ---
+  function generarNumFactura() {
+      // Simula un número de factura consecutivo 0001-XXXXXXXX
+      return "0001-" + String(Math.floor(Math.random() * 900000) + 100000).padStart(8, '0');
+  }
+
   function prepararImpresion(movId) {
       const mov = dbCcMovements.find(m => m.id === movId);
       const cli = dbClients.find(c => c.id === selectedClientId);
       if(!mov || !cli) return;
 
       const isPago = mov.type === 'haber';
+      const isFacturaA = (!isPago && cli.type === 'client'); // Mayorista = RI = Factura A
       
-      // Llenamos datos generales del PDF
-      document.getElementById('printDocType').textContent = isPago ? 'RECIBO DE PAGO' : 'DETALLE DE COMPRA';
-      document.getElementById('printDocType').style.color = isPago ? '#16a34a' : '#333';
-      document.getElementById('printDate').textContent = `Fecha: ${mov.date.split('-').reverse().join('/')}`;
-      document.getElementById('printRef').textContent = `Ref: ${mov.id}`;
+      // 1. HEADER DEL DOCUMENTO
+      if (isPago) {
+          document.getElementById('printDocTitle').textContent = 'RECIBO';
+          document.getElementById('printDocLetter').textContent = 'X';
+          document.getElementById('printDocCod').textContent = 'Doc. no válido como factura';
+          document.getElementById('printSaleCond').textContent = 'Cobranza';
+      } else {
+          document.getElementById('printDocTitle').textContent = 'FACTURA';
+          document.getElementById('printDocLetter').textContent = isFacturaA ? 'A' : 'B';
+          document.getElementById('printDocCod').textContent = isFacturaA ? 'Cod. 001' : 'Cod. 006';
+          document.getElementById('printSaleCond').textContent = 'Cuenta Corriente';
+      }
+      
+      document.getElementById('printDocNum').textContent = generarNumFactura();
+      document.getElementById('printDate').textContent = mov.date.split('-').reverse().join('/');
+      
+      // 2. DATOS DEL CLIENTE
       document.getElementById('printCliName').textContent = cli.name;
-      document.getElementById('printCliDoc').textContent = cli.cuil ? `CUIT/DNI: ${cli.cuil}` : 'Consumidor / Sin doc.';
-      document.getElementById('printUser').textContent = localStorage.getItem('activeUser') || 'Admin';
-      
-      document.getElementById('printTotalLabel').textContent = isPago ? 'IMPORTE RECIBIDO:' : 'TOTAL DEL CARGO:';
-      document.getElementById('printTotalAmount').textContent = currency(mov.amount);
+      document.getElementById('printCliDoc').textContent = cli.cuil || '---';
+      document.getElementById('printCliAddr').textContent = cli.address || 'Consumidor Final';
+      document.getElementById('printCliIva').textContent = isFacturaA ? 'Responsable Inscripto' : 'Consumidor Final';
 
+      // 3. ARMADO DE LA TABLA Y TOTALES
       const tableBody = document.getElementById('printTableBody');
       const tableHeader = document.getElementById('printTableHeader');
-
+      const totalsBox = document.getElementById('printTotalsBox');
+      
       let htmlItems = '';
+      let htmlTotals = '';
 
-      // Si es una VENTA (Debe) y tiene un número de ticket, buscamos el detalle exacto.
+      // SI ES VENTA CON TICKET Y FACTURA A (Desglose de IVA)
       if (!isPago && mov.concept.toLowerCase().includes('ticket #')) {
           const ticketNumber = mov.concept.split('#')[1]?.trim();
           const sale = dbSales.find(s => String(s.id) === ticketNumber);
           
           if (sale && sale.items) {
-              // Ajustamos la cabecera para ítems
-              tableHeader.innerHTML = `<tr><th style="width: 15%;">CANT</th><th style="width: 55%;">DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">P. UNITARIO</th><th style="width: 15%; text-align: right;">SUBTOTAL</th></tr>`;
-              
-              // Parseamos los ítems de la venta (si vienen en JSON desde el backend)
               const itemsList = typeof sale.items === 'string' ? JSON.parse(sale.items) : sale.items;
               
-              htmlItems = itemsList.map(i => {
-                  return `<tr>
-                    <td style="font-weight:bold; text-align:center;">${i.qty}</td>
-                    <td>${escapeHtml(i.name)}</td>
-                    <td style="text-align:right;">${currency(i.price)}</td>
-                    <td style="text-align:right;">${currency(i.qty * i.price)}</td>
-                  </tr>`;
-              }).join('');
+              if (isFacturaA) {
+                  // FACTURA A: Muestra precios Netos (sin 21%)
+                  tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 50%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO NETO</th><th style="width: 10%; text-align: right;">% IVA</th><th style="width: 15%; text-align: right;">SUBTOTAL NETO</th></tr>`;
+                  
+                  let totalNeto = 0;
+                  htmlItems = itemsList.map(i => {
+                      const precioNeto = i.price / 1.21;
+                      const subNeto = (i.price / 1.21) * i.qty;
+                      totalNeto += subNeto;
+                      return `<tr>
+                        <td style="text-align:center;">${i.qty}</td>
+                        <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
+                        <td style="text-align:right;">${currency(precioNeto)}</td>
+                        <td style="text-align:right;">21%</td>
+                        <td style="text-align:right;">${currency(subNeto)}</td>
+                      </tr>`;
+                  }).join('');
+
+                  const totalIva = totalNeto * 0.21;
+                  htmlTotals = `
+                    <div class="print-total-line"><span>Importe Neto Gravado:</span><span>${currency(totalNeto)}</span></div>
+                    <div class="print-total-line"><span>IVA 21%:</span><span>${currency(totalIva)}</span></div>
+                    <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
+                  `;
+              } else {
+                  // FACTURA B: Muestra precios finales
+                  tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 60%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO UNIT.</th><th style="width: 15%; text-align: right;">SUBTOTAL</th></tr>`;
+                  
+                  htmlItems = itemsList.map(i => {
+                      return `<tr>
+                        <td style="text-align:center;">${i.qty}</td>
+                        <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
+                        <td style="text-align:right;">${currency(i.price)}</td>
+                        <td style="text-align:right;">${currency(i.qty * i.price)}</td>
+                      </tr>`;
+                  }).join('');
+
+                  htmlTotals = `<div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>`;
+              }
           }
       }
 
-      // Si no encontramos los artículos (o es un Recibo de Pago simple)
+      // SI NO HAY DETALLE O ES UN RECIBO DE PAGO
       if (!htmlItems) {
-          tableHeader.innerHTML = `<tr><th style="width: 80%;">CONCEPTO DE LA OPERACIÓN</th><th style="width: 20%; text-align: right;">IMPORTE</th></tr>`;
+          tableHeader.innerHTML = `<tr><th style="width: 80%;">CONCEPTO</th><th style="width: 20%; text-align: right;">IMPORTE</th></tr>`;
           htmlItems = `<tr>
-            <td><strong style="font-size:16px;">${escapeHtml(mov.concept)}</strong></td>
-            <td style="text-align:right; font-weight:bold;">${currency(mov.amount)}</td>
+            <td style="padding: 20px 10px;"><strong style="font-size:14px;">${escapeHtml(mov.concept)}</strong></td>
+            <td style="text-align:right; font-weight:bold; font-size:16px;">${currency(mov.amount)}</td>
           </tr>`;
+          htmlTotals = `<div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>`;
       }
 
+      // Renderizar
       tableBody.innerHTML = htmlItems;
+      totalsBox.innerHTML = htmlTotals;
       
-      // Lanzamos la ventana de impresión nativa
+      // Mostrar firma si es recibo
+      document.getElementById('printSignatureArea').style.display = isPago ? 'block' : 'none';
+      
+      // Lanzamos impresión
       window.print();
   }
 
-  // --- MODAL MOVIMIENTOS Y GUARDADO EN NUBE ---
+  // --- MODAL MOVIMIENTOS ---
   function abrirModalMovimiento(tipo) {
     if(!selectedClientId) return;
     document.getElementById('movType').value = tipo;
@@ -441,9 +503,7 @@
     mostrarCarga(true);
     try {
       const response = await fetch(`${API_URL}/cc_movements`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mov)
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mov)
       });
       
       if(response.ok) {
@@ -451,15 +511,8 @@
         cerrarModalMov();
         renderClientList(); 
         renderLedger();     
-      } else {
-        alert("Error al procesar el movimiento en D1.");
-      }
-    } catch(err) {
-      console.error("Error guardando:", err);
-      alert("Error de conexión. Intentá de nuevo.");
-    } finally {
-      mostrarCarga(false);
-    }
+      } else { alert("Error al procesar en D1."); }
+    } catch(err) { alert("Error de conexión."); } finally { mostrarCarga(false); }
   }
 
   initCC();
