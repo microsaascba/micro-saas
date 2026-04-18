@@ -2,11 +2,11 @@ export async function onRequestGet(context) {
   try {
     const { results } = await context.env.DB.prepare("SELECT * FROM sales ORDER BY date DESC").all();
     
-    // SQLite guarda los productos del ticket como texto, acá los volvemos a convertir a lista
+    // Convertimos de texto a objeto para que el frontend lo lea bien
     const ventasFormateadas = results.map(venta => ({
       ...venta,
       items: JSON.parse(venta.itemsJSON || '[]'),
-      client: venta.clientId // Para que el frontend lea el nombre/ID
+      client: venta.clientId 
     }));
     
     return Response.json(ventasFormateadas);
@@ -18,14 +18,8 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   try {
     const data = await context.request.json();
-    
-    // Convertimos la lista de productos del ticket a texto para SQLite
     const itemsString = JSON.stringify(data.items || []);
-    
-    // Transformamos isB2B a número (1 o 0)
     const isB2BNum = data.isB2B ? 1 : 0;
-    
-    // Determinamos qué guardar en cliente
     const clientNameOrId = data.clientId || data.client || 'Consumidor Final';
 
     await context.env.DB.prepare(`
@@ -43,7 +37,7 @@ export async function onRequestPost(context) {
       itemsString
     ).run();
 
-    return Response.json({ success: true, message: "Venta procesada con éxito" });
+    return Response.json({ success: true });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
@@ -53,10 +47,8 @@ export async function onRequestDelete(context) {
   try {
     const url = new URL(context.request.url);
     const id = url.searchParams.get('id');
-    
     await context.env.DB.prepare("DELETE FROM sales WHERE id = ?1").bind(id).run();
-    
-    return Response.json({ success: true, message: "Venta eliminada" });
+    return Response.json({ success: true });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
