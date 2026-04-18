@@ -3,46 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stock | Micro SaaS</title>
+  <title>Stock y Depósitos | Micro SaaS</title>
+  
+  <style>
+    html, body { background-color: #f0f2f7 !important; }
+    body { animation: fadeIn 0.15s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
-    .layout-2col { display: grid; grid-template-columns: 1fr 350px; gap: 20px; align-items: start; }
-    @media (max-width: 1000px) { .layout-2col { grid-template-columns: 1fr; } }
+    .layout-1col { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
     
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
     
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
-    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
 
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
     
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
+    
+    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
 
-    .legend-box { background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px dashed var(--muted); font-size: 13px; color: var(--text); line-height: 1.5; margin-bottom: 20px;}
-    .code-tag { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-weight: bold; color: #0f172a; }
+    .branch-badge { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: bold; margin-right: 5px; display: inline-block; margin-bottom: 4px; }
   </style>
 </head>
 <body>
+
+<div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
+      <div class="brand-text"><strong id="sidebarUserName">Usuario: Admin</strong><small>Control del negocio</small></div>
     </div>
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
       <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
       <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
       <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html" class="active"><span class="nav-icon">📚</span> Stock</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
@@ -52,50 +61,40 @@
   <main class="content">
     <header class="topbar">
       <div class="page-title">
-        <h1 style="margin:0; font-size: 26px;">Stock</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Control simple de unidades, alertas de faltantes y movimientos básicos.</p>
+        <h1 style="margin:0; font-size: 26px;">Inventario Multi-Depósito</h1>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Ajustes, transferencias y control de stock centralizado.</p>
       </div>
       <div class="topbar-actions" style="display: flex; gap: 10px;">
-        <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalImportar()">⬆ Importar Excel / CSV</button>
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Exportar Excel</button>
-        <button class="btn btn-outline">Sincronizar</button>
-        <button class="btn btn-primary">+ Ajuste manual</button>
+        <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalTransferencia()">⇄ Transferir a Sucursal</button>
+        <button class="btn btn-primary" onclick="abrirModalAjuste()">+ Ajuste Manual</button>
       </div>
     </header>
 
     <div class="kpi-grid">
       <article class="card card-pad">
-        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Productos activos</div>
+        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Productos en Catálogo</div>
         <div id="kpiActivos" style="font-size:28px; font-weight:800;">0</div>
-        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Vinculados al módulo producto</div>
       </article>
       <article class="card card-pad">
-        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Unidades en stock</div>
-        <div id="kpiUnidades" style="font-size:28px; font-weight:800;">0</div>
-        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Suma total del stock actual</div>
+        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Unidades Totales</div>
+        <div id="kpiUnidades" style="font-size:28px; font-weight:800; color:var(--primary);">0</div>
       </article>
       <article class="card card-pad">
-        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Stock bajo</div>
-        <div id="kpiBajo" style="font-size:28px; font-weight:800;">0</div>
-        <div style="font-size:12px; color:var(--muted); margin-top:5px;">Cerca de agotarse</div>
+        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Stock Crítico</div>
+        <div id="kpiBajo" style="font-size:28px; font-weight:800; color:var(--warning);">0</div>
       </article>
       <article class="card card-pad">
-        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Sin stock</div>
-        <div id="kpiCero" style="font-size:28px; font-weight:800;">0</div>
-        <div style="font-size:12px; color:var(--muted); margin-top:5px;">No se pueden vender</div>
+        <div style="font-size:12px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Agotados</div>
+        <div id="kpiCero" style="font-size:28px; font-weight:800; color:var(--danger);">0</div>
       </article>
     </div>
 
-    <div class="layout-2col">
+    <div class="layout-1col">
       <article class="card card-pad">
-        <h2 style="margin: 0 0 5px 0; font-size: 18px;">Stock actual</h2>
-        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Vista central del inventario y alertas automáticas.</p>
+        <h2 style="margin: 0 0 15px 0; font-size: 18px;">Existencias por Depósito</h2>
         
         <div style="display:flex; gap:10px; margin-bottom:20px;">
-          <input type="text" id="searchStock" class="input-box" placeholder="Buscar producto o SKU..." style="max-width: 250px;" onkeyup="renderStock()">
-          <select class="input-box" style="max-width: 150px;">
-            <option>Todos</option>
-          </select>
+          <input type="text" id="searchStock" class="input-box" placeholder="🔍 Buscar producto o SKU..." style="max-width: 350px;" onkeyup="renderStock()">
         </div>
 
         <div style="overflow-x: auto;">
@@ -103,56 +102,109 @@
             <thead>
               <tr>
                 <th>Producto</th>
-                <th>SKU</th>
-                <th>Stock Actual</th>
-                <th>Stock Mínimo</th>
-                <th>Estado</th>
-                <th>Mensaje</th>
-                <th style="text-align: center;">Acciones</th>
+                <th>SKU / Código</th>
+                <th style="text-align: center;">Stock Total</th>
+                <th>Distribución en Sucursales</th>
+                <th>Estado General</th>
               </tr>
             </thead>
             <tbody id="tableBodyStock"></tbody>
           </table>
         </div>
       </article>
-
-      <article class="card card-pad">
-        <h2 style="margin: 0 0 5px 0; font-size: 18px;">Productos críticos</h2>
-        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Priorizá reposición sin perder tiempo.</p>
-        <div id="listaCriticos"></div>
-      </article>
     </div>
   </main>
 </div>
 
-<dialog id="modalImportar" style="width: 100%; max-width: 550px;">
+<dialog id="modalAjuste" style="width: 100%; max-width: 500px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;">Importar Carga Masiva</h2>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarModalImportar()">✕</button>
+      <h2 style="margin: 0; font-size:20px;">Ajuste Manual de Stock</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarModalAjuste()">✕</button>
     </div>
     
-    <div class="legend-box">
-      <strong>Instrucciones:</strong> Soporta archivos <strong>.xlsx, .xls y .csv</strong>.<br><br>
-      La primera fila debe tener estos nombres de columna:<br><br>
-      <div style="text-align: center; margin-bottom: 10px;">
-        <span class="code-tag">SKU</span> <span class="code-tag">Nombre</span> <span class="code-tag">Stock</span> <span class="code-tag">Costo</span> <span class="code-tag">Precio</span>
+    <form onsubmit="procesarAjuste(event)">
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Producto *</label>
+        <select id="ajusteProducto" class="input-box" required></select>
       </div>
-      <div style="text-align: center;">
-        <span class="code-tag">Categoria</span> <span class="code-tag">Estado</span> <span class="code-tag">Gastos</span> <span class="code-tag">Color</span> <span class="code-tag">Talle</span>
-      </div><br>
-      <em>* SKU, Nombre, Stock, Costo y Precio son obligatorios.</em>
-    </div>
 
-    <form onsubmit="procesarArchivo(event)">
-      <div style="margin-bottom: 20px;">
-        <label style="font-size: 12px; font-weight: bold; color: var(--muted); margin-bottom: 8px; display: block;">Seleccionar archivo (Excel o CSV)</label>
-        <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" required class="input-box" style="padding: 8px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Depósito / Sucursal *</label>
+          <select id="ajusteSucursal" class="input-box" required>
+            <option value="Central">Central</option>
+            <option value="Sucursal 1">Sucursal 1</option>
+            <option value="Sucursal 2">Sucursal 2</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Tipo de Ajuste *</label>
+          <select id="ajusteTipo" class="input-box" required>
+            <option value="ingreso">Ingreso (+)</option>
+            <option value="egreso">Egreso / Merma (-)</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Cantidad *</label>
+        <input type="number" id="ajusteCant" class="input-box" min="1" required placeholder="Ej: 10">
+      </div>
+
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Motivo (Opcional)</label>
+        <input type="text" id="ajusteMotivo" class="input-box" placeholder="Ej: Mercadería dañada, Ingreso sin remito">
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-light" onclick="cerrarModalImportar()">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Subir y Actualizar</button>
+        <button type="button" class="btn btn-light" onclick="cerrarModalAjuste()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Aplicar Ajuste</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<dialog id="modalTransferencia" style="width: 100%; max-width: 500px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;">Transferir entre Sucursales</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarModalTransferencia()">✕</button>
+    </div>
+    
+    <form onsubmit="procesarTransferencia(event)">
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Producto a Mover *</label>
+        <select id="transfProducto" class="input-box" required></select>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Origen (Sale de) *</label>
+          <select id="transfOrigen" class="input-box" required>
+            <option value="Central">Central</option>
+            <option value="Sucursal 1">Sucursal 1</option>
+            <option value="Sucursal 2">Sucursal 2</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Destino (Entra a) *</label>
+          <select id="transfDestino" class="input-box" required>
+            <option value="Sucursal 1">Sucursal 1</option>
+            <option value="Sucursal 2">Sucursal 2</option>
+            <option value="Central">Central</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Cantidad a Transferir *</label>
+        <input type="number" id="transfCant" class="input-box" min="1" required placeholder="Ej: 5">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="cerrarModalTransferencia()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Confirmar Movimiento</button>
       </div>
     </form>
   </div>
@@ -160,125 +212,186 @@
 
 <script src="core.js"></script>
 <script>
+  const API_URL = "/api";
   let dbProducts = [];
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function todayISO() { return new Date().toISOString().split('T')[0]; }
+  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
 
-  function initStock() {
-    dbProducts = getData(KEYS.products, []);
-    renderStock();
+  // Normalizador de JSON de sucursales
+  function getBranches(prod) {
+    if (!prod.stock_branches) return { "Central": prod.stock || 0 };
+    try {
+      const parsed = JSON.parse(prod.stock_branches);
+      return typeof parsed === 'object' ? parsed : { "Central": prod.stock || 0 };
+    } catch(e) {
+      return { "Central": prod.stock || 0 };
+    }
+  }
+
+  async function initStock() {
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/products`);
+      if (response.ok) dbProducts = await response.json();
+    } catch (error) {
+      console.error("Error cargando D1", error);
+    } finally {
+      mostrarCarga(false);
+      renderStock();
+    }
   }
 
   function renderStock() {
     const term = document.getElementById('searchStock').value.toLowerCase();
-    const filtrados = dbProducts.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)));
-    let kpiActivos = 0, kpiUnidades = 0, kpiBajo = 0, kpiCero = 0;
     const tbody = document.getElementById('tableBodyStock');
-    let rowsHtml = '';
-    let criticosHtml = '';
-
+    
+    let kpiActivos = 0, kpiUnidades = 0, kpiBajo = 0, kpiCero = 0;
+    
+    const filtrados = dbProducts.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)));
     filtrados.sort((a,b) => a.stock - b.stock);
 
-    filtrados.forEach(p => {
-      if (p.status !== 'Inactivo') kpiActivos++;
-      kpiUnidades += p.stock;
-      if (p.stock <= 3 && p.stock > 0) kpiBajo++;
-      if (p.stock === 0) kpiCero++;
-
-      let estadoBadge = p.stock === 0 ? '<span style="background:#fee2e2; color:#dc2626; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Agotado</span>' : (p.stock <= 3 ? '<span style="background:#fef08a; color:#b45309; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Bajo</span>' : '<span style="background:#dcfce7; color:#16a34a; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Normal</span>');
-
-      rowsHtml += `<tr><td><strong>${escapeHtml(p.name)}</strong></td><td>${p.code || '-'}</td><td><strong>${p.stock}</strong> <span style="font-size:11px; color:var(--muted);">u.</span></td><td style="color:var(--muted);">3</td><td>${estadoBadge}</td><td style="font-size:13px;">${p.stock<=3?'Requiere reposición':'Stock saludable'}</td><td style="text-align: center;"><div style="display:flex; gap:5px; justify-content:center;"><button class="btn-outline" style="padding:4px 8px; font-size:12px;">Ajustar</button></div></td></tr>`;
+    tbody.innerHTML = filtrados.map(p => {
+      const branches = getBranches(p);
+      let stockTotal = 0;
+      let branchHTML = '';
       
-      if(p.stock <= 3) {
-        criticosHtml += `<div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid #fef08a; border-radius:8px; margin-bottom:10px; background:#fffdf2;"><div><strong>${escapeHtml(p.name)}</strong><div style="font-size:11px; color:var(--warning); font-weight:bold;">Quedan ${p.stock} un.</div></div><button class="btn btn-outline" style="padding:4px 8px; font-size:11px;">Reponer</button></div>`;
+      for (const [branch, qty] of Object.entries(branches)) {
+        stockTotal += parseInt(qty);
+        branchHTML += `<span class="branch-badge">${branch}: <span style="color:var(--primary);">${qty}</span></span>`;
       }
-    });
+      
+      // Actualizar el stock total del objeto para mantener coherencia
+      p.stock = stockTotal;
 
-    tbody.innerHTML = rowsHtml || '<tr><td colspan="7" style="text-align:center; padding:30px;">No hay productos.</td></tr>';
-    document.getElementById('listaCriticos').innerHTML = criticosHtml || '<div style="text-align:center; color:var(--muted);">Todo bajo control.</div>';
+      if (p.status !== 'Inactivo') kpiActivos++;
+      kpiUnidades += stockTotal;
+      if (stockTotal <= 3 && stockTotal > 0) kpiBajo++;
+      if (stockTotal === 0) kpiCero++;
+
+      let estadoBadge = stockTotal === 0 
+        ? '<span style="background:#fee2e2; color:#dc2626; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Agotado</span>' 
+        : (stockTotal <= 3 ? '<span style="background:#fef08a; color:#b45309; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Bajo</span>' : '<span style="background:#dcfce7; color:#16a34a; padding:4px 10px; border-radius:12px; font-size:11px; font-weight:bold;">Normal</span>');
+
+      return `
+      <tr>
+        <td><strong>${escapeHtml(p.name)}</strong></td>
+        <td><span style="color:var(--muted); font-family:monospace;">${p.code || '-'}</span></td>
+        <td style="text-align:center;"><strong style="font-size:16px;">${stockTotal}</strong></td>
+        <td>${branchHTML}</td>
+        <td>${estadoBadge}</td>
+      </tr>`;
+    }).join('');
+
+    if (filtrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No hay productos registrados en el inventario.</td></tr>';
+    }
+
     document.getElementById('kpiActivos').textContent = kpiActivos;
     document.getElementById('kpiUnidades').textContent = kpiUnidades;
     document.getElementById('kpiBajo').textContent = kpiBajo;
     document.getElementById('kpiCero').textContent = kpiCero;
   }
 
-  function exportarExcel() {
-    if(dbProducts.length === 0) return alert("No hay datos.");
-    const csvData = dbProducts.map(p => ({ SKU: p.code||'', Nombre: p.name, Stock: p.stock, Costo: p.cost, Precio: p.price, Categoria: p.category||'', Estado: p.status||'Activo', Gastos: p.expenses||0, Color: p.color||'', Talle: p.size||'' }));
-    const headers = Object.keys(csvData[0]);
-    const csvContent = [headers.join(';'), ...csvData.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
-    link.download = `Plantilla_Stock.csv`;
-    link.click();
+  // --- MODAL DE AJUSTE MANUAL ---
+  function abrirModalAjuste() {
+    const select = document.getElementById('ajusteProducto');
+    select.innerHTML = '<option value="">Seleccioná un producto...</option>' + 
+      dbProducts.map(p => `<option value="${p.id}">${escapeHtml(p.name)} (Stock: ${p.stock})</option>`).join('');
+    
+    document.getElementById('ajusteCant').value = '';
+    document.getElementById('modalAjuste').showModal();
+  }
+  function cerrarModalAjuste() { document.getElementById('modalAjuste').close(); }
+
+  async function procesarAjuste(e) {
+    e.preventDefault();
+    const prodId = document.getElementById('ajusteProducto').value;
+    const branch = document.getElementById('ajusteSucursal').value;
+    const tipo = document.getElementById('ajusteTipo').value;
+    const cant = parseInt(document.getElementById('ajusteCant').value);
+    
+    if(!prodId || isNaN(cant) || cant <= 0) return alert("Completá los datos correctamente.");
+
+    const prod = dbProducts.find(p => p.id === prodId);
+    let branches = getBranches(prod);
+    
+    // Inicializar la sucursal si no existe
+    if (branches[branch] === undefined) branches[branch] = 0;
+
+    // Calcular el nuevo stock en la sucursal
+    if (tipo === 'ingreso') {
+      branches[branch] += cant;
+    } else {
+      if (branches[branch] < cant) return alert(`⚠️ No hay suficiente stock en ${branch} para descontar ${cant}. Quedan ${branches[branch]}`);
+      branches[branch] -= cant;
+    }
+
+    // Actualizar stock total
+    let stockTotal = 0;
+    for (let b in branches) stockTotal += branches[b];
+
+    prod.stock_branches = branches; // Lo dejamos como objeto, la API lo convierte a JSON
+    prod.stock = stockTotal;
+
+    mostrarCarga(true);
+    try {
+      await fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(prod) });
+      cerrarModalAjuste();
+      renderStock();
+    } catch(err) {
+      alert("Error al actualizar la base de datos.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
-  function abrirModalImportar() { document.getElementById('modalImportar').showModal(); }
-  function cerrarModalImportar() { document.getElementById('modalImportar').close(); }
+  // --- MODAL DE TRANSFERENCIAS ---
+  function abrirModalTransferencia() {
+    const select = document.getElementById('transfProducto');
+    select.innerHTML = '<option value="">Seleccioná un producto...</option>' + 
+      dbProducts.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    
+    document.getElementById('transfCant').value = '';
+    document.getElementById('modalTransferencia').showModal();
+  }
+  function cerrarModalTransferencia() { document.getElementById('modalTransferencia').close(); }
 
-  // ── LÓGICA DE PROCESAMIENTO HÍBRIDO (Excel o CSV) ──
-  function procesarArchivo(e) {
+  async function procesarTransferencia(e) {
     e.preventDefault();
-    const file = document.getElementById('fileInput').files[0];
-    if (!file) return;
+    const prodId = document.getElementById('transfProducto').value;
+    const origen = document.getElementById('transfOrigen').value;
+    const destino = document.getElementById('transfDestino').value;
+    const cant = parseInt(document.getElementById('transfCant').value);
 
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-      const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      
-      // Convertimos la hoja de Excel a un array de objetos JSON
-      const rows = XLSX.utils.sheet_to_json(firstSheet);
-      
-      if(rows.length === 0) return alert("El archivo está vacío.");
+    if(!prodId || origen === destino || isNaN(cant) || cant <= 0) return alert("Verificá los datos. Origen y destino no pueden ser iguales.");
 
-      let updated = 0; let added = 0;
+    const prod = dbProducts.find(p => p.id === prodId);
+    let branches = getBranches(prod);
 
-      rows.forEach(row => {
-        // Normalizar nombres de columnas (quitar espacios y pasar a minúsculas para comparar)
-        const findVal = (names) => {
-          const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
-          return key ? row[key] : null;
-        };
+    if (branches[origen] === undefined || branches[origen] < cant) {
+      return alert(`⚠️ Operación rechazada: No hay suficientes unidades (${cant}) en ${origen}.`);
+    }
 
-        const code = String(findVal(['sku', 'codigo', 'código']) || '');
-        const name = String(findVal(['nombre', 'producto']) || '');
-        const stock = parseInt(findVal(['stock', 'cantidad'])) || 0;
-        const cost = parseFloat(findVal(['costo', 'precio costo'])) || 0;
-        const price = parseFloat(findVal(['precio', 'precio de venta'])) || 0;
+    if (branches[destino] === undefined) branches[destino] = 0;
 
-        if(!name || isNaN(stock)) return; // Saltear filas sin datos clave
+    // Ejecutar el movimiento
+    branches[origen] -= cant;
+    branches[destino] += cant;
 
-        let prod = dbProducts.find(p => (code && p.code === code) || p.name.toLowerCase() === name.toLowerCase());
+    prod.stock_branches = branches;
 
-        const dataObj = {
-          code: code, name: name, stock: stock, cost: cost, price: price,
-          category: findVal(['categoria', 'categoría']) || '',
-          status: findVal(['estado']) || 'Activo',
-          expenses: parseFloat(findVal(['gastos'])) || 0,
-          color: findVal(['color']) || '',
-          size: findVal(['talle', 'talla', 'size']) || '',
-          promoType: 'none'
-        };
-
-        if (prod) {
-          Object.assign(prod, dataObj);
-          updated++;
-        } else {
-          dbProducts.unshift({ id: 'prod_' + Date.now() + Math.random(), ...dataObj });
-          added++;
-        }
-      });
-
-      setData(KEYS.products, dbProducts);
-      window.dispatchEvent(new Event('saas:data-updated'));
-      cerrarModalImportar();
+    mostrarCarga(true);
+    try {
+      await fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(prod) });
+      cerrarModalTransferencia();
       renderStock();
-      alert(`✅ Éxito: ${updated} actualizados y ${added} nuevos.`);
-    };
-    reader.readAsArrayBuffer(file);
+      alert("✅ Transferencia realizada con éxito.");
+    } catch(err) {
+      alert("Error en la transferencia de la base de datos.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   initStock();
