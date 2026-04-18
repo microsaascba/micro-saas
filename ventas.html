@@ -167,7 +167,7 @@
 
 <script src="core.js"></script>
 <script>
-  const API_URL = "/api";
+ const API_URL = "/api";
   let dbProducts = []; 
   let dbSales = [];
   const PIN_ADMIN = "1234"; 
@@ -192,34 +192,113 @@
     finally { mostrarCarga(false); renderHistorialYcaja(); }
   }
 
+  // --- MOTOR DE AUTORIZACIÓN (MOVIDO ARRIBA PARA EVITAR EL BUG) ---
   function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
     document.getElementById('authActionText').textContent = accionTexto;
-    pendingAdminAction = funcionExito; pendingAdminParam = param;
+    pendingAdminAction = funcionExito; 
+    pendingAdminParam = param;
     document.getElementById('adminAuthPin').value = '';
     document.getElementById('adminAuthDialog').showModal();
     setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
   }
 
-  function cerrarAdminAuth() { document.getElementById('adminAuthDialog').close(); pendingAdminAction = null; pendingAdminParam = null; }
+  function cerrarAdminAuth() { 
+      document.getElementById('adminAuthDialog').close(); 
+      pendingAdminAction = null; 
+      pendingAdminParam = null; 
+  }
 
   function validarAdminAuth(e) {
     e.preventDefault();
     if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
-      cerrarAdminAuth(); if (pendingAdminAction) pendingAdminAction(pendingAdminParam);
+      const accionSegura = pendingAdminAction;
+      const parametroSeguro = pendingAdminParam;
+      cerrarAdminAuth(); 
+      
+      // Ejecutamos la acción guardada en memoria
+      if (accionSegura) {
+          accionSegura(parametroSeguro);
+      }
     } else {
-      alert("❌ PIN incorrecto."); document.getElementById('adminAuthPin').value = ''; document.getElementById('adminAuthPin').focus();
+      alert("❌ PIN incorrecto."); 
+      document.getElementById('adminAuthPin').value = ''; 
+      document.getElementById('adminAuthPin').focus();
     }
   }
 
+  // --- LÓGICA DE ANULACIÓN MULTI-SUCURSAL ---
+  async function ejecutarAnulacionVenta(id) {
+    mostrarCarga(true);
+    try {
+      const venta = dbSales.find(v => v.id === id);
+      
+      // DEVOLUCIÓN DE STOCK MULTI-SUCURSAL
+      if (venta && venta.items && venta.items.length > 0) {
+        const sucursalVenta = venta.branch || 'Central'; // Buscamos de qué sucursal salió la venta
+        
+        for (let item of venta.items) {
+          const pDB = dbProducts.find(p => p.id === item.id);
+          if (pDB) {
+            let branches = {};
+            try { 
+                branches = JSON.parse(pDB.stock_branches); 
+            } catch(e) { 
+                branches = { "Central": pDB.stock || 0 }; 
+            }
+            
+            // Le devolvemos el stock a la sucursal que hizo la venta
+            if (branches[sucursalVenta] === undefined) branches[sucursalVenta] = 0;
+            branches[sucursalVenta] += item.qty;
+            
+            // Recalculamos el total
+            let stockTotal = 0;
+            for (let b in branches) stockTotal += branches[b];
+            
+            pDB.stock_branches = JSON.stringify(branches);
+            pDB.stock = stockTotal;
+
+            // Actualizamos en D1
+            await fetch(`${API_URL}/products`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pDB) });
+          }
+        }
+      }
+      
+      // ELIMINAMOS LA VENTA
+      const res = await fetch(`${API_URL}/sales?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        dbSales = dbSales.filter(v => v.id !== id); 
+        renderHistorialYcaja(); 
+        alert(`✅ Venta anulada con éxito.\nEl stock fue devuelto a la sucursal: ${venta.branch || 'Central'}.`);
+      } else { 
+          alert("Error al intentar anular la venta en la base de datos."); 
+      }
+    } catch (e) { console.error(e); alert("Error de red."); } finally { mostrarCarga(false); }
+  }
+
+  // Los prompts de botones llaman a la función pedirAuthAdmin (que ahora sí sabe quiénes son las funciones objetivo)
+  function anularVentaPrompt(id) { pedirAuthAdmin('anular este comprobante y devolver stock', ejecutarAnulacionVenta, id); }
+  function imprimirCierrePrompt() { pedirAuthAdmin('cerrar la caja e imprimir ticket Z', ejecutarCierreCaja); }
+
+
   function renderHistorialYcaja() {
     const today = todayISO();
-    const ventasHoy = dbSales.filter(s => s.date === today || (s.createdAt && s.createdAt.startsWith(today)));
+    
+    // FILTRO DE SUCURSAL PARA CAJEROS (El Admin ve todo, la cajera solo su caja)
+    const role = localStorage.getItem('userRole') || 'admin';
+    const terminalActiva = localStorage.getItem('terminal_assigned_branch');
+    
+    let ventasFiltradas = dbSales.filter(s => s.date === today || (s.createdAt && s.createdAt.startsWith(today)));
+    
+    if (role !== 'admin' && terminalActiva) {
+        ventasFiltradas = ventasFiltradas.filter(s => s.branch === terminalActiva);
+    }
+
     const tbody = document.getElementById('historialBody');
     
-    if (ventasHoy.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No hay ventas registradas hoy.</td></tr>';
+    if (ventasFiltradas.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No hay ventas registradas hoy en esta caja.</td></tr>';
     } else {
-      tbody.innerHTML = ventasHoy.map(v => {
+      tbody.innerHTML = ventasFiltradas.map(v => {
         let hora = '-';
         if (v.createdAt) {
             const d = new Date(v.createdAt);
@@ -229,11 +308,14 @@
         const vendedor = v.seller || 'Admin';
         const cuponText = v.cupon ? ` <strong style="font-size:11px; color:#0f766e; display:block;">Cupón: ${escapeHtml(v.cupon)}</strong>` : '';
         const displayClient = (v.clientId && v.isB2B) ? `<span title="B2B">🏢 ${escapeHtml(v.client || v.clientId)}</span>` : escapeHtml(v.client || 'Consumidor Final');
+        
+        // Muestra la sucursal de donde salió la venta (solo útil si el Admin está viendo el consolidado global)
+        const branchTag = (role === 'admin' && v.branch) ? `<br><small style="color:var(--primary); font-weight:bold;">📍 ${v.branch}</small>` : '';
 
         return `
         <tr>
           <td style="color:var(--muted); font-size:12px;">${hora}</td>
-          <td><strong>${escapeHtml(vendedor)}</strong></td>
+          <td><strong>${escapeHtml(vendedor)}</strong>${branchTag}</td>
           <td style="color:var(--muted); font-size:11px;">#${v.id.replace('vta_','')}</td>
           <td><strong>${displayClient}</strong></td>
           <td><span style="background:#f1f5f9; padding:4px 8px; border-radius:6px; font-size:12px; font-weight:bold;">${v.method}</span>${cuponText}</td>
@@ -246,40 +328,17 @@
     }
 
     let totEfectivo = 0, totTransf = 0, totTarjeta = 0;
-    ventasHoy.forEach(v => {
+    ventasFiltradas.forEach(v => {
       if (v.method === 'Efectivo') totEfectivo += v.total;
       else if (v.method === 'Transferencia') totTransf += v.total;
       else if (v.method === 'Tarjeta') totTarjeta += v.total;
+      // Nota: Si metiste Cuentas Corrientes, quizás tengas 'A Cuenta Corriente', podés ignorarlo de la caja física o sumarlo a un 4to bloque.
     });
 
     document.getElementById('cajaEfectivo').textContent = currency(totEfectivo);
     document.getElementById('cajaTransf').textContent = currency(totTransf);
     document.getElementById('cajaTarjeta').textContent = currency(totTarjeta);
     document.getElementById('cajaTotal').textContent = currency(totEfectivo + totTransf + totTarjeta);
-  }
-
-  function anularVentaPrompt(id) { pedirAuthAdmin('anular este comprobante y devolver stock', ejecutarAnulacionVenta, id); }
-  function imprimirCierrePrompt() { pedirAuthAdmin('cerrar la caja e imprimir ticket Z', ejecutarCierreCaja); }
-
-  async function ejecutarAnulacionVenta(id) {
-    mostrarCarga(true);
-    try {
-      const venta = dbSales.find(v => v.id === id);
-      if (venta && venta.items && venta.items.length > 0) {
-        for (let item of venta.items) {
-          const pDB = dbProducts.find(p => p.id === item.id);
-          if (pDB) {
-            pDB.stock += item.qty; 
-            await fetch(`${API_URL}/products`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pDB) });
-          }
-        }
-      }
-      const res = await fetch(`${API_URL}/sales?id=${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        dbSales = dbSales.filter(v => v.id !== id); renderHistorialYcaja(); 
-        alert("✅ Venta anulada con éxito. El stock fue devuelto.");
-      } else { alert("Error al intentar anular la venta en la base de datos."); }
-    } catch (e) { console.error(e); alert("Error de red."); } finally { mostrarCarga(false); }
   }
 
   function ejecutarCierreCaja() {
@@ -299,11 +358,19 @@
   // EXPORTACIÓN A EXCEL CONSOLIDADAY INTELIGENTE
   function exportarExcelConsolidado() {
     const today = todayISO();
-    const ventasHoy = dbSales.filter(s => s.date === today || (s.createdAt && s.createdAt.startsWith(today)));
-    if(!ventasHoy.length) return alert("No hay ventas hoy para exportar.");
+    
+    const role = localStorage.getItem('userRole') || 'admin';
+    const terminalActiva = localStorage.getItem('terminal_assigned_branch');
+    
+    let ventasHoy = dbSales.filter(s => s.date === today || (s.createdAt && s.createdAt.startsWith(today)));
+    if (role !== 'admin' && terminalActiva) {
+        ventasHoy = ventasHoy.filter(s => s.branch === terminalActiva);
+    }
+    
+    if(!ventasHoy.length) return alert("No hay ventas hoy para exportar en esta caja.");
 
     // Datos individuales
-    let csvContent = "Fecha;Hora;Comprobante;Vendedor;Cliente;Metodo Pago;Cupon;Subtotal;Descuento;Total Final\n";
+    let csvContent = "Fecha;Hora;Sucursal;Comprobante;Vendedor;Cliente;Metodo Pago;Cupon;Subtotal;Descuento;Total Final\n";
     
     let totEfectivo = 0, totTransf = 0, totTarjeta = 0;
 
@@ -312,9 +379,10 @@
       const fecha = fechaObj.toLocaleDateString('es-AR');
       const hora = fechaObj.toLocaleTimeString('es-AR');
       const vendedor = v.seller || 'Admin';
-      const cuponStr = v.cupon ? `="${v.cupon}"` : '-'; // Evita que excel rompa números largos de tarjeta
+      const sucursalVenta = v.branch || 'Central';
+      const cuponStr = v.cupon ? `="${v.cupon}"` : '-'; 
       
-      csvContent += `"${fecha}";"${hora}";"${v.id}";"${vendedor}";"${v.client || 'Consumidor Final'}";"${v.method}";${cuponStr};"${v.subtotal}";"${v.promoDiscount || 0}";"${v.total}"\n`;
+      csvContent += `"${fecha}";"${hora}";"${sucursalVenta}";"${v.id}";"${vendedor}";"${v.client || 'Consumidor Final'}";"${v.method}";${cuponStr};"${v.subtotal}";"${v.promoDiscount || 0}";"${v.total}"\n`;
 
       if (v.method === 'Efectivo') totEfectivo += v.total;
       else if (v.method === 'Transferencia') totTransf += v.total;
@@ -322,17 +390,16 @@
     });
 
     // Filas de consolidación (Resumen al pie)
-    csvContent += `\n;;;;;;;;;\n`; // Espacio
-    csvContent += `;;;;;;;;"TOTAL EFECTIVO";"${totEfectivo}"\n`;
-    csvContent += `;;;;;;;;"TOTAL TRANSFERENCIA";"${totTransf}"\n`;
-    csvContent += `;;;;;;;;"TOTAL TARJETAS";"${totTarjeta}"\n`;
-    csvContent += `;;;;;;;;"TOTAL CAJA DEL DIA";"${totEfectivo + totTransf + totTarjeta}"\n`;
+    csvContent += `\n;;;;;;;;;;\n`; 
+    csvContent += `;;;;;;;;;"TOTAL EFECTIVO";"${totEfectivo}"\n`;
+    csvContent += `;;;;;;;;;"TOTAL TRANSFERENCIA";"${totTransf}"\n`;
+    csvContent += `;;;;;;;;;"TOTAL TARJETAS";"${totTarjeta}"\n`;
+    csvContent += `;;;;;;;;;"TOTAL CAJA DEL DIA";"${totEfectivo + totTransf + totTarjeta}"\n`;
 
-    // Descarga (Agregando BOM para que Excel lea bien acentos y caracteres latinos)
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `Liquidacion_Caja_${today}.csv`;
+    link.download = `Liquidacion_Caja_${terminalActiva || 'Global'}_${today}.csv`;
     link.click();
   }
 
