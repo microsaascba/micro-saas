@@ -3,119 +3,127 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Acceso | Micro SaaS</title>
+  <title>Ingreso | Micro SaaS</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    body {
-      display: flex; align-items: center; justify-content: center;
-      min-height: 100vh; background: linear-gradient(135deg, #f0f2f7 0%, #e2e8f0 100%);
-      margin: 0; font-family: var(--font, 'DM Sans', sans-serif);
+    html, body { 
+      height: 100%; margin: 0; padding: 0;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      display: flex; justify-content: center; align-items: center;
+      font-family: 'Inter', system-ui, sans-serif;
     }
-    .login-wrapper { width: 100%; max-width: 420px; padding: 20px; box-sizing: border-box; }
+    
     .login-card {
-      background: var(--panel, #ffffff); padding: 40px 32px; border-radius: 24px;
-      box-shadow: 0 20px 48px rgba(15, 23, 42, 0.08); border: 1px solid var(--line, #e2e8f0); text-align: center;
+      background: #ffffff;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      animation: slideUp 0.4s ease-out;
     }
-    .login-logo {
-      width: 64px; height: 64px; background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      border-radius: 18px; margin: 0 auto 24px; display: grid; place-items: center;
-      color: #ffffff; font-size: 28px; font-weight: 800; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .login-card h1 { margin: 0 0 8px; font-size: 26px; color: var(--text, #0f172a); font-weight: 800; letter-spacing: -0.03em; }
-    .login-card p { color: var(--muted, #64748b); font-size: 14px; line-height: 1.5; margin: 0 0 32px; padding: 0 10px; }
-    .form-group { text-align: left; margin-bottom: 20px; }
-    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; }
-    .form-group input {
-      width: 100%; padding: 14px 16px; border: 1px solid var(--line, #cbd5e1); border-radius: 12px;
-      background: #ffffff; color: var(--text, #0f172a); font-family: inherit; font-size: 14px; box-sizing: border-box;
-      transition: border-color 0.2s, box-shadow 0.2s;
+
+    .brand-logo-large {
+      background: var(--primary);
+      color: white;
+      width: 60px; height: 60px;
+      border-radius: 14px;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 28px; font-weight: 900;
+      margin: 0 auto 20px auto;
     }
-    .form-group input:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); outline: none; }
-    .btn-login {
-      width: 100%; background: var(--primary, #2563eb); color: #ffffff; border: none; padding: 15px;
-      border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25); margin-top: 8px;
-    }
-    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37, 99, 235, 0.35); }
-    .support-link { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--line, #e2e8f0); font-size: 13px; color: var(--muted, #64748b); }
-    .support-link a { color: #25D366; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; margin-left: 4px; transition: opacity 0.2s; }
-    .support-link a:hover { opacity: 0.8; }
+
+    .login-title { margin: 0 0 5px; font-size: 22px; color: var(--text); }
+    .login-sub { margin: 0 0 30px; font-size: 14px; color: var(--muted); }
+
+    .input-group { text-align: left; margin-bottom: 20px; }
+    .input-group label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
+    .input-box { width: 100%; padding: 14px; border: 2px solid var(--line); border-radius: 10px; font-size: 15px; outline: none; transition: 0.2s; box-sizing: border-box; }
+    .input-box:focus { border-color: var(--primary); }
+
+    .btn-login { width: 100%; padding: 16px; font-size: 16px; font-weight: bold; background: var(--primary); color: white; border: none; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+    .btn-login:hover { background: #1d4ed8; }
+    .btn-login:disabled { background: var(--muted); cursor: not-allowed; }
+
+    #errorMsg { color: var(--danger); background: var(--danger-soft); padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-bottom: 20px; display: none; }
   </style>
 </head>
 <body>
 
-  <div class="login-wrapper">
-    <div class="login-card">
-      <div class="login-logo">M</div>
-      <h1>Bienvenido al sistema</h1>
-      <p>Ingrese sus credenciales operativas para acceder.</p>
-      
-      <form id="loginForm">
-        <div class="form-group">
-          <label>Nombre de Usuario</label>
-          <input type="text" id="loginUsername" placeholder="Ej: admin o caja1" required autocomplete="username" />
-        </div>
-        <div class="form-group">
-          <label>Contraseña</label>
-          <input type="password" id="loginPassword" placeholder="Ingrese su contraseña" required autocomplete="current-password" />
-        </div>
-        <button type="submit" class="btn-login">Ingresar al Sistema</button>
-      </form>
+  <div class="login-card">
+    <div class="brand-logo-large">M</div>
+    <h1 class="login-title">Bienvenido</h1>
+    <p class="login-sub">Ingresá tus credenciales para continuar</p>
 
-      <div class="support-link">
-        ¿Necesitás ayuda? 
-        <a href="https://wa.me/5493516506955" target="_blank">
-          <span>💬</span> Escribinos
-        </a>
+    <div id="errorMsg"></div>
+
+    <form id="loginForm" onsubmit="procesarLogin(event)">
+      <div class="input-group">
+        <label>Usuario</label>
+        <input type="text" id="username" class="input-box" required placeholder="Ej: admin" autofocus>
       </div>
-    </div>
+      
+      <div class="input-group">
+        <label>Contraseña</label>
+        <input type="password" id="password" class="input-box" required placeholder="••••••••">
+      </div>
+
+      <button type="submit" class="btn-login" id="btnSubmit">Ingresar al sistema</button>
+    </form>
   </div>
 
-  <script src="core.js"></script>
   <script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    async function procesarLogin(e) {
       e.preventDefault();
-      const username = document.getElementById('loginUsername').value.trim();
-      const password = document.getElementById('loginPassword').value.trim();
-      const btn = document.querySelector('.btn-login');
       
-      btn.textContent = "Verificando...";
+      const btn = document.getElementById('btnSubmit');
+      const errorMsg = document.getElementById('errorMsg');
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value.trim();
+
       btn.disabled = true;
+      btn.textContent = "Verificando...";
+      errorMsg.style.display = 'none';
 
       try {
-        const res = await fetch('/api/login', {
+        const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ username: u, password: p })
         });
 
-        if (res.ok) {
-          const data = await res.json();
-          // Guardamos los datos de la sesión real
-          localStorage.setItem('saas_logged_in', 'true');
-          localStorage.setItem('saas_username', data.user.username);
-          localStorage.setItem('saas_role', data.user.role);
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // GUARDAMOS LA LLAVE DE ACCESO EN EL NAVEGADOR
+          localStorage.setItem('activeUser', data.user.username);
+          localStorage.setItem('userRole', data.user.role);
+          localStorage.setItem('allowedModules', JSON.stringify(data.user.allowedModules));
           
-          // Redirigimos según el rol
-          if (data.user.role === 'pos') {
-            window.location.href = 'ventas.html';
-          } else {
-            window.location.href = 'dashboard.html';
-          }
+          btn.style.background = "var(--success)";
+          btn.textContent = "¡Acceso Autorizado!";
+          
+          // Redirigimos al panel
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 500);
         } else {
-          alert("Usuario o contraseña incorrectos.");
-          btn.textContent = "Ingresar al Sistema";
+          errorMsg.textContent = data.error || "Error desconocido.";
+          errorMsg.style.display = 'block';
           btn.disabled = false;
+          btn.textContent = "Ingresar al sistema";
         }
       } catch (error) {
-        alert("Error de conexión con el servidor. Revisá tu internet.");
-        btn.textContent = "Ingresar al Sistema";
+        errorMsg.textContent = "Error de red. Verificá tu conexión.";
+        errorMsg.style.display = 'block';
         btn.disabled = false;
+        btn.textContent = "Ingresar al sistema";
       }
-    });
-  </script>
-</body>
-</html>
+    }
   </script>
 </body>
 </html>
