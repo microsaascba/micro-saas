@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sucursales | Micro SaaS</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    html, body { background-color: #f0f2f7 !important; }
+    body { animation: fadeIn 0.15s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    .layout-2col { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 1000px) { .layout-2col { grid-template-columns: 1fr; } }
+    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
+    .input-box:focus { border-color: var(--primary); }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
+    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
+    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
+  </style>
+</head>
+<body>
+
+<div id="loadingOverlay">Sincronizando con la nube...</div>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong id="sidebarUserName">Usuario: Admin</strong><small>Control del negocio</small></div>
+    </div>
+    <nav class="nav">
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
+      <a href="sucursales.html" class="active"><span class="nav-icon">🏪</span> Sucursales</a>
+      <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <header class="topbar">
+      <div class="page-title">
+        <h1 style="margin:0; font-size: 26px;">Locales y Depósitos</h1>
+        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión de sucursales para el control de inventario.</p>
+      </div>
+    </header>
+
+    <div class="layout-2col">
+      <article class="card card-pad">
+        <h2 style="margin: 0 0 5px 0; font-size: 18px;" id="formTitle">Alta de Sucursal</h2>
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Datos del nuevo punto de venta o depósito.</p>
+        
+        <form id="branchForm" onsubmit="guardarSucursal(event)">
+          <input type="hidden" id="branchId">
+          
+          <div style="margin-bottom: 15px;">
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Nombre de la Sucursal *</label>
+            <input type="text" id="branchName" class="input-box" required placeholder="Ej: Sucursal Centro">
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Dirección</label>
+            <input type="text" id="branchAddress" class="input-box" placeholder="Ej: Av. Principal 123">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+            <div>
+              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Encargado</label>
+              <input type="text" id="branchManager" class="input-box" placeholder="Nombre">
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Teléfono</label>
+              <input type="text" id="branchPhone" class="input-box" placeholder="Ej: 351...">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-light" style="flex:1;" onclick="limpiarFormulario()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" style="flex:2;" id="btnSave">Guardar Sucursal</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="card card-pad">
+        <h2 style="margin: 0 0 20px 0; font-size: 18px;">Directorio de Locales</h2>
+        
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th>Encargado</th>
+                <th style="text-align: center;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+  </main>
+</div>
+
+<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: var(--panel);">
+  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
+    <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
+  </div>
+  <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
+    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Se requiere PIN de administrador.</p>
+    <input type="password" id="adminAuthPin" required placeholder="Ingresá el PIN" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
+      <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="core.js"></script>
+<script>
+  const API_URL = "/api"; 
+  let dbBranches = [];
+  const PIN_ADMIN = "1234";
+  let pendingAdminAction = null;
+  let pendingAdminParam = null;
+
+  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
+
+  async function initBranches() {
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/branches`);
+      if (response.ok) dbBranches = await response.json();
+    } catch (error) { console.error("Error:", error); } 
+    finally { mostrarCarga(false); renderTable(); }
+  }
+
+  async function guardarSucursal(e) {
+    e.preventDefault();
+    const id = document.getElementById('branchId').value || 'br_' + Date.now();
+    
+    const branch = {
+      id: id,
+      name: document.getElementById('branchName').value.trim(),
+      address: document.getElementById('branchAddress').value.trim(),
+      manager: document.getElementById('branchManager').value.trim(),
+      phone: document.getElementById('branchPhone').value.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/branches`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(branch)
+      });
+      if(response.ok) {
+        const idx = dbBranches.findIndex(c => c.id === id);
+        if (idx >= 0) dbBranches[idx] = branch; else dbBranches.unshift(branch);
+        limpiarFormulario(); renderTable();
+      } else alert("Error al guardar.");
+    } catch(error) { alert("Error de conexión."); } 
+    finally { mostrarCarga(false); }
+  }
+
+  function editarSucursal(id) {
+    const c = dbBranches.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('formTitle').textContent = "Editar Sucursal";
+    document.getElementById('branchId').value = c.id;
+    document.getElementById('branchName').value = c.name;
+    document.getElementById('branchAddress').value = c.address || '';
+    document.getElementById('branchManager').value = c.manager || '';
+    document.getElementById('branchPhone').value = c.phone || '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function limpiarFormulario() {
+    document.getElementById('formTitle').textContent = "Alta de Sucursal";
+    document.getElementById('branchForm').reset();
+    document.getElementById('branchId').value = '';
+  }
+
+  function eliminarSucursalPrompt(id) {
+    const c = dbBranches.find(x => x.id === id);
+    if(c && c.name.toLowerCase() === 'central') return alert("La sucursal Central no puede ser eliminada.");
+    pedirAuthAdmin(ejecutarEliminacionSucursal, id);
+  }
+
+  async function ejecutarEliminacionSucursal(id) {
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/branches?id=${id}`, { method: 'DELETE' });
+      if (response.ok) { dbBranches = dbBranches.filter(c => c.id !== id); renderTable(); } 
+      else alert("Error al eliminar.");
+    } catch(error) { alert("Error de conexión."); } 
+    finally { mostrarCarga(false); }
+  }
+
+  function pedirAuthAdmin(funcionExito, param = null) {
+    pendingAdminAction = funcionExito; pendingAdminParam = param;
+    document.getElementById('adminAuthPin').value = '';
+    document.getElementById('adminAuthDialog').showModal();
+    setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
+  }
+
+  function cerrarAdminAuth() { document.getElementById('adminAuthDialog').close(); pendingAdminAction = null; pendingAdminParam = null; }
+
+  function validarAdminAuth(e) {
+    e.preventDefault();
+    if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
+      const accion = pendingAdminAction; const param = pendingAdminParam;
+      cerrarAdminAuth(); if (accion) accion(param);
+    } else { alert("❌ PIN incorrecto."); document.getElementById('adminAuthPin').value = ''; document.getElementById('adminAuthPin').focus(); }
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = dbBranches.map(c => {
+      const isCentral = c.name.toLowerCase() === 'central';
+      const deleteBtn = isCentral ? '' : `<button onclick="eliminarSucursalPrompt('${c.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Borrar</button>`;
+      
+      return `
+      <tr>
+        <td><strong>${escapeHtml(c.name)}</strong></td>
+        <td><span style="color:var(--muted);">${escapeHtml(c.address || '-')}</span></td>
+        <td>
+          <div style="font-size:13px;">${escapeHtml(c.manager || '-')}</div>
+          <small style="color:var(--muted);">${escapeHtml(c.phone || '-')}</small>
+        </td>
+        <td style="text-align: center;">
+          <button onclick="editarSucursal('${c.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; margin-right:5px;">Editar</button>
+          ${deleteBtn}
+        </td>
+      </tr>`
+    }).join('');
+  }
+
+  initBranches();
+</script>
+</body>
+</html>
