@@ -118,11 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- 3. CONTROL DE SESIÓN Y PERMISOS ---
+  // --- 3. CONTROL DE SESIÓN, PERMISOS Y TERMINAL FÍSICA ---
   const activeUser = localStorage.getItem('activeUser') || localStorage.getItem('saas_username');
   const role = localStorage.getItem('userRole') || localStorage.getItem('saas_role');
   const isLogged = (activeUser !== null && activeUser !== undefined) || (localStorage.getItem('saas_logged_in') === 'true');
   const allowedModules = JSON.parse(localStorage.getItem('allowedModules') || '[]');
+
+  // LLAVE MAESTRA: Sucursal vinculada a esta PC
+  const terminalBranch = localStorage.getItem('terminal_assigned_branch');
 
   if (!isLogged && !isLoginPage) { 
     window.location.href = 'login.html'; 
@@ -134,29 +137,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const brandText = document.querySelector('.brand-text strong');
     if (brandText) brandText.textContent = 'Usuario: ' + (activeUser.charAt(0).toUpperCase() + activeUser.slice(1));
 
-    // B. Configurar Menú
+    // B. Configurar Menú e Indicador de Terminal
     const nav = document.querySelector('.nav');
+    
+    if (nav) {
+      // Dibujar indicador de PC
+      const branchIndicator = document.createElement('div');
+      branchIndicator.style = "padding: 12px; margin-bottom: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 12px; color: #94a3b8; border-left: 4px solid " + (terminalBranch ? "#10b981" : "#ef4444");
+      branchIndicator.innerHTML = terminalBranch 
+          ? `📍 PC Asignada:<br><strong style="color:white; font-size:13px;">${escapeHtml(terminalBranch)}</strong>`
+          : `⚠️ Terminal Libre<br><small>No vinculada a sucursal</small>`;
+      nav.prepend(branchIndicator);
 
-    // INYECCIÓN MÁGICA: Agregar "Sucursales" si no existe en el HTML
-    if (nav && !document.querySelector('a[href="sucursales.html"]')) {
-       const sucLink = document.createElement('a'); sucLink.href = 'sucursales.html';
-       if (currentPage === 'sucursales') sucLink.classList.add('active');
-       sucLink.innerHTML = '<span class="nav-icon">🏪</span> Sucursales'; 
-       nav.appendChild(sucLink);
+      // INYECCIÓN MÁGICA: Agregar "Sucursales" si no existe en el HTML
+      if (!document.querySelector('a[href="sucursales.html"]')) {
+         const sucLink = document.createElement('a'); sucLink.href = 'sucursales.html';
+         if (currentPage === 'sucursales') sucLink.classList.add('active');
+         sucLink.innerHTML = '<span class="nav-icon">🏪</span> Sucursales'; 
+         nav.appendChild(sucLink);
+      }
+
+      // Inyectar Usuarios si es Admin
+      if (role === 'admin' && !document.querySelector('a[href="usuarios.html"]')) {
+         const usersLink = document.createElement('a'); usersLink.href = 'usuarios.html';
+         if (currentPage === 'usuarios') usersLink.classList.add('active');
+         usersLink.innerHTML = '<span class="nav-icon">👥</span> Usuarios'; nav.appendChild(usersLink);
+      }
+
+      if (!document.getElementById('btnLogout')) {
+        const logoutBtn = document.createElement('a'); logoutBtn.id = 'btnLogout'; logoutBtn.href = '#';
+        logoutBtn.innerHTML = '<span class="nav-icon">🚪</span> Cerrar sesión';
+        logoutBtn.style.color = '#fca5a5'; logoutBtn.style.marginTop = '15px'; logoutBtn.style.borderTop = '1px solid rgba(255,255,255,0.1)'; logoutBtn.style.paddingTop = '15px';
+        logoutBtn.onclick = (e) => { e.preventDefault(); logout(); }; nav.appendChild(logoutBtn);
+      }
     }
 
-    // Inyectar Usuarios si es Admin
-    if (nav && role === 'admin' && !document.querySelector('a[href="usuarios.html"]')) {
-       const usersLink = document.createElement('a'); usersLink.href = 'usuarios.html';
-       if (currentPage === 'usuarios') usersLink.classList.add('active');
-       usersLink.innerHTML = '<span class="nav-icon">👥</span> Usuarios'; nav.appendChild(usersLink);
-    }
-
-    if (nav && !document.getElementById('btnLogout')) {
-      const logoutBtn = document.createElement('a'); logoutBtn.id = 'btnLogout'; logoutBtn.href = '#';
-      logoutBtn.innerHTML = '<span class="nav-icon">🚪</span> Cerrar sesión';
-      logoutBtn.style.color = '#fca5a5'; logoutBtn.style.marginTop = '15px'; logoutBtn.style.borderTop = '1px solid rgba(255,255,255,0.1)'; logoutBtn.style.paddingTop = '15px';
-      logoutBtn.onclick = (e) => { e.preventDefault(); logout(); }; nav.appendChild(logoutBtn);
+    // --- SEGURIDAD: BLOQUEO DE OPERACIÓN SIN VÍNCULO ---
+    // Si no es Admin y la PC no está vinculada, bloqueamos módulos que muevan stock o plata
+    const sensitiveModules = ['facturacion', 'stock', 'ventas'];
+    if (role !== 'admin' && !terminalBranch && sensitiveModules.includes(currentPage)) {
+        document.body.innerHTML = `
+            <div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px;">
+                <h1 style="font-size: 60px; margin: 0;">🖥️</h1>
+                <h2 style="color: #ef4444;">Terminal No Autorizada</h2>
+                <p>Esta computadora no ha sido vinculada a ninguna sucursal todavía.</p>
+                <p style="color: #94a3b8; font-size: 14px;">Solicitá al Administrador que configure este dispositivo.</p>
+                <button onclick="logout()" style="margin-top: 20px; padding: 12px 24px; background: #1e293b; color: white; border: 1px solid #334155; border-radius: 8px; cursor: pointer;">Cerrar Sesión</button>
+            </div>
+        `;
+        return;
     }
 
     // C. Ocultar Menús Prohibidos
