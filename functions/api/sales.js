@@ -1,6 +1,6 @@
 export async function onRequestGet(context) {
   try {
-    const { results } = await context.env.DB.prepare("SELECT * FROM sales ORDER BY date DESC").all();
+    const { results } = await context.env.DB.prepare("SELECT * FROM sales ORDER BY createdAt DESC").all();
     const ventasFormateadas = results.map(venta => ({
       ...venta,
       items: JSON.parse(venta.itemsJSON || '[]'),
@@ -16,14 +16,14 @@ export async function onRequestPost(context) {
     const itemsString = JSON.stringify(data.items || []);
     const isB2BNum = data.isB2B ? 1 : 0;
     const clientNameOrId = data.clientId || data.client || 'Consumidor Final';
+    const vendedor = data.seller || 'Admin';
 
-    // AHORA SÍ GUARDAMOS EL CUPÓN EN LA BASE DE DATOS
     await context.env.DB.prepare(`
-      INSERT INTO sales (id, date, clientId, method, cupon, subtotal, promoDiscount, total, isB2B, itemsJSON) 
-      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+      INSERT INTO sales (id, date, clientId, method, cupon, subtotal, promoDiscount, total, isB2B, itemsJSON, createdAt, seller) 
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
     `).bind(
       data.id, data.date || new Date().toISOString().split('T')[0], clientNameOrId, 
-      data.method, data.cupon || '', data.subtotal, data.promoDiscount, data.total, isB2BNum, itemsString
+      data.method, data.cupon || '', data.subtotal, data.promoDiscount, data.total, isB2BNum, itemsString, data.createdAt, vendedor
     ).run();
     return Response.json({ success: true });
   } catch (error) { return Response.json({ error: error.message }, { status: 500 }); }
