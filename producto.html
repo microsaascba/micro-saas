@@ -4,23 +4,35 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Productos | Micro SaaS</title>
+  
+  <style>
+    /* Antídoto destello blanco */
+    html, body { background-color: #f0f2f7 !important; }
+    body { animation: fadeIn 0.15s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+  
   <link rel="stylesheet" href="styles.css" />
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
-    .layout-2col { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; }
-    @media (max-width: 1000px) { .layout-2col { grid-template-columns: 1fr; } }
+    /* ── NUEVO LAYOUT HORIZONTAL PARA PRODUCTOS ── */
+    .layout-stacked { display: flex; flex-direction: column; gap: 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
     
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .full-width { grid-column: span 2; }
+    .form-grid-horizontal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: end; }
+    .col-span-2 { grid-column: span 2; }
+    .col-span-4 { grid-column: span 4; }
     
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
-    .input-box:disabled { background: var(--panel-2); color: var(--muted); cursor: not-allowed; font-weight: bold; }
+    .input-box:disabled { background: transparent; border: none; padding: 0; font-size: 16px; font-weight: 800; cursor: default; }
     
-    .promo-box { background: var(--panel-2); padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px dashed var(--primary-soft); }
-    .variations-box { background: #f8fafc; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid var(--line); }
+    .calc-box { background: var(--panel-2); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); }
+    .calc-box label { font-size: 11px; font-weight: bold; color: var(--muted); display: block; margin-bottom: 4px; }
+    
+    .promo-box { background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px dashed var(--primary-soft); height: 100%; box-sizing: border-box;}
+    .variations-box { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line); height: 100%; box-sizing: border-box;}
     
     .badge-promo { background: var(--warning-soft); color: var(--warning); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
     .badge-var { background: var(--panel-2); color: var(--text); padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-right: 4px; border: 1px solid var(--line); }
@@ -35,6 +47,16 @@
     
     /* Indicador de carga */
     .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
+
+    /* Responsive para que no se rompa en pantallas chicas */
+    @media (max-width: 900px) {
+      .form-grid-horizontal { grid-template-columns: 1fr 1fr; }
+      .col-span-2, .col-span-4 { grid-column: span 2; }
+    }
+    @media (max-width: 500px) {
+      .form-grid-horizontal { grid-template-columns: 1fr; }
+      .col-span-2, .col-span-4 { grid-column: span 1; }
+    }
   </style>
 </head>
 <body>
@@ -68,120 +90,124 @@
       </div>
     </header>
 
-    <div class="layout-2col">
+    <div class="layout-stacked">
       <article class="card card-pad">
-        <h2 style="margin: 0 0 5px 0; font-size: 18px;" id="formTitle">Alta de producto</h2>
-        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Definición de costos, variaciones y rentabilidad.</p>
+        <div style="margin-bottom: 20px;">
+          <h2 style="margin: 0 0 5px 0; font-size: 18px;" id="formTitle">Alta de producto</h2>
+          <p style="color: var(--muted); font-size: 13px; margin: 0;">Definición de costos, variaciones y rentabilidad.</p>
+        </div>
         
         <form id="productForm" onsubmit="guardarProducto(event)">
           <input type="hidden" id="prodId">
           
-          <div class="form-grid">
-            <div class="full-width">
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Nombre del producto *</label>
+          <div class="form-grid-horizontal">
+            <div class="col-span-2">
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Nombre del producto *</label>
               <input type="text" id="prodName" class="input-box" required placeholder="Ej: Máquina de corte profesional">
             </div>
-            
             <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Categoría</label>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Categoría</label>
               <input type="text" id="prodCategory" class="input-box" placeholder="Ej: Herramientas">
             </div>
             <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Estado</label>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Código / SKU</label>
+              <input type="text" id="prodCode" class="input-box" placeholder="Opcional">
+            </div>
+
+            <div>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Costo unitario *</label>
+              <input type="number" id="prodCost" class="input-box" required min="0" step="0.01" value="0" oninput="calcularRentabilidad()">
+            </div>
+            <div>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Gastos asociados</label>
+              <input type="number" id="prodExpenses" class="input-box" min="0" step="0.01" value="0" oninput="calcularRentabilidad()">
+            </div>
+            <div>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Precio de Venta *</label>
+              <input type="number" id="prodPrice" class="input-box" required min="0" step="0.01" value="0" oninput="calcularRentabilidad()">
+            </div>
+            <div>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Stock Inicial</label>
+              <input type="number" id="prodStock" class="input-box" value="0" min="0">
+            </div>
+
+            <div class="calc-box">
+              <label>Utilidad Bruta ($)</label>
+              <input type="text" id="prodProfit" disabled value="$0.00" style="color:var(--success); width:100%;">
+            </div>
+            <div class="calc-box">
+              <label>Margen (sobre venta)</label>
+              <input type="text" id="prodMargin" disabled value="0.0%" style="color:var(--primary); width:100%;">
+            </div>
+            <div class="calc-box">
+              <label>Mark up (sobre costo)</label>
+              <input type="text" id="prodMarkup" disabled value="0.0%" style="color:var(--text); width:100%;">
+            </div>
+            <div>
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Estado</label>
               <select id="prodStatus" class="input-box">
                 <option value="Activo">Activo</option>
                 <option value="Inactivo">Inactivo</option>
               </select>
             </div>
-            
-            <div class="full-width" style="border-top: 1px dashed var(--line); margin-top: 5px; padding-top: 10px;"></div>
 
-            <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Costo unitario *</label>
-              <input type="number" id="prodCost" class="input-box" required min="0" step="0.01" value="0" oninput="calcularRentabilidad()">
-            </div>
-            <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Gastos asociados</label>
-              <input type="number" id="prodExpenses" class="input-box" min="0" step="0.01" value="0" oninput="calcularRentabilidad()">
-            </div>
-            
-            <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Precio de Venta *</label>
-              <input type="number" id="prodPrice" class="input-box" required min="0" step="0.01" value="0" oninput="calcularRentabilidad()">
-            </div>
-            <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Utilidad Bruta ($)</label>
-              <input type="text" id="prodProfit" class="input-box" disabled value="$0.00">
-            </div>
-
-            <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Margen (sobre venta)</label>
-              <input type="text" id="prodMargin" class="input-box" disabled value="0.0%">
-            </div>
-            <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Mark up (sobre costo)</label>
-              <input type="text" id="prodMarkup" class="input-box" disabled value="0.0%">
-            </div>
-
-            <div class="full-width" style="border-top: 1px dashed var(--line); margin-top: 5px; padding-top: 10px;"></div>
-
-            <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Código / SKU</label>
-              <input type="text" id="prodCode" class="input-box" placeholder="Opcional">
-            </div>
-            <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Stock Inicial</label>
-              <input type="number" id="prodStock" class="input-box" value="0" min="0">
-            </div>
-          </div>
-
-          <div class="variations-box">
-            <h3 style="margin: 0 0 10px 0; font-size: 13px; color: var(--text);">🎨 Variaciones (Opcional)</h3>
-            <div class="form-grid">
-              <div>
-                <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Color</label>
-                <input type="text" id="prodColor" class="input-box" placeholder="Ej: Negro, Plateado">
-              </div>
-              <div>
-                <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Tamaño / Talle</label>
-                <input type="text" id="prodSize" class="input-box" placeholder="Ej: S, M, L / 200ml">
+            <div class="col-span-2">
+              <div class="variations-box">
+                <h3 style="margin: 0 0 10px 0; font-size: 13px; color: var(--text);">🎨 Variaciones (Opcional)</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                  <div>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:4px;">Color</label>
+                    <input type="text" id="prodColor" class="input-box" placeholder="Ej: Negro, Plateado">
+                  </div>
+                  <div>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:4px;">Tamaño / Talle</label>
+                    <input type="text" id="prodSize" class="input-box" placeholder="Ej: S, M, L / 200ml">
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="promo-box">
-            <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--primary);">🎁 Oferta Automática</h3>
-            <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Tipo de Promoción</label>
-            <select id="promoType" class="input-box" onchange="togglePromoFields()" style="margin-bottom: 10px;">
-              <option value="none">Ninguna</option>
-              <option value="2x1">2x1 (Lleva 2, paga 1)</option>
-              <option value="2da_unidad">Descuento en 2da Unidad</option>
-              <option value="descuento_directo">Descuento Directo (%)</option>
-              <option value="combo">Combo (Llevando con otro prod.)</option>
-            </select>
-
-            <div id="promoValueBox" style="display: none; margin-bottom: 10px;">
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Porcentaje de Descuento (%) *</label>
-              <input type="number" id="promoValue" class="input-box" placeholder="Ej: 50" min="1" max="100">
+            <div class="col-span-2">
+              <div class="promo-box">
+                <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">🎁 Oferta Automática</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: end;">
+                  <div>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:4px;">Tipo de Promoción</label>
+                    <select id="promoType" class="input-box" onchange="togglePromoFields()">
+                      <option value="none">Ninguna</option>
+                      <option value="2x1">2x1 (Lleva 2, paga 1)</option>
+                      <option value="2da_unidad">Desc. en 2da Unidad</option>
+                      <option value="descuento_directo">Desc. Directo (%)</option>
+                      <option value="combo">Combo</option>
+                    </select>
+                  </div>
+                  <div>
+                    <div id="promoValueBox" style="display: none;">
+                      <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:4px;">Valor (%) *</label>
+                      <input type="number" id="promoValue" class="input-box" placeholder="Ej: 50" min="1" max="100">
+                    </div>
+                    <div id="promoComboBox" style="display: none;">
+                      <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:4px;">Producto *</label>
+                      <select id="promoLinked" class="input-box"></select>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div id="promoComboBox" style="display: none;">
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Producto Requerido (Combo) *</label>
-              <select id="promoLinked" class="input-box">
-                </select>
+            <div class="col-span-4" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px; padding-top: 20px; border-top: 1px dashed var(--line);">
+              <button type="button" class="btn btn-light" onclick="limpiarFormulario()">Cancelar</button>
+              <button type="submit" class="btn btn-primary" style="padding: 10px 24px;" id="btnSave">Guardar Producto</button>
             </div>
-          </div>
-
-          <div style="margin-top: 20px; display: flex; gap: 10px;">
-            <button type="button" class="btn btn-light" style="flex:1;" onclick="limpiarFormulario()">Cancelar</button>
-            <button type="submit" class="btn btn-primary" style="flex:2;" id="btnSave">Guardar Producto</button>
           </div>
         </form>
       </article>
 
       <article class="card card-pad">
-        <h2 style="margin: 0 0 20px 0; font-size: 18px;">Catálogo Activo</h2>
-        <input type="text" id="searchTable" class="input-box" placeholder="Buscar producto o código..." onkeyup="renderTable()" style="margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0; font-size: 18px;">Catálogo Activo</h2>
+          <input type="text" id="searchTable" class="input-box" placeholder="Buscar producto o código..." onkeyup="renderTable()" style="max-width: 300px; margin: 0;">
+        </div>
         
         <div style="overflow-x: auto;">
           <table>
@@ -221,12 +247,9 @@
   </form>
 </dialog>
 
+<script src="core.js"></script>
 <script>
-  // ====================================================================
-  // URL RELATIVA PARA CLOUDFLARE PAGES FUNCTIONS
-  // ====================================================================
   const API_URL = "/api"; 
-  
   let dbProducts = [];
   const PIN_ADMIN = "1234";
   let pendingAdminAction = null;
@@ -259,7 +282,7 @@
   }
 
   // --- RENTABILIDAD ---
-  function calcularRentabilidad() {
+  window.calcularRentabilidad = function() {
     const cost = parseFloat(document.getElementById('prodCost').value) || 0;
     const expenses = parseFloat(document.getElementById('prodExpenses').value) || 0;
     const price = parseFloat(document.getElementById('prodPrice').value) || 0;
@@ -288,16 +311,16 @@
       marginBox.value = "0.0%"; marginBox.style.color = "var(--muted)";
       markupBox.value = "0.0%"; markupBox.style.color = "var(--muted)";
     }
-  }
+  };
 
-  function togglePromoFields() {
+  window.togglePromoFields = function() {
     const type = document.getElementById('promoType').value;
     const valueBox = document.getElementById('promoValueBox');
     const comboBox = document.getElementById('promoComboBox');
 
-    valueBox.style.display = ['2da_unidad', 'descuento_directo', 'combo'].includes(type) ? 'block' : 'none';
+    valueBox.style.display = ['2da_unidad', 'descuento_directo'].includes(type) ? 'block' : 'none';
     comboBox.style.display = type === 'combo' ? 'block' : 'none';
-  }
+  };
 
   function actualizarSelectCombos() {
     const select = document.getElementById('promoLinked');
@@ -306,7 +329,7 @@
   }
 
   // --- GUARDAR PRODUCTO EN LA NUBE ---
-  async function guardarProducto(e) {
+  window.guardarProducto = async function(e) {
     e.preventDefault();
     const type = document.getElementById('promoType').value;
     if (type === 'combo' && !document.getElementById('promoLinked').value) return alert("Seleccione un producto para el combo.");
@@ -353,9 +376,9 @@
     } finally {
       mostrarCarga(false);
     }
-  }
+  };
 
-  function editarProducto(id) {
+  window.editarProducto = function(id) {
     const p = dbProducts.find(x => x.id === id);
     if (!p) return;
     document.getElementById('formTitle').textContent = "Editar producto";
@@ -364,10 +387,10 @@
     document.getElementById('prodCategory').value = p.category || '';
     document.getElementById('prodStatus').value = p.status || 'Activo';
     document.getElementById('prodCode').value = p.code || '';
-    document.getElementById('prodCost').value = p.cost;
+    document.getElementById('prodCost').value = p.cost || 0;
     document.getElementById('prodExpenses').value = p.expenses || 0;
-    document.getElementById('prodPrice').value = p.price;
-    document.getElementById('prodStock').value = p.stock;
+    document.getElementById('prodPrice').value = p.price || 0;
+    document.getElementById('prodStock').value = p.stock || 0;
     document.getElementById('prodColor').value = p.color || '';
     document.getElementById('prodSize').value = p.size || '';
     
@@ -377,37 +400,35 @@
     
     calcularRentabilidad();
     togglePromoFields();
-  }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  function limpiarFormulario() {
+  window.limpiarFormulario = function() {
     document.getElementById('formTitle').textContent = "Alta de producto";
     document.getElementById('productForm').reset();
     document.getElementById('prodId').value = '';
-    document.getElementById('prodProfit').value = '$0.00'; document.getElementById('prodProfit').style.color = "var(--muted)";
-    document.getElementById('prodMargin').value = '0.0%'; document.getElementById('prodMargin').style.color = "var(--muted)";
-    document.getElementById('prodMarkup').value = '0.0%'; document.getElementById('prodMarkup').style.color = "var(--muted)";
+    document.getElementById('prodProfit').value = '$0.00'; document.getElementById('prodProfit').style.color = "var(--success)";
+    document.getElementById('prodMargin').value = '0.0%'; document.getElementById('prodMargin').style.color = "var(--primary)";
+    document.getElementById('prodMarkup').value = '0.0%'; document.getElementById('prodMarkup').style.color = "var(--text)";
     togglePromoFields();
-  }
+  };
 
   // --- ELIMINAR PRODUCTO DE LA NUBE (CON PIN) ---
-  function eliminarProductoPrompt(id) {
+  window.eliminarProductoPrompt = function(id) {
     pedirAuthAdmin('borrar permanentemente este producto de la nube', ejecutarEliminacionProducto, id);
-  }
+  };
 
   async function ejecutarEliminacionProducto(id) {
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/products`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: id })
+      const response = await fetch(`${API_URL}/products?id=${id}`, {
+        method: 'DELETE'
       });
 
       if (response.ok) {
         dbProducts = dbProducts.filter(p => p.id !== id);
         actualizarSelectCombos();
         renderTable();
-        alert("✅ Producto eliminado correctamente de la nube.");
       } else {
         alert("Error al eliminar de la base de datos.");
       }
@@ -428,12 +449,12 @@
     setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
   }
 
-  function cerrarAdminAuth() {
+  window.cerrarAdminAuth = function() {
     document.getElementById('adminAuthDialog').close();
     pendingAdminAction = null; pendingAdminParam = null;
-  }
+  };
 
-  function validarAdminAuth(e) {
+  window.validarAdminAuth = function(e) {
     e.preventDefault();
     if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
       const accion = pendingAdminAction;
@@ -445,9 +466,9 @@
       document.getElementById('adminAuthPin').value = ''; 
       document.getElementById('adminAuthPin').focus();
     }
-  }
+  };
 
-  function renderTable() {
+  window.renderTable = function() {
     const term = document.getElementById('searchTable').value.toLowerCase();
     const filtrados = dbProducts.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)));
     
@@ -494,7 +515,11 @@
         </td>
       </tr>`
     }).join('');
-  }
+    
+    if (filtrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No hay productos registrados.</td></tr>';
+    }
+  };
 
   initProducts();
 </script>
