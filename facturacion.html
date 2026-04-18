@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -58,18 +57,6 @@
     .btn-charge:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4); }
 
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px;}
-
-    #printTicketArea { display: none; }
-    @media print {
-      @page { margin: 0; size: 80mm auto; }
-      body { margin: 0; background: #fff; }
-      body * { visibility: hidden; }
-      #printTicketArea, #printTicketArea * { visibility: visible; }
-      #printTicketArea { position: absolute; left: 0; top: 0; width: 80mm; font-family: monospace; font-size: 12px; padding: 5mm; color: #000; display: block !important; }
-      .ticket-header { text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 16px; }
-      .ticket-line { display: flex; justify-content: space-between; margin-bottom: 5px; }
-      .ticket-divider { border-top: 1px dashed #000; margin: 10px 0; }
-    }
   </style>
 </head>
 <body>
@@ -168,14 +155,12 @@
             <span>Descuentos y Promos</span><span id="txtPromoDiscount">-$0</span>
           </div>
           <div class="totals-row grand-total"><span>Total</span><span id="txtTotal" style="color: var(--primary);">$0</span></div>
-          <button class="btn-charge" onclick="procesarVenta()">Confirmar e Imprimir (F12)</button>
+          <button class="btn-charge" id="btnCobrar" onclick="procesarVenta()">Confirmar e Imprimir (F12)</button>
         </article>
       </div>
     </div>
   </main>
 </div>
-
-<div id="printTicketArea"></div>
 
 <script src="core.js"></script>
 <script>
@@ -230,6 +215,7 @@
     isB2B = false;
     document.getElementById('payMethodsB2C').style.display = 'flex';
     document.getElementById('payMethodsB2B').style.display = 'none';
+    document.getElementById('btnCobrar').textContent = "Confirmar e Imprimir (F12)";
     setPayment('Efectivo', document.querySelector('#payMethodsB2C .pay-btn'), false); 
   }
 
@@ -238,6 +224,7 @@
     document.getElementById('payMethodsB2C').style.display = 'none';
     document.getElementById('payMethodsB2B').style.display = 'flex';
     document.getElementById('cuponContainer').style.display = 'none';
+    document.getElementById('btnCobrar').textContent = "Confirmar en Cuenta Corriente (F12)";
   }
 
   function setPayment(method, btnElement, debeEnfocar = true) {
@@ -327,126 +314,4 @@
     item.qty = num; renderCart();
   };
 
-  function quitar(id) { cart = cart.filter(x => x.id !== id); renderCart(); }
-  window.cancelarVenta = function() { if(confirm("¿Vaciar todo el comprobante?")) { cart = []; renderCart(); searchInput.focus(); } };
-
-  function calcularTotales() {
-    let subtotal = 0, promoDiscountTotal = 0;
-    cart.forEach(item => { item.promoApplied = 0; subtotal += (item.price * item.qty); });
-    cart.forEach(item => {
-      let d = 0; const type = item.promoType; const val = parseFloat(item.promoValue) || 0;
-      if (type === '2x1') { d = Math.floor(item.qty / 2) * item.price; } 
-      else if (type === '2da_unidad') { d = Math.floor(item.qty / 2) * (item.price * (val / 100)); } 
-      else if (type === 'descuento_directo') { d = (item.price * item.qty) * (val / 100); } 
-      else if (type === 'combo' && item.promoLinked) {
-        const linkedItem = cart.find(c => c.id === item.promoLinked);
-        if (linkedItem) { const cantCombos = Math.min(item.qty, linkedItem.qty); d = cantCombos * (item.price * (val / 100)); }
-      }
-      item.promoApplied = d; promoDiscountTotal += d;
-    });
-    return { subtotal, promoDiscountTotal, totalPagar: Math.max(0, subtotal - promoDiscountTotal) };
-  }
-
-  function renderCart() {
-    const tbody = document.getElementById('cartBody');
-    const { subtotal, promoDiscountTotal, totalPagar } = calcularTotales();
-
-    if (cart.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6"><div style="text-align:center; color:var(--muted); padding:60px 10px;">El comprobante está vacío.<br><small>Utilizá el buscador de arriba o presioná F2.</small></div></td></tr>';
-    } else {
-      tbody.innerHTML = cart.map(item => {
-        let tagHtml = '';
-        if (item.promoApplied > 0) {
-          let razon = (item.promoType === '2x1') ? '2x1' : (item.promoType === '2da_unidad') ? `2da al ${item.promoValue}%` : (item.promoType === 'combo') ? `COMBO` : `${item.promoValue}% OFF`;
-          tagHtml = `<br><span style="font-size:10px; color:var(--danger); font-weight:bold; background:#fee2e2; padding:2px 6px; border-radius:4px;">PROMO ${razon}: -${currency(item.promoApplied)}</span>`;
-        }
-        const subtotalFila = (item.price * item.qty) - (item.promoApplied||0);
-        return `
-        <tr>
-          <td style="color:var(--muted); font-size:12px;">${item.code || '-'}</td>
-          <td><strong style="font-size:14px; color:var(--text);">${escapeHtml(item.name)}</strong>${tagHtml}</td>
-          <td style="text-align: right; color:var(--muted);">${currency(item.price)}</td>
-          <td style="text-align: center;">
-            <div class="qty-control">
-              <button class="qty-btn" onclick="modificarCantidad('${item.id}', -1)" tabindex="-1">-</button>
-              <input type="number" class="qty-input" value="${item.qty}" min="1" onchange="setCantidadManual('${item.id}', this)" onclick="this.select()">
-              <button class="qty-btn" onclick="modificarCantidad('${item.id}', 1)" tabindex="-1">+</button>
-            </div>
-          </td>
-          <td style="text-align: right;"><strong>${currency(subtotalFila)}</strong></td>
-          <td style="text-align: center;"><button onclick="quitar('${item.id}')" style="background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:16px;" tabindex="-1">✕</button></td>
-        </tr>`;
-      }).join('');
-    }
-
-    document.getElementById('txtSubtotal').textContent = currency(subtotal);
-    document.getElementById('rowPromoDiscount').style.display = promoDiscountTotal > 0 ? 'flex' : 'none';
-    if(promoDiscountTotal > 0) document.getElementById('txtPromoDiscount').textContent = '-' + currency(promoDiscountTotal);
-    document.getElementById('txtTotal').textContent = currency(totalPagar);
-  }
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'F12') { e.preventDefault(); procesarVenta(); }
-    if (e.key === 'F2') { e.preventDefault(); searchInput.focus(); }
-  });
-
-  window.procesarVenta = async function() {
-    if(cart.length === 0) return;
-    if (!confirm("¿Confirmar venta e imprimir ticket?")) return;
-
-    let cuponText = '';
-    if (!isB2B && currentPaymentMethod === 'Tarjeta') {
-      cuponText = document.getElementById('cuponNumber').value.trim();
-      if (!cuponText || isNaN(cuponText)) { alert("⚠️ Ingresá el número de lote/cupón."); document.getElementById('cuponNumber').focus(); return; }
-    }
-
-    mostrarCarga(true);
-    const { subtotal, promoDiscountTotal, totalPagar } = calcularTotales();
-    const cliente = clientInput.value || 'Consumidor Final';
-    const cid = document.getElementById('clientId').value;
-    const dateStr = new Date().toISOString().split('T')[0];
-
-    const venta = {
-      id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: dateStr,
-      client: cliente, clientId: cid, method: currentPaymentMethod, cupon: cuponText,
-      subtotal: subtotal, promoDiscount: promoDiscountTotal, total: totalPagar, isB2B: isB2B,
-      items: cart
-    };
-
-    try {
-      const resVenta = await fetch(`${API_URL}/sales`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(venta) });
-      if(!resVenta.ok) throw new Error("Error guardando Venta: " + await resVenta.text());
-      
-      if (isB2B && cid) {
-        const mov = { id: 'cc_' + Date.now(), clientId: cid, date: dateStr, type: 'debe', amount: totalPagar, concept: `Ticket #${venta.id.split('_')[1]}` };
-        const resCC = await fetch(`${API_URL}/cc_movements`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(mov) });
-        if(!resCC.ok) throw new Error("Error en Cta Cte: " + await resCC.text());
-      }
-
-      for(let item of cart) {
-        const dbProd = dbProducts.find(p => p.id === item.id);
-        if(dbProd) {
-          dbProd.stock -= item.qty;
-          const resProd = await fetch(`${API_URL}/products`, { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(dbProd) });
-          if(!resProd.ok) throw new Error("Error descontando stock: " + await resProd.text());
-        }
-      }
-
-      localStorage.setItem('last_sale_to_print', JSON.stringify(venta));
-      cart = []; clientInput.value = 'Consumidor Final'; document.getElementById('clientId').value = '';
-      if(currentPaymentMethod === 'Tarjeta') document.getElementById('cuponNumber').value = '';
-      activarModoB2C(); renderCart(); searchInput.focus();
-      window.open('factura.html', '_blank');
-
-    } catch(e) { 
-      console.error(e);
-      alert("ATENCIÓN: Falló el cobro.\n\nMotivo:\n" + e.message); 
-    } finally { 
-      mostrarCarga(false); 
-    }
-  };
-
-  initPOS();
-</script>
-</body>
-</html>
+  function quitar(id) { cart
