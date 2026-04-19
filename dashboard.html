@@ -66,24 +66,13 @@
     .amount-pos { color: var(--success); font-weight: 700; font-size: 15px; }
     .amount-neg { color: var(--danger); font-weight: 700; font-size: 15px; }
 
-    /* Chart */
-    .perf-chart { height: 240px; display: grid; grid-template-columns: repeat(10,1fr); gap: 8px; align-items: end; padding-top: 8px; }
-    .bar-group  { display: flex; align-items: end; gap: 3px; height: 100%; }
-    .bar { flex: 1; border-radius: 8px 8px 3px 3px; min-height: 10px; }
-    .bar-s { background: linear-gradient(180deg, #60a5fa, #2563eb); }
-    .bar-e { background: linear-gradient(180deg, #fca5a5, #ef4444); }
-    .bar-n { background: linear-gradient(180deg, #86efac, #22c55e); }
-    .chart-labels { display: grid; grid-template-columns: repeat(10,1fr); gap: 8px; margin-top: 8px; text-align: center; font-size: 11px; color: var(--muted); }
-    .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; font-size: 13px; font-weight: 600; color: var(--muted); }
-    .legend span { display: inline-flex; align-items: center; gap: 6px; }
-    .legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-
-    /* REGLAS MAGICAS: RESPONSIVE Y MENÚ HAMBURGUESA */
     .kpi-grid-5 { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important; gap: 16px !important; margin-bottom: 22px; }
     .kpi-card { min-width: 0; word-wrap: break-word; }
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .topbar-left { display: flex; align-items: center; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+    
+    .filter-bar { display: flex; gap: 15px; margin-bottom: 20px; background: var(--panel-2); padding: 15px; border-radius: 12px; border: 1px solid var(--line); flex-wrap: wrap; align-items: flex-end; }
     
     @media (max-width: 1200px) {
       .hero { grid-template-columns: 1fr; }
@@ -136,6 +125,21 @@
       </div>
     </header>
 
+    <div class="filter-bar">
+      <div>
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; display:block; margin-bottom:5px;">Desde</label>
+        <input type="date" id="dashDesde" class="input-box" style="padding: 8px 12px;" onchange="renderDashboard()">
+      </div>
+      <div>
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; display:block; margin-bottom:5px;">Hasta</label>
+        <input type="date" id="dashHasta" class="input-box" style="padding: 8px 12px;" onchange="renderDashboard()">
+      </div>
+      <div id="boxDashSucursal">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; display:block; margin-bottom:5px;">Sucursal</label>
+        <select id="dashSucursal" class="input-box" style="padding: 8px 12px; font-weight: bold;" onchange="renderDashboard()"></select>
+      </div>
+    </div>
+
     <section class="hero">
       <div>
         <h2 id="heroTitle">Cargando datos del negocio...</h2>
@@ -145,8 +149,8 @@
       <div class="quick-actions">
         <button class="action-btn" onclick="location.href='facturacion.html'">➕<strong>Cargar venta</strong><span>Registrar ingreso y bajar stock</span></button>
         <button class="action-btn" onclick="location.href='contable.html'">💳<strong>Cargar gasto</strong><span>Registrar egreso del día</span></button>
-        <button class="action-btn" onclick="location.href='contable.html'">🏦<strong>Pago proveedor</strong><span>Actualizar deuda o pago</span></button>
-        <button class="action-btn" onclick="location.href='producto.html'">📦<strong>Nuevo producto</strong><span>Alta rápida de producto</span></button>
+        <button class="action-btn" onclick="location.href='cc.html'">🏦<strong>Cobrar a Cliente</strong><span>Ingresar cobro Cta. Cte.</span></button>
+        <button class="action-btn" onclick="location.href='producto.html'">📦<strong>Nuevo producto</strong><span>Alta rápida de catálogo</span></button>
       </div>
     </section>
 
@@ -155,8 +159,8 @@
     <div class="two-col">
       <article class="card card-pad">
         <div class="section-head">
-          <div><h2>Estado del negocio hoy</h2><p>Lectura simple para decidir rápido</p></div>
-          <a href="contable.html" class="ghost-link">Ver detalle</a>
+          <div><h2>Estado del Período</h2><p>Lectura simple de la rentabilidad</p></div>
+          <a href="contable.html" class="ghost-link">Ver contabilidad</a>
         </div>
         <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;">
           <p id="stateNarrative" style="margin:0;font-size:14px;line-height:1.65;color:var(--text);"></p>
@@ -166,34 +170,10 @@
 
       <article class="card card-pad">
         <div class="section-head">
-          <div><h2>Alertas del negocio</h2><p>Prioridad operativa del día</p></div>
-          <a href="stock.html" class="ghost-link">Ver todo</a>
+          <div><h2>Ventas por Sucursal</h2><p>Participación en el período seleccionado</p></div>
+          <a href="ventas.html" class="ghost-link">Ver tickets</a>
         </div>
-        <div id="alertList" style="display:grid;gap:10px;"></div>
-      </article>
-    </div>
-
-    <div class="two-col" style="margin-bottom:18px;">
-      <article class="card card-pad">
-        <div class="section-head">
-          <div><h2>Rendimiento del período</h2><p>Ventas, egresos y resultado neto</p></div>
-          <a href="ventas.html" class="ghost-link">Ver ventas</a>
-        </div>
-        <div class="perf-chart" id="performanceChart"></div>
-        <div class="chart-labels" id="performanceLabels"></div>
-        <div class="legend">
-          <span><i style="background:#2563eb"></i> Ventas</span>
-          <span><i style="background:#ef4444"></i> Egresos</span>
-          <span><i style="background:#22c55e"></i> Resultado</span>
-        </div>
-      </article>
-
-      <article class="card card-pad">
-        <div class="section-head">
-          <div><h2>Gastos recientes</h2><p>Últimos movimientos</p></div>
-          <a href="contable.html" class="ghost-link">Ver más</a>
-        </div>
-        <div id="recentExpensesList" style="display:grid;gap:10px;"></div>
+        <div id="branchSalesList" style="display:grid;gap:10px;"></div>
       </article>
     </div>
 
@@ -203,12 +183,12 @@
         <div id="topProductsList" style="display:grid;gap:10px;"></div>
       </article>
       <article class="card card-pad">
-        <div class="section-head"><div><h2>Menor margen</h2><p>Productos a revisar</p></div><a href="producto.html" class="ghost-link">Ir a pricing</a></div>
-        <div id="lowMarginList" style="display:grid;gap:10px;"></div>
+        <div class="section-head"><div><h2>Stock crítico</h2><p>Agotados o bajo el mínimo</p></div><a href="stock.html" class="ghost-link">Ir a stock</a></div>
+        <div id="lowStockList" style="display:grid;gap:10px;"></div>
       </article>
       <article class="card card-pad">
-        <div class="section-head"><div><h2>Stock bajo</h2><p>Reposición sugerida</p></div><a href="stock.html" class="ghost-link">Ver stock</a></div>
-        <div id="lowStockList" style="display:grid;gap:10px;"></div>
+        <div class="section-head"><div><h2>Alertas Operativas</h2><p>Deudas y pendientes</p></div><a href="contable.html" class="ghost-link">Revisar</a></div>
+        <div id="alertList" style="display:grid;gap:10px;"></div>
       </article>
     </div>
 
@@ -218,7 +198,7 @@
         <div id="latestSalesList"></div>
       </article>
       <article class="card card-pad">
-        <div class="section-head"><div><h2>Pagos y egresos recientes</h2><p>Movimientos de caja y proveedores</p></div><a href="contable.html" class="ghost-link">Ver contable</a></div>
+        <div class="section-head"><div><h2>Últimos Egresos (Global)</h2><p>Gastos y pagos a proveedores</p></div><a href="contable.html" class="ghost-link">Ver contable</a></div>
         <div id="latestOutflowsList"></div>
       </article>
     </div>
@@ -227,20 +207,43 @@
 
 <script src="core.js"></script>
 <script>
-// Función para abrir y cerrar el menú hamburguesa
 function toggleMenu() {
   document.querySelector('.sidebar').classList.toggle('open');
   document.getElementById('sidebarOverlay').classList.toggle('open');
 }
 
-// Variables globales para la Base de Datos
 let dbProducts = [];
 let dbSales = [];
 let dbExpenses = [];
 
-// INICIALIZACIÓN ASÍNCRONA DESDE CLOUDFLARE D1
 async function initDashboard() {
   try {
+    // Definir fechas por defecto (Mes actual)
+    const d = new Date();
+    const primerDiaMes = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+    const hoy = d.toISOString().split('T')[0];
+    
+    document.getElementById('dashDesde').value = primerDiaMes;
+    document.getElementById('dashHasta').value = hoy;
+
+    // Poblar sucursales según Rol
+    const role = localStorage.getItem('userRole') || 'admin';
+    const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+    const selSuc = document.getElementById('dashSucursal');
+    
+    if (role === 'admin') {
+        selSuc.innerHTML = '<option value="ALL">Todas las Sucursales</option>';
+        const resB = await fetch('/api/branches');
+        if (resB.ok) {
+            const branches = await resB.json();
+            branches.forEach(b => selSuc.innerHTML += `<option value="${b.name}">${b.name}</option>`);
+        }
+    } else {
+        selSuc.innerHTML = `<option value="${terminalActiva}">${terminalActiva}</option>`;
+        selSuc.disabled = true;
+    }
+
+    // Cargar datos
     const [resP, resS, resE] = await Promise.all([
       fetch('/api/products'),
       fetch('/api/sales'),
@@ -253,98 +256,140 @@ async function initDashboard() {
     
     renderDashboard();
   } catch (error) {
-    console.error("Error cargando datos de la nube:", error);
+    console.error("Error:", error);
     document.getElementById('heroTitle').textContent = "Error de conexión";
     document.getElementById('heroText').textContent = "No se pudieron sincronizar los datos de Cloudflare D1.";
   }
 }
 
 function computeState() {
-  // Calculamos el margen de los productos en tiempo real porque D1 no guarda la columna margen
-  dbProducts.forEach(p => {
-    p.margin = p.price > 0 ? ((p.price - (p.cost || 0)) / p.price) * 100 : 0;
+  const desde = document.getElementById('dashDesde').value;
+  const hasta = document.getElementById('dashHasta').value;
+  const sucursal = document.getElementById('dashSucursal').value;
+
+  dbProducts.forEach(p => { p.margin = p.price > 0 ? ((p.price - (p.cost || 0)) / p.price) * 100 : 0; });
+
+  // 1. Filtrar Ventas por Fecha
+  let periodSales = dbSales.filter(s => {
+      const d = s.date || (s.createdAt || '').split('T')[0];
+      return d >= desde && d <= hasta;
   });
 
-  const today = todayISO();
-  const cm = monthKey(today);
+  // Calcular desglose por sucursal ANTES de filtrar por la seleccionada
+  const branchBreakdown = {};
+  let totalPeriodoGlobal = 0;
+  periodSales.forEach(s => {
+      const b = s.branch || 'Central';
+      const tot = typeof s.total === 'number' ? s.total : 0;
+      branchBreakdown[b] = (branchBreakdown[b] || 0) + tot;
+      totalPeriodoGlobal += tot;
+  });
 
-  const salesToday  = dbSales.filter(s => (s.createdAt || s.date || '').slice(0,10) === today);
-  const salesMonth  = dbSales.filter(s => monthKey(s.createdAt || s.date || '') === cm);
-  const incomeToday = salesToday.reduce((a,s) => a + saleTotal(s), 0);
-  const incomeMonth = salesMonth.reduce((a,s) => a + saleTotal(s), 0);
+  // 2. Aplicar filtro de Sucursal a las ventas
+  if (sucursal !== 'ALL') {
+      periodSales = periodSales.filter(s => s.branch === sucursal);
+  }
 
-  // Egresos Pagados
-  const mExpenses = dbExpenses.filter(e => monthKey(e.date) === cm && (e.status || '').toLowerCase() === 'pagado').reduce((a,e) => a + toNum(e.amount), 0);
-  const monthOutflows = mExpenses; // Simplificado: Todo egreso sale de la tabla expenses
-  const netMonth = incomeMonth - monthOutflows;
+  const incomePeriod = periodSales.reduce((a,s) => a + (typeof s.total === 'number' ? s.total : 0), 0);
 
-  const avgMargin = dbProducts.length ? dbProducts.reduce((a,p) => a + toNum(p.margin), 0) / dbProducts.length : 0;
-  const lowMargin = [...dbProducts].filter(p => toNum(p.margin) < 20).sort((a,b)=>toNum(a.margin)-toNum(b.margin)).slice(0,3);
-  const lowStock  = [...dbProducts].filter(p => toNum(p.stock) <= toNum(p.stockMin || 3) && p.status !== 'Inactivo').sort((a,b)=>toNum(a.stock)-toNum(b.stock)).slice(0,3);
+  // 3. Filtrar Egresos (Solo por fecha y que estén pagados. Los egresos son globales).
+  const periodExpenses = dbExpenses.filter(e => {
+      const d = e.date || '';
+      return d >= desde && d <= hasta && (e.status || '').toLowerCase() === 'pagado';
+  });
+  const outflowsPeriod = periodExpenses.reduce((a,e) => a + (Number(e.amount)||0), 0);
+
+  // El Neto solo es real si se ven TODAS las sucursales, porque los gastos son de toda la empresa
+  const netPeriod = sucursal === 'ALL' ? incomePeriod - outflowsPeriod : incomePeriod;
+
+  const avgMargin = dbProducts.length ? dbProducts.reduce((a,p) => a + (Number(p.margin)||0), 0) / dbProducts.length : 0;
+  const lowStock  = [...dbProducts].filter(p => (Number(p.stock)||0) <= (Number(p.stockMin)||3) && p.status !== 'Inactivo').sort((a,b)=>(Number(a.stock)||0)-(Number(b.stock)||0)).slice(0,3);
 
   const topMap = {};
-  salesMonth.forEach(sale => (sale.items || []).forEach(item => {
-    const k = item.name || 'Producto';
-    if (!topMap[k]) topMap[k] = { name: k, units: 0, revenue: 0 };
-    topMap[k].units += toNum(item.quantity || item.qty); // item.qty es como lo manda facturación
-    topMap[k].revenue += toNum(item.subtotal) || toNum(item.quantity || item.qty) * toNum(item.price);
-  }));
-  const topProducts = Object.values(topMap).sort((a,b)=>b.units-a.units).slice(0,3);
+  periodSales.forEach(sale => {
+      const items = typeof sale.items === 'string' ? JSON.parse(sale.items) : (sale.items || []);
+      items.forEach(item => {
+        const k = item.name || 'Producto';
+        if (!topMap[k]) topMap[k] = { name: k, units: 0, revenue: 0 };
+        topMap[k].units += (Number(item.qty) || 1);
+        topMap[k].revenue += (Number(item.qty) * Number(item.price)) || 0;
+      });
+  });
+  const topProducts = Object.values(topMap).sort((a,b)=>b.units-a.units).slice(0,4);
 
-  const latestSales = [...dbSales].sort((a,b)=>(b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||'')).slice(0,4);
+  const latestSales = [...periodSales].sort((a,b)=>(b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||'')).slice(0,4);
   const latestExpenses = [
-    ...dbExpenses.map(e => ({ type:'Gasto', date:e.date, title:e.concept, detail:e.category||'Gasto', amount:-Math.abs(toNum(e.amount)) }))
+    ...dbExpenses.map(e => ({ type:'Gasto', date:e.date, title:e.concept, detail:e.category||'Gasto', amount:-Math.abs(Number(e.amount)||0) }))
   ].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4);
 
-  // Deudas pendientes (gastos no pagados)
-  const supplierDebtPending = dbExpenses.filter(e => (e.status || '').toLowerCase() === 'pendiente').reduce((a,e) => a + toNum(e.amount), 0);
+  const supplierDebtPending = dbExpenses.filter(e => (e.status || '').toLowerCase() === 'pendiente').reduce((a,e) => a + (Number(e.amount)||0), 0);
 
-  return { products: dbProducts, sales: dbSales, incomeToday, incomeMonth, monthOutflows, netMonth, avgMargin, lowMargin, lowStock, topProducts, latestSales, latestExpenses, supplierDebtPending };
+  return { 
+      products: dbProducts, sales: periodSales, 
+      incomePeriod, outflowsPeriod, netPeriod, avgMargin, lowStock, 
+      topProducts, latestSales, latestExpenses, supplierDebtPending, 
+      branchBreakdown, totalPeriodoGlobal, sucursal 
+  };
 }
 
 function renderHero(s) {
   const date = new Intl.DateTimeFormat('es-AR', { weekday:'long', day:'numeric', month:'long' }).format(new Date());
-  document.getElementById('topbarDate').textContent = date + ' · Resumen operativo';
-  document.getElementById('heroTitle').textContent = s.incomeToday > 0
-    ? `Hoy vendiste ${currency(s.incomeToday)} y el negocio ${s.netMonth >= 0 ? 'sigue en positivo' : 'está ajustado'}.`
-    : 'Todavía no registraste ventas hoy.';
-  document.getElementById('heroText').textContent =
-    `Ingresos del mes: ${currency(s.incomeMonth)}. Egresos: ${currency(s.monthOutflows)}. Margen promedio: ${percent(s.avgMargin)}. ${s.lowStock.length} productos con stock bajo.`;
+  document.getElementById('topbarDate').textContent = date + ' · Reporte Operativo';
+  
+  const textSucursal = s.sucursal === 'ALL' ? 'en la empresa' : `en ${s.sucursal}`;
+
+  document.getElementById('heroTitle').textContent = s.incomePeriod > 0
+    ? `Vendiste ${currency(s.incomePeriod)} ${textSucursal}.`
+    : `No hay ventas registradas en el período seleccionado.`;
+    
+  let heroTxt = `Facturación: ${currency(s.incomePeriod)}. `;
+  if (s.sucursal === 'ALL') heroTxt += `Egresos globales: ${currency(s.outflowsPeriod)}. `;
+  heroTxt += `Margen promedio del catálogo: ${percent(s.avgMargin)}.`;
+  
+  document.getElementById('heroText').textContent = heroTxt;
+  
+  let netBadge = '';
+  if (s.sucursal === 'ALL') {
+      netBadge = `<span class="hero-badge ${s.netPeriod >= 0 ? 'success' : 'warning'}">Caja Neta: ${currency(s.netPeriod)}</span>`;
+  } else {
+      netBadge = `<span class="hero-badge primary">Viendo solo ${s.sucursal}</span>`;
+  }
+
   document.getElementById('heroBadges').innerHTML = `
-    <span class="hero-badge primary">Estado: ${s.netMonth >= 0 ? 'positivo' : 'en alerta'}</span>
-    <span class="hero-badge ${s.avgMargin >= 25 ? 'success' : 'warning'}">Margen ${percent(s.avgMargin)}</span>
+    ${netBadge}
     <span class="hero-badge ${s.lowStock.length ? 'warning' : 'success'}">${s.lowStock.length} con stock bajo</span>
   `;
 }
 
 function renderKpis(s) {
   const cards = [
-    { label:'Ventas del día',    value:currency(s.incomeToday),  note: s.incomeToday > 0 ? 'Con movimiento' : 'Sin ventas hoy' },
-    { label:'Ingresos del mes',  value:currency(s.incomeMonth),  note: 'Facturación acumulada' },
-    { label:'Egresos del mes',   value:currency(s.monthOutflows),note: 'Gastos + pagos' },
-    { label:'Resultado neto',    value:currency(s.netMonth),     note: s.netMonth >= 0 ? 'Positivo ✓' : 'Negativo ⚠' },
-    { label:'Margen general',    value:percent(s.avgMargin),     note: s.avgMargin >= 25 ? 'Saludable' : 'A revisar' },
+    { label:'Ingresos (Período)',  value:currency(s.incomePeriod), note: s.sucursal === 'ALL' ? 'Todas las sucursales' : `Solo ${s.sucursal}` },
+    { label:'Egresos (Global)',    value:currency(s.outflowsPeriod),note: 'Gastos de la empresa' },
+    { label:'Resultado Caja',      value: s.sucursal === 'ALL' ? currency(s.netPeriod) : 'N/A', note: s.sucursal === 'ALL' ? 'Ingresos vs Egresos' : 'Filtro activo' },
+    { label:'Margen Promedio',     value:percent(s.avgMargin),     note: s.avgMargin >= 25 ? 'Saludable' : 'A revisar' },
   ];
   document.getElementById('kpiGrid').innerHTML = cards.map(c => `
     <article class="card kpi-card" style="padding: 20px;">
       <div class="kpi-label">${c.label}</div>
-      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-value" style="color: ${c.value === 'N/A' ? 'var(--muted)' : 'inherit'}">${c.value}</div>
       <div class="kpi-sub">${c.note}</div>
     </article>
   `).join('');
 }
 
 function renderNarrative(s) {
-  let text = `El negocio viene ${s.netMonth >= 0 ? 'en positivo con resultado neto de ' + currency(s.netMonth) : 'ajustado, resultado neto ' + currency(s.netMonth)}. `;
-  text += `Margen promedio: ${percent(s.avgMargin)}. `;
-  if (s.topProducts.length) text += `El producto más vendido es ${s.topProducts[0].name}. `;
-  if (s.lowMargin.length)   text += `Hay ${s.lowMargin.length} productos con margen bajo. `;
-  if (s.lowStock.length)    text += `${s.lowStock.length} productos con stock bajo.`;
+  let text = '';
+  if (s.sucursal === 'ALL') {
+      text = `La empresa generó una caja neta de ${currency(s.netPeriod)} en las fechas seleccionadas. `;
+  } else {
+      text = `La sucursal ${s.sucursal} generó ingresos por ${currency(s.incomePeriod)}. `;
+  }
+  
+  if (s.topProducts.length) text += `El producto estrella es ${s.topProducts[0].name} (${s.topProducts[0].units} unidades). `;
   document.getElementById('stateNarrative').textContent = text;
 
   const insights = [
-    { dot: s.incomeToday > 0 ? 'green' : 'amber', title: s.incomeToday > 0 ? 'Hoy hubo ventas' : 'Sin ventas todavía', body: s.incomeToday > 0 ? `Ingresaste ${currency(s.incomeToday)} hoy.` : 'Todavía no hay actividad comercial.' },
-    { dot: s.avgMargin >= 25 ? 'green' : 'amber',  title: 'Margen del negocio', body: `El margen promedio es ${percent(s.avgMargin)}.` },
+    { dot: s.incomePeriod > 0 ? 'green' : 'amber', title: s.incomePeriod > 0 ? 'Flujo de Ventas' : 'Sin ventas', body: `Facturación de ${currency(s.incomePeriod)}.` },
     { dot: s.lowStock.length ? 'red' : 'green',    title: 'Estado del stock', body: s.lowStock.length ? `${s.lowStock.length} productos bajo el mínimo.` : 'Stock bajo control.' },
   ];
   document.getElementById('insightList').innerHTML = insights.map(i => `
@@ -355,12 +400,36 @@ function renderNarrative(s) {
   `).join('');
 }
 
+function renderBranchBreakdown(s) {
+    const list = document.getElementById('branchSalesList');
+    if (Object.keys(s.branchBreakdown).length === 0) {
+        list.innerHTML = '<div class="empty">Sin ventas en el período.</div>';
+        return;
+    }
+    
+    // Sort branches by revenue descending
+    const sortedBranches = Object.entries(s.branchBreakdown).sort((a,b) => b[1] - a[1]);
+    
+    list.innerHTML = sortedBranches.map(([branchName, amount]) => {
+        const percentage = s.totalPeriodoGlobal > 0 ? ((amount / s.totalPeriodoGlobal) * 100).toFixed(1) : 0;
+        return `
+        <div class="simple-item" style="border-left: 4px solid var(--primary);">
+            <div>
+                <h4 style="font-size:14px; margin-bottom:2px;">📍 ${escapeHtml(branchName)}</h4>
+                <p style="font-size:12px; color:var(--muted);">${percentage}% de la facturación</p>
+            </div>
+            <div class="simple-meta">
+                <strong style="color:var(--text); font-size:16px;">${currency(amount)}</strong>
+            </div>
+        </div>`;
+    }).join('');
+}
+
 function renderAlerts(s) {
   const alerts = [];
-  if (s.lowStock.length)          alerts.push({ cls:'red',   title:`${s.lowStock.length} con stock crítico`, text:s.lowStock.map(p=>p.name).join(', ') + ' necesitan reposición.', cta:'Ver stock', href:'stock.html' });
-  if (s.supplierDebtPending > 0)  alerts.push({ cls:'amber', title:'Pagos pendientes', text:`Monto pendiente a pagar: ${currency(s.supplierDebtPending)}.`, cta:'Revisar', href:'contable.html' });
-  if (s.lowMargin.length)         alerts.push({ cls:'blue',  title:'Productos con margen bajo', text:s.lowMargin.map(p=>p.name).join(', ') + ' están dejando poca rentabilidad.', cta:'Ver pricing', href:'producto.html' });
-  if (!alerts.length)             alerts.push({ cls:'blue',  title:'Sin alertas críticas', text:'El sistema no detectó problemas importantes.', cta:'Dashboard', href:'dashboard.html' });
+  if (s.supplierDebtPending > 0)  alerts.push({ cls:'amber', title:'Pagos pendientes', text:`Deuda a proveedores: ${currency(s.supplierDebtPending)}.`, cta:'Revisar', href:'contable.html' });
+  if (s.lowStock.length)          alerts.push({ cls:'red',   title:`Stock crítico`, text:s.lowStock.length + ' artículos necesitan reposición urgente.', cta:'Ver stock', href:'stock.html' });
+  if (!alerts.length)             alerts.push({ cls:'blue',  title:'Todo en orden', text:'El sistema no detectó alertas críticas.', cta:'Actualizar', href:'#' });
 
   document.getElementById('alertList').innerHTML = alerts.map(a => `
     <div class="alert-item">
@@ -371,51 +440,36 @@ function renderAlerts(s) {
   `).join('');
 }
 
-function renderChart(s) {
-  const days = Array.from({length:10}, (_,i) => i+1);
-  const mx = Math.max(s.incomeMonth, s.monthOutflows, Math.abs(s.netMonth), 1);
-  document.getElementById('performanceChart').innerHTML = days.map((d,i) => {
-    const f = (i+3)/12;
-    const sv = Math.max(10, (s.incomeMonth/mx)*75*f);
-    const ev = Math.max(10, (s.monthOutflows/mx)*55*f);
-    const nv = Math.max(10, (Math.max(s.netMonth,0)/mx)*65*f);
-    return `<div class="bar-group"><div class="bar bar-s" style="height:${sv}%"></div><div class="bar bar-e" style="height:${ev}%"></div><div class="bar bar-n" style="height:${nv}%"></div></div>`;
-  }).join('');
-  document.getElementById('performanceLabels').innerHTML = days.map(d=>`<span>${d}</span>`).join('');
-}
-
-function simpleItem(title, sub, value, note) {
-  return `<div class="simple-item"><div><h4>${escapeHtml(title)}</h4><p>${escapeHtml(sub)}</p></div><div class="simple-meta"><strong>${value}</strong><small>${note}</small></div></div>`;
-}
-
 function renderSimpleLists(s) {
   document.getElementById('recentExpensesList').innerHTML = s.latestExpenses.length
     ? s.latestExpenses.map(e => simpleItem(e.title, e.date + ' · ' + e.detail, `<span style="color:var(--danger)">${currency(e.amount)}</span>`, e.type)).join('')
-    : '<div class="empty">Sin egresos recientes.</div>';
+    : '<div class="empty">Sin egresos registrados.</div>';
 
   document.getElementById('topProductsList').innerHTML = s.topProducts.length
     ? s.topProducts.map(p => simpleItem(p.name, p.units + ' unidades vendidas', currency(p.revenue), 'Top ventas')).join('')
     : '<div class="empty">Sin ventas del período.</div>';
 
-  document.getElementById('lowMarginList').innerHTML = s.lowMargin.length
-    ? s.lowMargin.map(p => simpleItem(p.name, 'Margen actual', percent(p.margin||0), 'Bajo')).join('')
-    : '<div class="empty">Sin alertas de margen.</div>';
-
   document.getElementById('lowStockList').innerHTML = s.lowStock.length
-    ? s.lowStock.map(p => simpleItem(p.name, `Mín ${p.stockMin||3} · Actual ${p.stock||0}`, `<span style="color:${toNum(p.stock)<=0?'var(--danger)':'var(--warning)'}">${toNum(p.stock)<=0?'Crítico':'Bajo'}</span>`, 'Reponer')).join('')
-    : '<div class="empty">Sin alertas de stock.</div>';
+    ? s.lowStock.map(p => simpleItem(p.name, `Actual: ${p.stock||0} un.`, `<span style="color:var(--danger)">Crítico</span>`, 'Reponer')).join('')
+    : '<div class="empty">Stock saludable.</div>';
 }
 
 function renderActivity(s) {
   document.getElementById('latestSalesList').innerHTML = s.latestSales.length
-    ? s.latestSales.map(sale => `
+    ? s.latestSales.map(sale => {
+        const items = typeof sale.items === 'string' ? JSON.parse(sale.items) : (sale.items || []);
+        return `
       <div class="activity-item">
         <div class="activity-left">
           <div class="activity-badge badge-sale">V</div>
-          <div><h4>${escapeHtml(sale.code || 'Venta')}</h4><p>${(sale.createdAt||sale.date||'').slice(0,10)} · ${(sale.items||[]).length} productos</p></div>
+          <div>
+            <h4>${escapeHtml(sale.client || 'Consumidor Final')}</h4>
+            <p>${(sale.createdAt||sale.date||'').slice(0,10)} · ${items.length} prod. · 📍 ${sale.branch || 'Central'}</p>
+          </div>
         </div>
         <span class="amount-pos">+${currency(saleTotal(sale))}</span>
-      </div>`).join('')
+      </div>`
+      }).join('')
     : '<div class="empty">Sin ventas recientes.</div>';
 
   document.getElementById('latestOutflowsList').innerHTML = s.latestExpenses.length
@@ -435,8 +489,8 @@ function renderDashboard() {
   renderHero(s);
   renderKpis(s);
   renderNarrative(s);
+  renderBranchBreakdown(s); // Nuevo componente
   renderAlerts(s);
-  renderChart(s);
   renderSimpleLists(s);
   renderActivity(s);
 }
