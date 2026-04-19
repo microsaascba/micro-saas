@@ -66,6 +66,7 @@
         <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Auditoría de egresos, comprobantes fiscales y Cuentas por Pagar.</p>
       </div>
       <div class="topbar-actions" style="display: flex; gap: 10px;">
+        <button class="btn btn-primary" style="background: #4f46e5; border:none;" onclick="abrirModalCierreMes()">📊 Cierre de Mes (P&L)</button>
         <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Exportar Libro</button>
         <button class="btn btn-primary" onclick="abrirModalGasto()">+ Cargar Comprobante</button>
       </div>
@@ -321,6 +322,75 @@
     </div>
   </form>
 </dialog>
+
+
+<dialog id="modalCierreMes" style="width: 100%; max-width: 800px; background: var(--bg);">
+  <div class="modal-content" style="background: transparent; padding: 0;">
+    <div style="background: var(--panel); padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; border-radius: 16px 16px 0 0;">
+      <h2 style="margin: 0; font-size:20px; display:flex; align-items:center; gap:10px;">📊 Estado de Resultados (Cierre de Mes)</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalCierreMes').close()">✕</button>
+    </div>
+    
+    <div style="padding: 24px;">
+      <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid var(--line);">
+        <div style="flex: 1;">
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seleccionar Período a Cerrar</label>
+          <input type="month" id="cierreMesInput" class="input-box" onchange="calcularCierreMes()">
+        </div>
+        <button class="btn btn-primary" onclick="calcularCierreMes()">Calcular Resultados</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+          
+          <div style="background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--line); border-top: 4px solid var(--primary);">
+            <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--muted); text-transform: uppercase;">1. Ingresos y Costos Directos</h3>
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;"><span>Ventas Brutas (Total Ticket)</span><strong id="cmVentasBrutas">$0</strong></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px; color:var(--danger);"><span>(-) IVA Débito Fiscal (21%)</span><strong id="cmIvaDebito">$0</strong></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:15px; font-weight:bold; border-bottom:1px dashed var(--line); padding-bottom:15px;"><span>Ventas Netas (Reales)</span><strong id="cmVentasNetas">$0</strong></div>
+            
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px; color:var(--warning);"><span>(-) Costo Mercadería (CMV)</span><strong id="cmCostoMerc">$0</strong></div>
+            <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:900; color:var(--success); background: var(--success-soft); padding: 10px; border-radius: 6px; margin-top: 10px;">
+              <span>UTILIDAD BRUTA</span><strong id="cmUtilidadBruta">$0</strong>
+            </div>
+          </div>
+
+          <div style="background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--line); border-top: 4px solid var(--warning);">
+            <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--muted); text-transform: uppercase;">2. Gastos Operativos (OPEX)</h3>
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;"><span>Gastos Totales (Pagados y Deuda)</span><strong id="cmGastosBrutos">$0</strong></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px; color:var(--success);"><span>(-) IVA Crédito (Solo Fac. A)</span><strong id="cmIvaCredito">$0</strong></div>
+            <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:bold; border-top:1px dashed var(--line); padding-top:10px; margin-top:5px;">
+              <span>Gastos Netos</span><strong id="cmGastosNetos" style="color:var(--danger)">$0</strong>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+          
+          <div style="background: var(--text); color: white; padding: 25px 20px; border-radius: 12px; box-shadow: var(--shadow-lg);">
+            <h3 style="margin: 0 0 5px 0; font-size: 14px; text-transform: uppercase; color: var(--muted);">Resultado Neto (Bolsillo)</h3>
+            <p style="margin: 0 0 15px 0; font-size: 12px; color: #94a3b8;">Utilidad Bruta menos Gastos Netos</p>
+            <div id="cmUtilidadNeta" style="font-size:36px; font-weight:900; line-height: 1;">$0</div>
+            <div id="cmMargenNeto" style="margin-top: 10px; font-size: 14px; font-weight: bold; color: #cbd5e1;">Margen Neto: 0%</div>
+          </div>
+
+          <div style="background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--line); border-top: 4px solid #8b5cf6;">
+            <h3 style="margin: 0 0 5px 0; font-size: 14px; color: var(--muted); text-transform: uppercase;">Posición de IVA (AFIP)</h3>
+            <p style="margin: 0 0 15px 0; font-size: 12px; color: var(--muted);">IVA Débito cobrado vs IVA Crédito pagado.</p>
+            <div style="display:flex; justify-content:space-between; font-size:18px; font-weight:800;" id="cmPosicionIvaBox">
+              <span id="cmPosicionIvaTexto">A Pagar a AFIP:</span><strong id="cmPosicionIvaMonto">$0</strong>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+
+  
 
 <script src="core.js"></script>
 <script>
@@ -634,6 +704,102 @@
     link.download = `Libro_Compras_Gastos_${todayISO()}.csv`;
     link.click();
   }
+
+
+// ── LÓGICA DE CIERRE DE MES (ESTADO DE RESULTADOS) ──
+  function abrirModalCierreMes() {
+    // Seteamos el input al mes actual por defecto
+    const d = new Date();
+    const monthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    document.getElementById('cierreMesInput').value = monthStr;
+    calcularCierreMes();
+    document.getElementById('modalCierreMes').showModal();
+  }
+
+  function calcularCierreMes() {
+    const periodo = document.getElementById('cierreMesInput').value; // Formato YYYY-MM
+    if(!periodo) return;
+
+    // 1. Filtrar transacciones del mes
+    const ventasMes = dbSales.filter(s => (s.date || '').startsWith(periodo) || (s.createdAt || '').startsWith(periodo));
+    const gastosMes = dbExpenses.filter(e => (e.date || '').startsWith(periodo));
+
+    // 2. Variables Acumuladoras
+    let ventasBrutas = 0;
+    let cmvTotal = 0;
+    let ivaDebito = 0; // El IVA que vos cobraste
+    
+    let gastosBrutos = 0;
+    let ivaCredito = 0; // El IVA que vos pagaste y podés descontar
+
+    // --- CÁLCULO DE VENTAS Y CMV ---
+    ventasMes.forEach(v => {
+        ventasBrutas += v.total;
+        
+        // Calcular CMV sumando el costo histórico guardado en el JSON
+        const items = typeof v.items === 'string' ? JSON.parse(v.items) : (v.items || []);
+        items.forEach(i => {
+            cmvTotal += (i.qty * (i.cost || 0)); // Si son ventas viejas sin costo, asume 0
+        });
+    });
+
+    // En Argentina, si los precios finales ya incluyen IVA, extraemos el neto dividiendo por 1.21
+    // (Asumimos tarifa general 21% para simplificar el modelo base)
+    const ventasNetas = ventasBrutas / 1.21;
+    ivaDebito = ventasBrutas - ventasNetas;
+
+    // --- CÁLCULO DE GASTOS Y CRÉDITO FISCAL ---
+    gastosMes.forEach(g => {
+        gastosBrutos += g.amount;
+        
+        // Solo las Facturas A generan Crédito Fiscal descontable. 
+        // B, C, Tickets y Gastos Internos son costo 100%.
+        if (g.invoiceType === 'Factura A') {
+            const gastoNetoParcial = g.amount / 1.21;
+            ivaCredito += (g.amount - gastoNetoParcial);
+        }
+    });
+
+    const gastosNetos = gastosBrutos - ivaCredito;
+    
+    // --- RESULTADOS FINALES ---
+    const utilidadBruta = ventasNetas - cmvTotal;
+    const utilidadNeta = utilidadBruta - gastosNetos;
+    const posicionIva = ivaDebito - ivaCredito;
+
+    // --- RENDERIZADO EN DOM ---
+    document.getElementById('cmVentasBrutas').textContent = currency(ventasBrutas);
+    document.getElementById('cmIvaDebito').textContent = currency(ivaDebito);
+    document.getElementById('cmVentasNetas').textContent = currency(ventasNetas);
+    document.getElementById('cmCostoMerc').textContent = currency(cmvTotal);
+    document.getElementById('cmUtilidadBruta').textContent = currency(utilidadBruta);
+
+    document.getElementById('cmGastosBrutos').textContent = currency(gastosBrutos);
+    document.getElementById('cmIvaCredito').textContent = currency(ivaCredito);
+    document.getElementById('cmGastosNetos').textContent = currency(gastosNetos);
+
+    const elUtilidadNeta = document.getElementById('cmUtilidadNeta');
+    elUtilidadNeta.textContent = currency(utilidadNeta);
+    elUtilidadNeta.style.color = utilidadNeta < 0 ? '#fca5a5' : '#86efac'; // Rojo claro o Verde claro por el fondo oscuro
+
+    const margenNeto = ventasNetas > 0 ? (utilidadNeta / ventasNetas) * 100 : 0;
+    document.getElementById('cmMargenNeto').textContent = `Margen Neto: ${margenNeto.toFixed(1)}%`;
+
+    const elPosIvaTexto = document.getElementById('cmPosicionIvaTexto');
+    const elPosIvaMonto = document.getElementById('cmPosicionIvaMonto');
+    
+    if (posicionIva > 0) {
+        elPosIvaTexto.textContent = "A Pagar a AFIP:";
+        elPosIvaMonto.textContent = currency(posicionIva);
+        elPosIvaMonto.style.color = "var(--danger)";
+    } else {
+        elPosIvaTexto.textContent = "Saldo a Favor:";
+        elPosIvaMonto.textContent = currency(Math.abs(posicionIva));
+        elPosIvaMonto.style.color = "var(--success)";
+    }
+  }
+
+  
 
   initContable();
 </script>
