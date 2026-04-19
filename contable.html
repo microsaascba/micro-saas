@@ -203,6 +203,17 @@
           </div>
         </div>
         <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Sucursal (Origen del gasto) *</label>
+          <select id="expBranch" class="input-box" required></select>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 15px; align-items: end;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Concepto / Detalle de compra *</label>
+          <input type="text" id="expConcept" required class="input-box" placeholder="Ej: Compra de insumos, Pago de luz, Resma papel">
+        </div>
+        <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Imputación Contable</label>
           <select id="expCategory" class="input-box">
             <option value="Mercadería">Compra Mercadería</option>
@@ -214,11 +225,6 @@
             <option value="Otros">Gastos Generales</option>
           </select>
         </div>
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Concepto / Detalle de compra *</label>
-        <input type="text" id="expConcept" required class="input-box" placeholder="Ej: Compra de insumos, Pago de luz, Resma papel">
       </div>
       
       <div style="background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px dashed var(--line); margin-bottom: 15px;">
@@ -273,6 +279,32 @@
   </div>
 </dialog>
 
+<dialog id="modalListaProveedores" style="width: 100%; max-width: 700px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;">Directorio de Proveedores</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalListaProveedores').close()">✕</button>
+    </div>
+    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; gap: 10px;">
+      <input type="text" id="searchProveedor" class="input-box" placeholder="Buscar por Razón Social o CUIT..." onkeyup="renderDirectorioProveedores()" style="max-width: 300px;">
+      <button class="btn btn-primary" onclick="abrirModalProveedor()">+ Nuevo Proveedor</button>
+    </div>
+    <div style="overflow-y: auto; max-height: 400px; border: 1px solid var(--line); border-radius: 8px;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead style="background: var(--panel-2); position: sticky; top: 0; z-index: 1;">
+          <tr>
+            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">Razón Social</th>
+            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">CUIT</th>
+            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">Contacto</th>
+            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="bodyListaProveedores"></tbody>
+      </table>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="modalProveedor" style="width: 100%; max-width: 600px; z-index: 10000;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
@@ -288,8 +320,8 @@
           <input type="text" id="suppName" required class="input-box" placeholder="Ej: Distribuidora Central SA">
         </div>
         <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT *</label>
-          <input type="text" id="suppCuit" class="input-box" placeholder="Sin guiones (Ej: 30123456789)">
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT (11 dígitos) *</label>
+          <input type="text" id="suppCuit" class="input-box" placeholder="Sin guiones ni espacios (Ej: 30123456789)">
         </div>
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Condición frente al IVA</label>
@@ -327,32 +359,6 @@
         <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Guardar Proveedor</button>
       </div>
     </form>
-  </div>
-</dialog>
-
-<dialog id="modalListaProveedores" style="width: 100%; max-width: 700px;">
-  <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;">Directorio de Proveedores</h2>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalListaProveedores').close()">✕</button>
-    </div>
-    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; gap: 10px;">
-      <input type="text" id="searchProveedor" class="input-box" placeholder="Buscar por Razón Social o CUIT..." onkeyup="renderDirectorioProveedores()" style="max-width: 300px;">
-      <button class="btn btn-primary" onclick="abrirModalProveedor()">+ Nuevo Proveedor</button>
-    </div>
-    <div style="overflow-y: auto; max-height: 400px; border: 1px solid var(--line); border-radius: 8px;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left;">
-        <thead style="background: var(--panel-2); position: sticky; top: 0; z-index: 1;">
-          <tr>
-            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">Razón Social</th>
-            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">CUIT</th>
-            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">Contacto</th>
-            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Acción</th>
-          </tr>
-        </thead>
-        <tbody id="bodyListaProveedores"></tbody>
-      </table>
-    </div>
   </div>
 </dialog>
 
@@ -456,10 +462,25 @@
   async function initContable() {
     mostrarCarga(true);
     try {
-      const [resE, resS, resSup] = await Promise.all([ fetch(`${API_URL}/expenses`), fetch(`${API_URL}/sales`), fetch(`${API_URL}/suppliers`) ]);
+      const [resE, resS, resSup, resB] = await Promise.all([ 
+          fetch(`${API_URL}/expenses`), 
+          fetch(`${API_URL}/sales`), 
+          fetch(`${API_URL}/suppliers`),
+          fetch(`${API_URL}/branches`) // Cargar Sucursales
+      ]);
+      
       if(resE.ok) dbExpenses = await resE.json();
       if(resS.ok) dbSales = await resS.json();
       if(resSup.ok) dbSuppliers = await resSup.json();
+      
+      let branches = [];
+      if(resB.ok) branches = await resB.json();
+      
+      // Poblar el selector de sucursal para gastos
+      const branchOptions = '<option value="Global">Gasto Global / Empresa</option>' + branches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+      const expBranchEl = document.getElementById('expBranch');
+      if(expBranchEl) expBranchEl.innerHTML = branchOptions;
+
     } catch (e) { console.error(e); } 
     finally { 
       actualizarSelectProveedores();
@@ -547,8 +568,16 @@
     const cuit = document.getElementById('suppCuit').value.trim();
     const name = document.getElementById('suppName').value.trim();
 
-    // 1. VALIDACIÓN DE CUIT DUPLICADO
+    // VALIDACIÓN ESTRICTA DE CUIT
     if (cuit !== "") {
+        // Exigir exactamente 11 números
+        const cuitRegex = /^\d{11}$/;
+        if (!cuitRegex.test(cuit)) {
+            alert("❌ Error: El CUIT debe contener exactamente 11 números, sin guiones ni espacios.");
+            return;
+        }
+
+        // Evitar CUIT duplicados
         const duplicadoCUIT = dbSuppliers.find(s => s.cuit === cuit && s.id !== id);
         if (duplicadoCUIT) {
             alert(`❌ Error: El CUIT ${cuit} ya está registrado para el proveedor "${duplicadoCUIT.name}".\nNo se puede guardar un CUIT duplicado.`);
@@ -556,7 +585,7 @@
         }
     }
 
-    // 2. ADVERTENCIA DE NOMBRE DUPLICADO (Permite guardar si el usuario insiste)
+    // ADVERTENCIA DE NOMBRE DUPLICADO
     const duplicadoNombre = dbSuppliers.find(s => s.name.toLowerCase() === name.toLowerCase() && s.id !== id);
     if (duplicadoNombre) {
          if(!confirm(`⚠️ Atención: Ya existe un proveedor llamado "${duplicadoNombre.name}".\n¿Estás seguro de que querés guardarlo de todas formas?`)) {
@@ -603,21 +632,19 @@
   }
 
   async function ejecutarEliminacionProveedor(id) {
-    // Recordatorio: Para que esto funcione en la nube, necesitas el endpoint DELETE en suppliers.js
-    // export async function onRequestDelete(context) { ... }
     mostrarCarga(true);
     try {
       const response = await fetch(`${API_URL}/suppliers?id=${id}`, { method: 'DELETE' });
-      if(response.ok || true) { // Asumimos ok localmente si el backend no lo procesa
-          dbSuppliers = dbSuppliers.filter(s => s.id !== id);
-          actualizarSelectProveedores();
+      // Eliminamos localmente
+      dbSuppliers = dbSuppliers.filter(s => s.id !== id);
+      actualizarSelectProveedores();
+      
+      if (document.getElementById('modalListaProveedores').open) {
           renderDirectorioProveedores();
-          renderContable(); // Refresca la tabla por si había gastos de este proveedor
-      } else {
-          alert("Error al eliminar el proveedor de la base de datos.");
       }
+      renderContable(); // Refresca la tabla por si había gastos de este proveedor
     } catch(err) {
-      alert("Error de conexión.");
+      alert("Error al intentar eliminar el proveedor.");
     } finally {
       mostrarCarga(false);
     }
@@ -642,6 +669,9 @@
       document.getElementById('expInvoiceNum').value = exp.invoiceNum || '';
       document.getElementById('expSupplier').value = exp.supplierId || 'Varios/Consumidor Final';
       
+      const expBranchEl = document.getElementById('expBranch');
+      if(expBranchEl) expBranchEl.value = exp.branch || 'Global';
+
       document.getElementById('expIva').value = exp.ivaAmount || 0;
       document.getElementById('expOtros').value = exp.nonTaxedAmount || 0;
       document.getElementById('expNeto').value = (exp.amount - (exp.ivaAmount || 0) - (exp.nonTaxedAmount || 0)).toFixed(2);
@@ -674,6 +704,10 @@
       title.textContent = "Carga de Comprobante / Gasto";
       document.getElementById('expId').value = '';
       document.getElementById('expDate').value = todayISO();
+      
+      const expBranchEl = document.getElementById('expBranch');
+      if(expBranchEl) expBranchEl.value = 'Global';
+
       btnDel.style.display = 'none'; 
       document.getElementById('btnSaveExpense').style.display = 'block';
       
@@ -692,12 +726,15 @@
     e.preventDefault();
     const id = document.getElementById('expId').value || 'exp_' + Date.now();
     
+    const expBranchEl = document.getElementById('expBranch');
+
     const exp = {
       id: id,
       date: document.getElementById('expDate').value,
       invoiceType: document.getElementById('expInvoiceType').value,
       invoiceNum: document.getElementById('expInvoiceNum').value.trim(),
       supplierId: document.getElementById('expSupplier').value,
+      branch: expBranchEl ? expBranchEl.value : 'Global',
       amount: parseFloat(document.getElementById('expAmount').value) || 0,
       ivaAmount: parseFloat(document.getElementById('expIva').value) || 0,
       nonTaxedAmount: parseFloat(document.getElementById('expOtros').value) || 0,
@@ -807,12 +844,14 @@
       const fechaParts = exp.date.split('-');
       const fechaLocal = fechaParts.length === 3 ? `${fechaParts[2]}/${fechaParts[1]}/${fechaParts[0]}` : exp.date;
 
+      const branchNameTag = exp.branch && exp.branch !== 'Global' ? `<br><small style="color:var(--primary); font-weight:bold;">📍 ${escapeHtml(exp.branch)}</small>` : '';
+
       rowsHtml += `
       <tr style="${isAnul ? 'opacity:0.5;' : ''}">
         <td style="color:var(--muted); font-size:12px;">${fechaLocal}</td>
         <td>${badgeInv}<br><small style="color:var(--muted)">${escapeHtml(exp.invoiceNum || 'S/N')}</small></td>
         <td style="${isAnul ? 'text-decoration:line-through;' : ''}"><strong>${escapeHtml(supName)}</strong></td>
-        <td style="${isAnul ? 'text-decoration:line-through;' : ''}">${escapeHtml(exp.concept)}<br><small style="color:var(--muted)">${escapeHtml(exp.category)}</small></td>
+        <td style="${isAnul ? 'text-decoration:line-through;' : ''}">${escapeHtml(exp.concept)}${branchNameTag}<br><small style="color:var(--muted)">${escapeHtml(exp.category)}</small></td>
         <td>${statusBadge}</td>
         <td style="text-align:right; font-weight:bold; color:var(--text); ${isAnul ? 'text-decoration:line-through;' : ''}">${currency(exp.amount)}</td>
         <td style="text-align:center;">
@@ -922,7 +961,8 @@
       }
       return {
         "Fecha": e.date, "Comprobante": e.invoiceType, "Numero": e.invoiceNum || '-',
-        "Proveedor": supName, "Concepto": e.concept, "Total": e.amount, "IVA": e.ivaAmount || 0, "Estado": e.status
+        "Proveedor": supName, "Concepto": e.concept, "Sucursal": e.branch || 'Global',
+        "Total": e.amount, "IVA": e.ivaAmount || 0, "Estado": e.status
       };
     });
     const headers = Object.keys(csvData[0]);
