@@ -299,7 +299,13 @@
         <td style="color: var(--muted);">${i.code || '-'}</td>
         <td><strong>${escapeHtml(i.name)}</strong></td>
         <td style="text-align:right;">${currency(i.price)}</td>
-        <td style="text-align:center;"><input type="number" class="qty-input" value="${i.qty}" onchange="updateQty('${i.id}', this.value)"></td>
+        <td style="text-align:center;">
+          <div class="qty-control">
+            <button class="qty-btn" onclick="updateQty('${i.id}', ${i.qty - 1})">-</button>
+            <input type="number" class="qty-input" value="${i.qty}" onchange="updateQty('${i.id}', this.value)">
+            <button class="qty-btn" onclick="updateQty('${i.id}', ${i.qty + 1})">+</button>
+          </div>
+        </td>
         <td style="text-align:right; color:var(--primary);"><strong>${currency(sub)}</strong></td>
         <td style="text-align:center;"><button onclick="quitar('${i.id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">✕</button></td>
       </tr>`;
@@ -308,10 +314,11 @@
     document.getElementById('txtTotal').textContent = currency(total);
   }
 
-  window.updateQty = (id, v) => { 
+ window.updateQty = (id, v) => { 
     const i = cart.find(x => x.id === id); 
     if(i) {
-        const nuevaCant = parseInt(v) || 1;
+        // Aseguramos que no baje de 1
+        const nuevaCant = parseInt(v) > 0 ? parseInt(v) : 1;
         const pDB = dbProducts.find(p => p.id === id);
         const localStock = getLocalStock(pDB);
 
