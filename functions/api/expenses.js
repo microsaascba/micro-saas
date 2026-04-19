@@ -16,7 +16,8 @@ export async function onRequestPost(context) {
     `).bind(
       data.id, data.date, data.amount, data.concept, data.category, data.status, data.method, 
       data.dueDate || null, data.notes || '', data.createdAt || new Date().toISOString(),
-      data.supplierId || '', data.invoiceType || 'Interno', data.invoiceNum || ''
+      data.supplierId || '', data.invoiceType || 'Interno', data.invoiceNum || '',
+      data.ivaAmount || 0, data.nonTaxedAmount || 0 // <-- NUEVOS CAMPOS
     ).run();
     return Response.json({ success: true });
   } catch (error) { return Response.json({ error: error.message }, { status: 500 }); }
