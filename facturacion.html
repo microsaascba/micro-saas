@@ -341,12 +341,12 @@
     if(!cart.length) return;
     if(!confirm(isB2B ? "¿Confirmar y enviar deuda a la Cuenta Corriente?" : "¿Confirmar venta e imprimir ticket?")) return;
     
-    // VALIDACIÓN: Si es tarjeta, obligar a poner cupón
+    // VALIDACIÓN: Si es Crédito, obligar a poner cupón
     let cuponText = '';
-    if (!isB2B && currentPaymentMethod === 'Tarjeta') {
+    if (!isB2B && currentPaymentMethod === 'Crédito') {
       cuponText = document.getElementById('cuponNumber').value.trim();
       if (!cuponText) { 
-        alert("⚠️ Ingresá el número de lote/cupón para poder cobrar con Tarjeta."); 
+        alert("⚠️ Ingresá el número de lote/cupón para poder cobrar con Tarjeta de Crédito."); 
         document.getElementById('cuponNumber').focus(); 
         return; 
       }
