@@ -352,17 +352,28 @@
       }
     }
 
-    mostrarCarga(true);
+   mostrarCarga(true);
     const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
     const dateStr = todayISO();
     const cid = document.getElementById('clientId').value;
+
+    // LIMPIEZA Y GUARDADO EXPLÍCITO DEL COSTO HISTÓRICO
+    const itemsLimpios = cart.map(i => ({
+        id: i.id,
+        code: i.code || '',
+        name: i.name,
+        price: i.price,
+        cost: i.cost || 0, // <-- ACÁ SELLAMOS EL COSTO PARA EL CMV
+        qty: i.qty,
+        subtotal: i.price * i.qty
+    }));
 
     const venta = {
       id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: dateStr,
       branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
       clientId: cid || 'Consumidor Final', client: document.getElementById('clientName').value || 'Consumidor Final',
-      method: currentPaymentMethod, cupon: cuponText, subtotal: total, promoDiscount: 0, total: total, isB2B: isB2B, items: cart
-    };
+      method: currentPaymentMethod, cupon: cuponText, subtotal: total, promoDiscount: 0, total: total, isB2B: isB2B, items: itemsLimpios
+    }; 
 
     try {
       const resV = await fetch(`${API_URL}/sales`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(venta) });
