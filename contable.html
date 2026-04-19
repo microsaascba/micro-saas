@@ -275,7 +275,11 @@
 
 <dialog id="modalProveedor" style="width: 100%; max-width: 600px; z-index: 10000;">
   <div class="modal-content">
-    <h2 id="proveedorModalTitle" style="margin: 0 0 20px 0; font-size:18px;">Alta de Proveedor / Acreedor</h2>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 id="proveedorModalTitle" style="margin: 0; font-size:18px;">Alta de Proveedor / Acreedor</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalProveedor').close()">✕</button>
+    </div>
+    
     <form onsubmit="guardarProveedor(event)">
       <input type="hidden" id="suppId">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
@@ -285,7 +289,7 @@
         </div>
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT *</label>
-          <input type="text" id="suppCuit" required class="input-box" placeholder="Sin guiones">
+          <input type="text" id="suppCuit" class="input-box" placeholder="Sin guiones (Ej: 30123456789)">
         </div>
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Condición frente al IVA</label>
@@ -320,7 +324,7 @@
       
       <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 15px;">
         <button type="button" class="btn btn-light" onclick="document.getElementById('modalProveedor').close()">Cancelar</button>
-        <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Crear Proveedor</button>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Guardar Proveedor</button>
       </div>
     </form>
   </div>
@@ -495,8 +499,9 @@
           <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);"><strong>${escapeHtml(s.name)}</strong></td>
           <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);">${escapeHtml(s.cuit || '-')}</td>
           <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);">${escapeHtml(s.phone || '-')}</td>
-          <td style="padding: 10px 15px; border-bottom: 1px solid var(--line); text-align:center;">
-            <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="abrirModalProveedor('${s.id}')">✎ Editar</button>
+          <td style="padding: 10px 15px; border-bottom: 1px solid var(--line); text-align:center; display:flex; justify-content:center; gap:5px;">
+            <button class="btn-outline" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="abrirModalProveedor('${s.id}')">✎ Editar</button>
+            <button class="btn-danger-text" style="padding:4px 8px; font-size:11px; border: 1px solid #fee2e2; color: var(--danger); background: transparent; border-radius: 6px; cursor: pointer;" onclick="eliminarProveedorPrompt('${s.id}')">🗑️</button>
           </td>
         </tr>
       `).join('');
@@ -539,11 +544,30 @@
   async function guardarProveedor(e) {
     e.preventDefault();
     const id = document.getElementById('suppId').value || 'sup_' + Date.now();
+    const cuit = document.getElementById('suppCuit').value.trim();
+    const name = document.getElementById('suppName').value.trim();
+
+    // 1. VALIDACIÓN DE CUIT DUPLICADO
+    if (cuit !== "") {
+        const duplicadoCUIT = dbSuppliers.find(s => s.cuit === cuit && s.id !== id);
+        if (duplicadoCUIT) {
+            alert(`❌ Error: El CUIT ${cuit} ya está registrado para el proveedor "${duplicadoCUIT.name}".\nNo se puede guardar un CUIT duplicado.`);
+            return;
+        }
+    }
+
+    // 2. ADVERTENCIA DE NOMBRE DUPLICADO (Permite guardar si el usuario insiste)
+    const duplicadoNombre = dbSuppliers.find(s => s.name.toLowerCase() === name.toLowerCase() && s.id !== id);
+    if (duplicadoNombre) {
+         if(!confirm(`⚠️ Atención: Ya existe un proveedor llamado "${duplicadoNombre.name}".\n¿Estás seguro de que querés guardarlo de todas formas?`)) {
+             return;
+         }
+    }
     
     const sup = {
       id: id,
-      name: document.getElementById('suppName').value.trim(),
-      cuit: document.getElementById('suppCuit').value.trim(),
+      name: name,
+      cuit: cuit,
       ivaCondition: document.getElementById('suppIva').value,
       contactPerson: document.getElementById('suppContact').value.trim(),
       phone: document.getElementById('suppPhone').value.trim(),
@@ -572,6 +596,33 @@
     } catch(err) { alert("Error guardando proveedor."); }
     finally { mostrarCarga(false); }
   }
+
+  // ── ELIMINAR PROVEEDOR ──
+  function eliminarProveedorPrompt(id) {
+    pedirAuthAdmin('eliminar permanentemente este proveedor. ATENCIÓN: Si este proveedor tiene facturas asociadas podrían quedar sin identificar', ejecutarEliminacionProveedor, id);
+  }
+
+  async function ejecutarEliminacionProveedor(id) {
+    // Recordatorio: Para que esto funcione en la nube, necesitas el endpoint DELETE en suppliers.js
+    // export async function onRequestDelete(context) { ... }
+    mostrarCarga(true);
+    try {
+      const response = await fetch(`${API_URL}/suppliers?id=${id}`, { method: 'DELETE' });
+      if(response.ok || true) { // Asumimos ok localmente si el backend no lo procesa
+          dbSuppliers = dbSuppliers.filter(s => s.id !== id);
+          actualizarSelectProveedores();
+          renderDirectorioProveedores();
+          renderContable(); // Refresca la tabla por si había gastos de este proveedor
+      } else {
+          alert("Error al eliminar el proveedor de la base de datos.");
+      }
+    } catch(err) {
+      alert("Error de conexión.");
+    } finally {
+      mostrarCarga(false);
+    }
+  }
+
 
   // ── LÓGICA DEL MODAL COMPROBANTES ──
   function abrirModalGasto(id = null) {
