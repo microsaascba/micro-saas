@@ -165,43 +165,42 @@
   </form>
 </dialog>
 
-<dialog id="modalExportarVentas" style="width: 100%; max-width: 500px;">
-  <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;">Exportar Reporte de Ventas</h2>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalExportarVentas').close()">✕</button>
-    </div>
-    <form onsubmit="ejecutarExportacionAvanzada(event)">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Desde *</label>
-          <input type="date" id="exportDesde" class="input-box" required>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Hasta *</label>
-          <input type="date" id="exportHasta" class="input-box" required>
-        </div>
-      </div>
-      
-      <div style="margin-bottom: 15px;" id="boxExportSucursal">
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Sucursal *</label>
-        <select id="exportSucursal" class="input-box" required></select>
-      </div>
-
-      <div style="margin-bottom: 25px;">
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Tipo de Reporte *</label>
-        <select id="exportTipo" class="input-box" required>
-          <option value="resumen">Consolidado (1 fila por Factura/Ticket)</option>
-          <option value="detallado">Detallado (1 fila por Artículo vendido)</option>
-        </select>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-light" onclick="document.getElementById('modalExportarVentas').close()">Cancelar</button>
-        <button type="submit" class="btn btn-success">Generar Excel</button>
-      </div>
-    </form>
+<dialog id="modalExportarVentas" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 500px; width: 90%; background: var(--panel);">
+  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+    <h2 style="margin: 0; font-size:18px;">Exportar Reporte de Ventas</h2>
+    <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalExportarVentas').close()">✕</button>
   </div>
+  
+  <form onsubmit="ejecutarExportacionAvanzada(event)" style="padding: 22px;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+      <div>
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Desde *</label>
+        <input type="date" id="exportDesde" class="input-box" required>
+      </div>
+      <div>
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Hasta *</label>
+        <input type="date" id="exportHasta" class="input-box" required>
+      </div>
+    </div>
+    
+    <div style="margin-bottom: 15px;" id="boxExportSucursal">
+      <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Sucursal *</label>
+      <select id="exportSucursal" class="input-box" required></select>
+    </div>
+
+    <div style="margin-bottom: 25px;">
+      <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Tipo de Reporte *</label>
+      <select id="exportTipo" class="input-box" required>
+        <option value="resumen">Consolidado (1 fila por Factura/Ticket)</option>
+        <option value="detallado">Detallado (1 fila por Artículo vendido)</option>
+      </select>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-light" onclick="document.getElementById('modalExportarVentas').close()">Cancelar</button>
+      <button type="submit" class="btn btn-success" style="border: none;">Generar Excel</button>
+    </div>
+  </form>
 </dialog>
 
   
