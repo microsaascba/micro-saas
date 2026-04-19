@@ -230,7 +230,8 @@
     if(btn) btn.classList.add('active');
     
     const cupon = document.getElementById('cuponContainer');
-    if (method === 'Tarjeta') { 
+    // Solo se abre el cupón si es Crédito
+    if (method === 'Crédito') { 
       cupon.style.display = 'block'; 
       if(focus) document.getElementById('cuponNumber').focus(); 
     } else { 
