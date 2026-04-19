@@ -68,6 +68,7 @@
       <div class="topbar-actions" style="display: flex; gap: 10px;">
         <button class="btn btn-primary" style="background: #4f46e5; border:none;" onclick="abrirModalCierreMes()">📊 Cierre de Mes (P&L)</button>
         <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Exportar Libro</button>
+        <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirDirectorioProveedores()">👥 Proveedores</button>
         <button class="btn btn-primary" onclick="abrirModalGasto()">+ Cargar Comprobante</button>
       </div>
     </header>
@@ -274,8 +275,9 @@
 
 <dialog id="modalProveedor" style="width: 100%; max-width: 600px; z-index: 10000;">
   <div class="modal-content">
-    <h2 style="margin: 0 0 20px 0; font-size:18px;">Alta de Proveedor / Acreedor</h2>
+    <h2 id="proveedorModalTitle" style="margin: 0 0 20px 0; font-size:18px;">Alta de Proveedor / Acreedor</h2>
     <form onsubmit="guardarProveedor(event)">
+      <input type="hidden" id="suppId">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Razón Social / Nombre *</label>
@@ -321,6 +323,32 @@
         <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Crear Proveedor</button>
       </div>
     </form>
+  </div>
+</dialog>
+
+<dialog id="modalListaProveedores" style="width: 100%; max-width: 700px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;">Directorio de Proveedores</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalListaProveedores').close()">✕</button>
+    </div>
+    <div style="margin-bottom: 15px; display: flex; justify-content: space-between; gap: 10px;">
+      <input type="text" id="searchProveedor" class="input-box" placeholder="Buscar por Razón Social o CUIT..." onkeyup="renderDirectorioProveedores()" style="max-width: 300px;">
+      <button class="btn btn-primary" onclick="abrirModalProveedor()">+ Nuevo Proveedor</button>
+    </div>
+    <div style="overflow-y: auto; max-height: 400px; border: 1px solid var(--line); border-radius: 8px;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead style="background: var(--panel-2); position: sticky; top: 0; z-index: 1;">
+          <tr>
+            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">Razón Social</th>
+            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">CUIT</th>
+            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">Contacto</th>
+            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Acción</th>
+          </tr>
+        </thead>
+        <tbody id="bodyListaProveedores"></tbody>
+      </table>
+    </div>
   </div>
 </dialog>
 
@@ -449,23 +477,71 @@
       document.getElementById('expAmount').value = (n + i + o).toFixed(2);
   }
 
-  // ── GESTIÓN DE PROVEEDORES ──
-  function abrirModalProveedor() {
-    document.getElementById('suppName').value = '';
-    document.getElementById('suppCuit').value = '';
-    document.getElementById('suppIva').value = 'Responsable Inscripto';
-    document.getElementById('suppContact').value = '';
-    document.getElementById('suppPhone').value = '';
-    document.getElementById('suppEmail').value = '';
-    document.getElementById('suppAddress').value = '';
-    document.getElementById('suppNotes').value = '';
+  // ── GESTIÓN DE PROVEEDORES (Directorio y Edición) ──
+  function abrirDirectorioProveedores() {
+      document.getElementById('searchProveedor').value = '';
+      renderDirectorioProveedores();
+      document.getElementById('modalListaProveedores').showModal();
+  }
+
+  function renderDirectorioProveedores() {
+      const term = document.getElementById('searchProveedor').value.toLowerCase();
+      const tbody = document.getElementById('bodyListaProveedores');
+      
+      const filtrados = dbSuppliers.filter(s => s.name.toLowerCase().includes(term) || (s.cuit && s.cuit.includes(term)));
+      
+      tbody.innerHTML = filtrados.map(s => `
+        <tr>
+          <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);"><strong>${escapeHtml(s.name)}</strong></td>
+          <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);">${escapeHtml(s.cuit || '-')}</td>
+          <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);">${escapeHtml(s.phone || '-')}</td>
+          <td style="padding: 10px 15px; border-bottom: 1px solid var(--line); text-align:center;">
+            <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="abrirModalProveedor('${s.id}')">✎ Editar</button>
+          </td>
+        </tr>
+      `).join('');
+      
+      if(filtrados.length === 0) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color:var(--muted);">No se encontraron proveedores.</td></tr>';
+  }
+
+  function abrirModalProveedor(id = null) {
+    const title = document.getElementById('proveedorModalTitle');
+    if (id) {
+        // EDICIÓN
+        const s = dbSuppliers.find(x => x.id === id);
+        if (!s) return;
+        title.textContent = "Editar Proveedor";
+        document.getElementById('suppId').value = s.id;
+        document.getElementById('suppName').value = s.name;
+        document.getElementById('suppCuit').value = s.cuit || '';
+        document.getElementById('suppIva').value = s.ivaCondition || 'Responsable Inscripto';
+        document.getElementById('suppContact').value = s.contactPerson || '';
+        document.getElementById('suppPhone').value = s.phone || '';
+        document.getElementById('suppEmail').value = s.email || '';
+        document.getElementById('suppAddress').value = s.address || '';
+        document.getElementById('suppNotes').value = s.notes || '';
+    } else {
+        // CREACIÓN NUEVA
+        title.textContent = "Alta de Proveedor / Acreedor";
+        document.getElementById('suppId').value = '';
+        document.getElementById('suppName').value = '';
+        document.getElementById('suppCuit').value = '';
+        document.getElementById('suppIva').value = 'Responsable Inscripto';
+        document.getElementById('suppContact').value = '';
+        document.getElementById('suppPhone').value = '';
+        document.getElementById('suppEmail').value = '';
+        document.getElementById('suppAddress').value = '';
+        document.getElementById('suppNotes').value = '';
+    }
     document.getElementById('modalProveedor').showModal();
   }
 
   async function guardarProveedor(e) {
     e.preventDefault();
+    const id = document.getElementById('suppId').value || 'sup_' + Date.now();
+    
     const sup = {
-      id: 'sup_' + Date.now(),
+      id: id,
       name: document.getElementById('suppName').value.trim(),
       cuit: document.getElementById('suppCuit').value.trim(),
       ivaCondition: document.getElementById('suppIva').value,
@@ -480,9 +556,18 @@
     mostrarCarga(true);
     try {
       await fetch(`${API_URL}/suppliers`, { method: 'POST', body: JSON.stringify(sup) });
-      dbSuppliers.unshift(sup);
+      
+      const idx = dbSuppliers.findIndex(x => x.id === id);
+      if (idx >= 0) dbSuppliers[idx] = sup; else dbSuppliers.unshift(sup);
+      
       actualizarSelectProveedores();
-      document.getElementById('expSupplier').value = sup.id; // Lo autoselecciona
+      
+      if (document.getElementById('modalListaProveedores').open) {
+          renderDirectorioProveedores();
+      } else {
+          document.getElementById('expSupplier').value = sup.id; 
+      }
+      
       document.getElementById('modalProveedor').close();
     } catch(err) { alert("Error guardando proveedor."); }
     finally { mostrarCarga(false); }
