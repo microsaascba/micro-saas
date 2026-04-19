@@ -13,6 +13,8 @@
   </style>
   
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
@@ -84,10 +86,14 @@
   </aside>
 
   <main class="content">
-    <header class="topbar">
+    <header class="topbar" style="align-items: center;">
       <div class="page-title">
         <h1 style="margin:0; font-size: 26px;">Productos</h1>
         <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión integral del catálogo, conectado a Cloudflare D1.</p>
+      </div>
+      <div class="topbar-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarCatalogoExcel()">⬇ Exportar Excel / Plantilla</button>
+        <button class="btn btn-primary" onclick="abrirModalImportar()">⬆ Importar Lote (Excel)</button>
       </div>
     </header>
 
@@ -129,7 +135,7 @@
             </div>
             <div>
               <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Stock Inicial</label>
-              <input type="number" id="prodStock" class="input-box" value="0" min="0">
+              <input type="number" id="prodStock" class="input-box" value="0" min="0" disabled title="El stock se modifica desde el módulo de Stock o en el Ingreso Masivo">
             </div>
 
             <div class="calc-box">
@@ -248,6 +254,44 @@
   </form>
 </dialog>
 
+<dialog id="modalImportarProductos" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 650px; width: 90%; background: var(--panel);">
+  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+    <h2 style="margin: 0; font-size:18px;">Importar Productos en Lote</h2>
+    <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalImportarProductos').close()">✕</button>
+  </div>
+  <div style="padding: 22px;">
+    <div style="background: #fff8f1; padding: 15px; border-radius: 8px; border: 1px dashed #f59e0b; margin-bottom: 20px; font-size: 12px; color: #b45309; line-height: 1.6;">
+      <strong style="font-size:13px;">Instrucciones de Subida:</strong><br>
+      Sube un archivo .xlsx o .csv. Si no tienes la plantilla, puedes descargarla desde el botón <strong>"Exportar Excel"</strong> en la parte superior.<br>
+      Las columnas deben llamarse <strong>exactamente</strong> así (solo NOMBRE y PRECIO son obligatorias, el resto puede quedar vacío o en cero):<br><br>
+      <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+        <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">NOMBRE</span>
+        <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">CATEGORIA</span>
+        <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">SKU</span>
+        <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">COSTO</span>
+        <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">GASTOS</span>
+        <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">PRECIO</span>
+        <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">ESTADO</span>
+        <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">COLOR</span>
+        <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">TALLE</span>
+      </div>
+      <br>
+      <em>* Nota: Las unidades de stock no se importan desde aquí. Los ingresos de mercadería deben hacerse desde el módulo de <strong>Stock</strong>. Si un SKU ya existe en el sistema, se actualizarán sus datos comerciales.</em>
+    </div>
+    
+    <form onsubmit="procesarImportacionMasiva(event)">
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seleccionar Archivo Excel / CSV *</label>
+        <input type="file" id="importFile" accept=".xlsx, .xls, .csv" required class="input-box" style="padding: 8px;">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalImportarProductos').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="background:#0f766e; border-color:#0f766e;">Procesar Catálogo</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
 <script src="core.js"></script>
 <script>
   const API_URL = "/api"; 
@@ -258,6 +302,7 @@
 
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function todayISO() { return new Date().toISOString().split('T')[0]; }
   
   function mostrarCarga(mostrar) {
     document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none';
@@ -329,7 +374,132 @@
       dbProducts.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
   }
 
-  // --- GUARDAR PRODUCTO EN LA NUBE ---
+  // --- EXPORTAR EXCEL / PLANTILLA ---
+  window.exportarCatalogoExcel = function() {
+      let dataExport = [];
+      if (dbProducts.length === 0) {
+          // Plantilla vacía si no hay productos
+          dataExport.push({ "NOMBRE": "", "CATEGORIA": "", "SKU": "", "COSTO": 0, "GASTOS": 0, "PRECIO": 0, "ESTADO": "Activo", "COLOR": "", "TALLE": "" });
+      } else {
+          dataExport = dbProducts.map(p => ({
+              "NOMBRE": p.name || "",
+              "CATEGORIA": p.category || "",
+              "SKU": p.code || "",
+              "COSTO": p.cost || 0,
+              "GASTOS": p.expenses || 0,
+              "PRECIO": p.price || 0,
+              "ESTADO": p.status || "Activo",
+              "COLOR": p.color || "",
+              "TALLE": p.size || ""
+          }));
+      }
+
+      const ws = XLSX.utils.json_to_sheet(dataExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Productos");
+      XLSX.writeFile(wb, `Catalogo_Productos_${todayISO()}.xlsx`);
+  }
+
+  // --- IMPORTACIÓN MASIVA DESDE EXCEL ---
+  window.abrirModalImportar = function() {
+      document.getElementById('importFile').value = '';
+      document.getElementById('modalImportarProductos').showModal();
+  }
+
+  window.procesarImportacionMasiva = async function(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('importFile');
+      if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = async function(evt) {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(firstSheet);
+
+          if (rows.length === 0) return alert("El archivo está vacío o mal formateado.");
+
+          let prodUpdates = [];
+          let errores = [];
+
+          rows.forEach((row, index) => {
+              // Busca la columna tolerando mayúsculas/minúsculas y espacios
+              const findVal = (names) => {
+                  const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
+                  return key ? row[key] : null;
+              };
+
+              const name = String(findVal(['nombre', 'name', 'producto']) || '').trim();
+              const price = parseFloat(findVal(['precio', 'price', 'venta']));
+              
+              if (!name) { errores.push(`Fila ${index + 2}: Nombre vacío.`); return; }
+              if (isNaN(price)) { errores.push(`Fila ${index + 2}: Precio inválido para "${name}".`); return; }
+
+              const code = String(findVal(['sku', 'codigo', 'código']) || '').trim();
+              const category = String(findVal(['categoria', 'categoría', 'category']) || '').trim();
+              const cost = parseFloat(findVal(['costo', 'cost'])) || 0;
+              const expenses = parseFloat(findVal(['gastos', 'expenses'])) || 0;
+              let status = String(findVal(['estado', 'status']) || 'Activo').trim();
+              if (status.toLowerCase() !== 'activo' && status.toLowerCase() !== 'inactivo') status = 'Activo';
+              const color = String(findVal(['color']) || '').trim();
+              const size = String(findVal(['talle', 'tamaño', 'size']) || '').trim();
+
+              // Si enviaron un SKU, verificamos si ya existe para no duplicarlo, sino actualizamos.
+              let existingProd = null;
+              if (code) existingProd = dbProducts.find(p => p.code === code);
+
+              const id = existingProd ? existingProd.id : ('prod_' + Math.random().toString(36).substr(2, 9) + Date.now());
+
+              const newProd = {
+                  id: id,
+                  name: name,
+                  category: category,
+                  code: code,
+                  cost: cost,
+                  expenses: expenses,
+                  price: price,
+                  status: status,
+                  color: color,
+                  size: size,
+                  // Mantenemos el stock y promos actuales si estamos actualizando
+                  stock: existingProd ? existingProd.stock : 0,
+                  stock_branches: existingProd ? existingProd.stock_branches : '{"Central":0}',
+                  promoType: existingProd ? existingProd.promoType : 'none',
+                  promoValue: existingProd ? existingProd.promoValue : 0,
+                  promoLinked: existingProd ? existingProd.promoLinked : '',
+                  createdAt: existingProd ? existingProd.createdAt : new Date().toISOString()
+              };
+
+              prodUpdates.push(newProd);
+          });
+
+          if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron productos válidos.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
+
+          let msj = `Se van a importar/actualizar ${prodUpdates.length} artículos en el catálogo.\n`;
+          if (errores.length > 0) msj += `⚠️ Hubo ${errores.length} filas ignoradas por errores:\n` + errores.slice(0,3).join('\n') + `\n`;
+          if (!confirm(msj + `\n¿Confirmás la importación?`)) return;
+
+          mostrarCarga(true);
+          try {
+              // Enviamos los datos en paralelo a D1
+              await Promise.all(prodUpdates.map(p => fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(p) })));
+              
+              document.getElementById('modalImportarProductos').close();
+              alert("✅ Importación de catálogo completada.");
+              await initProducts(); 
+          } catch(err) { 
+              alert("Error de red o timeout durante la subida masiva. Revisa tu conexión."); 
+          } finally { 
+              mostrarCarga(false); 
+          }
+      };
+      reader.readAsArrayBuffer(file);
+  }
+
+  // --- GUARDAR PRODUCTO MANUAL EN LA NUBE ---
   window.guardarProducto = async function(e) {
     e.preventDefault();
     const type = document.getElementById('promoType').value;
@@ -337,6 +507,11 @@
     
     const id = document.getElementById('prodId').value || 'prod_' + Date.now();
     
+    // Al crearlo manualmente le fijamos el stock inicial a 0
+    let existingProd = dbProducts.find(p => p.id === id);
+    const prodStock = existingProd ? existingProd.stock : 0;
+    const prodBranches = existingProd ? existingProd.stock_branches : '{"Central":0}';
+
     const prod = {
       id: id,
       name: document.getElementById('prodName').value.trim(),
@@ -346,7 +521,8 @@
       cost: parseFloat(document.getElementById('prodCost').value) || 0,
       expenses: parseFloat(document.getElementById('prodExpenses').value) || 0,
       price: parseFloat(document.getElementById('prodPrice').value) || 0,
-      stock: parseInt(document.getElementById('prodStock').value) || 0,
+      stock: prodStock,
+      stock_branches: prodBranches,
       color: document.getElementById('prodColor').value.trim(),
       size: document.getElementById('prodSize').value.trim(),
       promoType: type,
