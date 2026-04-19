@@ -377,9 +377,8 @@
     let totEfectivo = 0, totTransf = 0, totTarjeta = 0;
     ventasFiltradas.forEach(v => {
       if (v.method === 'Efectivo') totEfectivo += v.total;
-      else if (v.method === 'Transferencia') totTransf += v.total;
-      else if (v.method === 'Tarjeta') totTarjeta += v.total;
-      // Nota: Si metiste Cuentas Corrientes, quizás tengas 'A Cuenta Corriente', podés ignorarlo de la caja física o sumarlo a un 4to bloque.
+      else if (v.method === 'Transferencia' || v.method === 'Transf.') totTransf += v.total;
+      else if (v.method === 'Tarjeta' || v.method === 'Débito' || v.method === 'Crédito') totTarjeta += v.total;
     });
 
     document.getElementById('cajaEfectivo').textContent = currency(totEfectivo);
