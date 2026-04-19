@@ -423,3 +423,73 @@ html, body {
     grid-template-columns: 1fr; /* Todo a 1 columna en celulares */
   }
 }
+
+/* ==========================================================================
+   DISEÑO RESPONSIVE GLOBAL (Móviles y Tablets)
+   ========================================================================== */
+
+/* 1. Botón de menú y fondo oscuro (Overlay) por defecto ocultos */
+.mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
+.sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+
+/* Contenedor flexible para tablas largas */
+.table-responsive { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
+
+/* ── PANTALLAS MEDIANAS (Tablets - hasta 1000px) ── */
+@media (max-width: 1000px) {
+    /* Apilamos los diseños de múltiples columnas */
+    .layout-2col, .three-col, .two-col, .two-col-eq { 
+        grid-template-columns: 1fr !important; 
+    }
+    
+    /* Los formularios en línea se dividen a 2 columnas en vez de 3 o 4 */
+    .form-grid-horizontal, .checkout-footer { 
+        grid-template-columns: 1fr 1fr !important; 
+    }
+}
+
+/* ── PANTALLAS PEQUEÑAS (Celulares - hasta 768px) ── */
+@media (max-width: 768px) {
+    /* 1. Transformar el layout principal */
+    .app { display: block !important; }
+    
+    /* 2. Barra lateral (Sidebar) flotante */
+    .sidebar { 
+        position: fixed !important; 
+        left: -300px; /* Oculta por defecto */
+        top: 0; 
+        height: 100vh !important; 
+        width: 260px !important; 
+        z-index: 999; 
+        flex-direction: column !important; 
+        transition: left 0.3s ease; 
+        box-shadow: 4px 0 25px rgba(0,0,0,0.5); 
+    }
+    .sidebar.open { left: 0; }
+    .sidebar-overlay.open { display: block; }
+    .nav { flex-direction: column !important; }
+    
+    /* 3. Mostrar el botón hamburguesa */
+    .mobile-toggle { display: block; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 15px; }
+    .topbar-left { display: flex; align-items: center; }
+    .topbar-actions { width: 100%; justify-content: flex-start; }
+    
+    /* 4. Redimensionar elementos internos */
+    .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
+    .page-title h1 { font-size: 20px !important; }
+    
+    /* 5. Colapsar todos los formularios y grillas a 1 sola columna */
+    .form-grid-horizontal, .checkout-footer, .kpi-grid { 
+        grid-template-columns: 1fr !important; 
+    }
+    .col-span-2, .col-span-4 { grid-column: span 1 !important; }
+    
+    /* 6. Ajustar modales para que no se salgan de la pantalla */
+    dialog { width: 95% !important; max-width: 95% !important; margin: auto; }
+    .modal-content { padding: 15px !important; }
+    
+    /* 7. Ajustar botones del POS (Facturación) */
+    #payMethodsB2C, #payMethodsB2B { flex-direction: column; }
+    .pay-btn { width: 100%; margin-bottom: 5px; }
+}
