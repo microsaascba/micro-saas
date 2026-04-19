@@ -27,17 +27,8 @@
     .action-btn strong { display: block; font-size: 14px; margin-top: 6px; }
     .action-btn span   { font-size: 12px; color: rgba(255,255,255,.7); }
 
-    .two-col { display: grid; grid-template-columns: 1.1fr .9fr; gap: 18px; margin-bottom: 18px; }
     .three-col { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 18px; }
-    .two-col-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-    .insight-item { display: flex; gap: 10px; align-items: flex-start; padding: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; }
-    .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
-    .dot-green  { background: var(--success); }
-    .dot-amber  { background: var(--warning); }
-    .dot-red    { background: var(--danger); }
-    .insight-item strong { display: block; font-size: 14px; margin-bottom: 2px; }
-    .insight-item p { margin: 0; color: var(--muted); font-size: 13px; }
+    .two-col-eq { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
 
     .alert-item { display: grid; grid-template-columns: 38px 1fr auto; gap: 12px; align-items: start; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--panel-2); }
     .alert-icon { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-weight: 800; font-size: 16px; }
@@ -74,9 +65,14 @@
     
     .filter-bar { display: flex; gap: 15px; margin-bottom: 20px; background: var(--panel-2); padding: 15px; border-radius: 12px; border: 1px solid var(--line); flex-wrap: wrap; align-items: flex-end; }
     
+    .excel-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .excel-table th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
+    .excel-table td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+    .excel-table tbody tr:hover { background-color: #f8fafc; }
+
     @media (max-width: 1200px) {
       .hero { grid-template-columns: 1fr; }
-      .two-col, .three-col, .two-col-eq { grid-template-columns: 1fr; }
+      .three-col, .two-col-eq { grid-template-columns: 1fr; }
     }
     @media (max-width: 900px) {
       .mobile-toggle { display: block; }
@@ -156,26 +152,29 @@
 
     <section class="kpi-grid-5 card-pad" id="kpiGrid"></section>
 
-    <div class="two-col">
-      <article class="card card-pad">
-        <div class="section-head">
-          <div><h2>Estado del Período</h2><p>Lectura simple de la rentabilidad</p></div>
-          <a href="contable.html" class="ghost-link">Ver contabilidad</a>
+    <article class="card card-pad" style="margin-bottom: 18px;">
+      <div class="section-head" style="margin-bottom: 15px;">
+        <div>
+            <h2 style="margin:0; font-size:18px;">Rendimiento por Sucursal (P&L Operativo)</h2>
+            <p style="margin:4px 0 0; font-size:13px; color:var(--muted);">Ingresos, Costo de Mercadería (CMV) y Utilidad Bruta</p>
         </div>
-        <div style="background:var(--panel-2);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;">
-          <p id="stateNarrative" style="margin:0;font-size:14px;line-height:1.65;color:var(--text);"></p>
-        </div>
-        <div id="insightList" style="display:grid;gap:10px;"></div>
-      </article>
-
-      <article class="card card-pad">
-        <div class="section-head">
-          <div><h2>Ventas por Sucursal</h2><p>Participación en el período seleccionado</p></div>
-          <a href="ventas.html" class="ghost-link">Ver tickets</a>
-        </div>
-        <div id="branchSalesList" style="display:grid;gap:10px;"></div>
-      </article>
-    </div>
+        <a href="ventas.html" class="ghost-link">Ver tickets</a>
+      </div>
+      <div style="overflow-x: auto; border: 1px solid var(--line); border-radius: 10px;">
+        <table class="excel-table" style="margin: 0;">
+          <thead>
+            <tr>
+              <th>Sucursal</th>
+              <th style="text-align: right;">Ingresos (Ventas)</th>
+              <th style="text-align: right;">Costos (CMV)</th>
+              <th style="text-align: right;">Utilidad Bruta</th>
+              <th style="text-align: right;">Margen Promedio</th>
+            </tr>
+          </thead>
+          <tbody id="branchSalesList"></tbody>
+        </table>
+      </div>
+    </article>
 
     <div class="three-col">
       <article class="card card-pad">
@@ -207,6 +206,26 @@
 
 <script src="core.js"></script>
 <script>
+// ── FUNCIONES AUXILIARES DE FORMATEO (Faltaban en la versión anterior) ──
+function toNum(v) { return Number(v) || 0; }
+function percent(n) { return (Number(n) || 0).toFixed(1) + '%'; }
+function saleTotal(s) { return typeof s.total === 'number' ? s.total : 0; }
+function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
+function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function simpleItem(title, sub, value, note) {
+  return `
+    <div class="simple-item">
+      <div>
+        <h4 style="font-size:14px; margin-bottom:2px;">${escapeHtml(title)}</h4>
+        <p style="font-size:12px; color:var(--muted); margin:0;">${escapeHtml(sub)}</p>
+      </div>
+      <div class="simple-meta" style="text-align:right;">
+        <strong style="display:block; font-size:14px; color:var(--text);">${value}</strong>
+        <small style="color:var(--muted); font-size:12px;">${note}</small>
+      </div>
+    </div>`;
+}
+
 function toggleMenu() {
   document.querySelector('.sidebar').classList.toggle('open');
   document.getElementById('sidebarOverlay').classList.toggle('open');
@@ -275,31 +294,46 @@ function computeState() {
       return d >= desde && d <= hasta;
   });
 
-  // Calcular desglose por sucursal ANTES de filtrar por la seleccionada
+  // 2. Calcular desglose (Ingresos, CMV, Utilidad) por sucursal ANTES de filtrar
   const branchBreakdown = {};
   let totalPeriodoGlobal = 0;
+  
   periodSales.forEach(s => {
       const b = s.branch || 'Central';
+      if (!branchBreakdown[b]) branchBreakdown[b] = { ingresos: 0, cmv: 0 };
+      
       const tot = typeof s.total === 'number' ? s.total : 0;
-      branchBreakdown[b] = (branchBreakdown[b] || 0) + tot;
+      branchBreakdown[b].ingresos += tot;
       totalPeriodoGlobal += tot;
+
+      // Calcular el CMV sumando el costo de cada ítem en el ticket
+      const items = typeof s.items === 'string' ? JSON.parse(s.items) : (s.items || []);
+      items.forEach(i => {
+          branchBreakdown[b].cmv += (toNum(i.qty) || 1) * (toNum(i.cost) || 0);
+      });
   });
 
-  // 2. Aplicar filtro de Sucursal a las ventas
+  // Calcular la Utilidad y Margen para cada Sucursal
+  for (let b in branchBreakdown) {
+      const data = branchBreakdown[b];
+      data.utilidad = data.ingresos - data.cmv;
+      data.margen = data.ingresos > 0 ? (data.utilidad / data.ingresos) * 100 : 0;
+  }
+
+  // 3. Aplicar filtro de Sucursal a las ventas globales para el resto de KPIs
   if (sucursal !== 'ALL') {
       periodSales = periodSales.filter(s => s.branch === sucursal);
   }
 
   const incomePeriod = periodSales.reduce((a,s) => a + (typeof s.total === 'number' ? s.total : 0), 0);
 
-  // 3. Filtrar Egresos (Solo por fecha y que estén pagados. Los egresos son globales).
+  // 4. Filtrar Egresos (Solo por fecha, que estén pagados y NO anulados)
   const periodExpenses = dbExpenses.filter(e => {
       const d = e.date || '';
       return d >= desde && d <= hasta && (e.status || '').toLowerCase() === 'pagado';
   });
   const outflowsPeriod = periodExpenses.reduce((a,e) => a + (Number(e.amount)||0), 0);
 
-  // El Neto solo es real si se ven TODAS las sucursales, porque los gastos son de toda la empresa
   const netPeriod = sucursal === 'ALL' ? incomePeriod - outflowsPeriod : incomePeriod;
 
   const avgMargin = dbProducts.length ? dbProducts.reduce((a,p) => a + (Number(p.margin)||0), 0) / dbProducts.length : 0;
@@ -377,51 +411,28 @@ function renderKpis(s) {
   `).join('');
 }
 
-function renderNarrative(s) {
-  let text = '';
-  if (s.sucursal === 'ALL') {
-      text = `La empresa generó una caja neta de ${currency(s.netPeriod)} en las fechas seleccionadas. `;
-  } else {
-      text = `La sucursal ${s.sucursal} generó ingresos por ${currency(s.incomePeriod)}. `;
-  }
-  
-  if (s.topProducts.length) text += `El producto estrella es ${s.topProducts[0].name} (${s.topProducts[0].units} unidades). `;
-  document.getElementById('stateNarrative').textContent = text;
-
-  const insights = [
-    { dot: s.incomePeriod > 0 ? 'green' : 'amber', title: s.incomePeriod > 0 ? 'Flujo de Ventas' : 'Sin ventas', body: `Facturación de ${currency(s.incomePeriod)}.` },
-    { dot: s.lowStock.length ? 'red' : 'green',    title: 'Estado del stock', body: s.lowStock.length ? `${s.lowStock.length} productos bajo el mínimo.` : 'Stock bajo control.' },
-  ];
-  document.getElementById('insightList').innerHTML = insights.map(i => `
-    <div class="insight-item">
-      <span class="dot dot-${i.dot}"></span>
-      <div><strong>${i.title}</strong><p>${i.body}</p></div>
-    </div>
-  `).join('');
-}
-
 function renderBranchBreakdown(s) {
-    const list = document.getElementById('branchSalesList');
+    const tbody = document.getElementById('branchSalesList');
     if (Object.keys(s.branchBreakdown).length === 0) {
-        list.innerHTML = '<div class="empty">Sin ventas en el período.</div>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:var(--muted);">Sin ventas en el período.</td></tr>';
         return;
     }
     
-    // Sort branches by revenue descending
-    const sortedBranches = Object.entries(s.branchBreakdown).sort((a,b) => b[1] - a[1]);
+    // Ordenar de la que más vendió a la que menos vendió
+    const sortedBranches = Object.entries(s.branchBreakdown).sort((a,b) => b[1].ingresos - a[1].ingresos);
     
-    list.innerHTML = sortedBranches.map(([branchName, amount]) => {
-        const percentage = s.totalPeriodoGlobal > 0 ? ((amount / s.totalPeriodoGlobal) * 100).toFixed(1) : 0;
+    tbody.innerHTML = sortedBranches.map(([branchName, data]) => {
+        const colorMargen = data.margen >= 20 ? 'var(--success)' : 'var(--warning)';
+        const bgMargen = data.margen >= 20 ? 'var(--success-soft)' : 'var(--warning-soft)';
+        
         return `
-        <div class="simple-item" style="border-left: 4px solid var(--primary);">
-            <div>
-                <h4 style="font-size:14px; margin-bottom:2px;">📍 ${escapeHtml(branchName)}</h4>
-                <p style="font-size:12px; color:var(--muted);">${percentage}% de la facturación</p>
-            </div>
-            <div class="simple-meta">
-                <strong style="color:var(--text); font-size:16px;">${currency(amount)}</strong>
-            </div>
-        </div>`;
+        <tr>
+            <td><strong>📍 ${escapeHtml(branchName)}</strong></td>
+            <td style="text-align:right; font-weight:bold; color:var(--text);">${currency(data.ingresos)}</td>
+            <td style="text-align:right; color:var(--danger);">${currency(data.cmv)}</td>
+            <td style="text-align:right; font-weight:bold; color:var(--success);">${currency(data.utilidad)}</td>
+            <td style="text-align:right;"><span style="background: ${bgMargen}; color: ${colorMargen}; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold;">${data.margen.toFixed(1)}%</span></td>
+        </tr>`;
     }).join('');
 }
 
@@ -441,10 +452,6 @@ function renderAlerts(s) {
 }
 
 function renderSimpleLists(s) {
-  document.getElementById('recentExpensesList').innerHTML = s.latestExpenses.length
-    ? s.latestExpenses.map(e => simpleItem(e.title, e.date + ' · ' + e.detail, `<span style="color:var(--danger)">${currency(e.amount)}</span>`, e.type)).join('')
-    : '<div class="empty">Sin egresos registrados.</div>';
-
   document.getElementById('topProductsList').innerHTML = s.topProducts.length
     ? s.topProducts.map(p => simpleItem(p.name, p.units + ' unidades vendidas', currency(p.revenue), 'Top ventas')).join('')
     : '<div class="empty">Sin ventas del período.</div>';
@@ -488,8 +495,7 @@ function renderDashboard() {
   const s = computeState();
   renderHero(s);
   renderKpis(s);
-  renderNarrative(s);
-  renderBranchBreakdown(s); // Nuevo componente
+  renderBranchBreakdown(s);
   renderAlerts(s);
   renderSimpleLists(s);
   renderActivity(s);
