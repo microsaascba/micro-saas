@@ -53,6 +53,7 @@
       <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
+      <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
   </aside>
@@ -81,7 +82,7 @@
         <div style="padding: 20px;">
           <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;">2. Artículos</label>
           <div style="position: relative;">
-            <input type="text" id="posSearch" class="pos-search-input" placeholder="🔍 Buscar por nombre o código..." autocomplete="off" autofocus>
+            <input type="text" id="posSearch" class="pos-search-input" placeholder="🔍 Buscar por nombre o código / Escanear código de barras..." autocomplete="off" autofocus>
             <div id="searchResults" class="autocomplete-list"></div>
           </div>
         </div>
@@ -241,7 +242,7 @@
     }
   }
 
-  // --- BUSQUEDA PRODUCTOS ---
+  // --- BUSQUEDA PRODUCTOS MANUAL ---
   document.getElementById('posSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
     const searchResults = document.getElementById('searchResults');
@@ -267,6 +268,39 @@
         }).join('');
     }
     searchResults.classList.add('active');
+  });
+
+  // --- INTEGRACIÓN LECTOR DE CÓDIGO DE BARRAS (Captura el "Enter") ---
+  document.getElementById('posSearch').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Evita que la pantalla se recargue
+      const term = e.target.value.trim();
+      if (term === '') return;
+
+      // Buscamos coincidencia EXACTA por código de barras / SKU
+      const prodExacto = dbProducts.find(p => p.code && p.code.toLowerCase() === term.toLowerCase());
+
+      if (prodExacto) {
+        // Replicamos la validación de stock y agregado al carrito
+        const localStock = getLocalStock(prodExacto);
+        const existe = cart.find(i => i.id === prodExacto.id);
+        const qtyDeseada = existe ? existe.qty + 1 : 1;
+
+        if (qtyDeseada > localStock) {
+            alert(`❌ STOCK INSUFICIENTE\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés facturar sin stock físico.`);
+        } else {
+            if (existe) existe.qty++; else cart.unshift({ ...prodExacto, qty: 1 });
+            renderCart();
+        }
+      } else {
+        // Alerta si el código escaneado no está en la base de datos
+        alert(`⚠️ El código "${term}" no está registrado en el catálogo.`);
+      }
+      
+      // Limpiamos el buscador y lo dejamos listo para el siguiente escaneo (pistoleo continuo)
+      e.target.value = '';
+      document.getElementById('searchResults').classList.remove('active');
+    }
   });
 
   function agregarAlCarrito(idx) {
@@ -389,7 +423,7 @@
       localStorage.setItem('last_sale_to_print', JSON.stringify(venta));
 
       cart = []; document.getElementById('clientName').value = 'Consumidor Final'; document.getElementById('clientId').value = '';
-      if (currentPaymentMethod === 'Tarjeta') document.getElementById('cuponNumber').value = '';
+      if (currentPaymentMethod === 'Crédito') document.getElementById('cuponNumber').value = '';
       const ventaFueB2B = isB2B;
       activarModoB2C(); renderCart();
       
