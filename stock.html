@@ -97,6 +97,8 @@
         <button class="btn btn-primary" onclick="abrirModalIngresoCompra()">📥 Ingreso Factura (Manual)</button>
         <button class="btn btn-primary" style="background: #0f766e; border:none;" onclick="abrirModalTransferencia()">⇄ Transferir</button>
         <button class="btn btn-primary" style="background: var(--text); border:none;" onclick="abrirModalAjuste()">+ Ajuste</button>
+        <button class="btn btn-primary" style="background: #0f766e; border:none;" onclick="abrirModalTransferencia()">⇄ Transferir</button>
+        <button class="btn btn-primary" style="background: #0284c7; border:none;" onclick="abrirModalTransferenciaMasiva()">⇄ Transf. Masiva</button>
       </div>
     </header>
 
@@ -325,6 +327,43 @@
   </div>
 </dialog>
 
+  <dialog id="modalTransferenciaMasiva" style="width: 100%; max-width: 600px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;">Transferencia Masiva (Excel)</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalTransferenciaMasiva').close()">✕</button>
+    </div>
+    
+    <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px dashed #3b82f6; margin-bottom: 20px; font-size: 12px; color: #1d4ed8; line-height: 1.5;">
+      <strong>Instrucciones:</strong> Subí un archivo .xlsx o .csv con la mercadería a mover.<br>
+      Podés usar el mismo Excel que descargás de "Valorizado PVP" y agregarle la columna de cantidad. El sistema leerá obligatoriamente:<br><br>
+      <span style="background: #dbeafe; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; margin-right: 10px;">SKU</span>  
+      <span style="background: #dbeafe; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold;">CANTIDAD</span>
+    </div>
+
+    <form id="formTransferenciaMasiva">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Origen (Sale de...) *</label>
+          <select id="transfMasivaOrigen" class="input-box" required></select>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Destino (Entra en...) *</label>
+          <select id="transfMasivaDestino" class="input-box" required></select>
+        </div>
+      </div>
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Archivo Excel / CSV *</label>
+        <input type="file" id="transfMasivaFile" accept=".xlsx, .xls, .csv" required class="input-box" style="padding: 8px;">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalTransferenciaMasiva').close()">Cancelar</button>
+        <button type="button" class="btn btn-primary" style="background:#0284c7; border-color:#0284c7;" onclick="procesarTransferenciaMasiva(event)">Validar y Transferir</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
 <div id="printRemito">
   <div class="remito-header">
     <div>
@@ -426,7 +465,7 @@
       const filter = document.getElementById('branchFilter');
       if(filter) filter.innerHTML = '<option value="ALL">Todas las Sucursales</option>' + branchOptions;
       
-      const destElements = ['masivaDestino', 'ingresoDestino', 'transfOrigen', 'transfDestino', 'ajusteSucursal'];
+      const destElements = ['masivaDestino', 'ingresoDestino', 'transfOrigen', 'transfDestino', 'ajusteSucursal', 'transfMasivaOrigen', 'transfMasivaDestino'];
       destElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = branchOptions; });
 
       // Proveedores usan el ID para poder cruzar con la tabla expenses
@@ -641,6 +680,90 @@
       document.getElementById('ingresoFactura').disabled = true;
       document.getElementById('modalIngresoCompra').showModal(); 
   }
+
+  function abrirModalTransferenciaMasiva() { 
+      document.getElementById('transfMasivaFile').value = ''; 
+      document.getElementById('modalTransferenciaMasiva').showModal(); 
+  }
+
+  async function procesarTransferenciaMasiva(e) {
+      e.preventDefault();
+      const origen = document.getElementById('transfMasivaOrigen').value;
+      const destino = document.getElementById('transfMasivaDestino').value;
+      const fileInput = document.getElementById('transfMasivaFile');
+
+      if (origen === destino) return alert("La sucursal de origen y destino no pueden ser la misma.");
+      if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = async function(evt) {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(firstSheet);
+
+          if (rows.length === 0) return alert("El archivo está vacío o mal formateado.");
+
+          let prodUpdates = [];
+          let errores = [];
+          let itemsParaRemito = [];
+
+          rows.forEach((row, index) => {
+              const findVal = (names) => {
+                  const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
+                  return key ? row[key] : null;
+              };
+
+              const sku = String(findVal(['sku', 'codigo', 'código']) || '').trim();
+              const cant = parseInt(findVal(['cantidad', 'cant', 'qty']));
+
+              if (!sku || isNaN(cant) || cant <= 0) return;
+
+              const prod = dbProducts.find(p => p.code == sku);
+              if (!prod) { errores.push(`Fila ${index + 2}: SKU ${sku} no existe en catálogo.`); return; }
+
+              let branches = getBranches(prod);
+              
+              // Validación crucial: ¿Hay stock suficiente en el origen?
+              if (branches[origen] === undefined || branches[origen] < cant) {
+                  errores.push(`Fila ${index + 2}: Sin stock suficiente de ${sku} en ${origen} (Disponible: ${branches[origen] || 0}).`);
+                  return;
+              }
+
+              if (branches[destino] === undefined) branches[destino] = 0;
+              
+              branches[origen] -= cant;
+              branches[destino] += cant;
+              
+              let stockTotal = 0;
+              for (let b in branches) stockTotal += branches[b];
+              
+              prodUpdates.push({ ...prod, stock_branches: branches, stock: stockTotal });
+              itemsParaRemito.push({ code: prod.code, name: prod.name, qty: cant });
+          });
+
+          if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron transferencias válidas.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
+
+          let msj = `Vas a transferir ${itemsParaRemito.length} referencias de ${origen} a ${destino}.\n`;
+          if (errores.length > 0) msj += `⚠️ Hubo ${errores.length} filas ignoradas por errores o falta de stock:\n` + errores.slice(0,3).join('\n') + `\n`;
+          if (!confirm(msj + `\n¿Confirmás la transferencia masiva?`)) return;
+
+          mostrarCarga(true);
+          try {
+              // Enviamos los datos en paralelo a D1
+              await Promise.all(prodUpdates.map(p => fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(p) })));
+              logMovement('Transferencia', origen, destino, `Transferencia Masiva (Lote Excel)`, itemsParaRemito);
+              document.getElementById('modalTransferenciaMasiva').close();
+              await initStock(); 
+              alert("✅ Transferencia Masiva completada. Remito interno generado en el historial.");
+          } catch(err) { alert("Error de conexión durante la transferencia."); } 
+          finally { mostrarCarga(false); }
+      };
+      reader.readAsArrayBuffer(file);
+  }
+  
   function abrirModalIngresoMasivo() { 
       document.getElementById('masivaFile').value = ''; 
       document.getElementById('masivaFactura').innerHTML = '<option value="">Seleccioná un proveedor primero...</option>';
