@@ -284,3 +284,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
    
 });
+
+// --- LÓGICA DE MENÚ RESPONSIVE ---
+function toggleMenu() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('open');
+    }
+}
