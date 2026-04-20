@@ -54,7 +54,7 @@
       <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html" class="active"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
-      <a href="ordenes.html" class="active"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="ordenes.html"><span class="nav-icon">📋</span> Órdenes</a>
       <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
@@ -280,6 +280,33 @@
   </div>
 </dialog>
 
+<dialog id="modalProveedor" style="width: 100%; max-width: 600px; z-index: 10000;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 id="proveedorModalTitle" style="margin: 0; font-size:18px;">Alta de Proveedor / Acreedor</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalProveedor').close()">✕</button>
+    </div>
+    
+    <form onsubmit="guardarProveedor(event)">
+      <input type="hidden" id="suppId">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+        <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Razón Social / Nombre *</label><input type="text" id="suppName" required class="input-box"></div>
+        <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT (11 dígitos) *</label><input type="text" id="suppCuit" class="input-box" placeholder="Ej: 30123456789"></div>
+        <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Condición frente al IVA</label><select id="suppIva" class="input-box"><option value="Responsable Inscripto">Responsable Inscripto</option><option value="Monotributo">Monotributo</option><option value="Exento">Exento</option><option value="Consumidor Final">Consumidor Final</option></select></div>
+        <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Persona de Contacto</label><input type="text" id="suppContact" class="input-box"></div>
+        <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Teléfono</label><input type="text" id="suppPhone" class="input-box"></div>
+        <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Email</label><input type="email" id="suppEmail" class="input-box"></div>
+        <div style="grid-column: span 2;"><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Dirección Comercial</label><input type="text" id="suppAddress" class="input-box"></div>
+        <div style="grid-column: span 2;"><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Observaciones / Datos Bancarios</label><textarea id="suppNotes" class="input-box" rows="2"></textarea></div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 15px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalProveedor').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Guardar Proveedor</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
 <dialog id="modalListaProveedores" style="width: 100%; max-width: 700px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
@@ -293,73 +320,11 @@
     <div style="overflow-y: auto; max-height: 400px; border: 1px solid var(--line); border-radius: 8px;">
       <table style="width: 100%; border-collapse: collapse; text-align: left;">
         <thead style="background: var(--panel-2); position: sticky; top: 0; z-index: 1;">
-          <tr>
-            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">Razón Social</th>
-            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">CUIT</th>
-            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">Contacto</th>
-            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Acción</th>
-          </tr>
+          <tr><th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">Razón Social</th><th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">CUIT</th><th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">Contacto</th><th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Acción</th></tr>
         </thead>
         <tbody id="bodyListaProveedores"></tbody>
       </table>
     </div>
-  </div>
-</dialog>
-
-<dialog id="modalProveedor" style="width: 100%; max-width: 600px; z-index: 10000;">
-  <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 id="proveedorModalTitle" style="margin: 0; font-size:18px;">Alta de Proveedor / Acreedor</h2>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalProveedor').close()">✕</button>
-    </div>
-    
-    <form onsubmit="guardarProveedor(event)">
-      <input type="hidden" id="suppId">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Razón Social / Nombre *</label>
-          <input type="text" id="suppName" required class="input-box" placeholder="Ej: Distribuidora Central SA">
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT (11 dígitos) *</label>
-          <input type="text" id="suppCuit" class="input-box" placeholder="Sin guiones ni espacios (Ej: 30123456789)">
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Condición frente al IVA</label>
-          <select id="suppIva" class="input-box">
-            <option value="Responsable Inscripto">Responsable Inscripto</option>
-            <option value="Monotributo">Monotributo</option>
-            <option value="Exento">Exento</option>
-            <option value="Consumidor Final">Consumidor Final</option>
-          </select>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Persona de Contacto</label>
-          <input type="text" id="suppContact" class="input-box" placeholder="Nombre del vendedor/agente">
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Teléfono</label>
-          <input type="text" id="suppPhone" class="input-box" placeholder="Ej: 351...">
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Email</label>
-          <input type="email" id="suppEmail" class="input-box" placeholder="ventas@proveedor.com">
-        </div>
-        <div style="grid-column: span 2;">
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Dirección Comercial</label>
-          <input type="text" id="suppAddress" class="input-box" placeholder="Calle, Número, Ciudad">
-        </div>
-        <div style="grid-column: span 2;">
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Observaciones / Datos Bancarios</label>
-          <textarea id="suppNotes" class="input-box" rows="2" placeholder="CBU, Alias, plazos de entrega..."></textarea>
-        </div>
-      </div>
-      
-      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; border-top: 1px solid var(--line); padding-top: 15px;">
-        <button type="button" class="btn btn-light" onclick="document.getElementById('modalProveedor').close()">Cancelar</button>
-        <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Guardar Proveedor</button>
-      </div>
-    </form>
   </div>
 </dialog>
 
@@ -369,59 +334,40 @@
       <h2 style="margin: 0; font-size:20px; display:flex; align-items:center; gap:10px;">📊 Estado de Resultados (Cierre de Mes)</h2>
       <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalCierreMes').close()">✕</button>
     </div>
-    
     <div style="padding: 24px;">
       <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px; background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid var(--line);">
-        <div style="flex: 1;">
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seleccionar Período a Cerrar</label>
-          <input type="month" id="cierreMesInput" class="input-box" onchange="calcularCierreMes()">
-        </div>
+        <div style="flex: 1;"><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seleccionar Período a Cerrar</label><input type="month" id="cierreMesInput" class="input-box" onchange="calcularCierreMes()"></div>
         <button class="btn btn-primary" onclick="calcularCierreMes()">Calcular Resultados</button>
       </div>
-
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <div style="display: flex; flex-direction: column; gap: 15px;">
-          
           <div style="background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--line); border-top: 4px solid var(--primary);">
             <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--muted); text-transform: uppercase;">1. Ingresos y Costos Directos</h3>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;"><span>Ventas Brutas (Total Ticket)</span><strong id="cmVentasBrutas">$0</strong></div>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px; color:var(--danger);"><span>(-) IVA Débito Fiscal</span><strong id="cmIvaDebito">$0</strong></div>
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:15px; font-weight:bold; border-bottom:1px dashed var(--line); padding-bottom:15px;"><span>Ventas Netas (Reales)</span><strong id="cmVentasNetas">$0</strong></div>
-            
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px; color:var(--warning);"><span>(-) Costo Mercadería (CMV)</span><strong id="cmCostoMerc">$0</strong></div>
-            <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:900; color:var(--success); background: var(--success-soft); padding: 10px; border-radius: 6px; margin-top: 10px;">
-              <span>UTILIDAD BRUTA</span><strong id="cmUtilidadBruta">$0</strong>
-            </div>
+            <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:900; color:var(--success); background: var(--success-soft); padding: 10px; border-radius: 6px; margin-top: 10px;"><span>UTILIDAD BRUTA</span><strong id="cmUtilidadBruta">$0</strong></div>
           </div>
-
           <div style="background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--line); border-top: 4px solid var(--warning);">
             <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--muted); text-transform: uppercase;">2. Gastos Operativos (OPEX)</h3>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px;"><span>Gastos Totales (Facturado)</span><strong id="cmGastosBrutos">$0</strong></div>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px; font-size:14px; color:var(--success);"><span>(-) IVA Crédito (Tipeado)</span><strong id="cmIvaCredito">$0</strong></div>
-            <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:bold; border-top:1px dashed var(--line); padding-top:10px; margin-top:5px;">
-              <span>Gastos Netos</span><strong id="cmGastosNetos" style="color:var(--danger)">$0</strong>
-            </div>
+            <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:bold; border-top:1px dashed var(--line); padding-top:10px; margin-top:5px;"><span>Gastos Netos</span><strong id="cmGastosNetos" style="color:var(--danger)">$0</strong></div>
           </div>
-
         </div>
-
         <div style="display: flex; flex-direction: column; gap: 15px;">
-          
           <div style="background: var(--text); color: white; padding: 25px 20px; border-radius: 12px; box-shadow: var(--shadow-lg);">
             <h3 style="margin: 0 0 5px 0; font-size: 14px; text-transform: uppercase; color: var(--muted);">Resultado Neto (Bolsillo)</h3>
             <p style="margin: 0 0 15px 0; font-size: 12px; color: #94a3b8;">Utilidad Bruta menos Gastos Netos</p>
             <div id="cmUtilidadNeta" style="font-size:36px; font-weight:900; line-height: 1;">$0</div>
             <div id="cmMargenNeto" style="margin-top: 10px; font-size: 14px; font-weight: bold; color: #cbd5e1;">Margen Neto: 0%</div>
           </div>
-
           <div style="background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--line); border-top: 4px solid #8b5cf6;">
             <h3 style="margin: 0 0 5px 0; font-size: 14px; color: var(--muted); text-transform: uppercase;">Posición de IVA (AFIP)</h3>
             <p style="margin: 0 0 15px 0; font-size: 12px; color: var(--muted);">Basado en datos reales cargados.</p>
-            <div id="cmPosicionIvaBox" style="display:flex; justify-content:space-between; font-size:18px; font-weight:800;">
-              <span id="cmPosicionIvaTexto">A Pagar IVA:</span><strong id="cmPosicionIvaMonto">$0</strong>
-            </div>
+            <div id="cmPosicionIvaBox" style="display:flex; justify-content:space-between; font-size:18px; font-weight:800;"><span id="cmPosicionIvaTexto">A Pagar IVA:</span><strong id="cmPosicionIvaMonto">$0</strong></div>
           </div>
-          
         </div>
       </div>
     </div>
@@ -449,6 +395,7 @@
   let dbExpenses = [];
   let dbSales = [];
   let dbSuppliers = [];
+  let branches = [];
   
   const PIN_ADMIN = "1234";
   let pendingAdminAction = null;
@@ -467,17 +414,15 @@
           fetch(`${API_URL}/expenses`), 
           fetch(`${API_URL}/sales`), 
           fetch(`${API_URL}/suppliers`),
-          fetch(`${API_URL}/branches`) // Cargar Sucursales
+          fetch(`${API_URL}/branches`)
       ]);
       
       if(resE.ok) dbExpenses = await resE.json();
       if(resS.ok) dbSales = await resS.json();
       if(resSup.ok) dbSuppliers = await resSup.json();
-      
-      let branches = [];
       if(resB.ok) branches = await resB.json();
       
-      // Poblar el selector de sucursal para gastos
+      // Llenamos el selector de Sucursales para el Gasto
       const branchOptions = '<option value="Global">Gasto Global / Empresa</option>' + branches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
       const expBranchEl = document.getElementById('expBranch');
       if(expBranchEl) expBranchEl.innerHTML = branchOptions;
@@ -534,7 +479,6 @@
   function abrirModalProveedor(id = null) {
     const title = document.getElementById('proveedorModalTitle');
     if (id) {
-        // EDICIÓN
         const s = dbSuppliers.find(x => x.id === id);
         if (!s) return;
         title.textContent = "Editar Proveedor";
@@ -548,7 +492,6 @@
         document.getElementById('suppAddress').value = s.address || '';
         document.getElementById('suppNotes').value = s.notes || '';
     } else {
-        // CREACIÓN NUEVA
         title.textContent = "Alta de Proveedor / Acreedor";
         document.getElementById('suppId').value = '';
         document.getElementById('suppName').value = '';
@@ -569,16 +512,12 @@
     const cuit = document.getElementById('suppCuit').value.trim();
     const name = document.getElementById('suppName').value.trim();
 
-    // VALIDACIÓN ESTRICTA DE CUIT
     if (cuit !== "") {
-        // Exigir exactamente 11 números
         const cuitRegex = /^\d{11}$/;
         if (!cuitRegex.test(cuit)) {
             alert("❌ Error: El CUIT debe contener exactamente 11 números, sin guiones ni espacios.");
             return;
         }
-
-        // Evitar CUIT duplicados
         const duplicadoCUIT = dbSuppliers.find(s => s.cuit === cuit && s.id !== id);
         if (duplicadoCUIT) {
             alert(`❌ Error: El CUIT ${cuit} ya está registrado para el proveedor "${duplicadoCUIT.name}".\nNo se puede guardar un CUIT duplicado.`);
@@ -586,12 +525,9 @@
         }
     }
 
-    // ADVERTENCIA DE NOMBRE DUPLICADO
     const duplicadoNombre = dbSuppliers.find(s => s.name.toLowerCase() === name.toLowerCase() && s.id !== id);
     if (duplicadoNombre) {
-         if(!confirm(`⚠️ Atención: Ya existe un proveedor llamado "${duplicadoNombre.name}".\n¿Estás seguro de que querés guardarlo de todas formas?`)) {
-             return;
-         }
+         if(!confirm(`⚠️ Atención: Ya existe un proveedor llamado "${duplicadoNombre.name}".\n¿Estás seguro de que querés guardarlo de todas formas?`)) return;
     }
     
     const sup = {
@@ -610,47 +546,30 @@
     mostrarCarga(true);
     try {
       await fetch(`${API_URL}/suppliers`, { method: 'POST', body: JSON.stringify(sup) });
-      
       const idx = dbSuppliers.findIndex(x => x.id === id);
       if (idx >= 0) dbSuppliers[idx] = sup; else dbSuppliers.unshift(sup);
-      
       actualizarSelectProveedores();
-      
-      if (document.getElementById('modalListaProveedores').open) {
-          renderDirectorioProveedores();
-      } else {
-          document.getElementById('expSupplier').value = sup.id; 
-      }
-      
+      if (document.getElementById('modalListaProveedores').open) renderDirectorioProveedores();
+      else document.getElementById('expSupplier').value = sup.id; 
       document.getElementById('modalProveedor').close();
     } catch(err) { alert("Error guardando proveedor."); }
     finally { mostrarCarga(false); }
   }
 
-  // ── ELIMINAR PROVEEDOR ──
   function eliminarProveedorPrompt(id) {
-    pedirAuthAdmin('eliminar permanentemente este proveedor. ATENCIÓN: Si este proveedor tiene facturas asociadas podrían quedar sin identificar', ejecutarEliminacionProveedor, id);
+    pedirAuthAdmin('eliminar permanentemente este proveedor.', ejecutarEliminacionProveedor, id);
   }
 
   async function ejecutarEliminacionProveedor(id) {
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/suppliers?id=${id}`, { method: 'DELETE' });
-      // Eliminamos localmente
+      await fetch(`${API_URL}/suppliers?id=${id}`, { method: 'DELETE' });
       dbSuppliers = dbSuppliers.filter(s => s.id !== id);
       actualizarSelectProveedores();
-      
-      if (document.getElementById('modalListaProveedores').open) {
-          renderDirectorioProveedores();
-      }
-      renderContable(); // Refresca la tabla por si había gastos de este proveedor
-    } catch(err) {
-      alert("Error al intentar eliminar el proveedor.");
-    } finally {
-      mostrarCarga(false);
-    }
+      if (document.getElementById('modalListaProveedores').open) renderDirectorioProveedores();
+      renderContable();
+    } catch(err) { alert("Error al intentar eliminar el proveedor."); } finally { mostrarCarga(false); }
   }
-
 
   // ── LÓGICA DEL MODAL COMPROBANTES ──
   function abrirModalGasto(id = null) {
@@ -681,9 +600,7 @@
       document.getElementById('expConcept').value = exp.concept;
       document.getElementById('expCategory').value = exp.category;
 
-      if (exp.status !== 'Anulado' && exp.status !== 'Pagado' && exp.status !== 'Pendiente') {
-          exp.status = 'Pagado'; 
-      }
+      if (exp.status !== 'Anulado' && exp.status !== 'Pagado' && exp.status !== 'Pendiente') exp.status = 'Pagado'; 
       
       const statusSelect = document.getElementById('expStatus');
       if (exp.status === 'Anulado' && !Array.from(statusSelect.options).some(o => o.value === 'Anulado')) {
@@ -726,7 +643,6 @@
   async function guardarGasto(e) {
     e.preventDefault();
     const id = document.getElementById('expId').value || 'exp_' + Date.now();
-    
     const expBranchEl = document.getElementById('expBranch');
 
     const exp = {
@@ -736,6 +652,7 @@
       invoiceNum: document.getElementById('expInvoiceNum').value.trim(),
       supplierId: document.getElementById('expSupplier').value,
       branch: expBranchEl ? expBranchEl.value : 'Global',
+      loadedBy: localStorage.getItem('activeUser') || 'Admin', // GUARDAMOS QUIEN LO CARGA
       amount: parseFloat(document.getElementById('expAmount').value) || 0,
       ivaAmount: parseFloat(document.getElementById('expIva').value) || 0,
       nonTaxedAmount: parseFloat(document.getElementById('expOtros').value) || 0,
@@ -752,14 +669,14 @@
       const idx = dbExpenses.findIndex(x => x.id === id);
       if (idx >= 0) dbExpenses[idx] = exp; else dbExpenses.unshift(exp);
       cerrarModalGasto(); renderContable();
-    } catch(err) { alert("Error guardando comprobante."); }
+    } catch(err) { alert("Error guardando comprobante. Asegúrate de haber ejecutado los comandos SQL."); }
     finally { mostrarCarga(false); }
   }
 
   function anularGastoPrompt() {
     const id = document.getElementById('expId').value;
     if(!id) return;
-    pedirAuthAdmin('anular este comprobante (el monto no sumará, pero quedará en el historial)', ejecutarAnulacionGasto, id);
+    pedirAuthAdmin('anular este comprobante de forma permanente', ejecutarAnulacionGasto, id);
   }
 
   async function ejecutarAnulacionGasto(id) {
@@ -769,6 +686,7 @@
       if(!exp) return;
       
       exp.status = 'Anulado';
+      exp.canceledBy = localStorage.getItem('activeUser') || 'Admin'; // GUARDAMOS QUIEN LO ANULA
 
       await fetch(`${API_URL}/expenses`, { method: 'POST', body: JSON.stringify(exp) });
       cerrarModalGasto(); 
@@ -842,16 +760,20 @@
       const badgeInv = exp.invoiceType === 'Gasto Interno' 
         ? `<span style="background:var(--line); padding:2px 6px; border-radius:4px; font-size:10px;">INTERNO</span>`
         : `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">${exp.invoiceType}</span>`;
+      
       const fechaParts = exp.date.split('-');
       const fechaLocal = fechaParts.length === 3 ? `${fechaParts[2]}/${fechaParts[1]}/${fechaParts[0]}` : exp.date;
-
       const branchNameTag = exp.branch && exp.branch !== 'Global' ? `<br><small style="color:var(--primary); font-weight:bold;">📍 ${escapeHtml(exp.branch)}</small>` : '';
 
       rowsHtml += `
       <tr style="${isAnul ? 'opacity:0.5;' : ''}">
         <td style="color:var(--muted); font-size:12px;">${fechaLocal}</td>
         <td>${badgeInv}<br><small style="color:var(--muted)">${escapeHtml(exp.invoiceNum || 'S/N')}</small></td>
-        <td style="${isAnul ? 'text-decoration:line-through;' : ''}"><strong>${escapeHtml(supName)}</strong></td>
+        <td style="${isAnul ? 'text-decoration:line-through;' : ''}">
+           <strong>${escapeHtml(supName)}</strong>
+           <br><small style="color:var(--muted)">Cargó: ${escapeHtml(exp.loadedBy || 'Admin')}</small>
+           ${isAnul ? `<br><small style="color:var(--danger); font-weight:bold;">Anuló: ${escapeHtml(exp.canceledBy || 'Admin')}</small>` : ''}
+        </td>
         <td style="${isAnul ? 'text-decoration:line-through;' : ''}">${escapeHtml(exp.concept)}${branchNameTag}<br><small style="color:var(--muted)">${escapeHtml(exp.category)}</small></td>
         <td>${statusBadge}</td>
         <td style="text-align:right; font-weight:bold; color:var(--text); ${isAnul ? 'text-decoration:line-through;' : ''}">${currency(exp.amount)}</td>
@@ -902,10 +824,9 @@
     const periodo = document.getElementById('cierreMesInput').value;
     if(!periodo) return;
 
-    // PERFIL FISCAL (Se puede mover a core.js para persistencia)
     const esMonotributista = true; 
 
-    const ventasMes = dbSales.filter(s => (s.date || '').startsWith(periodo));
+    const ventasMes = dbSales.filter(s => (s.date || '').startsWith(periodo) && s.status !== 'Anulada');
     const gastosMes = dbExpenses.filter(e => (e.date || '').startsWith(periodo) && e.status !== 'Anulado');
 
     let ventasBrutas = 0, cmvTotal = 0, ivaDebito = 0;
@@ -963,7 +884,8 @@
       return {
         "Fecha": e.date, "Comprobante": e.invoiceType, "Numero": e.invoiceNum || '-',
         "Proveedor": supName, "Concepto": e.concept, "Sucursal": e.branch || 'Global',
-        "Total": e.amount, "IVA": e.ivaAmount || 0, "Estado": e.status
+        "Total": e.amount, "IVA": e.ivaAmount || 0, "Estado": e.status, 
+        "Cargado Por": e.loadedBy || '', "Anulado Por": e.canceledBy || ''
       };
     });
     const headers = Object.keys(csvData[0]);
