@@ -270,7 +270,7 @@
           </div>
           <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
              <small style="color:var(--danger); font-size:11px;">Baja de stock automática.</small>
-             <span id="labelFramePrice" style="font-size:12px; font-weight:bold; color:var(--text);">$0</span>
+             <span id="labelFramePrice" style="font-size:12px; font-weight:bold; color:var(--text);">$ 0</span>
           </div>
         </div>
         
@@ -283,7 +283,7 @@
               <select id="ordLensId" class="input-box" onchange="recalcularTotalOrden()" required><option value="">Seleccione Cristal...</option></select>
           </div>
           <div style="margin-top: 8px; text-align: right;">
-             <span id="labelLensPrice" style="font-size:12px; font-weight:bold; color:var(--text);">$0</span>
+             <span id="labelLensPrice" style="font-size:12px; font-weight:bold; color:var(--text);">$ 0</span>
           </div>
         </div>
       </div>
@@ -293,11 +293,11 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: end;">
           <div>
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Valor Total (Armazón + Cristal) *</label>
-            <input type="number" id="ordTotal" class="input-box" min="0" step="0.01" style="font-size: 18px; font-weight: bold; color: var(--primary);" oninput="calcSaldo()" required>
+            <input type="text" id="ordTotal" class="input-box" style="font-size: 18px; font-weight: bold; color: var(--primary);" oninput="formatCurrencyInput(this); calcSaldo()" placeholder="$ 0" required>
           </div>
           <div>
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seña Abonada Hoy ($)</label>
-            <input type="number" id="ordDeposit" class="input-box" min="0" step="0.01" value="0" style="font-size: 16px; font-weight: bold; color: var(--success);" oninput="calcSaldo()">
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seña Abonada Hoy</label>
+            <input type="text" id="ordDeposit" class="input-box" value="$ 0" style="font-size: 16px; font-weight: bold; color: var(--success);" oninput="formatCurrencyInput(this); calcSaldo()">
           </div>
           <div>
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de Pago (Seña)</label>
@@ -306,7 +306,7 @@
         </div>
         <div style="margin-top:15px; padding-top:15px; border-top:1px dashed var(--line); display:flex; justify-content:space-between; align-items:center;">
           <span style="font-weight:bold; font-size:14px; color:var(--danger);">SALDO PENDIENTE A COBRAR EN LA ENTREGA:</span>
-          <input type="number" id="ordBalance" class="input-box" readonly style="width:150px; background:transparent; border:none; font-size:22px; font-weight:900; color:var(--danger); text-align:right;">
+          <input type="text" id="ordBalance" class="input-box" value="$ 0" readonly style="width:150px; background:transparent; border:none; font-size:22px; font-weight:900; color:var(--danger); text-align:right;">
         </div>
       </div>
 
@@ -393,14 +393,47 @@
     btnElement.classList.add('active'); document.getElementById(tabId).classList.add('active');
   }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
-  function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
+  
+  // Modificamos ligeramente la función currency local para soportar decimales explícitos
+  function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+
+  // ─── NUEVAS FUNCIONES PARA ENMASCARAR MONEDA (Miles y Decimales) ───
+  function formatCurrencyInput(input) {
+    // Solo permitimos números y comas
+    let val = input.value.replace(/[^\d,]/g, '');
+    
+    // Evitamos que haya más de una coma decimal
+    const parts = val.split(',');
+    if (parts.length > 2) {
+      val = parts[0] + ',' + parts.slice(1).join('');
+    }
+    
+    if (val === '') {
+      input.value = '';
+      return;
+    }
+    
+    // Formateamos la parte entera con puntos cada 3 dígitos
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // Mantenemos hasta 2 decimales
+    let decPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : '';
+    
+    input.value = '$ ' + intPart + decPart;
+  }
+
+  // Convierte el texto visual (ej: "$ 1.500,50") a un número Float real (1500.50) para la Base de Datos
+  function parseCurrency(val) {
+    if (!val) return 0;
+    let str = String(val).replace(/[\$\s\.]/g, '').replace(',', '.');
+    return parseFloat(str) || 0;
+  }
+  // ────────────────────────────────────────────────────────────────────
 
   let dbOrders = []; let dbProducts = []; let dbClients = []; let dbSuppliers = [];
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
 
-  // Variables para recálculo automático de Orden
   let selectedFramePrice = 0;
   let selectedLensPrice = 0;
 
@@ -415,7 +448,6 @@
       if(resC.ok) dbClients = await resC.json();
       if(resS.ok) dbSuppliers = await resS.json();
       
-      // Poblar dropdowns de proveedores de cristales
       const suppOptions = '<option value="">Seleccione Laboratorio...</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
       document.getElementById('lensSupplier').innerHTML = suppOptions;
       document.getElementById('ordLensSupplier').innerHTML = suppOptions;
@@ -426,14 +458,12 @@
     } catch(e) { console.error(e); } finally { mostrarCarga(false); }
   }
 
-  // --- GESTIÓN DE CRISTALES (Se guardan en 'products' con categoría 'Cristal') ---
   function renderLenses() {
       const suppFilter = document.getElementById('filterLensSupplier').value;
       const tbody = document.getElementById('tbodyCristales');
       
-      // Filtramos productos que sean cristales
       let cristales = dbProducts.filter(p => p.category === 'Cristal');
-      if (suppFilter !== 'ALL') cristales = cristales.filter(p => p.promoLinked === suppFilter); // Usamos promoLinked para guardar el ID del proveedor
+      if (suppFilter !== 'ALL') cristales = cristales.filter(p => p.promoLinked === suppFilter);
 
       tbody.innerHTML = cristales.map(c => {
           const prov = dbSuppliers.find(s => s.id === c.promoLinked);
@@ -478,10 +508,10 @@
           id: id,
           name: document.getElementById('lensName').value.trim(),
           category: 'Cristal',
-          promoLinked: document.getElementById('lensSupplier').value, // Hack: Guardamos el proveedor aquí para no alterar la BD
+          promoLinked: document.getElementById('lensSupplier').value,
           cost: parseFloat(document.getElementById('lensCost').value) || 0,
           price: parseFloat(document.getElementById('lensPrice').value) || 0,
-          stock: 9999, // Cristales no tienen stock físico
+          stock: 9999,
           status: 'Activo'
       };
 
@@ -495,8 +525,6 @@
       } catch(err) { alert("Error guardando cristal."); } finally { mostrarCarga(false); }
   }
 
-
-  // --- AUTOCOMPLETADOS EN NUEVA ORDEN ---
   function buscarClienteOrd() {
     const term = document.getElementById('ordClientName').value.toLowerCase().trim();
     const list = document.getElementById('clientOrdResults');
@@ -518,12 +546,11 @@
         list.classList.remove('active'); 
         document.getElementById('ordFrameCode').value = ''; 
         selectedFramePrice = 0; 
-        document.getElementById('labelFramePrice').textContent = '$0';
+        document.getElementById('labelFramePrice').textContent = '$ 0,00';
         recalcularTotalOrden();
         return; 
     }
 
-    // Filtramos productos que NO sean Cristales
     const filtrados = dbProducts.filter(p => p.category !== 'Cristal' && ((p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term))).slice(0, 5);
     list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">Armazón no encontrado en catálogo.</div>' : filtrados.map(p => {
       let stock = 0; try { stock = JSON.parse(p.stock_branches)[terminalActiva] || 0; } catch(e) { stock = p.stock || 0; }
@@ -551,7 +578,7 @@
       if (!labId) {
           lensSelect.innerHTML = '<option value="">Seleccione Cristal...</option>';
           selectedLensPrice = 0;
-          document.getElementById('labelLensPrice').textContent = '$0';
+          document.getElementById('labelLensPrice').textContent = '$ 0,00';
           recalcularTotalOrden();
           return;
       }
@@ -560,7 +587,7 @@
       lensSelect.innerHTML = '<option value="">Seleccione Cristal...</option>' + cristalesDelLab.map(c => `<option value="${c.id}">${escapeHtml(c.name)} - ${currency(c.price)}</option>`).join('');
       
       selectedLensPrice = 0;
-      document.getElementById('labelLensPrice').textContent = '$0';
+      document.getElementById('labelLensPrice').textContent = '$ 0,00';
       recalcularTotalOrden();
   }
 
@@ -572,22 +599,30 @@
           document.getElementById('labelLensPrice').textContent = currency(selectedLensPrice);
       } else {
           selectedLensPrice = 0;
-          document.getElementById('labelLensPrice').textContent = '$0';
+          document.getElementById('labelLensPrice').textContent = '$ 0,00';
       }
       
-      // Auto-completar el Total
-      document.getElementById('ordTotal').value = (selectedFramePrice + selectedLensPrice).toFixed(2);
+      // Autocompletamos y forzamos el formato visual en el input de Texto
+      const total = selectedFramePrice + selectedLensPrice;
+      const inputTotal = document.getElementById('ordTotal');
+      // Convertimos el float a string con formato es-AR para que la función formatCurrencyInput lo entienda perfecto
+      inputTotal.value = total.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); 
+      formatCurrencyInput(inputTotal);
       calcSaldo();
   }
 
-  // --- LOGICA MODAL ORDEN Y GUARDADO ---
   function abrirModalOrden() {
     document.getElementById('formOrden').reset();
     document.getElementById('ordId').value = '';
     document.getElementById('ordDelivery').value = todayISO();
-    document.getElementById('ordBalance').value = '0';
-    document.getElementById('labelFramePrice').textContent = '$0';
-    document.getElementById('labelLensPrice').textContent = '$0';
+    
+    // Reseteamos los campos de texto
+    document.getElementById('ordTotal').value = '';
+    document.getElementById('ordDeposit').value = '$ 0,00';
+    document.getElementById('ordBalance').value = '$ 0,00';
+    
+    document.getElementById('labelFramePrice').textContent = '$ 0,00';
+    document.getElementById('labelLensPrice').textContent = '$ 0,00';
     document.getElementById('ordLensId').innerHTML = '<option value="">Seleccione Cristal...</option>';
     selectedFramePrice = 0; selectedLensPrice = 0;
     
@@ -597,22 +632,27 @@
   }
 
   function calcSaldo() {
-    const tot = parseFloat(document.getElementById('ordTotal').value) || 0;
-    const dep = parseFloat(document.getElementById('ordDeposit').value) || 0;
-    document.getElementById('ordBalance').value = (tot - dep).toFixed(2);
+    const tot = parseCurrency(document.getElementById('ordTotal').value);
+    const dep = parseCurrency(document.getElementById('ordDeposit').value);
+    const balance = tot - dep;
+    
+    // Muestra visualmente el saldo formateado
+    document.getElementById('ordBalance').value = currency(balance);
   }
 
   async function guardarOrden(e) {
     e.preventDefault();
     const isNew = !document.getElementById('ordId').value;
     const id = document.getElementById('ordId').value || 'OPT-' + Math.floor(Math.random()*90000 + 10000);
-    const balance = parseFloat(document.getElementById('ordBalance').value) || 0;
-    const deposit = parseFloat(document.getElementById('ordDeposit').value) || 0;
-    const frameCode = document.getElementById('ordFrameCode').value;
     
-    // Obtener el nombre del cristal seleccionado para guardarlo como texto en la orden
+    // Usamos el parser para convertir el texto formateado nuevamente a número matemático Float
+    const totalFloat = parseCurrency(document.getElementById('ordTotal').value);
+    const depositFloat = parseCurrency(document.getElementById('ordDeposit').value);
+    const balanceFloat = parseCurrency(document.getElementById('ordBalance').value);
+    
+    const frameCode = document.getElementById('ordFrameCode').value;
     const lensSelect = document.getElementById('ordLensId');
-    const glassTypeName = lensSelect.options[lensSelect.selectedIndex].text.split(' - ')[0]; // Quitamos el precio del texto
+    const glassTypeName = lensSelect.selectedIndex > 0 ? lensSelect.options[lensSelect.selectedIndex].text.split(' - ')[0] : '';
 
     const ord = {
       id: id, date: todayISO(),
@@ -622,16 +662,15 @@
       oi_esf: document.getElementById('oi_esf').value, oi_cil: document.getElementById('oi_cil').value, oi_eje: document.getElementById('oi_eje').value, oi_add: document.getElementById('oi_add').value,
       dp: document.getElementById('ordDp').value, altura: document.getElementById('ordAlt').value, doctor: document.getElementById('ordDoctor').value,
       frameCode: frameCode, frameName: document.getElementById('ordFrameName').value, 
-      glassType: glassTypeName || '',
+      glassType: glassTypeName,
       deliveryDate: document.getElementById('ordDelivery').value,
-      total: parseFloat(document.getElementById('ordTotal').value) || 0,
-      deposit: deposit, balance: balance,
+      total: totalFloat,
+      deposit: depositFloat, balance: balanceFloat,
       status: 'Pendiente', seller: localStorage.getItem('activeUser') || 'Admin', notes: '', createdAt: new Date().toISOString()
     };
 
     mostrarCarga(true);
     try {
-      // 1. Descontar Stock del Armazón SI es nuevo y si existe
       if (isNew && frameCode) {
         const prod = dbProducts.find(p => p.code === frameCode && p.category !== 'Cristal');
         if (prod) {
@@ -644,18 +683,16 @@
         }
       }
 
-      // 2. Generar Venta (Ticket) en Caja si hay Seña abonada HOY
-      if (isNew && deposit > 0) {
+      if (isNew && depositFloat > 0) {
         const method = document.getElementById('ordPaymentMethod').value;
         const ventaSena = {
           id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
-          clientId: ord.clientId, client: ord.clientName, method: method, cupon: '', subtotal: deposit, promoDiscount: 0, total: deposit, isB2B: false,
-          items: [{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Cristales`, price: deposit, cost: 0, qty: 1}]
+          clientId: ord.clientId, client: ord.clientName, method: method, cupon: '', subtotal: depositFloat, promoDiscount: 0, total: depositFloat, isB2B: false,
+          items: [{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Cristales`, price: depositFloat, cost: 0, qty: 1}]
         };
         await fetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSena) });
       }
 
-      // 3. Guardar Orden Óptica
       await fetch('/api/optical', { method: 'POST', body: JSON.stringify(ord) });
       if (isNew) dbOrders.unshift(ord); else { const idx = dbOrders.findIndex(x=>x.id===id); if(idx>=0) dbOrders[idx]=ord; }
       
@@ -665,7 +702,6 @@
     } catch(err) { alert("Error guardando orden."); } finally { mostrarCarga(false); }
   }
 
-  // --- RENDERIZADO Y ESTADOS ---
   function renderOrders() {
     const termPend = document.getElementById('searchOrder').value.toLowerCase();
     const termHist = document.getElementById('searchHistorial').value.toLowerCase();
@@ -727,7 +763,7 @@
   function prepararEntrega(id) {
     const o = dbOrders.find(x => x.id === id);
     document.getElementById('cobroOrdId').value = o.id;
-    document.getElementById('cobroMonto').value = currency(o.balance);
+    document.getElementById('cobroMonto').value = currency(o.balance); // Se muestra ya formateado al usuario
     document.getElementById('modalCobroSaldo').showModal();
   }
 
@@ -738,7 +774,6 @@
     
     mostrarCarga(true);
     try {
-      // Generar ticket en Caja por el SALDO pendiente
       if (o.balance > 0) {
         const ventaSaldo = {
           id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
@@ -749,7 +784,7 @@
       }
 
       o.status = 'Entregado';
-      o.balance = 0; // Queda cancelado
+      o.balance = 0; 
       await fetch('/api/optical', { method: 'POST', body: JSON.stringify(o) });
       
       document.getElementById('modalCobroSaldo').close();
@@ -758,20 +793,19 @@
     } catch(err) { alert("Error cerrando orden."); } finally { mostrarCarga(false); }
   }
 
-  // --- IMPRESIÓN ---
   function imprimirComprobantes(o) {
-    // Llenar datos Cliente
     document.getElementById('pcDate').textContent = new Date().toLocaleDateString('es-AR');
     document.getElementById('pcId').textContent = 'N° ' + o.id;
     document.getElementById('pcName').textContent = o.clientName;
     document.getElementById('pcDelivery').textContent = o.deliveryDate;
     document.getElementById('pcFrame').textContent = o.frameName || o.frameCode;
     document.getElementById('pcGlass').textContent = o.glassType;
+    
+    // Imprimen utilizando la función de moneda formateada local
     document.getElementById('pcTotal').textContent = currency(o.total);
     document.getElementById('pcDeposit').textContent = currency(o.deposit);
     document.getElementById('pcBalance').textContent = currency(o.balance);
 
-    // Llenar datos Laboratorio
     document.getElementById('plDate').textContent = new Date().toLocaleDateString('es-AR');
     document.getElementById('plId').textContent = 'ORDEN LAB N° ' + o.id;
     document.getElementById('plName').textContent = o.clientName;
