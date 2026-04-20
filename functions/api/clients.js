@@ -19,11 +19,12 @@ export async function onRequestPost(context) {
         const email = data.email || '';
         const phone = data.phone || '';
         const ivaCondition = data.ivaCondition || 'Consumidor Final';
+        const status = data.status || 'Activo'; // NUEVO CAMPO
         const createdAt = data.createdAt || new Date().toISOString();
         
         await context.env.DB.prepare(`
-            INSERT INTO clients (id, name, cuil, address, type, email, phone, ivaCondition, createdAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO clients (id, name, cuil, address, type, email, phone, ivaCondition, status, createdAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET 
                 name = excluded.name,
                 cuil = excluded.cuil,
@@ -31,27 +32,12 @@ export async function onRequestPost(context) {
                 type = excluded.type,
                 email = excluded.email,
                 phone = excluded.phone,
-                ivaCondition = excluded.ivaCondition
-        `).bind(id, name, cuil, address, type, email, phone, ivaCondition, createdAt).run();
+                ivaCondition = excluded.ivaCondition,
+                status = excluded.status
+        `).bind(id, name, cuil, address, type, email, phone, ivaCondition, status, createdAt).run();
 
         return new Response("OK", { status: 200 });
     } catch (error) {
         return new Response(`Error POST DB: ${error.message}`, { status: 500 });
-    }
-}
-
-// ESTO ES LO QUE FALTABA PARA QUE EL BOTÓN BORRAR FUNCIONE
-export async function onRequestDelete(context) {
-    try {
-        const url = new URL(context.request.url);
-        const id = url.searchParams.get('id');
-        
-        if (!id) return new Response("Falta el ID", { status: 400 });
-
-        await context.env.DB.prepare("DELETE FROM clients WHERE id = ?").bind(id).run();
-        
-        return new Response("OK", { status: 200 });
-    } catch (error) {
-        return new Response(`Error DELETE DB: ${error.message}`, { status: 500 });
     }
 }
