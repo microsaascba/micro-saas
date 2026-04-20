@@ -80,7 +80,7 @@
       <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
-      <a href="ordenes.html" class="active"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="ordenes.html"><span class="nav-icon">📋</span> Órdenes</a>
       <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
@@ -113,10 +113,16 @@
               <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Nombre del producto *</label>
               <input type="text" id="prodName" class="input-box" required placeholder="Ej: Máquina de corte profesional">
             </div>
+            
             <div>
-              <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Categoría</label>
-              <input type="text" id="prodCategory" class="input-box" placeholder="Ej: Herramientas">
+              <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Categoría *</label>
+              <div style="display: flex; gap: 5px;">
+                <select id="prodCategory" class="input-box" required style="font-weight: bold;">
+                    </select>
+                <button type="button" class="btn btn-primary" style="padding: 10px; flex-shrink: 0;" onclick="abrirModalCategoria()" title="Crear nueva Categoría">+</button>
+              </div>
             </div>
+            
             <div>
               <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Código / SKU</label>
               <input type="text" id="prodCode" class="input-box" placeholder="Opcional">
@@ -236,6 +242,25 @@
   </main>
 </div>
 
+<dialog id="modalCategoria" style="width: 100%; max-width: 400px; z-index: 10000;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:18px;">Nueva Categoría</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalCategoria').close()">✕</button>
+    </div>
+    <form onsubmit="guardarCategoria(event)">
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; display:block; margin-bottom:6px;">Nombre de la Categoría *</label>
+        <input type="text" id="catName" required class="input-box" placeholder="Ej: Indumentaria, Ferretería, etc." autocomplete="off">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalCategoria').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Crear Categoría</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
 <dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: var(--panel);">
   <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
     <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
@@ -297,6 +322,7 @@
 <script>
   const API_URL = "/api"; 
   let dbProducts = [];
+  let dbCategories = [];
   const PIN_ADMIN = "1234";
   let pendingAdminAction = null;
   let pendingAdminParam = null;
@@ -309,24 +335,76 @@
     document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none';
   }
 
-  // --- CARGAR PRODUCTOS DESDE LA NUBE ---
+  // --- CARGAR PRODUCTOS Y CATEGORÍAS DESDE LA NUBE ---
   async function initProducts() {
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/products`);
-      if (response.ok) {
-        dbProducts = await response.json();
-      } else {
-        console.error("Error al cargar la base de datos");
-      }
+      // Descarga paralela para mayor velocidad
+      const [resP, resC] = await Promise.all([
+          fetch(`${API_URL}/products`),
+          fetch(`${API_URL}/categories`)
+      ]);
+      
+      if (resP.ok) dbProducts = await resP.json();
+      if (resC.ok) dbCategories = await resC.json();
+      
     } catch (error) {
       console.error("Error de conexión:", error);
     } finally {
       mostrarCarga(false);
+      actualizarSelectCategorias();
       actualizarSelectCombos();
       renderTable();
     }
   }
+
+  // --- GESTIÓN DE CATEGORÍAS ---
+  function actualizarSelectCategorias(selectedName = null) {
+      const select = document.getElementById('prodCategory');
+      const currentVal = select.value;
+      
+      // Inteligencia: Mezclamos las categorías de la DB con las que ya existían en productos viejos para no perder data
+      const legacyCats = [...new Set(dbProducts.map(p => p.category).filter(c => c))];
+      const activeCats = dbCategories.map(c => c.name);
+      const allCats = [...new Set([...legacyCats, ...activeCats])].sort();
+
+      select.innerHTML = '<option value="">Seleccione o cree una...</option>' + 
+          allCats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      
+      if (selectedName) {
+          select.value = selectedName;
+      } else if (currentVal) {
+          select.value = currentVal;
+      }
+  }
+
+  window.abrirModalCategoria = function() {
+      document.getElementById('catName').value = '';
+      document.getElementById('modalCategoria').showModal();
+  };
+
+  window.guardarCategoria = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('catName').value.trim();
+      const id = 'cat_' + Date.now();
+      const cat = { id, name };
+
+      mostrarCarga(true);
+      try {
+          await fetch(`${API_URL}/categories`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(cat)
+          });
+          dbCategories.push(cat);
+          actualizarSelectCategorias(name);
+          document.getElementById('modalCategoria').close();
+      } catch (err) {
+          alert("Error guardando categoría. Recuerde crear el archivo api/categories.js");
+      } finally {
+          mostrarCarga(false);
+      }
+  };
 
   // --- RENTABILIDAD ---
   window.calcularRentabilidad = function() {
@@ -588,6 +666,7 @@
     document.getElementById('prodProfit').value = '$0.00'; document.getElementById('prodProfit').style.color = "var(--success)";
     document.getElementById('prodMargin').value = '0.0%'; document.getElementById('prodMargin').style.color = "var(--primary)";
     document.getElementById('prodMarkup').value = '0.0%'; document.getElementById('prodMarkup').style.color = "var(--text)";
+    actualizarSelectCategorias(); // Resetea y quita selecciones
     togglePromoFields();
   };
 
@@ -606,6 +685,7 @@
       if (response.ok) {
         dbProducts = dbProducts.filter(p => p.id !== id);
         actualizarSelectCombos();
+        actualizarSelectCategorias();
         renderTable();
       } else {
         alert("Error al eliminar de la base de datos.");
@@ -673,7 +753,7 @@
           ${isInactive ? '<span style="color:var(--danger); font-size:10px; font-weight:bold; margin-left:5px;">(INACTIVO)</span>' : ''}
           <br>
           <div style="margin-top: 4px;">
-            <small style="color:var(--muted); margin-right:5px;">${p.code||'S/N'}</small>
+            <small style="color:var(--muted); margin-right:5px;">${p.code||'S/N'} | Cat: ${escapeHtml(p.category||'-')}</small>
             ${varLabel} ${promoLabel}
           </div>
         </td>
