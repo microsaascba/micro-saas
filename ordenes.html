@@ -11,6 +11,7 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
   <style>
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
@@ -105,8 +106,9 @@
           <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión de pedidos, laboratorio y entregas.</p>
         </div>
       </div>
-      <div class="topbar-actions">
-        <button class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;" onclick="abrirModalOrden()">+ Nueva Orden</button>
+      <div class="topbar-actions" style="display: flex; gap: 10px;">
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="document.getElementById('modalExportar').showModal()">⬇ Exportar Excel</button>
+        <button class="btn btn-primary" onclick="abrirModalOrden()">+ Nueva Orden</button>
       </div>
     </header>
 
@@ -174,6 +176,38 @@
   </main>
 </div>
 
+<dialog id="modalExportar" style="width: 100%; max-width: 400px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;">Exportar Reporte</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalExportar').close()">✕</button>
+    </div>
+    <form onsubmit="ejecutarExportacionExcel(event)">
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Desde Fecha:</label>
+        <input type="date" id="expDesde" class="input-box" required>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Hasta Fecha:</label>
+        <input type="date" id="expHasta" class="input-box" required>
+      </div>
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Estado de la Orden:</label>
+        <select id="expEstado" class="input-box">
+          <option value="ALL">Todos los estados</option>
+          <option value="Pendiente">Solo Pendientes (Laboratorio)</option>
+          <option value="Recibido - Listo">Solo Listos para Entregar</option>
+          <option value="Entregado">Solo Entregados (Historial)</option>
+        </select>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalExportar').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="background:#16a34a; border-color:#16a34a;">Descargar Excel</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
 <dialog id="modalCristal" style="width: 100%; max-width: 500px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
@@ -211,7 +245,7 @@
 <dialog id="modalOrden" style="width: 100%; max-width: 800px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;" id="modalOrdenTitle">Nueva Orden</h2>
+      <h2 style="margin: 0; font-size:20px;" id="modalOrdenTitle">Nueva Orden de Trabajo</h2>
       <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalOrden').close()">✕</button>
     </div>
     
@@ -223,10 +257,13 @@
           <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">👤 1. Datos del Paciente</h3>
           <div style="position: relative; margin-bottom: 10px;">
             <input type="hidden" id="ordClientId">
-            <input type="text" id="ordClientName" class="input-box" placeholder="Buscar cliente por nombre o DNI..." autocomplete="off" oninput="buscarClienteOrd()" required>
+            <input type="text" id="ordClientName" class="input-box" placeholder="Buscar paciente por nombre o DNI..." autocomplete="off" oninput="buscarClienteOrd()" required>
             <div id="clientOrdResults" class="autocomplete-list"></div>
           </div>
-          <input type="text" id="ordDoctor" class="input-box" placeholder="Médico que prescribe (Opcional)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <input type="text" id="ordDoctor" class="input-box" placeholder="Médico / Oftalmólogo">
+            <input type="text" id="ordObraSocial" class="input-box" placeholder="Obra Social">
+          </div>
         </div>
         
         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line);">
@@ -254,9 +291,23 @@
           <input type="text" id="oi_eje" class="input-box" style="text-align:center;">
           <input type="text" id="oi_add" class="input-box" style="text-align:center;">
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-          <div><label class="receta-header">Distancia Pupilar (DP)</label><input type="text" id="ordDp" class="input-box"></div>
-          <div><label class="receta-header">Altura</label><input type="text" id="ordAlt" class="input-box"></div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+          <div>
+            <label class="receta-header">Uso del Anteojo</label>
+            <select id="ordDp" class="input-box">
+              <option value="Lejos">Lejos</option>
+              <option value="Cerca">Cerca</option>
+              <option value="Multifocal">Multifocal</option>
+              <option value="Bifocal">Bifocal</option>
+            </select>
+          </div>
+          <div><label class="receta-header">Altura (Opcional)</label><input type="text" id="ordAlt" class="input-box"></div>
+        </div>
+
+        <div>
+          <label class="receta-header">Observaciones de Laboratorio / Taller</label>
+          <textarea id="ordNotas" class="input-box" rows="2" placeholder="Ej: Centrado especial, detalles del armazón, material específico..."></textarea>
         </div>
       </div>
 
@@ -363,23 +414,35 @@
 
 <div id="printLab" class="print-area">
   <div class="print-header">
-    <div><h1 class="print-title">ORDEN DE LABORATORIO</h1><p style="margin:5px 0 0;" id="plDate"></p></div>
+    <div><h1 class="print-title">ORDEN DE TALLER</h1><p style="margin:5px 0 0;" id="plDate"></p></div>
     <div style="text-align:right;"><h2 style="margin:0; font-size:20px;" id="plId"></h2><p style="margin:5px 0 0; color:red; font-weight:bold;">USO INTERNO TALLER</p></div>
   </div>
-  <div class="print-box" style="margin-bottom:20px;">
-    <strong>PACIENTE:</strong> <span id="plName"></span> | <strong>MÉDICO:</strong> <span id="plDoc"></span><br>
-    <strong>ENTREGAR EL:</strong> <span id="plDelivery" style="font-size:16px; font-weight:bold;"></span>
+  
+  <div class="print-box" style="margin-bottom:20px; font-size:14px; line-height: 1.6;">
+    <strong>PACIENTE:</strong> <span id="plName"></span><br>
+    <strong>MÉDICO:</strong> <span id="plDoc"></span><br>
+    <strong>OBRA SOCIAL:</strong> <span id="plOS"></span><br>
+    <strong>ENTREGAR EL:</strong> <span id="plDelivery" style="font-size:16px; font-weight:bold; color:var(--primary)"></span>
   </div>
+
   <table class="print-table">
     <tr><th>OJO</th><th>ESFÉRICO</th><th>CILÍNDRICO</th><th>EJE</th><th>ADICIÓN</th></tr>
-    <tr><td><strong>DERECHO</strong></td><td id="plOdEsf"></td><td id="plOdCil"></td><td id="plOdEje"></td><td id="plOdAdd"></td></tr>
-    <tr><td><strong>IZQUIERDO</strong></td><td id="plOiEsf"></td><td id="plOiCil"></td><td id="plOiEje"></td><td id="plOiAdd"></td></tr>
+    <tr><td><strong>D. (Der)</strong></td><td id="plOdEsf"></td><td id="plOdCil"></td><td id="plOdEje"></td><td id="plOdAdd"></td></tr>
+    <tr><td><strong>I. (Izq)</strong></td><td id="plOiEsf"></td><td id="plOiCil"></td><td id="plOiEje"></td><td id="plOiAdd"></td></tr>
   </table>
+
+  <div style="margin-top:20px; padding: 10px; border: 1px solid #000; border-radius: 8px;">
+    <strong>OBSERVACIONES:</strong> <span id="plObs" style="font-style: italic;"></span>
+  </div>
+
   <div class="print-grid" style="margin-top:20px;">
-    <div class="print-box"><strong>D.P.:</strong> <span id="plDp"></span> <br> <strong>ALTURA:</strong> <span id="plAlt"></span></div>
+    <div class="print-box">
+      <strong>USO:</strong> <span id="plUso"></span><br><br>
+      <strong>ALTURA:</strong> <span id="plAlt"></span>
+    </div>
     <div class="print-box" style="background:#f8fafc;">
       <strong>ARMAZÓN A CALIBRAR:</strong><br><span id="plFrame" style="font-size:14px; font-weight:bold;"></span><br><br>
-      <strong>TIPO DE CRISTAL:</strong><br><span id="plGlass" style="font-size:14px; font-weight:bold;"></span>
+      <strong>CRISTAL SOLICITADO:</strong><br><span id="plGlass" style="font-size:14px; font-weight:bold;"></span>
     </div>
   </div>
 </div>
@@ -392,9 +455,9 @@
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     btnElement.classList.add('active'); document.getElementById(tabId).classList.add('active');
   }
+  
   function todayISO() { return new Date().toISOString().split('T')[0]; }
   
-  // FORMATEADOR MAESTRO DE MONEDA: Fuerza el signo $ sin depender del navegador
   function currency(n) { 
       let formatted = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
       return '$ ' + formatted; 
@@ -403,7 +466,6 @@
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
 
-  // LIMPIA Y REESTRUCTURA EL INPUT MIENTRAS EL USUARIO TECLEA
   function formatCurrencyInput(input) {
     let val = input.value.replace(/[^\d,]/g, '');
     const parts = val.split(',');
@@ -419,7 +481,6 @@
     input.value = '$ ' + intPart + decPart;
   }
 
-  // TRADUCE EL TEXTO (ej: "$ 1.500,50") A NÚMERO DE BASE DE DATOS (1500.50)
   function parseCurrency(val) {
     if (!val) return 0;
     let str = String(val).replace(/[\$\s\.]/g, '').replace(',', '.');
@@ -435,6 +496,12 @@
   async function initOrdenes() {
     mostrarCarga(true);
     try {
+      // Establecemos fechas por defecto en el modal de exportación (mes actual)
+      const d = new Date();
+      const primerDiaMes = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+      document.getElementById('expDesde').value = primerDiaMes;
+      document.getElementById('expHasta').value = todayISO();
+
       const [resO, resP, resC, resS] = await Promise.all([
         fetch('/api/optical'), fetch('/api/products'), fetch('/api/clients'), fetch('/api/suppliers')
       ]);
@@ -619,7 +686,7 @@
     document.getElementById('ordLensId').innerHTML = '<option value="">Seleccione Cristal...</option>';
     selectedFramePrice = 0; selectedLensPrice = 0;
     
-    document.getElementById('modalOrdenTitle').textContent = "Nueva Orden";
+    document.getElementById('modalOrdenTitle').textContent = "Nueva Orden de Trabajo";
     document.getElementById('btnGuardarOrden').style.display = 'block';
     document.getElementById('modalOrden').showModal();
   }
@@ -645,19 +712,28 @@
     const lensSelect = document.getElementById('ordLensId');
     const glassTypeName = lensSelect.selectedIndex > 0 ? lensSelect.options[lensSelect.selectedIndex].text.split(' - ')[0] : '';
 
+    // Compactamos los nuevos campos en la variable "notes" para no romper la base de datos actual
+    const obraSocialStr = document.getElementById('ordObraSocial').value.trim();
+    const notasStr = document.getElementById('ordNotas').value.trim();
+    const combinedNotes = `Obra Social: ${obraSocialStr || '-'} | Obs: ${notasStr || '-'}`;
+
     const ord = {
       id: id, date: todayISO(),
       clientId: document.getElementById('ordClientId').value || 'Consumidor Final',
       clientName: document.getElementById('ordClientName').value.trim() || 'Consumidor Final',
       od_esf: document.getElementById('od_esf').value, od_cil: document.getElementById('od_cil').value, od_eje: document.getElementById('od_eje').value, od_add: document.getElementById('od_add').value,
       oi_esf: document.getElementById('oi_esf').value, oi_cil: document.getElementById('oi_cil').value, oi_eje: document.getElementById('oi_eje').value, oi_add: document.getElementById('oi_add').value,
-      dp: document.getElementById('ordDp').value, altura: document.getElementById('ordAlt').value, doctor: document.getElementById('ordDoctor').value,
+      dp: document.getElementById('ordDp').value, // Ahora guarda "Lejos", "Cerca", etc.
+      altura: document.getElementById('ordAlt').value, 
+      doctor: document.getElementById('ordDoctor').value,
       frameCode: frameCode, frameName: document.getElementById('ordFrameName').value, 
       glassType: glassTypeName,
       deliveryDate: document.getElementById('ordDelivery').value,
       total: totalFloat,
       deposit: depositFloat, balance: balanceFloat,
-      status: 'Pendiente', seller: localStorage.getItem('activeUser') || 'Admin', notes: '', createdAt: new Date().toISOString()
+      status: 'Pendiente', seller: localStorage.getItem('activeUser') || 'Admin', 
+      notes: combinedNotes, // Acá viajan las observaciones y la obra social
+      createdAt: new Date().toISOString()
     };
 
     mostrarCarga(true);
@@ -784,6 +860,66 @@
     } catch(err) { alert("Error cerrando orden."); } finally { mostrarCarga(false); }
   }
 
+  // --- LÓGICA DE EXPORTACIÓN A EXCEL ---
+  function ejecutarExportacionExcel(e) {
+      e.preventDefault();
+      
+      if (dbOrders.length === 0) return alert("No hay órdenes registradas en el sistema para exportar.");
+      
+      const desde = document.getElementById('expDesde').value;
+      const hasta = document.getElementById('expHasta').value;
+      const estado = document.getElementById('expEstado').value;
+
+      const filtradas = dbOrders.filter(o => {
+          const fechaObj = o.createdAt ? o.createdAt.split('T')[0] : o.date;
+          const matchFechas = fechaObj >= desde && fechaObj <= hasta;
+          const matchEstado = estado === 'ALL' || o.status === estado;
+          return matchFechas && matchEstado;
+      });
+
+      if(filtradas.length === 0) return alert("No se encontraron órdenes que coincidan con esas fechas y estado.");
+
+      // Convertimos los datos para el Excel
+      const csvData = filtradas.map(o => {
+          // Extraemos obra social y observaciones si están guardadas en notes
+          let obsLimpia = o.notes;
+          let obraSocialLimpia = "-";
+          
+          if (o.notes && o.notes.includes("Obra Social:")) {
+              const partes = o.notes.split(" | Obs: ");
+              obraSocialLimpia = partes[0].replace("Obra Social: ", "").trim();
+              obsLimpia = partes.length > 1 ? partes[1].trim() : "";
+          }
+
+          return {
+              "Fecha Orden": o.createdAt ? o.createdAt.split('T')[0] : o.date,
+              "Fecha Entrega": o.deliveryDate,
+              "Orden Nro": o.id,
+              "Estado": o.status,
+              "Paciente / Cliente": o.clientName,
+              "Médico": o.doctor || '-',
+              "Obra Social": obraSocialLimpia,
+              "Armazón": o.frameName || o.frameCode,
+              "Cristal": o.glassType,
+              "Uso (Distancia)": o.dp,
+              "Valor Total": o.total,
+              "Seña": o.deposit,
+              "Saldo": o.balance,
+              "OD Esf": o.od_esf, "OD Cil": o.od_cil, "OD Eje": o.od_eje, "OD Add": o.od_add,
+              "OI Esf": o.oi_esf, "OI Cil": o.oi_cil, "OI Eje": o.oi_eje, "OI Add": o.oi_add,
+              "Altura": o.altura,
+              "Observaciones": obsLimpia
+          };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(csvData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Ordenes_Optica");
+      XLSX.writeFile(wb, `Reporte_Ordenes_${desde}_al_${hasta}.xlsx`);
+      
+      document.getElementById('modalExportar').close();
+  }
+
   function imprimirComprobantes(o) {
     document.getElementById('pcDate').textContent = new Date().toLocaleDateString('es-AR');
     document.getElementById('pcId').textContent = 'N° ' + o.id;
@@ -800,11 +936,26 @@
     document.getElementById('plId').textContent = 'ORDEN LAB N° ' + o.id;
     document.getElementById('plName').textContent = o.clientName;
     document.getElementById('plDoc').textContent = o.doctor || '-';
+    
+    // Parseo de Notas para impresión limpia
+    let obsLimpia = o.notes;
+    let obraSocialLimpia = "-";
+    if (o.notes && o.notes.includes("Obra Social:")) {
+        const partes = o.notes.split(" | Obs: ");
+        obraSocialLimpia = partes[0].replace("Obra Social: ", "").trim();
+        obsLimpia = partes.length > 1 ? partes[1].trim() : "";
+    }
+
+    document.getElementById('plOS').textContent = obraSocialLimpia;
     document.getElementById('plDelivery').textContent = o.deliveryDate;
     
     document.getElementById('plOdEsf').textContent = o.od_esf; document.getElementById('plOdCil').textContent = o.od_cil; document.getElementById('plOdEje').textContent = o.od_eje; document.getElementById('plOdAdd').textContent = o.od_add;
     document.getElementById('plOiEsf').textContent = o.oi_esf; document.getElementById('plOiCil').textContent = o.oi_cil; document.getElementById('plOiEje').textContent = o.oi_eje; document.getElementById('plOiAdd').textContent = o.oi_add;
-    document.getElementById('plDp').textContent = o.dp; document.getElementById('plAlt').textContent = o.altura;
+    
+    document.getElementById('plUso').textContent = o.dp || '-'; // Uso: Lejos/Cerca
+    document.getElementById('plAlt').textContent = o.altura || '-';
+    document.getElementById('plObs').textContent = obsLimpia || 'Sin observaciones.';
+    
     document.getElementById('plFrame').textContent = o.frameCode + ' - ' + o.frameName;
     document.getElementById('plGlass').textContent = o.glassType;
 
