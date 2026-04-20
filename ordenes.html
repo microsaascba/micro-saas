@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Óptica y Laboratorio | Micro SaaS</title>
+  <title>Órdenes | Micro SaaS</title>
   
   <style>
     html, body { background-color: #f0f2f7 !important; }
@@ -90,7 +90,7 @@
       <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
-      <a href="optica.html" class="active"><span class="nav-icon">👓</span> Óptica / Taller</a>
+      <a href="ordenes.html" class="active"><span class="nav-icon">📋</span> Órdenes</a>
       <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
@@ -101,12 +101,12 @@
       <div style="display: flex; align-items: center;">
         <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
         <div class="page-title">
-          <h1 style="margin:0; font-size: 26px;">Taller y Óptica</h1>
-          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión de recetas, laboratorio y entregas.</p>
+          <h1 style="margin:0; font-size: 26px;">Órdenes</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión de pedidos, laboratorio y entregas.</p>
         </div>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;" onclick="abrirModalOrden()">+ Nueva Orden / Pedido</button>
+        <button class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;" onclick="abrirModalOrden()">+ Nueva Orden</button>
       </div>
     </header>
 
@@ -121,7 +121,7 @@
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--warning);">
         <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Saldos a Cobrar</div>
-        <div id="kpiSaldos" style="font-size:28px; font-weight:800; color:var(--warning);">$0</div>
+        <div id="kpiSaldos" style="font-size:28px; font-weight:800; color:var(--warning);">$ 0,00</div>
       </article>
     </div>
 
@@ -211,7 +211,7 @@
 <dialog id="modalOrden" style="width: 100%; max-width: 800px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;" id="modalOrdenTitle">Nueva Orden de Óptica</h2>
+      <h2 style="margin: 0; font-size:20px;" id="modalOrdenTitle">Nueva Orden</h2>
       <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalOrden').close()">✕</button>
     </div>
     
@@ -270,7 +270,7 @@
           </div>
           <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
              <small style="color:var(--danger); font-size:11px;">Baja de stock automática.</small>
-             <span id="labelFramePrice" style="font-size:12px; font-weight:bold; color:var(--text);">$ 0</span>
+             <span id="labelFramePrice" style="font-size:12px; font-weight:bold; color:var(--text);">$ 0,00</span>
           </div>
         </div>
         
@@ -283,7 +283,7 @@
               <select id="ordLensId" class="input-box" onchange="recalcularTotalOrden()" required><option value="">Seleccione Cristal...</option></select>
           </div>
           <div style="margin-top: 8px; text-align: right;">
-             <span id="labelLensPrice" style="font-size:12px; font-weight:bold; color:var(--text);">$ 0</span>
+             <span id="labelLensPrice" style="font-size:12px; font-weight:bold; color:var(--text);">$ 0,00</span>
           </div>
         </div>
       </div>
@@ -293,11 +293,11 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: end;">
           <div>
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Valor Total (Armazón + Cristal) *</label>
-            <input type="text" id="ordTotal" class="input-box" style="font-size: 18px; font-weight: bold; color: var(--primary);" oninput="formatCurrencyInput(this); calcSaldo()" placeholder="$ 0" required>
+            <input type="text" id="ordTotal" class="input-box" style="font-size: 18px; font-weight: bold; color: var(--primary);" oninput="formatCurrencyInput(this); calcSaldo()" placeholder="$ 0,00" required autocomplete="off">
           </div>
           <div>
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seña Abonada Hoy</label>
-            <input type="text" id="ordDeposit" class="input-box" value="$ 0" style="font-size: 16px; font-weight: bold; color: var(--success);" oninput="formatCurrencyInput(this); calcSaldo()">
+            <input type="text" id="ordDeposit" class="input-box" style="font-size: 16px; font-weight: bold; color: var(--success);" oninput="formatCurrencyInput(this); calcSaldo()" placeholder="$ 0,00" autocomplete="off">
           </div>
           <div>
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de Pago (Seña)</label>
@@ -306,7 +306,7 @@
         </div>
         <div style="margin-top:15px; padding-top:15px; border-top:1px dashed var(--line); display:flex; justify-content:space-between; align-items:center;">
           <span style="font-weight:bold; font-size:14px; color:var(--danger);">SALDO PENDIENTE A COBRAR EN LA ENTREGA:</span>
-          <input type="text" id="ordBalance" class="input-box" value="$ 0" readonly style="width:150px; background:transparent; border:none; font-size:22px; font-weight:900; color:var(--danger); text-align:right;">
+          <input type="text" id="ordBalance" class="input-box" readonly style="width:150px; background:transparent; border:none; font-size:22px; font-weight:900; color:var(--danger); text-align:right;">
         </div>
       </div>
 
@@ -321,7 +321,7 @@
 <dialog id="modalCobroSaldo" style="width: 100%; max-width: 400px;">
   <div class="modal-content">
     <h2 style="margin: 0 0 15px 0; font-size:18px;">Cobrar Saldo y Entregar</h2>
-    <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">El cliente retira los anteojos. Se debe abonar el saldo pendiente para cerrar la orden.</p>
+    <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">El cliente retira el pedido. Se debe abonar el saldo pendiente para cerrar la orden.</p>
     <input type="hidden" id="cobroOrdId">
     <div style="margin-bottom: 15px;">
       <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Saldo a Cobrar</label>
@@ -345,7 +345,7 @@
 
 <div id="printClient" class="print-area">
   <div class="print-header">
-    <div><h1 class="print-title">ÓPTICA - ORDEN DE PEDIDO</h1><p style="margin:5px 0 0;" id="pcDate"></p></div>
+    <div><h1 class="print-title">ORDEN DE PEDIDO</h1><p style="margin:5px 0 0;" id="pcDate"></p></div>
     <div style="text-align:right;"><h2 style="margin:0; font-size:20px;" id="pcId"></h2><p style="margin:5px 0 0; font-weight:bold;">Comprobante Cliente</p></div>
   </div>
   <div class="print-grid">
@@ -394,17 +394,21 @@
   }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
   
-  // Modificamos ligeramente la función currency local para soportar decimales explícitos
-  function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0); }
+  // FORMATEADOR MAESTRO DE MONEDA: Fuerza el signo $ sin depender del navegador
+  function currency(n) { 
+      let formatted = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
+      return '$ ' + formatted; 
+  }
+  
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
 
-  // ─── NUEVAS FUNCIONES PARA ENMASCARAR MONEDA (Miles y Decimales) ───
+  // LIMPIA Y REESTRUCTURA EL INPUT MIENTRAS EL USUARIO TECLEA
   function formatCurrencyInput(input) {
-    // Solo permitimos números y comas
+    // Extrae solo los números y la coma
     let val = input.value.replace(/[^\d,]/g, '');
     
-    // Evitamos que haya más de una coma decimal
+    // Evita dobles comas
     const parts = val.split(',');
     if (parts.length > 2) {
       val = parts[0] + ',' + parts.slice(1).join('');
@@ -415,21 +419,20 @@
       return;
     }
     
-    // Formateamos la parte entera con puntos cada 3 dígitos
+    // Agrega puntos de miles y coma decimal
     let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    // Mantenemos hasta 2 decimales
     let decPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : '';
     
+    // Imprime literalmente el "$ " adelante
     input.value = '$ ' + intPart + decPart;
   }
 
-  // Convierte el texto visual (ej: "$ 1.500,50") a un número Float real (1500.50) para la Base de Datos
+  // TRADUCE EL TEXTO (ej: "$ 1.500,50") A NÚMERO DE BASE DE DATOS (1500.50)
   function parseCurrency(val) {
     if (!val) return 0;
     let str = String(val).replace(/[\$\s\.]/g, '').replace(',', '.');
     return parseFloat(str) || 0;
   }
-  // ────────────────────────────────────────────────────────────────────
 
   let dbOrders = []; let dbProducts = []; let dbClients = []; let dbSuppliers = [];
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
@@ -437,7 +440,7 @@
   let selectedFramePrice = 0;
   let selectedLensPrice = 0;
 
-  async function initOptica() {
+  async function initOrdenes() {
     mostrarCarga(true);
     try {
       const [resO, resP, resC, resS] = await Promise.all([
@@ -602,10 +605,10 @@
           document.getElementById('labelLensPrice').textContent = '$ 0,00';
       }
       
-      // Autocompletamos y forzamos el formato visual en el input de Texto
       const total = selectedFramePrice + selectedLensPrice;
       const inputTotal = document.getElementById('ordTotal');
-      // Convertimos el float a string con formato es-AR para que la función formatCurrencyInput lo entienda perfecto
+      
+      // Auto-rellenamos el input como texto y forzamos el formato
       inputTotal.value = total.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); 
       formatCurrencyInput(inputTotal);
       calcSaldo();
@@ -616,7 +619,7 @@
     document.getElementById('ordId').value = '';
     document.getElementById('ordDelivery').value = todayISO();
     
-    // Reseteamos los campos de texto
+    // Dejar listos con su signo $ asegurado
     document.getElementById('ordTotal').value = '';
     document.getElementById('ordDeposit').value = '$ 0,00';
     document.getElementById('ordBalance').value = '$ 0,00';
@@ -626,7 +629,7 @@
     document.getElementById('ordLensId').innerHTML = '<option value="">Seleccione Cristal...</option>';
     selectedFramePrice = 0; selectedLensPrice = 0;
     
-    document.getElementById('modalOrdenTitle').textContent = "Nueva Orden de Óptica";
+    document.getElementById('modalOrdenTitle').textContent = "Nueva Orden";
     document.getElementById('btnGuardarOrden').style.display = 'block';
     document.getElementById('modalOrden').showModal();
   }
@@ -636,16 +639,14 @@
     const dep = parseCurrency(document.getElementById('ordDeposit').value);
     const balance = tot - dep;
     
-    // Muestra visualmente el saldo formateado
     document.getElementById('ordBalance').value = currency(balance);
   }
 
   async function guardarOrden(e) {
     e.preventDefault();
     const isNew = !document.getElementById('ordId').value;
-    const id = document.getElementById('ordId').value || 'OPT-' + Math.floor(Math.random()*90000 + 10000);
+    const id = document.getElementById('ordId').value || 'ORD-' + Math.floor(Math.random()*90000 + 10000);
     
-    // Usamos el parser para convertir el texto formateado nuevamente a número matemático Float
     const totalFloat = parseCurrency(document.getElementById('ordTotal').value);
     const depositFloat = parseCurrency(document.getElementById('ordDeposit').value);
     const balanceFloat = parseCurrency(document.getElementById('ordBalance').value);
@@ -688,7 +689,7 @@
         const ventaSena = {
           id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
           clientId: ord.clientId, client: ord.clientName, method: method, cupon: '', subtotal: depositFloat, promoDiscount: 0, total: depositFloat, isB2B: false,
-          items: [{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Cristales`, price: depositFloat, cost: 0, qty: 1}]
+          items: [{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Abono inicial`, price: depositFloat, cost: 0, qty: 1}]
         };
         await fetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSena) });
       }
@@ -753,7 +754,7 @@
   }
 
   async function marcarListo(id) {
-    if(!confirm("¿Los cristales llegaron del laboratorio y están listos?")) return;
+    if(!confirm("¿El pedido llegó del laboratorio y está listo?")) return;
     const o = dbOrders.find(x => x.id === id); o.status = 'Recibido - Listo';
     mostrarCarga(true);
     await fetch('/api/optical', { method: 'POST', body: JSON.stringify(o) });
@@ -763,7 +764,7 @@
   function prepararEntrega(id) {
     const o = dbOrders.find(x => x.id === id);
     document.getElementById('cobroOrdId').value = o.id;
-    document.getElementById('cobroMonto').value = currency(o.balance); // Se muestra ya formateado al usuario
+    document.getElementById('cobroMonto').value = currency(o.balance); 
     document.getElementById('modalCobroSaldo').showModal();
   }
 
@@ -778,7 +779,7 @@
         const ventaSaldo = {
           id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
           clientId: o.clientId, client: o.clientName, method: method, cupon: '', subtotal: o.balance, promoDiscount: 0, total: o.balance, isB2B: false,
-          items: [{id: 'saldo', code: 'SALDO', name: `Saldo Orden ${o.id} - Lentes Terminados`, price: o.balance, cost: 0, qty: 1}]
+          items: [{id: 'saldo', code: 'SALDO', name: `Saldo Orden ${o.id} - Trabajo Terminado`, price: o.balance, cost: 0, qty: 1}]
         };
         await fetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSaldo) });
       }
@@ -801,7 +802,6 @@
     document.getElementById('pcFrame').textContent = o.frameName || o.frameCode;
     document.getElementById('pcGlass').textContent = o.glassType;
     
-    // Imprimen utilizando la función de moneda formateada local
     document.getElementById('pcTotal').textContent = currency(o.total);
     document.getElementById('pcDeposit').textContent = currency(o.deposit);
     document.getElementById('pcBalance').textContent = currency(o.balance);
@@ -821,7 +821,7 @@
     window.print();
   }
 
-  initOptica();
+  initOrdenes();
 </script>
 </body>
 </html>
