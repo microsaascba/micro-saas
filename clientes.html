@@ -23,7 +23,7 @@
     .input-box:focus { border-color: var(--primary); }
     
     table { width: 100%; border-collapse: collapse; text-align: left; }
-    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--panel-2);}
     td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
 
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
@@ -51,7 +51,7 @@
       <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
-      <a href="ordenes.html" class="active"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="ordenes.html"><span class="nav-icon">📋</span> Órdenes</a>
       <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
@@ -75,7 +75,7 @@
           
           <div style="margin-bottom: 15px;">
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Razón Social / Nombre *</label>
-            <input type="text" id="cliName" class="input-box" required placeholder="Ej: Supermercados SA">
+            <input type="text" id="cliName" class="input-box" required placeholder="Ej: Supermercados SA o Juan Perez">
           </div>
           
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
@@ -94,12 +94,23 @@
             <input type="text" id="cliAddress" class="input-box" placeholder="Calle, Número, Ciudad">
           </div>
 
-          <div style="margin-bottom: 25px;">
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Tipo de Cliente</label>
-            <select id="cliType" class="input-box">
-              <option value="minorista">Minorista (Consumidor)</option>
-              <option value="mayorista">Mayorista (Cuenta Corriente)</option>
-            </select>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+            <div>
+              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Condición IVA</label>
+              <select id="cliIvaCondition" class="input-box">
+                <option value="Consumidor Final">Consumidor Final</option>
+                <option value="Responsable Inscripto">Resp. Inscripto</option>
+                <option value="Monotributo">Monotributo</option>
+                <option value="Exento">Exento</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Tipo de Cliente</label>
+              <select id="cliType" class="input-box">
+                <option value="B2C">Minorista</option>
+                <option value="B2B">Mayorista (Cta. Cte.)</option>
+              </select>
+            </div>
           </div>
 
           <div style="display: flex; gap: 10px;">
@@ -118,8 +129,8 @@
             <thead>
               <tr>
                 <th>Cliente</th>
-                <th>CUIT/DNI</th>
-                <th>Contacto</th>
+                <th>CUIT / DNI</th>
+                <th>Contacto / Condición</th>
                 <th>Tipo</th>
                 <th style="text-align: center;">Acciones</th>
               </tr>
@@ -188,6 +199,7 @@
       phone: document.getElementById('cliPhone').value.trim(),
       address: document.getElementById('cliAddress').value.trim(),
       type: document.getElementById('cliType').value,
+      ivaCondition: document.getElementById('cliIvaCondition').value,
       createdAt: new Date().toISOString()
     };
 
@@ -205,7 +217,7 @@
         limpiarFormulario();
         renderTable();
       } else {
-        alert("Error al guardar en la nube.");
+        alert("Error al guardar en la base de datos.");
       }
     } catch(error) {
       console.error("Error guardando:", error);
@@ -224,7 +236,8 @@
     document.getElementById('cliCuil').value = c.cuil || '';
     document.getElementById('cliPhone').value = c.phone || '';
     document.getElementById('cliAddress').value = c.address || '';
-    document.getElementById('cliType').value = c.type || 'minorista';
+    document.getElementById('cliType').value = c.type || 'B2C';
+    document.getElementById('cliIvaCondition').value = c.ivaCondition || 'Consumidor Final';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -232,6 +245,8 @@
     document.getElementById('formTitle').textContent = "Alta de Cliente";
     document.getElementById('clientForm').reset();
     document.getElementById('cliId').value = '';
+    document.getElementById('cliType').value = 'B2C';
+    document.getElementById('cliIvaCondition').value = 'Consumidor Final';
   }
 
   // --- ELIMINAR CLIENTE CON PIN ---
@@ -290,7 +305,7 @@
     
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = filtrados.map(c => {
-      const badgeTipo = c.type === 'mayorista' 
+      const badgeTipo = (c.type === 'mayorista' || c.type === 'B2B') 
         ? `<span style="background:#e0e7ff; color:#1d4ed8; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; text-transform:uppercase;">Mayorista</span>`
         : `<span style="background:var(--panel-2); color:var(--text); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; text-transform:uppercase; border:1px solid var(--line);">Minorista</span>`;
 
@@ -299,8 +314,8 @@
         <td><strong>${escapeHtml(c.name)}</strong></td>
         <td><span style="color:var(--muted);">${escapeHtml(c.cuil || '-')}</span></td>
         <td>
-          <div style="font-size:12px;">${escapeHtml(c.phone || '-')}</div>
-          <small style="color:var(--muted);">${escapeHtml(c.address || '-')}</small>
+          <div style="font-size:12px; font-weight:bold;">${escapeHtml(c.phone || '-')}</div>
+          <small style="color:var(--muted);">${escapeHtml(c.ivaCondition || 'Consumidor Final')}</small>
         </td>
         <td>${badgeTipo}</td>
         <td style="text-align: center;">
