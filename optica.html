@@ -92,6 +92,7 @@
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
       <a href="optica.html" class="active"><span class="nav-icon">👓</span> Óptica / Taller</a>
       <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
+      <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
   </aside>
 
@@ -128,13 +129,13 @@
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('tab-pendientes', this)">Órdenes en Curso</button>
         <button class="tab-btn" onclick="switchTab('tab-historial', this)">Historial Entregados</button>
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <input type="text" id="searchOrder" class="input-box" placeholder="🔍 Buscar por N° Orden, Cliente o DNI..." onkeyup="renderOrders()">
+        <button class="tab-btn" onclick="switchTab('tab-cristales', this)">Catálogo de Cristales</button>
       </div>
 
       <div id="tab-pendientes" class="tab-content active">
+        <div style="margin-bottom: 15px;">
+          <input type="text" id="searchOrder" class="input-box" placeholder="🔍 Buscar por N° Orden, Cliente o DNI..." onkeyup="renderOrders()">
+        </div>
         <div style="overflow-x: auto;">
           <table>
             <thead><tr><th>N° Orden</th><th>Fecha Est.</th><th>Paciente / Cliente</th><th>Armazón + Cristal</th><th>Estado</th><th>Saldo</th><th style="text-align: center;">Acciones</th></tr></thead>
@@ -144,6 +145,9 @@
       </div>
 
       <div id="tab-historial" class="tab-content">
+        <div style="margin-bottom: 15px;">
+          <input type="text" id="searchHistorial" class="input-box" placeholder="🔍 Buscar en historial..." onkeyup="renderOrders()">
+        </div>
         <div style="overflow-x: auto;">
           <table>
             <thead><tr><th>N° Orden</th><th>Entregado el</th><th>Paciente / Cliente</th><th>Armazón + Cristal</th><th>Total Abonado</th><th style="text-align: center;">Acciones</th></tr></thead>
@@ -151,9 +155,58 @@
           </table>
         </div>
       </div>
+
+      <div id="tab-cristales" class="tab-content">
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+          <select id="filterLensSupplier" class="input-box" style="max-width: 300px; font-weight: bold;" onchange="renderLenses()">
+            <option value="ALL">Todos los Laboratorios (Proveedores)</option>
+          </select>
+          <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalCristal()">+ Nuevo Cristal a Catálogo</button>
+        </div>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead><tr><th>Nombre del Cristal</th><th>Laboratorio (Proveedor)</th><th>Costo</th><th>Precio de Venta</th><th style="text-align: center;">Acción</th></tr></thead>
+            <tbody id="tbodyCristales"></tbody>
+          </table>
+        </div>
+      </div>
     </article>
   </main>
 </div>
+
+<dialog id="modalCristal" style="width: 100%; max-width: 500px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;" id="modalCristalTitle">Alta de Cristal</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalCristal').close()">✕</button>
+    </div>
+    <form id="formCristal" onsubmit="guardarCristal(event)">
+      <input type="hidden" id="lensId">
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Laboratorio / Proveedor *</label>
+        <select id="lensSupplier" class="input-box" required></select>
+      </div>
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Nombre o Especificación del Cristal *</label>
+        <input type="text" id="lensName" class="input-box" placeholder="Ej: Multifocal Antirreflex Premium" required>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Costo (Laboratorio) *</label>
+          <input type="number" id="lensCost" class="input-box" step="0.01" min="0" required>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Precio Venta al Público *</label>
+          <input type="number" id="lensPrice" class="input-box" step="0.01" min="0" required>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalCristal').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar Cristal</button>
+      </div>
+    </form>
+  </div>
+</dialog>
 
 <dialog id="modalOrden" style="width: 100%; max-width: 800px;">
   <div class="modal-content">
@@ -212,15 +265,26 @@
           <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">👓 4. Armazón</h3>
           <div style="position: relative;">
             <input type="hidden" id="ordFrameCode">
-            <input type="text" id="ordFrameName" class="input-box" placeholder="Buscar en stock por código o nombre..." autocomplete="off" oninput="buscarArmazon()">
+            <input type="text" id="ordFrameName" class="input-box" placeholder="Buscar en stock..." autocomplete="off" oninput="buscarArmazon()">
             <div id="frameResults" class="autocomplete-list"></div>
           </div>
-          <small style="color:var(--danger); font-size:11px; display:block; margin-top:5px;">El stock se descontará al guardar la orden.</small>
+          <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+             <small style="color:var(--danger); font-size:11px;">Baja de stock automática.</small>
+             <span id="labelFramePrice" style="font-size:12px; font-weight:bold; color:var(--text);">$0</span>
+          </div>
         </div>
+        
         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line);">
-          <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">🔬 5. Cristales / Servicio</h3>
-          <input type="text" id="ordGlassType" class="input-box" placeholder="Ej: Multifocal Antirreflex Premium" required>
-          <small style="color:var(--muted); font-size:11px; display:block; margin-top:5px;">Especificaciones del laboratorio.</small>
+          <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">🔬 5. Cristales / Laboratorio</h3>
+          <div style="margin-bottom: 10px;">
+              <select id="ordLensSupplier" class="input-box" onchange="cargarLentesPorLab()"><option value="">Seleccione Laboratorio...</option></select>
+          </div>
+          <div>
+              <select id="ordLensId" class="input-box" onchange="recalcularTotalOrden()" required><option value="">Seleccione Cristal...</option></select>
+          </div>
+          <div style="margin-top: 8px; text-align: right;">
+             <span id="labelLensPrice" style="font-size:12px; font-weight:bold; color:var(--text);">$0</span>
+          </div>
         </div>
       </div>
 
@@ -333,23 +397,106 @@
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
 
-  let dbOrders = []; let dbProducts = []; let dbClients = [];
+  let dbOrders = []; let dbProducts = []; let dbClients = []; let dbSuppliers = [];
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+
+  // Variables para recálculo automático de Orden
+  let selectedFramePrice = 0;
+  let selectedLensPrice = 0;
 
   async function initOptica() {
     mostrarCarga(true);
     try {
-      const [resO, resP, resC] = await Promise.all([
-        fetch('/api/optical'), fetch('/api/products'), fetch('/api/clients')
+      const [resO, resP, resC, resS] = await Promise.all([
+        fetch('/api/optical'), fetch('/api/products'), fetch('/api/clients'), fetch('/api/suppliers')
       ]);
       if(resO.ok) dbOrders = await resO.json();
       if(resP.ok) dbProducts = await resP.json();
       if(resC.ok) dbClients = await resC.json();
+      if(resS.ok) dbSuppliers = await resS.json();
+      
+      // Poblar dropdowns de proveedores de cristales
+      const suppOptions = '<option value="">Seleccione Laboratorio...</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+      document.getElementById('lensSupplier').innerHTML = suppOptions;
+      document.getElementById('ordLensSupplier').innerHTML = suppOptions;
+      document.getElementById('filterLensSupplier').innerHTML = '<option value="ALL">Todos los Laboratorios</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+
       renderOrders();
+      renderLenses();
     } catch(e) { console.error(e); } finally { mostrarCarga(false); }
   }
 
-  // --- AUTOCOMPLETADOS ---
+  // --- GESTIÓN DE CRISTALES (Se guardan en 'products' con categoría 'Cristal') ---
+  function renderLenses() {
+      const suppFilter = document.getElementById('filterLensSupplier').value;
+      const tbody = document.getElementById('tbodyCristales');
+      
+      // Filtramos productos que sean cristales
+      let cristales = dbProducts.filter(p => p.category === 'Cristal');
+      if (suppFilter !== 'ALL') cristales = cristales.filter(p => p.promoLinked === suppFilter); // Usamos promoLinked para guardar el ID del proveedor
+
+      tbody.innerHTML = cristales.map(c => {
+          const prov = dbSuppliers.find(s => s.id === c.promoLinked);
+          const provName = prov ? prov.name : 'Desconocido';
+          return `
+          <tr>
+            <td><strong>${escapeHtml(c.name)}</strong></td>
+            <td>${escapeHtml(provName)}</td>
+            <td style="color:var(--danger)">${currency(c.cost)}</td>
+            <td style="font-weight:bold; color:var(--success)">${currency(c.price)}</td>
+            <td style="text-align:center;"><button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="editarCristal('${c.id}')">Editar</button></td>
+          </tr>`;
+      }).join('');
+      
+      if(cristales.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:var(--muted);">No hay cristales cargados en este laboratorio.</td></tr>';
+  }
+
+  function abrirModalCristal() {
+      document.getElementById('formCristal').reset();
+      document.getElementById('lensId').value = '';
+      document.getElementById('modalCristalTitle').textContent = "Alta de Cristal";
+      document.getElementById('modalCristal').showModal();
+  }
+
+  function editarCristal(id) {
+      const c = dbProducts.find(p => p.id === id);
+      if(!c) return;
+      document.getElementById('lensId').value = c.id;
+      document.getElementById('lensSupplier').value = c.promoLinked || '';
+      document.getElementById('lensName').value = c.name;
+      document.getElementById('lensCost').value = c.cost || 0;
+      document.getElementById('lensPrice').value = c.price || 0;
+      document.getElementById('modalCristalTitle').textContent = "Editar Cristal";
+      document.getElementById('modalCristal').showModal();
+  }
+
+  async function guardarCristal(e) {
+      e.preventDefault();
+      const id = document.getElementById('lensId').value || 'prod_' + Date.now();
+      
+      const lens = {
+          id: id,
+          name: document.getElementById('lensName').value.trim(),
+          category: 'Cristal',
+          promoLinked: document.getElementById('lensSupplier').value, // Hack: Guardamos el proveedor aquí para no alterar la BD
+          cost: parseFloat(document.getElementById('lensCost').value) || 0,
+          price: parseFloat(document.getElementById('lensPrice').value) || 0,
+          stock: 9999, // Cristales no tienen stock físico
+          status: 'Activo'
+      };
+
+      mostrarCarga(true);
+      try {
+          await fetch('/api/products', { method: 'POST', body: JSON.stringify(lens) });
+          const idx = dbProducts.findIndex(p => p.id === id);
+          if (idx >= 0) dbProducts[idx] = lens; else dbProducts.push(lens);
+          document.getElementById('modalCristal').close();
+          renderLenses();
+      } catch(err) { alert("Error guardando cristal."); } finally { mostrarCarga(false); }
+  }
+
+
+  // --- AUTOCOMPLETADOS EN NUEVA ORDEN ---
   function buscarClienteOrd() {
     const term = document.getElementById('ordClientName').value.toLowerCase().trim();
     const list = document.getElementById('clientOrdResults');
@@ -367,25 +514,83 @@
   function buscarArmazon() {
     const term = document.getElementById('ordFrameName').value.toLowerCase().trim();
     const list = document.getElementById('frameResults');
-    if (term.length < 1) { list.classList.remove('active'); document.getElementById('ordFrameCode').value = ''; return; }
+    if (term.length < 1) { 
+        list.classList.remove('active'); 
+        document.getElementById('ordFrameCode').value = ''; 
+        selectedFramePrice = 0; 
+        document.getElementById('labelFramePrice').textContent = '$0';
+        recalcularTotalOrden();
+        return; 
+    }
 
-    const filtrados = dbProducts.filter(p => (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term)).slice(0, 5);
+    // Filtramos productos que NO sean Cristales
+    const filtrados = dbProducts.filter(p => p.category !== 'Cristal' && ((p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term))).slice(0, 5);
     list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">Armazón no encontrado en catálogo.</div>' : filtrados.map(p => {
       let stock = 0; try { stock = JSON.parse(p.stock_branches)[terminalActiva] || 0; } catch(e) { stock = p.stock || 0; }
-      return `<div class="autocomplete-item" onclick="selFrame('${escapeHtml(p.code||'')}', '${escapeHtml(p.name)}')">
-        <strong>${escapeHtml(p.name)}</strong><br><small>${p.code||'S/N'} | <span style="color:${stock>0?'var(--success)':'var(--danger)'}">Stock: ${stock}</span></small>
+      return `<div class="autocomplete-item" onclick="selFrame('${escapeHtml(p.code||'')}', '${escapeHtml(p.name)}', ${p.price||0})">
+        <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code||'S/N'} | <span style="color:${stock>0?'var(--success)':'var(--danger)'}">Stock: ${stock}</span></small></div>
+        <div style="font-weight:bold; color:var(--primary);">${currency(p.price)}</div>
       </div>`;
     }).join('');
     list.classList.add('active');
   }
-  function selFrame(code, name) { document.getElementById('ordFrameCode').value = code; document.getElementById('ordFrameName').value = name; document.getElementById('frameResults').classList.remove('active'); }
 
-  // --- LOGICA MODAL Y GUARDADO ---
+  function selFrame(code, name, price) { 
+      document.getElementById('ordFrameCode').value = code; 
+      document.getElementById('ordFrameName').value = name; 
+      document.getElementById('frameResults').classList.remove('active'); 
+      selectedFramePrice = price;
+      document.getElementById('labelFramePrice').textContent = currency(price);
+      recalcularTotalOrden();
+  }
+
+  function cargarLentesPorLab() {
+      const labId = document.getElementById('ordLensSupplier').value;
+      const lensSelect = document.getElementById('ordLensId');
+      
+      if (!labId) {
+          lensSelect.innerHTML = '<option value="">Seleccione Cristal...</option>';
+          selectedLensPrice = 0;
+          document.getElementById('labelLensPrice').textContent = '$0';
+          recalcularTotalOrden();
+          return;
+      }
+      
+      const cristalesDelLab = dbProducts.filter(p => p.category === 'Cristal' && p.promoLinked === labId);
+      lensSelect.innerHTML = '<option value="">Seleccione Cristal...</option>' + cristalesDelLab.map(c => `<option value="${c.id}">${escapeHtml(c.name)} - ${currency(c.price)}</option>`).join('');
+      
+      selectedLensPrice = 0;
+      document.getElementById('labelLensPrice').textContent = '$0';
+      recalcularTotalOrden();
+  }
+
+  function recalcularTotalOrden() {
+      const lensId = document.getElementById('ordLensId').value;
+      if (lensId) {
+          const c = dbProducts.find(p => p.id === lensId);
+          selectedLensPrice = c ? (c.price || 0) : 0;
+          document.getElementById('labelLensPrice').textContent = currency(selectedLensPrice);
+      } else {
+          selectedLensPrice = 0;
+          document.getElementById('labelLensPrice').textContent = '$0';
+      }
+      
+      // Auto-completar el Total
+      document.getElementById('ordTotal').value = (selectedFramePrice + selectedLensPrice).toFixed(2);
+      calcSaldo();
+  }
+
+  // --- LOGICA MODAL ORDEN Y GUARDADO ---
   function abrirModalOrden() {
     document.getElementById('formOrden').reset();
     document.getElementById('ordId').value = '';
     document.getElementById('ordDelivery').value = todayISO();
     document.getElementById('ordBalance').value = '0';
+    document.getElementById('labelFramePrice').textContent = '$0';
+    document.getElementById('labelLensPrice').textContent = '$0';
+    document.getElementById('ordLensId').innerHTML = '<option value="">Seleccione Cristal...</option>';
+    selectedFramePrice = 0; selectedLensPrice = 0;
+    
     document.getElementById('modalOrdenTitle').textContent = "Nueva Orden de Óptica";
     document.getElementById('btnGuardarOrden').style.display = 'block';
     document.getElementById('modalOrden').showModal();
@@ -404,6 +609,10 @@
     const balance = parseFloat(document.getElementById('ordBalance').value) || 0;
     const deposit = parseFloat(document.getElementById('ordDeposit').value) || 0;
     const frameCode = document.getElementById('ordFrameCode').value;
+    
+    // Obtener el nombre del cristal seleccionado para guardarlo como texto en la orden
+    const lensSelect = document.getElementById('ordLensId');
+    const glassTypeName = lensSelect.options[lensSelect.selectedIndex].text.split(' - ')[0]; // Quitamos el precio del texto
 
     const ord = {
       id: id, date: todayISO(),
@@ -412,7 +621,8 @@
       od_esf: document.getElementById('od_esf').value, od_cil: document.getElementById('od_cil').value, od_eje: document.getElementById('od_eje').value, od_add: document.getElementById('od_add').value,
       oi_esf: document.getElementById('oi_esf').value, oi_cil: document.getElementById('oi_cil').value, oi_eje: document.getElementById('oi_eje').value, oi_add: document.getElementById('oi_add').value,
       dp: document.getElementById('ordDp').value, altura: document.getElementById('ordAlt').value, doctor: document.getElementById('ordDoctor').value,
-      frameCode: frameCode, frameName: document.getElementById('ordFrameName').value, glassType: document.getElementById('ordGlassType').value,
+      frameCode: frameCode, frameName: document.getElementById('ordFrameName').value, 
+      glassType: glassTypeName || '',
       deliveryDate: document.getElementById('ordDelivery').value,
       total: parseFloat(document.getElementById('ordTotal').value) || 0,
       deposit: deposit, balance: balance,
@@ -421,9 +631,9 @@
 
     mostrarCarga(true);
     try {
-      // 1. Descontar Stock del Armazón SI es nuevo
+      // 1. Descontar Stock del Armazón SI es nuevo y si existe
       if (isNew && frameCode) {
-        const prod = dbProducts.find(p => p.code === frameCode);
+        const prod = dbProducts.find(p => p.code === frameCode && p.category !== 'Cristal');
         if (prod) {
           let branches = {}; try { branches = JSON.parse(prod.stock_branches); } catch(e) { branches = {"Central":prod.stock}; }
           if ((branches[terminalActiva]||0) < 1) { alert("Stock insuficiente del armazón en esta sucursal."); mostrarCarga(false); return; }
@@ -457,14 +667,15 @@
 
   // --- RENDERIZADO Y ESTADOS ---
   function renderOrders() {
-    const term = document.getElementById('searchOrder').value.toLowerCase();
+    const termPend = document.getElementById('searchOrder').value.toLowerCase();
+    const termHist = document.getElementById('searchHistorial').value.toLowerCase();
     const tPend = document.getElementById('tbodyPendientes');
     const tHist = document.getElementById('tbodyHistorial');
     
     let kPend = 0, kListos = 0, kSaldo = 0;
     let htmlPend = '', htmlHist = '';
 
-    dbOrders.filter(o => o.id.toLowerCase().includes(term) || o.clientName.toLowerCase().includes(term)).forEach(o => {
+    dbOrders.forEach(o => {
       const isPend = o.status === 'Pendiente';
       const isListo = o.status === 'Recibido - Listo';
       
@@ -490,7 +701,11 @@
           </td>
         </tr>`;
         
-      if (o.status === 'Entregado') htmlHist += tr; else htmlPend += tr;
+      if (o.status === 'Entregado') {
+          if (o.id.toLowerCase().includes(termHist) || o.clientName.toLowerCase().includes(termHist)) htmlHist += tr;
+      } else {
+          if (o.id.toLowerCase().includes(termPend) || o.clientName.toLowerCase().includes(termPend)) htmlPend += tr;
+      }
     });
 
     tPend.innerHTML = htmlPend || '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted);">Sin órdenes en curso.</td></tr>';
