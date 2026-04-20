@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Óptica y Laboratorio | Micro SaaS</title>
+  
+  <style>
+    html, body { background-color: #f0f2f7 !important; }
+    body { animation: fadeIn 0.15s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+  <link rel="stylesheet" href="styles.css" />
+  
+  <style>
+    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a;}
+    
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
+    .input-box:focus { border-color: var(--primary); }
+    
+    .tabs { display: flex; gap: 20px; border-bottom: 2px solid var(--line); margin-bottom: 20px; flex-wrap: wrap;}
+    .tab-btn { background: none; border: none; padding: 10px 5px; font-size: 14px; font-weight: bold; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: 0.2s; }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-content { display: none; animation: fadeIn 0.3s ease; }
+    .tab-content.active { display: block; }
+    
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--panel-2); }
+    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+    
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
+    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
+    .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
+    
+    .receta-grid { display: grid; grid-template-columns: 40px repeat(4, 1fr); gap: 10px; align-items: center; text-align: center; margin-bottom: 15px; }
+    .receta-header { font-size: 11px; font-weight: bold; color: var(--muted); }
+    .receta-row-label { font-weight: 800; color: var(--text); }
+    
+    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 200px; overflow-y: auto; display: none; }
+    .autocomplete-list.active { display: block; }
+    .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .autocomplete-item:hover { background: var(--primary-soft); }
+
+    /* Estilos de Impresión */
+    #printClient, #printLab { display: none; }
+    @media print {
+      @page { margin: 10mm; size: A4; }
+      body { margin: 0; background: #fff; font-family: sans-serif; color: #000; }
+      .app, dialog { display: none !important; }
+      .print-area { display: block !important; width: 100%; page-break-after: always; }
+      .print-header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+      .print-title { font-size: 24px; font-weight: 900; margin: 0; text-transform: uppercase; }
+      .print-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+      .print-box { border: 1px solid #000; padding: 15px; border-radius: 8px; }
+      .print-table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: center; font-size: 12px; }
+      .print-table th, .print-table td { border: 1px solid #000; padding: 8px; }
+      .print-table th { background: #f0f0f0; }
+    }
+    
+    .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+    @media (max-width: 900px) {
+      .mobile-toggle { display: block; }
+      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; font-weight:bold; color:var(--primary); font-size:18px;">Procesando...</div>
+
+<div class="app">
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
+    </div>
+    <nav class="nav">
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
+      <a href="optica.html" class="active"><span class="nav-icon">👓</span> Óptica / Taller</a>
+      <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
+    </nav>
+  </aside>
+
+  <main class="content">
+    <header class="topbar" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center;">
+        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
+        <div class="page-title">
+          <h1 style="margin:0; font-size: 26px;">Taller y Óptica</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión de recetas, laboratorio y entregas.</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary" style="padding: 10px 20px; font-size: 14px;" onclick="abrirModalOrden()">+ Nueva Orden / Pedido</button>
+      </div>
+    </header>
+
+    <div class="kpi-grid">
+      <article class="card card-pad" style="border-top: 4px solid var(--danger);">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Pendientes (En Laboratorio)</div>
+        <div id="kpiPendientes" style="font-size:28px; font-weight:800; color:var(--danger);">0</div>
+      </article>
+      <article class="card card-pad" style="border-top: 4px solid var(--success);">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Listos para Entregar</div>
+        <div id="kpiListos" style="font-size:28px; font-weight:800; color:var(--success);">0</div>
+      </article>
+      <article class="card card-pad" style="border-top: 4px solid var(--warning);">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Saldos a Cobrar</div>
+        <div id="kpiSaldos" style="font-size:28px; font-weight:800; color:var(--warning);">$0</div>
+      </article>
+    </div>
+
+    <article class="card card-pad" style="max-width: 1200px; margin: 0 auto; width: 100%;">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tab-pendientes', this)">Órdenes en Curso</button>
+        <button class="tab-btn" onclick="switchTab('tab-historial', this)">Historial Entregados</button>
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <input type="text" id="searchOrder" class="input-box" placeholder="🔍 Buscar por N° Orden, Cliente o DNI..." onkeyup="renderOrders()">
+      </div>
+
+      <div id="tab-pendientes" class="tab-content active">
+        <div style="overflow-x: auto;">
+          <table>
+            <thead><tr><th>N° Orden</th><th>Fecha Est.</th><th>Paciente / Cliente</th><th>Armazón + Cristal</th><th>Estado</th><th>Saldo</th><th style="text-align: center;">Acciones</th></tr></thead>
+            <tbody id="tbodyPendientes"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-historial" class="tab-content">
+        <div style="overflow-x: auto;">
+          <table>
+            <thead><tr><th>N° Orden</th><th>Entregado el</th><th>Paciente / Cliente</th><th>Armazón + Cristal</th><th>Total Abonado</th><th style="text-align: center;">Acciones</th></tr></thead>
+            <tbody id="tbodyHistorial"></tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  </main>
+</div>
+
+<dialog id="modalOrden" style="width: 100%; max-width: 800px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;" id="modalOrdenTitle">Nueva Orden de Óptica</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalOrden').close()">✕</button>
+    </div>
+    
+    <form id="formOrden" onsubmit="guardarOrden(event)">
+      <input type="hidden" id="ordId">
+      
+      <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; margin-bottom: 20px;">
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line);">
+          <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">👤 1. Datos del Paciente</h3>
+          <div style="position: relative; margin-bottom: 10px;">
+            <input type="hidden" id="ordClientId">
+            <input type="text" id="ordClientName" class="input-box" placeholder="Buscar cliente por nombre o DNI..." autocomplete="off" oninput="buscarClienteOrd()" required>
+            <div id="clientOrdResults" class="autocomplete-list"></div>
+          </div>
+          <input type="text" id="ordDoctor" class="input-box" placeholder="Médico que prescribe (Opcional)">
+        </div>
+        
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line);">
+          <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">📅 2. Planificación</h3>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:4px;">Fecha de Entrega Estimada *</label>
+          <input type="date" id="ordDelivery" class="input-box" required>
+        </div>
+      </div>
+
+      <div style="background: #fff8f1; padding: 15px; border-radius: 8px; border: 1px solid #fed7aa; margin-bottom: 20px;">
+        <h3 style="margin: 0 0 15px 0; font-size: 14px; color: #c2410c;">👁️ 3. Receta Oftalmológica</h3>
+        <div class="receta-grid">
+          <div></div>
+          <div class="receta-header">ESFÉRICO</div><div class="receta-header">CILÍNDRICO</div><div class="receta-header">EJE</div><div class="receta-header">ADICIÓN</div>
+          
+          <div class="receta-row-label">O.D.</div>
+          <input type="text" id="od_esf" class="input-box" style="text-align:center;">
+          <input type="text" id="od_cil" class="input-box" style="text-align:center;">
+          <input type="text" id="od_eje" class="input-box" style="text-align:center;">
+          <input type="text" id="od_add" class="input-box" style="text-align:center;">
+          
+          <div class="receta-row-label">O.I.</div>
+          <input type="text" id="oi_esf" class="input-box" style="text-align:center;">
+          <input type="text" id="oi_cil" class="input-box" style="text-align:center;">
+          <input type="text" id="oi_eje" class="input-box" style="text-align:center;">
+          <input type="text" id="oi_add" class="input-box" style="text-align:center;">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+          <div><label class="receta-header">Distancia Pupilar (DP)</label><input type="text" id="ordDp" class="input-box"></div>
+          <div><label class="receta-header">Altura</label><input type="text" id="ordAlt" class="input-box"></div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line);">
+          <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">👓 4. Armazón</h3>
+          <div style="position: relative;">
+            <input type="hidden" id="ordFrameCode">
+            <input type="text" id="ordFrameName" class="input-box" placeholder="Buscar en stock por código o nombre..." autocomplete="off" oninput="buscarArmazon()">
+            <div id="frameResults" class="autocomplete-list"></div>
+          </div>
+          <small style="color:var(--danger); font-size:11px; display:block; margin-top:5px;">El stock se descontará al guardar la orden.</small>
+        </div>
+        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line);">
+          <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">🔬 5. Cristales / Servicio</h3>
+          <input type="text" id="ordGlassType" class="input-box" placeholder="Ej: Multifocal Antirreflex Premium" required>
+          <small style="color:var(--muted); font-size:11px; display:block; margin-top:5px;">Especificaciones del laboratorio.</small>
+        </div>
+      </div>
+
+      <div style="background: var(--panel-2); padding: 20px; border-radius: 8px; border: 1px dashed var(--primary); margin-bottom: 20px;">
+        <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--text);">💰 6. Liquidación</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: end;">
+          <div>
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Valor Total (Armazón + Cristal) *</label>
+            <input type="number" id="ordTotal" class="input-box" min="0" step="0.01" style="font-size: 18px; font-weight: bold; color: var(--primary);" oninput="calcSaldo()" required>
+          </div>
+          <div>
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seña Abonada Hoy ($)</label>
+            <input type="number" id="ordDeposit" class="input-box" min="0" step="0.01" value="0" style="font-size: 16px; font-weight: bold; color: var(--success);" oninput="calcSaldo()">
+          </div>
+          <div>
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de Pago (Seña)</label>
+            <select id="ordPaymentMethod" class="input-box"><option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito">Crédito</option><option value="Transferencia">Transferencia</option></select>
+          </div>
+        </div>
+        <div style="margin-top:15px; padding-top:15px; border-top:1px dashed var(--line); display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-weight:bold; font-size:14px; color:var(--danger);">SALDO PENDIENTE A COBRAR EN LA ENTREGA:</span>
+          <input type="number" id="ordBalance" class="input-box" readonly style="width:150px; background:transparent; border:none; font-size:22px; font-weight:900; color:var(--danger); text-align:right;">
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalOrden').close()">Cancelar</button>
+        <button type="submit" id="btnGuardarOrden" class="btn btn-primary" style="padding: 12px 24px;">Crear Orden y Descontar Stock</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<dialog id="modalCobroSaldo" style="width: 100%; max-width: 400px;">
+  <div class="modal-content">
+    <h2 style="margin: 0 0 15px 0; font-size:18px;">Cobrar Saldo y Entregar</h2>
+    <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">El cliente retira los anteojos. Se debe abonar el saldo pendiente para cerrar la orden.</p>
+    <input type="hidden" id="cobroOrdId">
+    <div style="margin-bottom: 15px;">
+      <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Saldo a Cobrar</label>
+      <input type="text" id="cobroMonto" class="input-box" readonly style="font-size: 24px; font-weight: bold; color: var(--danger); background: var(--danger-soft); border:none; text-align:center;">
+    </div>
+    <div style="margin-bottom: 25px;">
+      <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de Pago</label>
+      <select id="cobroMethod" class="input-box">
+        <option value="Efectivo">Efectivo</option>
+        <option value="Débito">Débito</option>
+        <option value="Crédito">Crédito</option>
+        <option value="Transferencia">Transferencia</option>
+      </select>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-light" onclick="document.getElementById('modalCobroSaldo').close()">Cancelar</button>
+      <button type="button" class="btn btn-success" onclick="ejecutarCobroYEntrega()">Confirmar Pago y Entregar</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="printClient" class="print-area">
+  <div class="print-header">
+    <div><h1 class="print-title">ÓPTICA - ORDEN DE PEDIDO</h1><p style="margin:5px 0 0;" id="pcDate"></p></div>
+    <div style="text-align:right;"><h2 style="margin:0; font-size:20px;" id="pcId"></h2><p style="margin:5px 0 0; font-weight:bold;">Comprobante Cliente</p></div>
+  </div>
+  <div class="print-grid">
+    <div class="print-box"><strong>PACIENTE:</strong> <span id="pcName"></span><br><br><strong>FECHA ESTIMADA DE ENTREGA:</strong> <span id="pcDelivery"></span></div>
+    <div class="print-box"><strong>ARMAZÓN:</strong> <span id="pcFrame"></span><br><br><strong>CRISTALES:</strong> <span id="pcGlass"></span></div>
+  </div>
+  <table class="print-table">
+    <tr><th>CONCEPTO</th><th>VALOR</th></tr>
+    <tr><td>VALOR TOTAL DEL TRABAJO</td><td id="pcTotal"></td></tr>
+    <tr><td>SEÑA ABONADA</td><td id="pcDeposit"></td></tr>
+    <tr><th style="background:#fff;">SALDO PENDIENTE AL RETIRAR</th><th id="pcBalance" style="background:#fff; font-size:16px;"></th></tr>
+  </table>
+  <p style="font-size:10px; margin-top:30px; text-align:center;">Conserve este comprobante para retirar su pedido. Los trabajos a medida no tienen devolución.</p>
+</div>
+
+<div id="printLab" class="print-area">
+  <div class="print-header">
+    <div><h1 class="print-title">ORDEN DE LABORATORIO</h1><p style="margin:5px 0 0;" id="plDate"></p></div>
+    <div style="text-align:right;"><h2 style="margin:0; font-size:20px;" id="plId"></h2><p style="margin:5px 0 0; color:red; font-weight:bold;">USO INTERNO TALLER</p></div>
+  </div>
+  <div class="print-box" style="margin-bottom:20px;">
+    <strong>PACIENTE:</strong> <span id="plName"></span> | <strong>MÉDICO:</strong> <span id="plDoc"></span><br>
+    <strong>ENTREGAR EL:</strong> <span id="plDelivery" style="font-size:16px; font-weight:bold;"></span>
+  </div>
+  <table class="print-table">
+    <tr><th>OJO</th><th>ESFÉRICO</th><th>CILÍNDRICO</th><th>EJE</th><th>ADICIÓN</th></tr>
+    <tr><td><strong>DERECHO</strong></td><td id="plOdEsf"></td><td id="plOdCil"></td><td id="plOdEje"></td><td id="plOdAdd"></td></tr>
+    <tr><td><strong>IZQUIERDO</strong></td><td id="plOiEsf"></td><td id="plOiCil"></td><td id="plOiEje"></td><td id="plOiAdd"></td></tr>
+  </table>
+  <div class="print-grid" style="margin-top:20px;">
+    <div class="print-box"><strong>D.P.:</strong> <span id="plDp"></span> <br> <strong>ALTURA:</strong> <span id="plAlt"></span></div>
+    <div class="print-box" style="background:#f8fafc;">
+      <strong>ARMAZÓN A CALIBRAR:</strong><br><span id="plFrame" style="font-size:14px; font-weight:bold;"></span><br><br>
+      <strong>TIPO DE CRISTAL:</strong><br><span id="plGlass" style="font-size:14px; font-weight:bold;"></span>
+    </div>
+  </div>
+</div>
+
+<script src="core.js"></script>
+<script>
+  function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
+  function switchTab(tabId, btnElement) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    btnElement.classList.add('active'); document.getElementById(tabId).classList.add('active');
+  }
+  function todayISO() { return new Date().toISOString().split('T')[0]; }
+  function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
+  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+
+  let dbOrders = []; let dbProducts = []; let dbClients = [];
+  const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+
+  async function initOptica() {
+    mostrarCarga(true);
+    try {
+      const [resO, resP, resC] = await Promise.all([
+        fetch('/api/optical'), fetch('/api/products'), fetch('/api/clients')
+      ]);
+      if(resO.ok) dbOrders = await resO.json();
+      if(resP.ok) dbProducts = await resP.json();
+      if(resC.ok) dbClients = await resC.json();
+      renderOrders();
+    } catch(e) { console.error(e); } finally { mostrarCarga(false); }
+  }
+
+  // --- AUTOCOMPLETADOS ---
+  function buscarClienteOrd() {
+    const term = document.getElementById('ordClientName').value.toLowerCase().trim();
+    const list = document.getElementById('clientOrdResults');
+    if (term.length < 1) { list.classList.remove('active'); document.getElementById('ordClientId').value = ''; return; }
+
+    const filtrados = dbClients.filter(c => (c.name||'').toLowerCase().includes(term) || (c.cuil||'').includes(term)).slice(0, 5);
+    list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">Cliente no encontrado. Se creará como consumidor final.</div>' : filtrados.map(c => `
+      <div class="autocomplete-item" onclick="selCliOrd('${c.id}', '${escapeHtml(c.name)}')">
+        <strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT/DNI'}</small>
+      </div>`).join('');
+    list.classList.add('active');
+  }
+  function selCliOrd(id, name) { document.getElementById('ordClientId').value = id; document.getElementById('ordClientName').value = name; document.getElementById('clientOrdResults').classList.remove('active'); }
+
+  function buscarArmazon() {
+    const term = document.getElementById('ordFrameName').value.toLowerCase().trim();
+    const list = document.getElementById('frameResults');
+    if (term.length < 1) { list.classList.remove('active'); document.getElementById('ordFrameCode').value = ''; return; }
+
+    const filtrados = dbProducts.filter(p => (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term)).slice(0, 5);
+    list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">Armazón no encontrado en catálogo.</div>' : filtrados.map(p => {
+      let stock = 0; try { stock = JSON.parse(p.stock_branches)[terminalActiva] || 0; } catch(e) { stock = p.stock || 0; }
+      return `<div class="autocomplete-item" onclick="selFrame('${escapeHtml(p.code||'')}', '${escapeHtml(p.name)}')">
+        <strong>${escapeHtml(p.name)}</strong><br><small>${p.code||'S/N'} | <span style="color:${stock>0?'var(--success)':'var(--danger)'}">Stock: ${stock}</span></small>
+      </div>`;
+    }).join('');
+    list.classList.add('active');
+  }
+  function selFrame(code, name) { document.getElementById('ordFrameCode').value = code; document.getElementById('ordFrameName').value = name; document.getElementById('frameResults').classList.remove('active'); }
+
+  // --- LOGICA MODAL Y GUARDADO ---
+  function abrirModalOrden() {
+    document.getElementById('formOrden').reset();
+    document.getElementById('ordId').value = '';
+    document.getElementById('ordDelivery').value = todayISO();
+    document.getElementById('ordBalance').value = '0';
+    document.getElementById('modalOrdenTitle').textContent = "Nueva Orden de Óptica";
+    document.getElementById('btnGuardarOrden').style.display = 'block';
+    document.getElementById('modalOrden').showModal();
+  }
+
+  function calcSaldo() {
+    const tot = parseFloat(document.getElementById('ordTotal').value) || 0;
+    const dep = parseFloat(document.getElementById('ordDeposit').value) || 0;
+    document.getElementById('ordBalance').value = (tot - dep).toFixed(2);
+  }
+
+  async function guardarOrden(e) {
+    e.preventDefault();
+    const isNew = !document.getElementById('ordId').value;
+    const id = document.getElementById('ordId').value || 'OPT-' + Math.floor(Math.random()*90000 + 10000);
+    const balance = parseFloat(document.getElementById('ordBalance').value) || 0;
+    const deposit = parseFloat(document.getElementById('ordDeposit').value) || 0;
+    const frameCode = document.getElementById('ordFrameCode').value;
+
+    const ord = {
+      id: id, date: todayISO(),
+      clientId: document.getElementById('ordClientId').value || 'Consumidor Final',
+      clientName: document.getElementById('ordClientName').value.trim() || 'Consumidor Final',
+      od_esf: document.getElementById('od_esf').value, od_cil: document.getElementById('od_cil').value, od_eje: document.getElementById('od_eje').value, od_add: document.getElementById('od_add').value,
+      oi_esf: document.getElementById('oi_esf').value, oi_cil: document.getElementById('oi_cil').value, oi_eje: document.getElementById('oi_eje').value, oi_add: document.getElementById('oi_add').value,
+      dp: document.getElementById('ordDp').value, altura: document.getElementById('ordAlt').value, doctor: document.getElementById('ordDoctor').value,
+      frameCode: frameCode, frameName: document.getElementById('ordFrameName').value, glassType: document.getElementById('ordGlassType').value,
+      deliveryDate: document.getElementById('ordDelivery').value,
+      total: parseFloat(document.getElementById('ordTotal').value) || 0,
+      deposit: deposit, balance: balance,
+      status: 'Pendiente', seller: localStorage.getItem('activeUser') || 'Admin', notes: '', createdAt: new Date().toISOString()
+    };
+
+    mostrarCarga(true);
+    try {
+      // 1. Descontar Stock del Armazón SI es nuevo
+      if (isNew && frameCode) {
+        const prod = dbProducts.find(p => p.code === frameCode);
+        if (prod) {
+          let branches = {}; try { branches = JSON.parse(prod.stock_branches); } catch(e) { branches = {"Central":prod.stock}; }
+          if ((branches[terminalActiva]||0) < 1) { alert("Stock insuficiente del armazón en esta sucursal."); mostrarCarga(false); return; }
+          branches[terminalActiva] -= 1;
+          let stockTotal = 0; for (let b in branches) stockTotal += branches[b];
+          prod.stock_branches = JSON.stringify(branches); prod.stock = stockTotal;
+          await fetch('/api/products', { method: 'POST', body: JSON.stringify(prod) });
+        }
+      }
+
+      // 2. Generar Venta (Ticket) en Caja si hay Seña abonada HOY
+      if (isNew && deposit > 0) {
+        const method = document.getElementById('ordPaymentMethod').value;
+        const ventaSena = {
+          id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
+          clientId: ord.clientId, client: ord.clientName, method: method, cupon: '', subtotal: deposit, promoDiscount: 0, total: deposit, isB2B: false,
+          items: [{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Cristales`, price: deposit, cost: 0, qty: 1}]
+        };
+        await fetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSena) });
+      }
+
+      // 3. Guardar Orden Óptica
+      await fetch('/api/optical', { method: 'POST', body: JSON.stringify(ord) });
+      if (isNew) dbOrders.unshift(ord); else { const idx = dbOrders.findIndex(x=>x.id===id); if(idx>=0) dbOrders[idx]=ord; }
+      
+      document.getElementById('modalOrden').close();
+      renderOrders();
+      if(isNew) imprimirComprobantes(ord);
+    } catch(err) { alert("Error guardando orden."); } finally { mostrarCarga(false); }
+  }
+
+  // --- RENDERIZADO Y ESTADOS ---
+  function renderOrders() {
+    const term = document.getElementById('searchOrder').value.toLowerCase();
+    const tPend = document.getElementById('tbodyPendientes');
+    const tHist = document.getElementById('tbodyHistorial');
+    
+    let kPend = 0, kListos = 0, kSaldo = 0;
+    let htmlPend = '', htmlHist = '';
+
+    dbOrders.filter(o => o.id.toLowerCase().includes(term) || o.clientName.toLowerCase().includes(term)).forEach(o => {
+      const isPend = o.status === 'Pendiente';
+      const isListo = o.status === 'Recibido - Listo';
+      
+      if (isPend) kPend++;
+      if (isListo) kListos++;
+      if (isPend || isListo) kSaldo += o.balance;
+
+      const badge = isPend ? `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">En Laboratorio</span>` : 
+                    isListo ? `<span style="background:#dcfce7; color:#16a34a; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Listo para Entregar</span>` : 
+                    `<span style="background:var(--line); color:var(--muted); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Entregado</span>`;
+
+      const tr = `
+        <tr>
+          <td><strong>${o.id}</strong></td>
+          <td>${isPend || isListo ? o.deliveryDate : (o.date || '-')}</td>
+          <td><strong>${escapeHtml(o.clientName)}</strong></td>
+          <td>${escapeHtml(o.frameName || o.frameCode)}<br><small style="color:var(--muted)">${escapeHtml(o.glassType)}</small></td>
+          ${isPend || isListo ? `<td>${badge}</td><td style="color:var(--danger); font-weight:bold;">${currency(o.balance)}</td>` : `<td>${currency(o.total)}</td>`}
+          <td style="text-align:center;">
+            ${isPend ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="marcarListo('${o.id}')">Marcar Recibido</button>` : ''}
+            ${isListo ? `<button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>` : ''}
+            <button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️ Imprimir</button>
+          </td>
+        </tr>`;
+        
+      if (o.status === 'Entregado') htmlHist += tr; else htmlPend += tr;
+    });
+
+    tPend.innerHTML = htmlPend || '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted);">Sin órdenes en curso.</td></tr>';
+    tHist.innerHTML = htmlHist || '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">Sin historial.</td></tr>';
+    
+    document.getElementById('kpiPendientes').textContent = kPend;
+    document.getElementById('kpiListos').textContent = kListos;
+    document.getElementById('kpiSaldos').textContent = currency(kSaldo);
+  }
+
+  async function marcarListo(id) {
+    if(!confirm("¿Los cristales llegaron del laboratorio y están listos?")) return;
+    const o = dbOrders.find(x => x.id === id); o.status = 'Recibido - Listo';
+    mostrarCarga(true);
+    await fetch('/api/optical', { method: 'POST', body: JSON.stringify(o) });
+    mostrarCarga(false); renderOrders();
+  }
+
+  function prepararEntrega(id) {
+    const o = dbOrders.find(x => x.id === id);
+    document.getElementById('cobroOrdId').value = o.id;
+    document.getElementById('cobroMonto').value = currency(o.balance);
+    document.getElementById('modalCobroSaldo').showModal();
+  }
+
+  async function ejecutarCobroYEntrega() {
+    const id = document.getElementById('cobroOrdId').value;
+    const method = document.getElementById('cobroMethod').value;
+    const o = dbOrders.find(x => x.id === id);
+    
+    mostrarCarga(true);
+    try {
+      // Generar ticket en Caja por el SALDO pendiente
+      if (o.balance > 0) {
+        const ventaSaldo = {
+          id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
+          clientId: o.clientId, client: o.clientName, method: method, cupon: '', subtotal: o.balance, promoDiscount: 0, total: o.balance, isB2B: false,
+          items: [{id: 'saldo', code: 'SALDO', name: `Saldo Orden ${o.id} - Lentes Terminados`, price: o.balance, cost: 0, qty: 1}]
+        };
+        await fetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSaldo) });
+      }
+
+      o.status = 'Entregado';
+      o.balance = 0; // Queda cancelado
+      await fetch('/api/optical', { method: 'POST', body: JSON.stringify(o) });
+      
+      document.getElementById('modalCobroSaldo').close();
+      renderOrders();
+      alert("✅ Orden entregada y cobro registrado en caja.");
+    } catch(err) { alert("Error cerrando orden."); } finally { mostrarCarga(false); }
+  }
+
+  // --- IMPRESIÓN ---
+  function imprimirComprobantes(o) {
+    // Llenar datos Cliente
+    document.getElementById('pcDate').textContent = new Date().toLocaleDateString('es-AR');
+    document.getElementById('pcId').textContent = 'N° ' + o.id;
+    document.getElementById('pcName').textContent = o.clientName;
+    document.getElementById('pcDelivery').textContent = o.deliveryDate;
+    document.getElementById('pcFrame').textContent = o.frameName || o.frameCode;
+    document.getElementById('pcGlass').textContent = o.glassType;
+    document.getElementById('pcTotal').textContent = currency(o.total);
+    document.getElementById('pcDeposit').textContent = currency(o.deposit);
+    document.getElementById('pcBalance').textContent = currency(o.balance);
+
+    // Llenar datos Laboratorio
+    document.getElementById('plDate').textContent = new Date().toLocaleDateString('es-AR');
+    document.getElementById('plId').textContent = 'ORDEN LAB N° ' + o.id;
+    document.getElementById('plName').textContent = o.clientName;
+    document.getElementById('plDoc').textContent = o.doctor || '-';
+    document.getElementById('plDelivery').textContent = o.deliveryDate;
+    
+    document.getElementById('plOdEsf').textContent = o.od_esf; document.getElementById('plOdCil').textContent = o.od_cil; document.getElementById('plOdEje').textContent = o.od_eje; document.getElementById('plOdAdd').textContent = o.od_add;
+    document.getElementById('plOiEsf').textContent = o.oi_esf; document.getElementById('plOiCil').textContent = o.oi_cil; document.getElementById('plOiEje').textContent = o.oi_eje; document.getElementById('plOiAdd').textContent = o.oi_add;
+    document.getElementById('plDp').textContent = o.dp; document.getElementById('plAlt').textContent = o.altura;
+    document.getElementById('plFrame').textContent = o.frameCode + ' - ' + o.frameName;
+    document.getElementById('plGlass').textContent = o.glassType;
+
+    window.print();
+  }
+
+  initOptica();
+</script>
+</body>
+</html>
