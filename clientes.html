@@ -72,8 +72,7 @@
         
         <form id="clientForm" onsubmit="guardarCliente(event)">
           <input type="hidden" id="cliId">
-          
-          <div style="margin-bottom: 15px;">
+          <input type="hidden" id="cliStatus" value="Activo"> <div style="margin-bottom: 15px;">
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Razón Social / Nombre *</label>
             <input type="text" id="cliName" class="input-box" required placeholder="Ej: Supermercados SA o Juan Perez">
           </div>
@@ -200,6 +199,7 @@
       address: document.getElementById('cliAddress').value.trim(),
       type: document.getElementById('cliType').value,
       ivaCondition: document.getElementById('cliIvaCondition').value,
+      status: document.getElementById('cliStatus').value || 'Activo',
       createdAt: new Date().toISOString()
     };
 
@@ -238,6 +238,7 @@
     document.getElementById('cliAddress').value = c.address || '';
     document.getElementById('cliType').value = c.type || 'B2C';
     document.getElementById('cliIvaCondition').value = c.ivaCondition || 'Consumidor Final';
+    document.getElementById('cliStatus').value = c.status || 'Activo';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -245,28 +246,44 @@
     document.getElementById('formTitle').textContent = "Alta de Cliente";
     document.getElementById('clientForm').reset();
     document.getElementById('cliId').value = '';
+    document.getElementById('cliStatus').value = 'Activo';
     document.getElementById('cliType').value = 'B2C';
     document.getElementById('cliIvaCondition').value = 'Consumidor Final';
   }
 
-  // --- ELIMINAR CLIENTE CON PIN ---
-  function eliminarClientePrompt(id) {
-    pedirAuthAdmin('borrar permanentemente este cliente de la nube', ejecutarEliminacionCliente, id);
+  // --- CAMBIAR ESTADO (ACTIVAR / INACTIVAR) CON PIN ---
+  function toggleEstadoClientePrompt(id) {
+    const c = dbClients.find(x => x.id === id);
+    if (!c) return;
+    
+    const accion = c.status === 'Inactivo' ? 'reactivar' : 'inhabilitar';
+    pedirAuthAdmin(`${accion} a este cliente`, ejecutarToggleEstadoCliente, id);
   }
 
-  async function ejecutarEliminacionCliente(id) {
+  async function ejecutarToggleEstadoCliente(id) {
+    const c = dbClients.find(x => x.id === id);
+    if (!c) return;
+
+    // Invertimos el estado
+    c.status = c.status === 'Inactivo' ? 'Activo' : 'Inactivo';
+
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/clients?id=${id}`, { method: 'DELETE' });
+      const response = await fetch(`${API_URL}/clients`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(c)
+      });
 
       if (response.ok) {
-        dbClients = dbClients.filter(c => c.id !== id);
         renderTable();
       } else {
-        alert("Error al eliminar de la base de datos.");
+        // Revertimos localmente si falla
+        c.status = c.status === 'Inactivo' ? 'Activo' : 'Inactivo';
+        alert("Error al actualizar el estado en la base de datos.");
       }
     } catch(error) {
-      console.error("Error eliminando:", error);
+      c.status = c.status === 'Inactivo' ? 'Activo' : 'Inactivo';
       alert("Error de conexión.");
     } finally {
       mostrarCarga(false);
@@ -305,13 +322,21 @@
     
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = filtrados.map(c => {
+      const isInactive = c.status === 'Inactivo';
+      
       const badgeTipo = (c.type === 'mayorista' || c.type === 'B2B') 
         ? `<span style="background:#e0e7ff; color:#1d4ed8; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; text-transform:uppercase;">Mayorista</span>`
         : `<span style="background:var(--panel-2); color:var(--text); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; text-transform:uppercase; border:1px solid var(--line);">Minorista</span>`;
 
+      const txtBtnEstado = isInactive ? 'Reactivar' : 'Inactivar';
+      const colorBtnEstado = isInactive ? 'var(--success)' : 'var(--danger)';
+
       return `
-      <tr>
-        <td><strong>${escapeHtml(c.name)}</strong></td>
+      <tr style="${isInactive ? 'opacity:0.5;' : ''}">
+        <td style="${isInactive ? 'text-decoration:line-through;' : ''}">
+           <strong>${escapeHtml(c.name)}</strong>
+           ${isInactive ? '<br><small style="color:var(--danger); font-weight:bold;">(INACTIVO)</small>' : ''}
+        </td>
         <td><span style="color:var(--muted);">${escapeHtml(c.cuil || '-')}</span></td>
         <td>
           <div style="font-size:12px; font-weight:bold;">${escapeHtml(c.phone || '-')}</div>
@@ -320,7 +345,7 @@
         <td>${badgeTipo}</td>
         <td style="text-align: center;">
           <button onclick="editarCliente('${c.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; margin-right:5px;">Editar</button>
-          <button onclick="eliminarClientePrompt('${c.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Borrar</button>
+          <button onclick="toggleEstadoClientePrompt('${c.id}')" style="background:transparent; border:1px solid ${isInactive ? '#dcfce7' : '#fee2e2'}; color:${colorBtnEstado}; border-radius:6px; padding:4px 8px; cursor:pointer;">${txtBtnEstado}</button>
         </td>
       </tr>`
     }).join('');
