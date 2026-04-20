@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ventas y Cierre | Micro SaaS</title>
+  <title>Ventas y Caja | Micro SaaS</title>
   
   <style>
     html, body { background-color: #f0f2f7 !important; }
@@ -16,10 +16,17 @@
     .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a;}
     
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .filter-bar { display: flex; gap: 15px; margin-bottom: 20px; background: var(--panel-2); padding: 15px; border-radius: 12px; border: 1px solid var(--line); flex-wrap: wrap; align-items: flex-end; }
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
+    .input-box:disabled { background: #f1f5f9; color: var(--muted); cursor: not-allowed; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 1000px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
     
+    .layout-z { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 1000px) { .layout-z { grid-template-columns: 1fr; } }
+
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
     td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
@@ -28,10 +35,24 @@
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
-    
-    .filter-bar { display: flex; gap: 15px; margin-bottom: 20px; background: var(--panel-2); padding: 15px; border-radius: 12px; border: 1px solid var(--line); flex-wrap: wrap; align-items: flex-end; }
-    
-    /* Responsive */
+
+    .warning-box { background: #fffbeb; border: 1px dashed #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+    .warning-box p { margin: 0; font-size: 12px; color: #b45309; }
+
+    /* Impresión del Cierre Z */
+    #printZ { display: none; }
+    @media print {
+      @page { margin: 5mm; size: 80mm auto; } /* Formato ticketera térmica */
+      body { margin: 0; background: #fff; font-family: monospace; color: #000; }
+      .app, dialog { display: none !important; }
+      #printZ { display: block !important; width: 100%; padding: 10px; box-sizing: border-box; }
+      .ticket-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+      .ticket-header h1 { font-size: 16px; margin: 0 0 5px 0; }
+      .ticket-header p { margin: 0; font-size: 12px; }
+      .ticket-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+      .ticket-total { font-size: 16px; font-weight: bold; border-top: 1px dashed #000; padding-top: 10px; margin-top: 10px; }
+    }
+
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
     @media (max-width: 900px) {
@@ -74,12 +95,12 @@
       <div style="display: flex; align-items: center;">
         <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
         <div class="page-title">
-          <h1 style="margin:0; font-size: 26px;">Historial de Ventas</h1>
-          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Auditoría de tickets, cobros y exportación.</p>
+          <h1 style="margin:0; font-size: 26px;">Ventas y Caja</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Historial de transacciones y arqueo de caja Z.</p>
         </div>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcelVentas()">⬇ Exportar a Excel</button>
+        <button class="btn btn-primary" style="background: var(--success); border-color: var(--success);" onclick="exportarExcelVentas()">⬇ Exportar Reporte</button>
       </div>
     </header>
 
@@ -103,43 +124,58 @@
     </div>
 
     <div class="kpi-grid">
-      <article class="card card-pad" style="border-top: 4px solid var(--primary);">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Total Facturado</div>
-        <div id="kpiTotal" style="font-size:28px; font-weight:800; color:var(--primary);">$0</div>
-        <div style="font-size:12px; color:var(--muted); margin-top:5px;" id="kpiTickets">0 tickets</div>
-      </article>
       <article class="card card-pad" style="border-top: 4px solid var(--success);">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Efectivo (Caja)</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Efectivo en Caja</div>
         <div id="kpiEfectivo" style="font-size:28px; font-weight:800;">$0</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid #3b82f6;">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Bancos (Transf / Tarjetas)</div>
-        <div id="kpiBancos" style="font-size:28px; font-weight:800;">$0</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Transferencias</div>
+        <div id="kpiTransf" style="font-size:28px; font-weight:800;">$0</div>
       </article>
-      <article class="card card-pad" style="border-top: 4px solid var(--warning);">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">A Cta. Cte. (Deuda)</div>
-        <div id="kpiCtaCte" style="font-size:28px; font-weight:800; color:var(--warning);">$0</div>
+      <article class="card card-pad" style="border-top: 4px solid #f97316;">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Tarjetas / Posnet</div>
+        <div id="kpiTarjetas" style="font-size:28px; font-weight:800;">$0</div>
+      </article>
+      <article class="card card-pad" style="border-top: 4px solid var(--primary);">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Total Facturado</div>
+        <div id="kpiTotal" style="font-size:28px; font-weight:800; color:var(--primary);">$0</div>
       </article>
     </div>
 
-    <article class="card card-pad" style="max-width: 100%; overflow: hidden;">
-      <div style="overflow-x: auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha y Hora</th>
-              <th>Comprobante</th>
-              <th>Sucursal</th>
-              <th>Cliente</th>
-              <th>Medio de Pago</th>
-              <th style="text-align: right;">Total</th>
-              <th style="text-align: center;">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tbodyVentas"></tbody>
-        </table>
-      </div>
-    </article>
+    <div class="layout-z">
+      <article class="card card-pad">
+        <h2 style="margin: 0 0 5px 0; font-size: 18px;">Arqueo y Cierre Z</h2>
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Finalización del turno operativo.</p>
+        
+        <div class="warning-box">
+          <p><strong>Atención:</strong> El Cierre Z requiere autorización del encargado.<br>Generará el ticket resumen para la caja física.</p>
+        </div>
+        
+        <button class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 15px; font-weight: bold; background: #ea580c; border: none; display: flex; justify-content: center; gap: 10px;" onclick="iniciarCierreZ()">
+          🔒 CERRAR CAJA E IMPRIMIR
+        </button>
+      </article>
+
+      <article class="card card-pad" style="overflow: hidden;">
+        <h2 style="margin: 0 0 15px 0; font-size: 16px;" id="titleHistorial">Historial Filtrado</h2>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Hora / Fecha</th>
+                <th>Vendedor</th>
+                <th>Comprobante</th>
+                <th>Cliente</th>
+                <th>Método / Cupón</th>
+                <th style="text-align: right;">Total</th>
+                <th style="text-align: center;">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyVentas"></tbody>
+          </table>
+        </div>
+      </article>
+    </div>
   </main>
 </div>
 
@@ -151,22 +187,10 @@
     </div>
     
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
-      <div>
-        <small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Cliente</small>
-        <div id="detalleCliente" style="font-weight:bold; font-size:14px;">-</div>
-      </div>
-      <div>
-        <small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Vendedor / Sucursal</small>
-        <div id="detalleVendedor" style="font-size:14px;">-</div>
-      </div>
-      <div>
-        <small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Medio de Pago</small>
-        <div id="detallePago" style="font-weight:bold; font-size:14px;">-</div>
-      </div>
-      <div>
-        <small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Cupón / Lote</small>
-        <div id="detalleCupon" style="font-size:14px;">-</div>
-      </div>
+      <div><small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Cliente</small><div id="detalleCliente" style="font-weight:bold; font-size:14px;">-</div></div>
+      <div><small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Vendedor / Sucursal</small><div id="detalleVendedor" style="font-size:14px;">-</div></div>
+      <div><small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Medio de Pago</small><div id="detallePago" style="font-weight:bold; font-size:14px;">-</div></div>
+      <div><small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Cupón / Lote</small><div id="detalleCupon" style="font-size:14px;">-</div></div>
     </div>
 
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
@@ -207,6 +231,23 @@
   </form>
 </dialog>
 
+<div id="printZ">
+  <div class="ticket-header">
+    <h1>CIERRE DE CAJA (Z)</h1>
+    <p id="zDate"></p>
+    <p id="zBranch"></p>
+  </div>
+  <div class="ticket-row" style="margin-top: 15px;"><span>Efectivo:</span><span id="zCash"></span></div>
+  <div class="ticket-row"><span>Transferencias:</span><span id="zTransf"></span></div>
+  <div class="ticket-row"><span>Tarjetas/Posnet:</span><span id="zCards"></span></div>
+  <div class="ticket-row" style="margin-top: 10px; color: #555;"><span>Cta. Cte. (Deuda):</span><span id="zDebt"></span></div>
+  <div class="ticket-row ticket-total"><span>TOTAL FACTURADO:</span><span id="zTotal"></span></div>
+  <div style="text-align: center; margin-top: 20px; font-size: 10px;">
+    <p>Operaciones totales: <span id="zCount"></span></p>
+    <p>Firma Encargado: ____________________</p>
+  </div>
+</div>
+
 <script src="core.js"></script>
 <script>
   function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
@@ -222,25 +263,29 @@
   async function initVentas() {
     mostrarCarga(true);
     try {
-      // Configurar fechas por defecto al mes actual
-      const d = new Date();
-      const primerDiaMes = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
-      document.getElementById('filterDesde').value = primerDiaMes;
-      document.getElementById('filterHasta').value = todayISO();
+      // 1. Por defecto mostramos las ventas de HOY (Historial del Día)
+      const hoy = todayISO();
+      document.getElementById('filterDesde').value = hoy;
+      document.getElementById('filterHasta').value = hoy;
 
-      // Cargar ventas y sucursales
+      // 2. Cargar ventas y sucursales
       const [resS, resB] = await Promise.all([ fetch('/api/sales'), fetch('/api/branches') ]);
       if(resS.ok) dbSales = await resS.json();
       
+      // 3. Control de Accesos a Filtros de Sucursal
       const role = localStorage.getItem('userRole') || 'admin';
       const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
       const selSuc = document.getElementById('filterSucursal');
       
       if (role === 'admin') {
-          selSuc.innerHTML = '<option value="ALL">Todas las Sucursales</option>';
+          selSuc.innerHTML = `<option value="ALL">Todas las Sucursales</option>`;
           if (resB.ok) {
               const branches = await resB.json();
-              branches.forEach(b => selSuc.innerHTML += `<option value="${b.name}">${b.name}</option>`);
+              // Insertamos las sucursales, pero seleccionamos por defecto la terminal activa del admin
+              branches.forEach(b => {
+                  const selected = b.name === terminalActiva ? 'selected' : '';
+                  selSuc.innerHTML += `<option value="${b.name}" ${selected}>${b.name}</option>`;
+              });
           }
       } else {
           selSuc.innerHTML = `<option value="${terminalActiva}">${terminalActiva}</option>`;
@@ -258,18 +303,23 @@
     const search = document.getElementById('searchVenta').value.toLowerCase();
     const tbody = document.getElementById('tbodyVentas');
 
-    let total = 0, efectivo = 0, bancos = 0, ctaCte = 0, count = 0;
+    // Cambiar el título según el filtro
+    if (desde === todayISO() && hasta === todayISO()) {
+        document.getElementById('titleHistorial').textContent = 'Historial del Día';
+    } else {
+        document.getElementById('titleHistorial').textContent = 'Historial del Período';
+    }
+
+    let total = 0, efectivo = 0, transf = 0, tarjetas = 0, ctaCte = 0, count = 0;
     
-    // Ordenar de más reciente a más antiguo
     const sortedSales = [...dbSales].sort((a,b) => (b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||''));
 
     const filtradas = sortedSales.filter(s => {
         const d = s.date || (s.createdAt || '').split('T')[0];
         const matchFechas = d >= desde && d <= hasta;
         const matchSucursal = sucursal === 'ALL' || s.branch === sucursal;
-        const matchSearch = search === '' || s.id.toLowerCase().includes(search) || (s.client||'').toLowerCase().includes(search);
+        const matchSearch = search === '' || s.id.toLowerCase().includes(search) || (s.client||'').toLowerCase().includes(search) || (s.method||'').toLowerCase().includes(search);
         
-        // No mostramos ventas anuladas en la sumatoria contable, pero sí en la lista tachadas
         return matchFechas && matchSucursal && matchSearch;
     });
 
@@ -282,38 +332,66 @@
             total += s.total;
             count++;
             if (s.method === 'Efectivo') efectivo += s.total;
+            else if (s.method === 'Transferencia') transf += s.total;
             else if (s.method === 'A Cuenta Corriente') ctaCte += s.total;
-            else bancos += s.total; // Tarjeta, Transferencia, Débito, Crédito
+            else tarjetas += s.total; // Débito, Crédito, Tarjeta
         }
 
         let badgeMethod = '';
-        if (s.method === 'Efectivo') badgeMethod = `<span style="background:#dcfce7; color:#16a34a; padding:2px 6px; border-radius:4px; font-size:11px; font-weight:bold;">Efectivo</span>`;
-        else if (s.method === 'A Cuenta Corriente') badgeMethod = `<span style="background:var(--warning-soft); color:var(--warning); padding:2px 6px; border-radius:4px; font-size:11px; font-weight:bold;">Cta. Cte.</span>`;
-        else badgeMethod = `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:11px; font-weight:bold;">${s.method}</span>`;
+        if (s.method === 'Efectivo') badgeMethod = `<span style="color:#16a34a; font-weight:bold;">💵 Efectivo</span>`;
+        else if (s.method === 'Transferencia') badgeMethod = `<span style="color:#3b82f6; font-weight:bold;">📱 Transferencia</span>`;
+        else if (s.method === 'A Cuenta Corriente') badgeMethod = `<span style="background:var(--warning-soft); color:var(--warning); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Cta. Cte.</span>`;
+        else badgeMethod = `<span style="color:#f97316; font-weight:bold;">💳 ${s.method}</span>`;
 
         return `
         <tr style="${isAnulada ? 'opacity:0.5; text-decoration:line-through;' : ''}">
             <td>${fechaHora}</td>
-            <td><strong>${s.id.split('_')[1] || s.id}</strong><br><small style="color:var(--muted)">${s.seller||'Admin'}</small></td>
-            <td>📍 ${escapeHtml(s.branch || 'Central')}</td>
+            <td><strong>${escapeHtml(s.seller||'Admin')}</strong><br><small style="color:var(--muted)">📍 ${escapeHtml(s.branch || 'Central')}</small></td>
+            <td>N° ${s.id.split('_')[1] || s.id}</td>
             <td><strong>${escapeHtml(s.client || 'Consumidor Final')}</strong></td>
-            <td>${isAnulada ? '<span style="color:var(--danger); font-weight:bold;">ANULADA</span>' : badgeMethod}</td>
+            <td>${isAnulada ? '<span style="color:var(--danger); font-weight:bold;">ANULADA</span>' : badgeMethod}<br><small style="color:var(--muted)">${escapeHtml(s.cupon || '')}</small></td>
             <td style="text-align:right; font-weight:bold;">${currency(s.total)}</td>
             <td style="text-align:center;">
-                <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick='verDetalle(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Ver Detalle</button>
+                <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick='verDetalle(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Revisar</button>
             </td>
         </tr>`;
     }).join('');
 
-    if (filtradas.length === 0) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 30px; color:var(--muted);">No hay ventas en este período o sucursal.</td></tr>';
+    if (filtradas.length === 0) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 30px; color:var(--muted);">No hay ventas registradas en esta caja o período.</td></tr>';
 
+    // Actualizar KPIs Visuales (Para la interfaz y para el futuro Cierre Z)
     document.getElementById('kpiTotal').textContent = currency(total);
-    document.getElementById('kpiTickets').textContent = `${count} tickets efectivos`;
     document.getElementById('kpiEfectivo').textContent = currency(efectivo);
-    document.getElementById('kpiBancos').textContent = currency(bancos);
-    document.getElementById('kpiCtaCte').textContent = currency(ctaCte);
+    document.getElementById('kpiTransf').textContent = currency(transf);
+    document.getElementById('kpiTarjetas').textContent = currency(tarjetas);
+    
+    // Guardamos en memoria ram para el ticket Z
+    window.dataZ = { total, efectivo, transf, tarjetas, ctaCte, count, desde, hasta, sucursal };
   }
 
+  // --- CIERRE Z ---
+  function iniciarCierreZ() {
+      if (window.dataZ.count === 0) return alert("No hay operaciones para realizar un cierre de caja.");
+      pedirAuthAdmin('imprimir el reporte Z y asentar el cierre del turno', ejecutarCierreZ);
+  }
+
+  function ejecutarCierreZ() {
+      const z = window.dataZ;
+      let dateTxt = z.desde === z.hasta ? `Fecha: ${z.desde}` : `Período: ${z.desde} al ${z.hasta}`;
+      
+      document.getElementById('zDate').textContent = dateTxt;
+      document.getElementById('zBranch').textContent = `Sucursal: ${z.sucursal === 'ALL' ? 'Todas' : z.sucursal}`;
+      document.getElementById('zCash').textContent = currency(z.efectivo);
+      document.getElementById('zTransf').textContent = currency(z.transf);
+      document.getElementById('zCards').textContent = currency(z.tarjetas);
+      document.getElementById('zDebt').textContent = currency(z.ctaCte);
+      document.getElementById('zTotal').textContent = currency(z.total);
+      document.getElementById('zCount').textContent = z.count;
+
+      window.print();
+  }
+
+  // --- MODAL DETALLES ---
   function verDetalle(s) {
       document.getElementById('detalleTitle').textContent = `Ticket #${s.id.split('_')[1] || s.id}`;
       document.getElementById('detalleCliente').textContent = s.client || 'Consumidor Final';
@@ -342,7 +420,7 @@
       const vta = dbSales.find(s => s.id === id);
       if(!vta || vta.status === 'Anulada') { alert("Esta venta ya está anulada."); return; }
       
-      pedirAuthAdmin('anular esta venta (El monto se descontará de la caja y los productos volverán al stock)', ejecutarAnulacion, id);
+      pedirAuthAdmin('anular esta venta (El monto se descontará de la caja)', ejecutarAnulacion, id);
   }
 
   async function ejecutarAnulacion(id) {
@@ -350,21 +428,8 @@
       try {
           const vta = dbSales.find(s => s.id === id);
           if(!vta) return;
-          
           vta.status = 'Anulada';
-          
-          // Guardar el estado anulado en la BD
           await fetch('/api/sales', { method: 'POST', body: JSON.stringify(vta) });
-
-          // Lógica avanzada: Devolver stock si los items no son servicios
-          const items = typeof vta.items === 'string' ? JSON.parse(vta.items) : (vta.items || []);
-          for (let item of items) {
-              if (item.code !== 'SENA' && item.code !== 'SALDO') { // Ignorar servicios de óptica
-                  // Aquí iría un fetch a la API de productos para devolver el stock sumando qty
-                  // Como requiere leer el producto completo primero, dejamos la lógica preparada
-                  console.log(`(Simulación) Devolviendo ${item.qty} un. de ${item.code} al stock de ${vta.branch}`);
-              }
-          }
           
           document.getElementById('modalDetalleVenta').close();
           renderVentas();
