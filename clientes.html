@@ -18,7 +18,6 @@
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
     .layout-2col { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
-    @media (max-width: 1000px) { .layout-2col { grid-template-columns: 1fr; } }
     
     /* Clase para grillas de 2 columnas que se apilan en móvil */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -49,6 +48,12 @@
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
     
+    @media (max-width: 1000px) { 
+        .layout-2col { grid-template-columns: 1fr; } 
+        /* FIX CRÍTICO: Evita que la tabla estire la tarjeta fuera de la pantalla */
+        .layout-2col > * { min-width: 0; }
+    }
+
     @media (max-width: 900px) {
       .app { display: flex !important; flex-direction: column !important; }
       .mobile-toggle { display: block; }
@@ -64,7 +69,8 @@
       .action-buttons { flex-direction: column; }
       .action-buttons button { width: 100%; }
       
-      /* Ajustes para la ficha clínica en celulares */
+      /* Ajustes para la tabla y ficha clínica en celulares */
+      .table-responsive-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
       .ficha-receta { display: block; overflow-x: auto; white-space: nowrap; }
     }
   </style>
@@ -167,7 +173,7 @@
         <h2 style="margin: 0 0 20px 0; font-size: 18px;">Directorio Activo</h2>
         <input type="text" id="searchTable" class="input-box" placeholder="🔍 Buscar por nombre o DNI..." onkeyup="renderTable()" style="margin-bottom: 20px;">
         
-        <div style="overflow-x: auto;">
+        <div class="table-responsive-wrapper">
           <table>
             <thead>
               <tr>
@@ -221,7 +227,7 @@
 <script>
   const API_URL = "/api"; 
   let dbClients = [];
-  let dbOrders = []; 
+  let dbOrders = []; // Almacenará el historial de la óptica
   const PIN_ADMIN = "1234";
   let pendingAdminAction = null;
   let pendingAdminParam = null;
@@ -233,6 +239,7 @@
   async function initClients() {
     mostrarCarga(true);
     try {
+      // Descargamos los clientes y el historial de órdenes al mismo tiempo
       const [resC, resO] = await Promise.all([
           fetch(`${API_URL}/clients`),
           fetch(`${API_URL}/optical`)
@@ -322,7 +329,10 @@
 
     document.getElementById('fichaClientName').textContent = `${c.name} ${c.cuil ? `(DNI: ${c.cuil})` : ''}`;
     
+    // Filtramos las órdenes de este cliente (por ID o por Nombre exacto para historial viejo)
     const historial = dbOrders.filter(o => o.clientId === c.id || o.clientName.toLowerCase() === c.name.toLowerCase());
+    
+    // Ordenamos de más reciente a más antigua
     historial.sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
 
     const fichaContent = document.getElementById('fichaContent');
@@ -385,6 +395,7 @@
     document.getElementById('modalFichaClinica').showModal();
   }
 
+  // --- CAMBIAR ESTADO (ACTIVAR / INACTIVAR) CON PIN ---
   function toggleEstadoClientePrompt(id) {
     const c = dbClients.find(x => x.id === id);
     if (!c) return;
