@@ -422,7 +422,6 @@
       if(resSup.ok) dbSuppliers = await resSup.json();
       if(resB.ok) branches = await resB.json();
       
-      // Llenamos el selector de Sucursales para el Gasto
       const branchOptions = '<option value="Global">Gasto Global / Empresa</option>' + branches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
       const expBranchEl = document.getElementById('expBranch');
       if(expBranchEl) expBranchEl.innerHTML = branchOptions;
@@ -652,7 +651,7 @@
       invoiceNum: document.getElementById('expInvoiceNum').value.trim(),
       supplierId: document.getElementById('expSupplier').value,
       branch: expBranchEl ? expBranchEl.value : 'Global',
-      loadedBy: localStorage.getItem('activeUser') || 'Admin', // GUARDAMOS QUIEN LO CARGA
+      loadedBy: localStorage.getItem('activeUser') || 'Admin', 
       amount: parseFloat(document.getElementById('expAmount').value) || 0,
       ivaAmount: parseFloat(document.getElementById('expIva').value) || 0,
       nonTaxedAmount: parseFloat(document.getElementById('expOtros').value) || 0,
@@ -669,13 +668,18 @@
       const idx = dbExpenses.findIndex(x => x.id === id);
       if (idx >= 0) dbExpenses[idx] = exp; else dbExpenses.unshift(exp);
       cerrarModalGasto(); renderContable();
-    } catch(err) { alert("Error guardando comprobante. Asegúrate de haber ejecutado los comandos SQL."); }
+    } catch(err) { alert("Error guardando comprobante."); }
     finally { mostrarCarga(false); }
   }
 
+  // LÓGICA DE ANULACIÓN CORREGIDA PARA EVITAR CONGELAMIENTO
   function anularGastoPrompt() {
     const id = document.getElementById('expId').value;
     if(!id) return;
+    
+    // FIX: Cerramos el modalGasto PRIMERO para que los fondos oscuros no se superpongan
+    cerrarModalGasto(); 
+    
     pedirAuthAdmin('anular este comprobante de forma permanente', ejecutarAnulacionGasto, id);
   }
 
@@ -686,10 +690,9 @@
       if(!exp) return;
       
       exp.status = 'Anulado';
-      exp.canceledBy = localStorage.getItem('activeUser') || 'Admin'; // GUARDAMOS QUIEN LO ANULA
+      exp.canceledBy = localStorage.getItem('activeUser') || 'Admin';
 
       await fetch(`${API_URL}/expenses`, { method: 'POST', body: JSON.stringify(exp) });
-      cerrarModalGasto(); 
       renderContable();
     } catch(err) { alert("Error anulando el comprobante."); }
     finally { mostrarCarga(false); }
@@ -703,7 +706,10 @@
     setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
   }
 
-  function cerrarAdminAuth() { document.getElementById('adminAuthDialog').close(); pendingAdminAction = null; pendingAdminParam = null; }
+  function cerrarAdminAuth() { 
+      document.getElementById('adminAuthDialog').close(); 
+      pendingAdminAction = null; pendingAdminParam = null; 
+  }
 
   function validarAdminAuth(e) {
     e.preventDefault();
@@ -795,7 +801,7 @@
       }
     });
 
-    dbSales.forEach(venta => { if ((venta.date || '').startsWith(currentMonth)) { ingresosMes += venta.total; } });
+    dbSales.forEach(venta => { if ((venta.date || '').startsWith(currentMonth) && venta.status !== 'Anulada') { ingresosMes += venta.total; } });
 
     document.getElementById('kpiGastosDia').textContent = currency(gastosDia);
     document.getElementById('kpiCountDia').textContent = `${countDia} comprobantes procesados`;
