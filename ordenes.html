@@ -14,8 +14,9 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
   <style>
-    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a;}
+    /* FIX RESPONSIVE: Sin !important en la grilla principal */
+    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a;}
     
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
@@ -35,7 +36,7 @@
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
     
-    .receta-grid { display: grid; grid-template-columns: 40px repeat(4, 1fr); gap: 10px; align-items: center; text-align: center; margin-bottom: 15px; }
+    .receta-grid { display: grid; grid-template-columns: 40px repeat(4, 1fr); gap: 10px; align-items: center; text-align: center; margin-bottom: 15px; overflow-x: auto; }
     .receta-header { font-size: 11px; font-weight: bold; color: var(--muted); }
     .receta-row-label { font-weight: 800; color: var(--text); }
     
@@ -60,13 +61,36 @@
       .print-table th { background: #f0f0f0; }
     }
     
+    /* REGLAS OBLIGATORIAS PARA CELULARES */
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+    
     @media (max-width: 900px) {
+      .app { display: flex !important; flex-direction: column !important; }
       .mobile-toggle { display: block; }
       .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
-      .sidebar.open { left: 0; }
+      .sidebar.open { left: 0 !important; }
       .sidebar-overlay.open { display: block; }
+      
+      .topbar { padding: 15px; flex-direction: column; align-items: flex-start !important; gap: 15px; }
+      .topbar-actions { width: 100%; display: flex; justify-content: space-between; }
+      .topbar-actions button { flex: 1; }
+      
+      .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
+      
+      /* Ajustes para el Modal de Orden en móviles */
+      #formOrden > div[style*="grid-template-columns: 1.5fr 1fr"] { grid-template-columns: 1fr !important; }
+      #formOrden > div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+      #formOrden > div > div > div[style*="grid-template-columns: 1fr 1fr"] { grid-template-columns: 1fr !important; }
+      #formOrden > div > div > div[style*="grid-template-columns: 1fr 1fr 1fr"] { grid-template-columns: 1fr !important; }
+      
+      /* Para la receta oftalmológica en móviles */
+      .receta-grid { display: block; }
+      .receta-header { display: none; } /* Ocultamos los headers de la tabla original */
+      .receta-grid input { margin-bottom: 5px; width: 100%; }
+      .receta-row-label { margin-top: 10px; margin-bottom: 5px; border-bottom: 1px solid var(--line); padding-bottom: 5px; display: block; }
+      /* Agregamos pseudo-elementos para que se entienda qué es cada campo en móvil */
+      .receta-grid input:nth-child(7)::before { content: "ESF: "; }
     }
   </style>
 </head>
@@ -99,7 +123,7 @@
 
   <main class="content">
     <header class="topbar" style="display: flex; justify-content: space-between; align-items: center;">
-      <div style="display: flex; align-items: center;">
+      <div style="display: flex; align-items: center; width: 100%;">
         <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
         <div class="page-title">
           <h1 style="margin:0; font-size: 26px;">Órdenes</h1>
@@ -276,25 +300,25 @@
       <div style="background: #fff8f1; padding: 15px; border-radius: 8px; border: 1px solid #fed7aa; margin-bottom: 20px;">
         <h3 style="margin: 0 0 15px 0; font-size: 14px; color: #c2410c;">👁️ 3. Receta Oftalmológica</h3>
         <div class="receta-grid">
-          <div></div>
+          <div class="receta-header"></div>
           <div class="receta-header">ESFÉRICO</div><div class="receta-header">CILÍNDRICO</div><div class="receta-header">EJE</div><div class="receta-header">ADICIÓN</div>
           
           <div class="receta-row-label">O.D.</div>
-          <input type="text" id="od_esf" class="input-box" style="text-align:center;">
-          <input type="text" id="od_cil" class="input-box" style="text-align:center;">
-          <input type="text" id="od_eje" class="input-box" style="text-align:center;">
-          <input type="text" id="od_add" class="input-box" style="text-align:center;">
+          <input type="text" id="od_esf" class="input-box" style="text-align:center;" placeholder="ESF">
+          <input type="text" id="od_cil" class="input-box" style="text-align:center;" placeholder="CIL">
+          <input type="text" id="od_eje" class="input-box" style="text-align:center;" placeholder="EJE">
+          <input type="text" id="od_add" class="input-box" style="text-align:center;" placeholder="ADD">
           
           <div class="receta-row-label">O.I.</div>
-          <input type="text" id="oi_esf" class="input-box" style="text-align:center;">
-          <input type="text" id="oi_cil" class="input-box" style="text-align:center;">
-          <input type="text" id="oi_eje" class="input-box" style="text-align:center;">
-          <input type="text" id="oi_add" class="input-box" style="text-align:center;">
+          <input type="text" id="oi_esf" class="input-box" style="text-align:center;" placeholder="ESF">
+          <input type="text" id="oi_cil" class="input-box" style="text-align:center;" placeholder="CIL">
+          <input type="text" id="oi_eje" class="input-box" style="text-align:center;" placeholder="EJE">
+          <input type="text" id="oi_add" class="input-box" style="text-align:center;" placeholder="ADD">
         </div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
           <div>
-            <label class="receta-header">Uso del Anteojo</label>
+            <label class="receta-header" style="display: block; margin-bottom: 4px;">Uso del Anteojo</label>
             <select id="ordDp" class="input-box">
               <option value="Lejos">Lejos</option>
               <option value="Cerca">Cerca</option>
@@ -302,11 +326,11 @@
               <option value="Bifocal">Bifocal</option>
             </select>
           </div>
-          <div><label class="receta-header">Altura (Opcional)</label><input type="text" id="ordAlt" class="input-box"></div>
+          <div><label class="receta-header" style="display: block; margin-bottom: 4px;">Altura (Opcional)</label><input type="text" id="ordAlt" class="input-box"></div>
         </div>
 
         <div>
-          <label class="receta-header">Observaciones de Laboratorio / Taller</label>
+          <label class="receta-header" style="display: block; margin-bottom: 4px;">Observaciones de Laboratorio / Taller</label>
           <textarea id="ordNotas" class="input-box" rows="2" placeholder="Ej: Centrado especial, detalles del armazón, material específico..."></textarea>
         </div>
       </div>
@@ -496,7 +520,6 @@
   async function initOrdenes() {
     mostrarCarga(true);
     try {
-      // Establecemos fechas por defecto en el modal de exportación (mes actual)
       const d = new Date();
       const primerDiaMes = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
       document.getElementById('expDesde').value = primerDiaMes;
@@ -712,7 +735,6 @@
     const lensSelect = document.getElementById('ordLensId');
     const glassTypeName = lensSelect.selectedIndex > 0 ? lensSelect.options[lensSelect.selectedIndex].text.split(' - ')[0] : '';
 
-    // Compactamos los nuevos campos en la variable "notes" para no romper la base de datos actual
     const obraSocialStr = document.getElementById('ordObraSocial').value.trim();
     const notasStr = document.getElementById('ordNotas').value.trim();
     const combinedNotes = `Obra Social: ${obraSocialStr || '-'} | Obs: ${notasStr || '-'}`;
@@ -723,7 +745,7 @@
       clientName: document.getElementById('ordClientName').value.trim() || 'Consumidor Final',
       od_esf: document.getElementById('od_esf').value, od_cil: document.getElementById('od_cil').value, od_eje: document.getElementById('od_eje').value, od_add: document.getElementById('od_add').value,
       oi_esf: document.getElementById('oi_esf').value, oi_cil: document.getElementById('oi_cil').value, oi_eje: document.getElementById('oi_eje').value, oi_add: document.getElementById('oi_add').value,
-      dp: document.getElementById('ordDp').value, // Ahora guarda "Lejos", "Cerca", etc.
+      dp: document.getElementById('ordDp').value, 
       altura: document.getElementById('ordAlt').value, 
       doctor: document.getElementById('ordDoctor').value,
       frameCode: frameCode, frameName: document.getElementById('ordFrameName').value, 
@@ -732,7 +754,7 @@
       total: totalFloat,
       deposit: depositFloat, balance: balanceFloat,
       status: 'Pendiente', seller: localStorage.getItem('activeUser') || 'Admin', 
-      notes: combinedNotes, // Acá viajan las observaciones y la obra social
+      notes: combinedNotes,
       createdAt: new Date().toISOString()
     };
 
@@ -860,7 +882,6 @@
     } catch(err) { alert("Error cerrando orden."); } finally { mostrarCarga(false); }
   }
 
-  // --- LÓGICA DE EXPORTACIÓN A EXCEL ---
   function ejecutarExportacionExcel(e) {
       e.preventDefault();
       
@@ -879,9 +900,7 @@
 
       if(filtradas.length === 0) return alert("No se encontraron órdenes que coincidan con esas fechas y estado.");
 
-      // Convertimos los datos para el Excel
       const csvData = filtradas.map(o => {
-          // Extraemos obra social y observaciones si están guardadas en notes
           let obsLimpia = o.notes;
           let obraSocialLimpia = "-";
           
@@ -937,7 +956,6 @@
     document.getElementById('plName').textContent = o.clientName;
     document.getElementById('plDoc').textContent = o.doctor || '-';
     
-    // Parseo de Notas para impresión limpia
     let obsLimpia = o.notes;
     let obraSocialLimpia = "-";
     if (o.notes && o.notes.includes("Obra Social:")) {
@@ -952,7 +970,7 @@
     document.getElementById('plOdEsf').textContent = o.od_esf; document.getElementById('plOdCil').textContent = o.od_cil; document.getElementById('plOdEje').textContent = o.od_eje; document.getElementById('plOdAdd').textContent = o.od_add;
     document.getElementById('plOiEsf').textContent = o.oi_esf; document.getElementById('plOiCil').textContent = o.oi_cil; document.getElementById('plOiEje').textContent = o.oi_eje; document.getElementById('plOiAdd').textContent = o.oi_add;
     
-    document.getElementById('plUso').textContent = o.dp || '-'; // Uso: Lejos/Cerca
+    document.getElementById('plUso').textContent = o.dp || '-'; 
     document.getElementById('plAlt').textContent = o.altura || '-';
     document.getElementById('plObs').textContent = obsLimpia || 'Sin observaciones.';
     
