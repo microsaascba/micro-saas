@@ -1,12 +1,3 @@
-export async function onRequestGet(context) {
-    try {
-        const { results } = await context.env.DB.prepare("SELECT * FROM clients ORDER BY name ASC").all();
-        return new Response(JSON.stringify(results), { headers: { "Content-Type": "application/json" } });
-    } catch (error) {
-        return new Response(`Error GET: ${error.message}`, { status: 500 });
-    }
-}
-
 export async function onRequestPost(context) {
     try {
         const data = await context.request.json();
@@ -19,12 +10,15 @@ export async function onRequestPost(context) {
         const email = data.email || '';
         const phone = data.phone || '';
         const ivaCondition = data.ivaCondition || 'Consumidor Final';
-        const status = data.status || 'Activo'; // NUEVO CAMPO
+        const status = data.status || 'Activo';
         const createdAt = data.createdAt || new Date().toISOString();
         
+        // NUEVO: Recibimos los módulos permitidos para esta empresa
+        const allowedModules = data.allowedModules ? JSON.stringify(data.allowedModules) : '[]';
+        
         await context.env.DB.prepare(`
-            INSERT INTO clients (id, name, cuil, address, type, email, phone, ivaCondition, status, createdAt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO clients (id, name, cuil, address, type, email, phone, ivaCondition, status, createdAt, allowedModules)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET 
                 name = excluded.name,
                 cuil = excluded.cuil,
@@ -33,8 +27,9 @@ export async function onRequestPost(context) {
                 email = excluded.email,
                 phone = excluded.phone,
                 ivaCondition = excluded.ivaCondition,
-                status = excluded.status
-        `).bind(id, name, cuil, address, type, email, phone, ivaCondition, status, createdAt).run();
+                status = excluded.status,
+                allowedModules = excluded.allowedModules
+        `).bind(id, name, cuil, address, type, email, phone, ivaCondition, status, createdAt, allowedModules).run();
 
         return new Response("OK", { status: 200 });
     } catch (error) {
