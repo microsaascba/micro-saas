@@ -13,8 +13,9 @@
 
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    /* FIX RESPONSIVE: Sin !important en la grilla principal */
+    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
     .layout-2col { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
     @media (max-width: 1000px) { .layout-2col { grid-template-columns: 1fr; } }
@@ -39,6 +40,24 @@
     .ficha-receta td { padding: 6px; border: 1px solid var(--line); font-weight: bold; color: var(--text); }
     .btn-ficha { background: #f3e8ff; color: #4338ca; border: 1px solid #c7d2fe; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: bold; transition: 0.2s;}
     .btn-ficha:hover { background: #e0e7ff; }
+
+    /* REGLAS OBLIGATORIAS PARA CELULARES */
+    .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+    
+    @media (max-width: 900px) {
+      .app { display: flex !important; flex-direction: column !important; }
+      .mobile-toggle { display: block; }
+      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
+      .sidebar.open { left: 0 !important; }
+      .sidebar-overlay.open { display: block; }
+      
+      .topbar { padding: 15px; display: flex; align-items: center; justify-content: flex-start; }
+      .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
+      
+      /* Ajustes para la ficha clínica en celulares */
+      .ficha-receta { display: block; overflow-x: auto; white-space: nowrap; }
+    }
   </style>
 </head>
 <body>
@@ -46,6 +65,8 @@
 <div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
+  
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
@@ -68,9 +89,12 @@
 
   <main class="content">
     <header class="topbar">
-      <div class="page-title">
-        <h1 style="margin:0; font-size: 26px;">Clientes B2B / B2C</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Directorio de clientes y Fichas Clínicas.</p>
+      <div style="display: flex; align-items: center;">
+        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
+        <div class="page-title">
+          <h1 style="margin:0; font-size: 26px;">Clientes B2B / B2C</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Directorio de clientes y Fichas Clínicas.</p>
+        </div>
       </div>
     </header>
 
@@ -327,23 +351,25 @@
                 </div>
               </div>
 
-              <table class="ficha-receta">
-                <tr><th>Ojo</th><th>Esférico</th><th>Cilíndrico</th><th>Eje</th><th>Adición</th></tr>
-                <tr>
-                  <td style="color:var(--muted);">O.D. (Der)</td>
-                  <td>${escapeHtml(o.od_esf || '-')}</td>
-                  <td>${escapeHtml(o.od_cil || '-')}</td>
-                  <td>${escapeHtml(o.od_eje || '-')}</td>
-                  <td>${escapeHtml(o.od_add || '-')}</td>
-                </tr>
-                <tr>
-                  <td style="color:var(--muted);">O.I. (Izq)</td>
-                  <td>${escapeHtml(o.oi_esf || '-')}</td>
-                  <td>${escapeHtml(o.oi_cil || '-')}</td>
-                  <td>${escapeHtml(o.oi_eje || '-')}</td>
-                  <td>${escapeHtml(o.oi_add || '-')}</td>
-                </tr>
-              </table>
+              <div style="overflow-x: auto;">
+                <table class="ficha-receta">
+                  <tr><th>Ojo</th><th>Esférico</th><th>Cilíndrico</th><th>Eje</th><th>Adición</th></tr>
+                  <tr>
+                    <td style="color:var(--muted);">O.D. (Der)</td>
+                    <td>${escapeHtml(o.od_esf || '-')}</td>
+                    <td>${escapeHtml(o.od_cil || '-')}</td>
+                    <td>${escapeHtml(o.od_eje || '-')}</td>
+                    <td>${escapeHtml(o.od_add || '-')}</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--muted);">O.I. (Izq)</td>
+                    <td>${escapeHtml(o.oi_esf || '-')}</td>
+                    <td>${escapeHtml(o.oi_cil || '-')}</td>
+                    <td>${escapeHtml(o.oi_eje || '-')}</td>
+                    <td>${escapeHtml(o.oi_add || '-')}</td>
+                  </tr>
+                </table>
+              </div>
               <div style="margin-top: 10px; font-size: 12px; color: var(--muted); text-align: center;">
                 <strong>DP:</strong> ${escapeHtml(o.dp || '-')} | <strong>Altura:</strong> ${escapeHtml(o.altura || '-')} | <strong>Médico:</strong> ${escapeHtml(o.doctor || '-')}
               </div>
