@@ -40,13 +40,33 @@
     .warning-box { background: #fffbeb; border: 1px dashed #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
     .warning-box p { margin: 0; font-size: 12px; color: #b45309; }
 
-    /* Áreas de Impresión (Ocultas en pantalla) */
+    /* --- ESTILOS FUERTES DE IMPRESIÓN --- */
     .print-area { display: none; }
     
     @media print {
-      @page { margin: 5mm; size: 80mm auto; } /* Formato ticketera térmica */
-      body { margin: 0; background: #fff; font-family: monospace; color: #000; }
-      .app, dialog { display: none !important; }
+      @page { margin: 0; size: 80mm auto; } /* Formato ticketera térmica */
+      
+      /* Ocultar TODO el sistema web de forma agresiva */
+      body * { visibility: hidden !important; }
+      
+      /* Rescatar solo el ticket y sus hijos */
+      #printTicketVenta, #printZ, #printTicketVenta *, #printZ * { 
+          visibility: visible !important; 
+      }
+      
+      /* Posicionar el ticket arriba a la izquierda para que no haya hojas en blanco */
+      #printTicketVenta, #printZ { 
+          position: absolute !important; 
+          left: 0 !important; 
+          top: 0 !important; 
+          width: 100% !important;
+          background: white !important;
+          padding: 5mm !important;
+          box-sizing: border-box;
+      }
+      
+      body { margin: 0; padding: 0; background: #fff !important; font-family: monospace; color: #000; }
+      .app, dialog, #sidebarOverlay, #loadingOverlay { display: none !important; }
       
       .ticket-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
       .ticket-header h1 { font-size: 16px; margin: 0 0 5px 0; }
@@ -54,6 +74,7 @@
       .ticket-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
       .ticket-total { font-size: 16px; font-weight: bold; border-top: 1px dashed #000; padding-top: 10px; margin-top: 10px; }
     }
+    /* ----------------------------------- */
 
     /* REGLAS OBLIGATORIAS PARA CELULARES */
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
@@ -75,6 +96,9 @@
       /* Apilar barra de filtros en móviles */
       .filter-bar { flex-direction: column; gap: 10px; align-items: stretch; }
       .filter-bar > div { width: 100%; }
+      
+      /* Permitir scroll en la tabla */
+      .table-responsive-wrapper { width: 100%; overflow-x: auto; }
     }
     
     @media (max-width: 500px) {
@@ -84,7 +108,7 @@
 </head>
 <body>
 
-<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; font-weight:bold; color:var(--primary); font-size:18px;">Cargando...</div>
+<div id="loadingOverlay">Cargando...</div>
 
 <div class="app">
   <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
@@ -177,7 +201,7 @@
 
       <article class="card card-pad" style="overflow: hidden;">
         <h2 style="margin: 0 0 15px 0; font-size: 16px;" id="titleHistorial">Historial Filtrado</h2>
-        <div style="overflow-x: auto;">
+        <div class="table-responsive-wrapper">
           <table>
             <thead>
               <tr>
@@ -301,7 +325,7 @@
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
 
   let dbSales = [];
-  let dbClients = []; // Agregamos la base de clientes para traducir el ID a Nombre
+  let dbClients = []; 
   const PIN_ADMIN = "1234";
   let pendingAdminAction = null; let pendingAdminParam = null;
 
@@ -312,7 +336,6 @@
       document.getElementById('filterDesde').value = hoy;
       document.getElementById('filterHasta').value = hoy;
 
-      // TRAEMOS TAMBIÉN LOS CLIENTES AL ABRIR LA PÁGINA
       const [resS, resB, resC] = await Promise.all([ 
         fetch('/api/sales'), 
         fetch('/api/branches'),
@@ -346,9 +369,8 @@
 
   function getClientName(clientIdOrName) {
       if(!clientIdOrName) return 'Consumidor Final';
-      // Buscamos si existe en la agenda de clientes
       const c = dbClients.find(client => client.id === clientIdOrName);
-      return c ? c.name : clientIdOrName; // Si lo encuentra devuelve el nombre, si no, devuelve lo que estaba escrito
+      return c ? c.name : clientIdOrName; 
   }
 
   function renderVentas() {
@@ -373,7 +395,6 @@
         const matchFechas = d >= desde && d <= hasta;
         const matchSucursal = sucursal === 'ALL' || s.branch === sucursal;
         
-        // Buscamos el nombre real para el buscador
         const realClientName = getClientName(s.client || s.clientId).toLowerCase();
         const matchSearch = search === '' || s.id.toLowerCase().includes(search) || realClientName.includes(search) || (s.method||'').toLowerCase().includes(search);
         
@@ -400,7 +421,6 @@
         else if (s.method === 'A Cuenta Corriente') badgeMethod = `<span style="background:var(--warning-soft); color:var(--warning); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Cta. Cte.</span>`;
         else badgeMethod = `<span style="color:#f97316; font-weight:bold;">💳 ${s.method}</span>`;
 
-        // TRADUCCIÓN DEL NOMBRE DEL CLIENTE
         const displayName = getClientName(s.client || s.clientId);
 
         return `
@@ -428,7 +448,6 @@
     window.dataZ = { total, efectivo, transf, tarjetas, ctaCte, count, desde, hasta, sucursal };
   }
 
-  // --- IMPRESIÓN DE TICKET INDIVIDUAL ---
   function imprimirTicket(s) {
       const displayName = getClientName(s.client || s.clientId);
       
@@ -449,7 +468,6 @@
 
       document.getElementById('ptTotal').textContent = currency(s.total);
 
-      // Ocultar Cierre Z, mostrar Ticket, Imprimir, Ocultar Ticket
       document.querySelectorAll('.print-area').forEach(el => el.style.display = 'none');
       document.getElementById('printTicketVenta').style.display = 'block';
       window.print();
@@ -465,7 +483,6 @@
       }
   }
 
-  // --- CIERRE Z ---
   function iniciarCierreZ() {
       if (window.dataZ.count === 0) return alert("No hay operaciones para realizar un cierre de caja.");
       pedirAuthAdmin('imprimir el reporte Z y asentar el cierre del turno', ejecutarCierreZ);
@@ -490,7 +507,6 @@
       document.getElementById('printZ').style.display = 'none';
   }
 
-  // --- MODAL DETALLES ---
   function verDetalle(s) {
       const displayName = getClientName(s.client || s.clientId);
       
@@ -515,7 +531,6 @@
       document.getElementById('modalDetalleVenta').showModal();
   }
 
-  // --- ANULACIÓN DE VENTAS ---
   function anularVentaPrompt() {
       const id = document.getElementById('detalleIdVenta').value;
       const vta = dbSales.find(s => s.id === id);
@@ -538,7 +553,6 @@
       } catch(e) { alert("Error al anular la venta."); } finally { mostrarCarga(false); }
   }
 
-  // --- EXPORTAR EXCEL ---
   function exportarExcelVentas() {
       const desde = document.getElementById('filterDesde').value;
       const hasta = document.getElementById('filterHasta').value;
@@ -574,7 +588,6 @@
       link.click();
   }
 
-  // --- AUTORIZACIÓN ADMIN ---
   function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
       document.getElementById('authActionText').textContent = accionTexto;
       pendingAdminAction = funcionExito; pendingAdminParam = param;
