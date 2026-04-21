@@ -76,6 +76,15 @@
       .print-total-line { display: flex; justify-content: space-between; margin-bottom: 5px; }
       .print-total-final { display: flex; justify-content: space-between; font-size: 18px; font-weight: 900; margin-top: 10px; border-top: 2px solid #000; padding-top: 5px; }
     }
+    
+    .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+    @media (max-width: 900px) {
+      .mobile-toggle { display: block; }
+      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
+      .sidebar.open { left: 0; }
+      .sidebar-overlay.open { display: block; }
+    }
   </style>
 </head>
 <body>
@@ -83,6 +92,7 @@
 <div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>  
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
@@ -97,17 +107,21 @@
       <a href="cc.html" class="active"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
-      <a href="ordenes.html" class="nav-icon"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="ordenes.html"><span class="nav-icon">📋</span> Órdenes</a>
       <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
+    
   </aside>
 
   <main class="content">
-    <header class="topbar">
-      <div class="page-title">
-        <h1 style="margin:0; font-size: 26px;">Cuentas Corrientes</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Seguimiento de deudas y cobranzas en D1.</p>
+    <header class="topbar" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center;">
+        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
+        <div class="page-title">
+          <h1 style="margin:0; font-size: 26px;">Cuentas Corrientes</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Seguimiento de deudas y cobranzas en D1.</p>
+        </div>
       </div>
     </header>
 
@@ -400,7 +414,7 @@
         <td style="text-align:right;" class="${isHaber ? 'ledger-haber' : ''}">${isHaber ? currency(m.amount) : '-'}</td>
         <td style="text-align:center;">
           <button class="btn-outline" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="prepararImpresion('${m.id}')">
-             📄 PDF
+              📄 PDF
           </button>
         </td>
       </tr>`;
@@ -562,22 +576,6 @@
             <div class="print-total-line"><span>IVA:</span><span>${currency(0)}</span></div>
             <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
           `;
-      }
-
-      tableBody.innerHTML = htmlItems;
-      totalsBox.innerHTML = htmlTotals;
-      document.getElementById('printSignatureArea').style.display = isPago ? 'block' : 'none';
-      
-      window.print();
-
-      // SI ES UN RECIBO DE PAGO O UN AJUSTE MANUAL
-      if (!htmlItems) {
-          tableHeader.innerHTML = `<tr><th style="width: 80%;">CONCEPTO DE LA OPERACIÓN</th><th style="width: 20%; text-align: right;">IMPORTE</th></tr>`;
-          htmlItems = `<tr>
-            <td style="padding: 20px 10px;"><strong style="font-size:14px;">${escapeHtml(mov.concept)}</strong></td>
-            <td style="text-align:right; font-weight:bold; font-size:16px;">${currency(mov.amount)}</td>
-          </tr>`;
-          htmlTotals = `<div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>`;
       }
 
       tableBody.innerHTML = htmlItems;
