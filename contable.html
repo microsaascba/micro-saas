@@ -13,8 +13,9 @@
 
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    /* FIX RESPONSIVE: Sin !important en la grilla principal */
+    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
     .layout-2col { display: grid; grid-template-columns: 1fr 350px; gap: 20px; align-items: start; }
     @media (max-width: 1000px) { .layout-2col { grid-template-columns: 1fr; } }
@@ -33,6 +34,24 @@
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
     
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
+
+    /* REGLAS OBLIGATORIAS PARA CELULARES */
+    .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+    
+    @media (max-width: 900px) {
+      .app { display: flex !important; flex-direction: column !important; }
+      .mobile-toggle { display: block; }
+      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
+      .sidebar.open { left: 0 !important; }
+      .sidebar-overlay.open { display: block; }
+      
+      .topbar { padding: 15px; flex-direction: column; align-items: flex-start !important; gap: 15px; }
+      .topbar-actions { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+      .topbar-actions button { width: 100%; justify-content: center; }
+      
+      .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
+    }
   </style>
 </head>
 <body>
@@ -40,6 +59,8 @@
 <div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
+  
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
@@ -61,10 +82,13 @@
   </aside>
 
   <main class="content">
-    <header class="topbar">
-      <div class="page-title">
-        <h1 style="margin:0; font-size: 26px;">Compras y Proveedores</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Auditoría de egresos, comprobantes fiscales y Cuentas por Pagar.</p>
+    <header class="topbar" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; width: 100%;">
+        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
+        <div class="page-title">
+          <h1 style="margin:0; font-size: 26px;">Compras y Proveedores</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Auditoría de egresos, comprobantes fiscales y Cuentas por Pagar.</p>
+        </div>
       </div>
       <div class="topbar-actions" style="display: flex; gap: 10px;">
         <button class="btn btn-primary" style="background: #4f46e5; border:none;" onclick="abrirModalCierreMes()">📊 Cierre de Mes (P&L)</button>
