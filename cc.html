@@ -13,10 +13,13 @@
   
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    /* FIX RESPONSIVE: Le quitamos los !important a la grilla para que pueda cambiar en móviles */
+    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    
     .layout-cc { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
     @media (max-width: 1000px) { .layout-cc { grid-template-columns: 1fr; } }
+    
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
     table { width: 100%; border-collapse: collapse; text-align: left; }
@@ -38,52 +41,43 @@
 
     /* ESTILOS DE FACTURA OFICIAL PARA IMPRESIÓN */
     #printSection { display: none; }
-    
     @media print {
       @page { margin: 15mm; size: A4 portrait; }
       body { margin: 0; background: #fff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #000; }
       .app, dialog { display: none !important; }
       #printSection { display: block !important; width: 100%; }
-      
       .print-header-grid { display: grid; grid-template-columns: 1fr 60px 1fr; border: 1px solid #000; border-radius: 8px; margin-bottom: 20px; position: relative; }
-      
-      /* Bloque Izquierdo (Datos Empresa) */
       .print-company { padding: 15px; border-right: 1px solid #000; }
       .print-company h1 { margin: 0; font-size: 22px; font-weight: 900; }
       .print-company p { margin: 2px 0; font-size: 11px; }
-      
-      /* Bloque Central (Letra Factura A/B/C/X) */
       .print-letter-box { display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; margin-top: -1px; margin-bottom: -1px;}
       .print-letter { font-size: 40px; font-weight: 900; border: 1px solid #000; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: #fff; margin-top: 10px;}
       .print-cod { font-size: 9px; margin-top: 2px; font-weight: bold;}
-      
-      /* Bloque Derecho (Datos Factura) */
       .print-doc-details { padding: 15px; border-left: 1px solid #000; text-align: left; }
       .print-doc-type { font-size: 24px; font-weight: 900; margin: 0 0 5px 0; letter-spacing: 2px; }
       .print-doc-details p { margin: 3px 0; font-size: 12px; }
-      
-      /* Datos del Cliente */
       .print-client-box { border: 1px solid #000; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; font-size: 12px; gap: 5px;}
       .print-client-box p { margin: 3px 0; }
-      
-      /* Tabla de Artículos */
       .print-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; border: 1px solid #000;}
       .print-table th, .print-table td { border: 1px solid #000; padding: 6px 10px; text-align: left; }
       .print-table th { background: #e5e7eb; font-weight: bold; text-align: center; }
-      
-      /* Totales */
       .print-totals-box { width: 40%; margin-left: auto; border: 1px solid #000; border-radius: 8px; padding: 10px; font-size: 13px; }
       .print-total-line { display: flex; justify-content: space-between; margin-bottom: 5px; }
       .print-total-final { display: flex; justify-content: space-between; font-size: 18px; font-weight: 900; margin-top: 10px; border-top: 2px solid #000; padding-top: 5px; }
     }
     
+    /* REGLAS OBLIGATORIAS PARA CELULARES */
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+    
     @media (max-width: 900px) {
+      .app { display: flex !important; flex-direction: column !important; }
       .mobile-toggle { display: block; }
       .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
-      .sidebar.open { left: 0; }
+      .sidebar.open { left: 0 !important; }
       .sidebar-overlay.open { display: block; }
+      .topbar { padding: 15px; }
+      .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
     }
   </style>
 </head>
@@ -111,7 +105,6 @@
       <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
-    
   </aside>
 
   <main class="content">
@@ -146,7 +139,7 @@
           </div>
         </div>
 
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
           <button class="btn btn-primary" onclick="abrirModalMovimiento('haber')">⬇ Ingresar Pago (Cobranza)</button>
           <button class="btn btn-outline" style="border-color: var(--danger); color: var(--danger);" onclick="abrirModalMovimiento('debe')">⬆ Cargar Deuda Manual</button>
         </div>
@@ -208,7 +201,6 @@
 </dialog>
 
 <div id="printSection">
-  
   <div class="print-header-grid">
     <div class="print-company">
       <h1>MICRO SAAS SOLUCIONES</h1>
@@ -244,21 +236,18 @@
   </div>
 
   <table class="print-table">
-    <thead id="printTableHeader">
-      </thead>
-    <tbody id="printTableBody">
-      </tbody>
+    <thead id="printTableHeader"></thead>
+    <tbody id="printTableBody"></tbody>
   </table>
 
-  <div class="print-totals-box" id="printTotalsBox">
-    </div>
+  <div class="print-totals-box" id="printTotalsBox"></div>
   
   <div id="printSignatureArea" style="display:none; text-align:center; margin-top:60px;">
     <p>___________________________________</p>
     <p style="font-size: 12px; color: #555;">Firma y Aclaración - Recibí Conforme</p>
   </div>
-
 </div>
+
 <dialog id="modalMov" style="width: 100%; max-width: 400px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
@@ -309,7 +298,6 @@
       
       if(resSales.ok) {
           dbSales = await resSales.json();
-          // ORDENAMOS Y ASIGNAMOS N° DE FACTURA CONSECUTIVO A PARTIR DE 1000
           dbSales.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
           dbSales.forEach((s, index) => {
               s.factNum = 1000 + index;
@@ -390,7 +378,6 @@
       let displayConcept = escapeHtml(m.concept);
       let isFacturaClickable = false;
 
-      // CRUZAR ID PARA OBTENER NUMERO DE FACTURA
       if (!isHaber && m.concept.toLowerCase().includes('ticket #')) {
           const ticketNumber = m.concept.split('#')[1]?.trim();
           const saleObj = dbSales.find(s => s.id.includes(ticketNumber));
@@ -401,7 +388,6 @@
           }
       }
 
-      // Si es factura, el concepto es azul y clickeable
       const conceptHtml = isFacturaClickable 
           ? `<a href="#" onclick="verDetalleFactura('${m.id}'); return false;" style="color:var(--primary); font-weight:800; text-decoration:none; border-bottom:1px dashed var(--primary);">📄 ${displayConcept}</a>` 
           : `<strong>${displayConcept}</strong>`;
@@ -430,7 +416,6 @@
     boxSaldo.style.color = saldoFinal > 0 ? 'var(--danger)' : (saldoFinal < 0 ? 'var(--success)' : 'var(--text)');
   }
 
-  // --- POP UP CON DETALLE DE FACTURA ---
   function verDetalleFactura(movId) {
       const mov = dbCcMovements.find(m => m.id === movId);
       if(!mov) return;
@@ -454,7 +439,6 @@
 
           document.getElementById('detalleFacTotal').textContent = currency(mov.amount);
           
-          // Configurar el botón de imprimir del Modal
           document.getElementById('btnImprimirDesdeModal').onclick = () => {
               document.getElementById('modalDetalleFac').close();
               prepararImpresion(movId);
@@ -464,19 +448,17 @@
       }
   }
 
-  // --- MOTOR DE FACTURACIÓN (PDF) ---
   function prepararImpresion(movId) {
       const mov = dbCcMovements.find(m => m.id === movId);
       const cli = dbClients.find(c => c.id === selectedClientId);
       if(!mov || !cli) return;
 
       const isPago = mov.type === 'haber';
-      const isFacturaA = (!isPago && cli.type === 'client'); // Mayorista = RI = Factura A
+      const isFacturaA = (!isPago && cli.type === 'client');
       
       let numeroComprobante = "0001-" + String(Math.floor(Math.random() * 900000) + 100000).padStart(8, '0');
       let saleObj = null;
 
-      // 1. HEADER DEL DOCUMENTO
       if (isPago) {
           document.getElementById('printDocTitle').textContent = 'RECIBO OFICIAL';
           document.getElementById('printDocLetter').textContent = 'X';
@@ -488,7 +470,6 @@
           document.getElementById('printDocCod').textContent = isFacturaA ? 'Cod. 001' : 'Cod. 006';
           document.getElementById('printSaleCond').textContent = 'Cuenta Corriente';
           
-          // Buscar el N° de factura consecutivo real
           const ticketNumber = mov.concept.split('#')[1]?.trim();
           saleObj = dbSales.find(s => s.id.includes(ticketNumber));
           if(saleObj) {
@@ -499,13 +480,11 @@
       document.getElementById('printDocNum').textContent = numeroComprobante;
       document.getElementById('printDate').textContent = mov.date.split('-').reverse().join('/');
       
-      // 2. DATOS DEL CLIENTE
       document.getElementById('printCliName').textContent = cli.name;
       document.getElementById('printCliDoc').textContent = cli.cuil || '---';
       document.getElementById('printCliAddr').textContent = cli.address || 'Consumidor Final';
       document.getElementById('printCliIva').textContent = isFacturaA ? 'Responsable Inscripto' : 'Consumidor Final';
 
-      // 3. ARMADO DE LA TABLA Y TOTALES
       const tableBody = document.getElementById('printTableBody');
       const tableHeader = document.getElementById('printTableHeader');
       const totalsBox = document.getElementById('printTotalsBox');
@@ -517,7 +496,6 @@
           const itemsList = typeof saleObj.items === 'string' ? JSON.parse(saleObj.items) : saleObj.items;
           
           if (isFacturaA) {
-              // FACTURA A: Muestra precios Netos (sin 21%)
               tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 50%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO NETO</th><th style="width: 10%; text-align: right;">% IVA</th><th style="width: 15%; text-align: right;">SUBTOTAL NETO</th></tr>`;
               
               let totalNeto = 0;
@@ -541,7 +519,6 @@
                 <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
               `;
           } else {
-              // FACTURA B/C: Muestra precios finales y el IVA en $0
               tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 60%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO UNIT.</th><th style="width: 15%; text-align: right;">SUBTOTAL</th></tr>`;
               
               let totalSubtotal = 0;
@@ -564,7 +541,6 @@
           }
       }
 
-      // SI ES UN RECIBO DE PAGO O UN AJUSTE MANUAL
       if (!htmlItems) {
           tableHeader.innerHTML = `<tr><th style="width: 80%;">CONCEPTO DE LA OPERACIÓN</th><th style="width: 20%; text-align: right;">IMPORTE</th></tr>`;
           htmlItems = `<tr>
