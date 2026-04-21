@@ -16,8 +16,9 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
-    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    /* FIX RESPONSIVE: Sin !important en la grilla principal */
+    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
     /* ── NUEVO LAYOUT HORIZONTAL PARA PRODUCTOS ── */
     .layout-stacked { display: flex; flex-direction: column; gap: 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
@@ -50,14 +51,28 @@
     /* Indicador de carga */
     .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
 
-    /* Responsive para que no se rompa en pantallas chicas */
+    /* REGLAS OBLIGATORIAS PARA CELULARES */
+    .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+
     @media (max-width: 900px) {
+      .app { display: flex !important; flex-direction: column !important; }
+      .mobile-toggle { display: block; }
+      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
+      .sidebar.open { left: 0 !important; }
+      .sidebar-overlay.open { display: block; }
+      .topbar { padding: 15px; flex-direction: column; align-items: flex-start; gap: 15px; }
+      .topbar-actions { width: 100%; display: flex; justify-content: space-between; }
+      .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
+      
       .form-grid-horizontal { grid-template-columns: 1fr 1fr; }
       .col-span-2, .col-span-4 { grid-column: span 2; }
     }
+    
     @media (max-width: 500px) {
       .form-grid-horizontal { grid-template-columns: 1fr; }
       .col-span-2, .col-span-4 { grid-column: span 1; }
+      .topbar-actions { flex-direction: column; }
     }
   </style>
 </head>
@@ -66,6 +81,7 @@
 <div id="loadingOverlay" class="loading-overlay">Sincronizando con la nube...</div>
 
 <div class="app">
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
@@ -87,13 +103,16 @@
   </aside>
 
   <main class="content">
-    <header class="topbar" style="align-items: center;">
-      <div class="page-title">
-        <h1 style="margin:0; font-size: 26px;">Productos</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión integral del catálogo, conectado a Cloudflare D1.</p>
+    <header class="topbar">
+      <div style="display: flex; align-items: center; width: 100%;">
+        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
+        <div class="page-title">
+          <h1 style="margin:0; font-size: 26px;">Productos</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión integral del catálogo en D1.</p>
+        </div>
       </div>
       <div class="topbar-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarCatalogoExcel()">⬇ Exportar Excel / Plantilla</button>
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarCatalogoExcel()">⬇ Exportar Plantilla</button>
         <button class="btn btn-primary" onclick="abrirModalImportar()">⬆ Importar Lote (Excel)</button>
       </div>
     </header>
@@ -117,8 +136,7 @@
             <div>
               <label style="font-size: 12px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Categoría *</label>
               <div style="display: flex; gap: 5px;">
-                <select id="prodCategory" class="input-box" required style="font-weight: bold;">
-                    </select>
+                <select id="prodCategory" class="input-box" required style="font-weight: bold;"></select>
                 <button type="button" class="btn btn-primary" style="padding: 10px; flex-shrink: 0;" onclick="abrirModalCategoria()" title="Crear nueva Categoría">+</button>
               </div>
             </div>
@@ -339,7 +357,6 @@
   async function initProducts() {
     mostrarCarga(true);
     try {
-      // Descarga paralela para mayor velocidad
       const [resP, resC] = await Promise.all([
           fetch(`${API_URL}/products`),
           fetch(`${API_URL}/categories`)
@@ -363,7 +380,6 @@
       const select = document.getElementById('prodCategory');
       const currentVal = select.value;
       
-      // Inteligencia: Mezclamos las categorías de la DB con las que ya existían en productos viejos para no perder data
       const legacyCats = [...new Set(dbProducts.map(p => p.category).filter(c => c))];
       const activeCats = dbCategories.map(c => c.name);
       const allCats = [...new Set([...legacyCats, ...activeCats])].sort();
@@ -457,7 +473,6 @@
   window.exportarCatalogoExcel = function() {
       let dataExport = [];
       if (dbProducts.length === 0) {
-          // Plantilla vacía si no hay productos
           dataExport.push({ "NOMBRE": "", "CATEGORIA": "", "SKU": "", "COSTO": 0, "GASTOS": 0, "PRECIO": 0, "ESTADO": "Activo", "COLOR": "", "TALLE": "" });
       } else {
           dataExport = dbProducts.map(p => ({
@@ -505,7 +520,6 @@
           let errores = [];
 
           rows.forEach((row, index) => {
-              // Busca la columna tolerando mayúsculas/minúsculas y espacios
               const findVal = (names) => {
                   const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
                   return key ? row[key] : null;
@@ -526,7 +540,6 @@
               const color = String(findVal(['color']) || '').trim();
               const size = String(findVal(['talle', 'tamaño', 'size']) || '').trim();
 
-              // Si enviaron un SKU, verificamos si ya existe para no duplicarlo, sino actualizamos.
               let existingProd = null;
               if (code) existingProd = dbProducts.find(p => p.code === code);
 
@@ -543,7 +556,6 @@
                   status: status,
                   color: color,
                   size: size,
-                  // Mantenemos el stock y promos actuales si estamos actualizando
                   stock: existingProd ? existingProd.stock : 0,
                   stock_branches: existingProd ? existingProd.stock_branches : '{"Central":0}',
                   promoType: existingProd ? existingProd.promoType : 'none',
@@ -563,7 +575,6 @@
 
           mostrarCarga(true);
           try {
-              // Enviamos los datos en paralelo a D1
               await Promise.all(prodUpdates.map(p => fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(p) })));
               
               document.getElementById('modalImportarProductos').close();
@@ -586,7 +597,6 @@
     
     const id = document.getElementById('prodId').value || 'prod_' + Date.now();
     
-    // Al crearlo manualmente le fijamos el stock inicial a 0
     let existingProd = dbProducts.find(p => p.id === id);
     const prodStock = existingProd ? existingProd.stock : 0;
     const prodBranches = existingProd ? existingProd.stock_branches : '{"Central":0}';
@@ -666,7 +676,7 @@
     document.getElementById('prodProfit').value = '$0.00'; document.getElementById('prodProfit').style.color = "var(--success)";
     document.getElementById('prodMargin').value = '0.0%'; document.getElementById('prodMargin').style.color = "var(--primary)";
     document.getElementById('prodMarkup').value = '0.0%'; document.getElementById('prodMarkup').style.color = "var(--text)";
-    actualizarSelectCategorias(); // Resetea y quita selecciones
+    actualizarSelectCategorias(); 
     togglePromoFields();
   };
 
