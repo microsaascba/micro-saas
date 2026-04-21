@@ -122,7 +122,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const activeUser = localStorage.getItem('activeUser') || localStorage.getItem('saas_username');
   const role = localStorage.getItem('userRole') || localStorage.getItem('saas_role');
   const isLogged = (activeUser !== null && activeUser !== undefined) || (localStorage.getItem('saas_logged_in') === 'true');
-  const allowedModules = JSON.parse(localStorage.getItem('allowedModules') || '[]');
+  
+  // NUEVO: INTERSECCIÓN MÁGICA DE MÓDULOS (Usuario + Empresa)
+  let userModules = JSON.parse(localStorage.getItem('allowedModules') || '[]');
+  let tenantModules = [];
+  try {
+      if (licencia && licencia.allowedModules) {
+          tenantModules = typeof licencia.allowedModules === 'string' ? JSON.parse(licencia.allowedModules) : licencia.allowedModules;
+      } else {
+          tenantModules = ["dashboard","producto","clientes","facturacion","ventas","cc","contable","stock","ordenes","sucursales","usuarios"];
+      }
+  } catch(e) {
+      tenantModules = ["dashboard","producto","clientes","facturacion","ventas","cc","contable","stock","ordenes","sucursales","usuarios"];
+  }
+  const allowedModules = userModules.filter(mod => tenantModules.includes(mod));
 
   // LLAVE MAESTRA: Sucursal vinculada a esta PC
   const terminalBranch = localStorage.getItem('terminal_assigned_branch');
@@ -173,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- SEGURIDAD: BLOQUEO DE OPERACIÓN SIN VÍNCULO ---
-    // Si no es Admin y la PC no está vinculada, bloqueamos módulos que muevan stock o plata
     const sensitiveModules = ['facturacion', 'stock', 'ventas'];
     if (role !== 'admin' && !terminalBranch && sensitiveModules.includes(currentPage)) {
         document.body.innerHTML = `
@@ -195,12 +207,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if(href) {
         const moduleName = href.split('.html')[0]; 
         
-        // Regla Modular Nueva
+        // Regla Modular Nueva (Empresa + Usuario)
         if (allowedModules.length > 0 && !allowedModules.includes(moduleName) && role !== 'admin') {
           link.style.display = 'none';
         }
         
-        // Regla Legacy (Ocultamos Sucursales a cajeros/vendedores antiguos también)
+        // Regla Legacy
         if (role !== 'admin' && (moduleName === 'usuarios' || moduleName === 'sucursales')) link.style.display = 'none';
         if ((role === 'encargado' || role === 'pos') && (moduleName === 'dashboard' || moduleName === 'contable')) link.style.display = 'none';
         if (role === 'pos' && moduleName === 'stock') link.style.display = 'none';
@@ -219,13 +231,11 @@ document.addEventListener('DOMContentLoaded', () => {
           homePage = allowedModules.length > 0 ? allowedModules[0] + '.html' : 'login.html';
       }
 
-      // Si entró a la raíz (dashboard) lo redirigimos silenciosamente
       if (currentPage === 'dashboard') {
           window.location.href = homePage;
           return;
       }
 
-      // Si quiso entrar a otra prohibida (ej: tipeando la URL) lo bloqueamos visualmente
       document.body.innerHTML = `
         <div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif; background: #f8fafc; color: #334155;">
           <h1 style="font-size: 80px; margin: 0;">🛑</h1>
@@ -254,40 +264,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-   // --- ARREGLO VISUAL DEL MENÚ LATERAL (SIDEBAR) ---
-    const globalCss = document.createElement('style');
-    globalCss.innerHTML = `
-      /* Pasamos el overflow al body para no romper el sticky */
-      html, body { overflow-x: hidden !important; }
-      
-      /* Le devolvemos la libertad al contenedor app */
-      .app { overflow-x: visible !important; align-items: start !important; }
-      
-      /* EL FIX ESTÁ ACÁ: Forzamos al menú a pegarse al techo SOLO EN PC */
-      @media (min-width: 769px) {
-          .sidebar { 
-              height: 100vh !important; 
-              position: sticky !important; 
-              top: 0 !important; 
-              overflow-y: auto !important; 
-              display: flex !important; 
-              flex-direction: column !important; 
-          }
-      }
-      
-      /* Estilizamos la barrita de scroll del menú para que quede elegante */
-      .sidebar::-webkit-scrollbar { width: 5px; }
-      .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
-      .sidebar::-webkit-scrollbar-track { background: transparent; }
-    `;
-    document.head.appendChild(globalCss);
-
-   
+  // --- ARREGLO VISUAL DEL MENÚ LATERAL (SIDEBAR) ---
+  const globalCss = document.createElement('style');
+  globalCss.innerHTML = `
+    html, body { overflow-x: hidden !important; }
+    .app { overflow-x: visible !important; align-items: start !important; }
+    @media (min-width: 901px) {
+        .sidebar { 
+            height: 100vh !important; 
+            position: sticky !important; 
+            top: 0 !important; 
+            overflow-y: auto !important; 
+            display: flex !important; 
+            flex-direction: column !important; 
+        }
+    }
+    .sidebar::-webkit-scrollbar { width: 5px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+  `;
+  document.head.appendChild(globalCss);
 });
 
 // --- LÓGICA DE MENÚ RESPONSIVE ---
-
-// 1. Función global para abrir/cerrar (aseguramos que window la reconozca siempre)
 window.toggleMenu = function() {
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.getElementById('sidebarOverlay');
@@ -296,13 +295,11 @@ window.toggleMenu = function() {
     if (overlay) overlay.classList.toggle('open');
 };
 
-// 2. Autocierre del menú al tocar un enlace (solo para pantallas chicas)
 document.addEventListener('DOMContentLoaded', () => {
     const navLinks = document.querySelectorAll('.sidebar .nav a');
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
-            // 768px es la medida que pusiste en tu styles.css para celulares
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= 900) {
                 const sidebar = document.querySelector('.sidebar');
                 const overlay = document.getElementById('sidebarOverlay');
                 if(sidebar) sidebar.classList.remove('open');
