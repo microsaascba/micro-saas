@@ -12,11 +12,13 @@
   </style>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a;}
+    /* FIX RESPONSIVE: Sin !important en la grilla principal */
+    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a;}
+    
     .pos-container { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
     
-    .pos-search-input { width: 100%; padding: 14px 18px; font-size: 15px; font-weight: 600; border: 2px solid var(--primary-soft); border-radius: 10px; outline: none; background: #fff; transition: 0.2s; }
+    .pos-search-input { width: 100%; padding: 14px 18px; font-size: 15px; font-weight: 600; border: 2px solid var(--primary-soft); border-radius: 10px; outline: none; background: #fff; transition: 0.2s; box-sizing: border-box; }
     .pos-search-input:focus { border-color: var(--primary); box-shadow: 0 4px 15px rgba(37,99,235,0.15); }
     
     .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 300px; overflow-y: auto; display: none; margin-top: 5px; }
@@ -27,14 +29,41 @@
     .excel-table { width: 100%; border-collapse: collapse; text-align: left; }
     .excel-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; border-bottom: 2px solid var(--line); border-top: 1px solid var(--line); }
     .excel-table td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
+    
     .qty-control { display: flex; align-items: center; gap: 4px; justify-content: center; }
     .qty-btn { background: var(--panel-2); border: 1px solid var(--line); width: 26px; height: 26px; border-radius: 6px; font-weight: bold; cursor: pointer; color: var(--text); }
     .qty-input { width: 50px; text-align: center; border: 1px solid var(--primary-soft); border-radius: 6px; padding: 6px 4px; font-weight: bold; outline:none; }
+    
     .checkout-footer { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start; }
     .pay-btn { border: 2px solid var(--line); background: #fff; padding: 12px 20px; border-radius: 10px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; flex: 1; }
     .pay-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
     .btn-charge { width: 100%; padding: 18px; font-size: 18px; font-weight: 800; border-radius: 10px; margin-top: 15px; cursor: pointer; background: var(--success); color: white; border: none; }
+    
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); }
+
+    /* REGLAS OBLIGATORIAS PARA CELULARES */
+    .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+    
+    @media (max-width: 900px) {
+      .app { display: flex !important; flex-direction: column !important; }
+      .mobile-toggle { display: block; }
+      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
+      .sidebar.open { left: 0 !important; }
+      .sidebar-overlay.open { display: block; }
+      
+      .topbar { padding: 15px; display: flex; align-items: center; justify-content: space-between; }
+      .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
+      
+      /* Apilar controles de pago y total en móviles */
+      .checkout-footer { grid-template-columns: 1fr; }
+      
+      /* Asegurar que la tabla no rompa el ancho de la pantalla */
+      .table-responsive-wrapper { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+      
+      /* Ajuste para los botones de pago que se vean bien apretados */
+      .pay-btn { padding: 10px; font-size: 13px; flex: 1 1 40%; }
+    }
   </style>
 </head>
 <body>
@@ -42,6 +71,8 @@
 <div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
+
   <aside class="sidebar">
     <div class="brand"><div class="brand-logo">M</div><div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div></div>
     <nav class="nav">
@@ -60,9 +91,12 @@
   </aside>
 
   <main class="content">
-    <header class="topbar">
-      <div class="page-title"><h1>Nueva Factura</h1></div>
-      <button class="btn btn-light" onclick="cancelarVenta()">🗑️ Vaciar</button>
+    <header class="topbar" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center;">
+        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
+        <div class="page-title"><h1 style="margin:0; font-size: 26px;">Nueva Factura</h1></div>
+      </div>
+      <button class="btn btn-light" style="white-space: nowrap;" onclick="cancelarVenta()">🗑️ Vaciar</button>
     </header>
 
     <div class="pos-container">
@@ -87,12 +121,14 @@
             <div id="searchResults" class="autocomplete-list"></div>
           </div>
         </div>
-        <table class="excel-table">
-          <thead>
-            <tr><th>Código</th><th>Descripción</th><th style="text-align: right;">Precio</th><th style="text-align: center;">Cant.</th><th style="text-align: right;">Subtotal</th><th></th></tr>
-          </thead>
-          <tbody id="cartBody"></tbody>
-        </table>
+        <div class="table-responsive-wrapper">
+          <table class="excel-table">
+            <thead>
+              <tr><th>Código</th><th>Descripción</th><th style="text-align: right;">Precio</th><th style="text-align: center;">Cant.</th><th style="text-align: right;">Subtotal</th><th></th></tr>
+            </thead>
+            <tbody id="cartBody"></tbody>
+          </table>
+        </div>
       </article>
 
       <div class="checkout-footer">
@@ -118,7 +154,7 @@
           <div style="display:flex; justify-content: space-between; font-size: 24px; font-weight: 800;">
             <span>Total</span><span id="txtTotal" style="color: var(--primary);">$0</span>
           </div>
-          <button class="btn-charge" id="btnCobrar" onclick="procesarVenta()">Confirmar e Imprimir (F12)</button>
+          <button class="btn-charge" id="btnCobrar" onclick="procesarVenta()">Confirmar e Imprimir</button>
         </article>
       </div>
     </div>
@@ -428,7 +464,7 @@
       const ventaFueB2B = isB2B;
       activarModoB2C(); renderCart();
       
-      if (!ventaFueB2B) window.open('factura.html', '_blank');
+      if (!ventaFueB2B) window.open('imprimir_ticket.html', '_blank');
 
     } catch(e) { alert("Error: " + e.message); }
     finally { mostrarCarga(false); }
