@@ -254,8 +254,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-   
-
    // --- ARREGLO VISUAL DEL MENÚ LATERAL (SIDEBAR) ---
     const globalCss = document.createElement('style');
     globalCss.innerHTML = `
@@ -265,14 +263,16 @@ document.addEventListener('DOMContentLoaded', () => {
       /* Le devolvemos la libertad al contenedor app */
       .app { overflow-x: visible !important; align-items: start !important; }
       
-      /* Forzamos al menú a pegarse al techo y permitir scroll interno */
-      .sidebar { 
-          height: 100vh !important; 
-          position: sticky !important; 
-          top: 0 !important; 
-          overflow-y: auto !important; /* Muestra barra de scroll si el menú es muy largo */
-          display: flex !important; 
-          flex-direction: column !important; 
+      /* EL FIX ESTÁ ACÁ: Forzamos al menú a pegarse al techo SOLO EN PC */
+      @media (min-width: 769px) {
+          .sidebar { 
+              height: 100vh !important; 
+              position: sticky !important; 
+              top: 0 !important; 
+              overflow-y: auto !important; 
+              display: flex !important; 
+              flex-direction: column !important; 
+          }
       }
       
       /* Estilizamos la barrita de scroll del menú para que quede elegante */
