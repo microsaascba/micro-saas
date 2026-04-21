@@ -286,12 +286,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- LÓGICA DE MENÚ RESPONSIVE ---
-function toggleMenu() {
+
+// 1. Función global para abrir/cerrar (aseguramos que window la reconozca siempre)
+window.toggleMenu = function() {
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     
-    if (sidebar && overlay) {
-        sidebar.classList.toggle('open');
-        overlay.classList.toggle('open');
-    }
-}
+    if (sidebar) sidebar.classList.toggle('open');
+    if (overlay) overlay.classList.toggle('open');
+};
+
+// 2. Autocierre del menú al tocar un enlace (solo para pantallas chicas)
+document.addEventListener('DOMContentLoaded', () => {
+    const navLinks = document.querySelectorAll('.sidebar .nav a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            // 768px es la medida que pusiste en tu styles.css para celulares
+            if (window.innerWidth <= 768) {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if(sidebar) sidebar.classList.remove('open');
+                if(overlay) overlay.classList.remove('open');
+            }
+        });
+    });
+});
