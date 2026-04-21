@@ -14,8 +14,10 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
   <style>
-    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    /* FIX RESPONSIVE: Sin !important en la grilla principal */
+    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    
     .layout-1col { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
@@ -59,6 +61,25 @@
       .firmas { display: flex; justify-content: space-between; margin-top: 30px; }
       .firma-line { border-top: 1px solid #000; width: 40%; text-align: center; padding-top: 4px; font-size: 10px; }
     }
+    
+    /* REGLAS OBLIGATORIAS PARA CELULARES */
+    .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+
+    @media (max-width: 900px) {
+      .app { display: flex !important; flex-direction: column !important; }
+      .mobile-toggle { display: block; }
+      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
+      .sidebar.open { left: 0 !important; }
+      .sidebar-overlay.open { display: block; }
+      
+      /* Ajuste específico para la topbar en Stock porque tiene muchos botones */
+      .topbar { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
+      .topbar-actions { justify-content: flex-start; width: 100%; }
+      .topbar-actions button { flex: 1 1 auto; /* Los botones se acomodan solos */ }
+      
+      .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
+    }
   </style>
 </head>
 <body>
@@ -66,6 +87,7 @@
 <div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
@@ -80,23 +102,25 @@
       <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html" class="active"><span class="nav-icon">📚</span> Stock</a>
-      <a href="ordenes.html" class="nav-icon"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="ordenes.html"><span class="nav-icon">📋</span> Órdenes</a>
       <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
   </aside>
 
   <main class="content">
-    <header class="topbar" style="align-items: center;">
-      <div class="page-title">
-        <h1 style="margin:0; font-size: 26px;">Inventario y Logística</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Ingreso de facturas de compra, remitos y estado de depósitos.</p>
+    <header class="topbar">
+      <div style="display: flex; align-items: center; width: 100%;">
+        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
+        <div class="page-title">
+          <h1 style="margin:0; font-size: 26px;">Inventario y Logística</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Ingreso de facturas de compra, remitos y estado de depósitos.</p>
+        </div>
       </div>
       <div class="topbar-actions">
         <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="descargarExcelValorizado()">⬇ Exportar Valorizado PVP</button>
         <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalIngresoMasivo()">📥 Ingreso Masivo (Excel)</button>
         <button class="btn btn-primary" onclick="abrirModalIngresoCompra()">📥 Ingreso Factura (Manual)</button>
-        <button class="btn btn-primary" style="background: #0f766e; border:none;" onclick="abrirModalTransferencia()">⇄ Transferir</button>
         <button class="btn btn-primary" style="background: var(--text); border:none;" onclick="abrirModalAjuste()">+ Ajuste</button>
         <button class="btn btn-primary" style="background: #0f766e; border:none;" onclick="abrirModalTransferencia()">⇄ Transferir</button>
         <button class="btn btn-primary" style="background: #0284c7; border:none;" onclick="abrirModalTransferenciaMasiva()">⇄ Transf. Masiva</button>
@@ -149,7 +173,7 @@
 
         <div id="tab-movimientos" class="tab-content">
           <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="text" id="searchHistory" class="input-box" placeholder="🔍 Buscar por N° de Comprobante, Factura u Origen..." style="max-width: 400px;" onkeyup="renderHistory()">
+            <input type="text" id="searchHistory" class="input-box" placeholder="🔍 Buscar por N° de Comprobante, Factura u Origen..." style="max-width: 400px; width: 100%;" onkeyup="renderHistory()">
           </div>
           <div style="overflow-x: auto;">
             <table class="excel-table">
@@ -409,7 +433,7 @@
   let dbProducts = [];
   let dbBranches = [];
   let dbSuppliers = [];
-  let dbExpenses = []; // Para cruzar las facturas
+  let dbExpenses = []; 
   
   let historyLogs = getData('saas_movements_log', []);
 
@@ -461,7 +485,6 @@
       if (resE.ok) dbExpenses = await resE.json();
     } catch (error) { console.error(error); } 
     finally {
-      // Poblar filtros y selects
       const branchOptions = dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
       const filter = document.getElementById('branchFilter');
       if(filter) filter.innerHTML = '<option value="ALL">Todas las Sucursales</option>' + branchOptions;
@@ -469,7 +492,6 @@
       const destElements = ['masivaDestino', 'ingresoDestino', 'transfOrigen', 'transfDestino', 'ajusteSucursal', 'transfMasivaOrigen', 'transfMasivaDestino'];
       destElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = branchOptions; });
 
-      // Proveedores usan el ID para poder cruzar con la tabla expenses
       const supplierOptions = '<option value="">Seleccioná...</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
       document.getElementById('ingresoProveedor').innerHTML = supplierOptions;
       document.getElementById('masivaProv').innerHTML = supplierOptions;
@@ -495,7 +517,6 @@
           return;
       }
 
-      // Buscar las facturas de ESTE proveedor en Contabilidad
       const facturasDelProveedor = dbExpenses.filter(e => e.supplierId === provId);
 
       if (facturasDelProveedor.length === 0) {
@@ -527,7 +548,6 @@
         branchToView = branchFilterEl ? branchFilterEl.value : 'ALL';
     }
 
-    // Construcción Dinámica de Columnas
     let theadHtml = `<tr>
       <th>Código</th>
       <th>Producto / Descripción</th>
@@ -568,7 +588,7 @@
       }
 
       kpiUnidades += displayStockForKPI;
-      kpiValorizado += (displayStockForKPI * (p.price || 0)); // VALORIZADO A PRECIO DE VENTA
+      kpiValorizado += (displayStockForKPI * (p.price || 0)); 
       if (displayStockForKPI <= 3 && displayStockForKPI > 0) kpiBajo++;
       if (displayStockForKPI === 0) kpiCero++;
 
@@ -641,7 +661,6 @@
       window.print();
   }
 
-  // --- EXPORTAR EXCEL VALORIZADO A PVP ---
   function descargarExcelValorizado() {
       if(dbProducts.length === 0) return alert("No hay datos.");
       
@@ -658,7 +677,6 @@
               "STOCK TOTAL": stockTotalGlobal
           };
 
-          // Agregar columna por cada sucursal
           dbBranches.forEach(b => { rowData[b.name] = parseInt(branches[b.name] || 0); });
           
           rowData["VALORIZADO (PVP)"] = stockTotalGlobal * (p.price || 0);
@@ -673,7 +691,6 @@
       link.click();
   }
 
-  // --- MODALES ---
   function abrirModalAjuste() { document.getElementById('modalAjuste').showModal(); }
   function abrirModalTransferencia() { document.getElementById('modalTransferencia').showModal(); }
   function abrirModalIngresoCompra() { 
@@ -727,7 +744,6 @@
 
               let branches = getBranches(prod);
               
-              // Validación crucial: ¿Hay stock suficiente en el origen?
               if (branches[origen] === undefined || branches[origen] < cant) {
                   errores.push(`Fila ${index + 2}: Sin stock suficiente de ${sku} en ${origen} (Disponible: ${branches[origen] || 0}).`);
                   return;
@@ -753,7 +769,6 @@
 
           mostrarCarga(true);
           try {
-              // Enviamos los datos en paralelo a D1
               await Promise.all(prodUpdates.map(p => fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(p) })));
               logMovement('Transferencia', origen, destino, `Transferencia Masiva (Lote Excel)`, itemsParaRemito);
               document.getElementById('modalTransferenciaMasiva').close();
@@ -879,7 +894,6 @@
       reader.readAsArrayBuffer(file);
   }
 
-  // --- OTRAS FUNCIONES (Transferencia y Ajuste) ---
   async function procesarAjuste(e) {
     e.preventDefault();
     const prodId = document.getElementById('ajusteProducto').value;
