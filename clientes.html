@@ -20,6 +20,10 @@
     .layout-2col { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
     @media (max-width: 1000px) { .layout-2col { grid-template-columns: 1fr; } }
     
+    /* Clase para grillas de 2 columnas que se apilan en móvil */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .action-buttons { display: flex; gap: 10px; }
+
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
     
@@ -54,6 +58,11 @@
       
       .topbar { padding: 15px; display: flex; align-items: center; justify-content: flex-start; }
       .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
+      
+      /* Apilar columnas del formulario */
+      .form-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+      .action-buttons { flex-direction: column; }
+      .action-buttons button { width: 100%; }
       
       /* Ajustes para la ficha clínica en celulares */
       .ficha-receta { display: block; overflow-x: auto; white-space: nowrap; }
@@ -112,7 +121,7 @@
             <input type="text" id="cliName" class="input-box" required placeholder="Ej: Juan Perez">
           </div>
           
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+          <div class="form-grid" style="margin-bottom: 15px;">
             <div>
               <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT / DNI</label>
               <input type="text" id="cliCuil" class="input-box" placeholder="Sin guiones">
@@ -128,7 +137,7 @@
             <input type="text" id="cliAddress" class="input-box" placeholder="Calle, Número, Ciudad">
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+          <div class="form-grid" style="margin-bottom: 25px;">
             <div>
               <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Condición IVA</label>
               <select id="cliIvaCondition" class="input-box">
@@ -147,7 +156,7 @@
             </div>
           </div>
 
-          <div style="display: flex; gap: 10px;">
+          <div class="action-buttons">
             <button type="button" class="btn btn-light" style="flex:1;" onclick="limpiarFormulario()">Cancelar</button>
             <button type="submit" class="btn btn-primary" style="flex:2;" id="btnSave">Guardar Cliente</button>
           </div>
@@ -212,7 +221,7 @@
 <script>
   const API_URL = "/api"; 
   let dbClients = [];
-  let dbOrders = []; // Almacenará el historial de la óptica
+  let dbOrders = []; 
   const PIN_ADMIN = "1234";
   let pendingAdminAction = null;
   let pendingAdminParam = null;
@@ -224,7 +233,6 @@
   async function initClients() {
     mostrarCarga(true);
     try {
-      // Descargamos los clientes y el historial de órdenes al mismo tiempo
       const [resC, resO] = await Promise.all([
           fetch(`${API_URL}/clients`),
           fetch(`${API_URL}/optical`)
@@ -314,10 +322,7 @@
 
     document.getElementById('fichaClientName').textContent = `${c.name} ${c.cuil ? `(DNI: ${c.cuil})` : ''}`;
     
-    // Filtramos las órdenes de este cliente (por ID o por Nombre exacto para historial viejo)
     const historial = dbOrders.filter(o => o.clientId === c.id || o.clientName.toLowerCase() === c.name.toLowerCase());
-    
-    // Ordenamos de más reciente a más antigua
     historial.sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
 
     const fichaContent = document.getElementById('fichaContent');
@@ -340,7 +345,7 @@
                 <div style="font-weight:bold; color:${colorEstado}; text-transform:uppercase;">${o.status}</div>
               </div>
               
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; font-size: 13px;">
+              <div class="form-grid" style="margin-bottom: 15px; font-size: 13px;">
                 <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid var(--line);">
                   <strong style="color:var(--primary); display:block; margin-bottom:4px;">Armazón:</strong> 
                   ${escapeHtml(o.frameName || o.frameCode || '-')}
@@ -380,7 +385,6 @@
     document.getElementById('modalFichaClinica').showModal();
   }
 
-  // --- CAMBIAR ESTADO (ACTIVAR / INACTIVAR) CON PIN ---
   function toggleEstadoClientePrompt(id) {
     const c = dbClients.find(x => x.id === id);
     if (!c) return;
