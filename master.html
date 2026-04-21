@@ -302,6 +302,22 @@
         <div class="field"><label>Primer Vencimiento *</label><input type="date" id="cDueDate" required /></div>
         
         <div id="adminConfigBox" class="field full admin-box">
+          <div class="field full admin-box" style="background: rgba(16, 185, 129, 0.05); border-color: var(--success); margin-top: 15px;">
+          <p style="color: var(--success);"><strong>Módulos Contratados (Plan del Cliente):</strong></p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="dashboard" checked> Dashboard</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="producto" checked> Productos</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="clientes" checked> Clientes</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="facturacion" checked> Facturación</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="ventas" checked> Ventas/Caja</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="cc" checked> Cta. Corriente</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="contable" checked> Contable</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="stock" checked> Stock</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="ordenes" checked> Órdenes</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="sucursales" checked> Sucursales</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="usuarios" checked> Usuarios</label>
+          </div>
+        </div>
           <p><strong>Usuario del Sistema Único del Cliente:</strong></p>
           <div class="form-grid">
             <div class="field"><label>Usuario Admin *</label><input type="text" id="cAdminUser" required /></div>
