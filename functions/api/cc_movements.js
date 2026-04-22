@@ -2,6 +2,16 @@ function getCompanyIdFromRequest(request) {
   return request.headers.get('x-company-id') || '';
 }
 
+function normalizeMovementType(type) {
+  const t = String(type || '').toLowerCase();
+  if (['credit', 'haber', 'pago'].includes(t)) return 'credit';
+  return 'debit';
+}
+
+function signedAmount(type, amount) {
+  return normalizeMovementType(type) === 'credit' ? -Number(amount || 0) : Number(amount || 0);
+}
+
 export async function onRequestGet(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
@@ -11,6 +21,7 @@ export async function onRequestGet(context) {
 
     const url = new URL(context.request.url);
     const clientId = url.searchParams.get('clientId');
+    const includeBalance = url.searchParams.get('withBalance') === '1';
 
     let query = "SELECT * FROM cc_movements WHERE company_id = ?";
     const binds = [companyId];
@@ -20,11 +31,25 @@ export async function onRequestGet(context) {
       binds.push(clientId);
     }
 
-    query += " ORDER BY date DESC, createdAt DESC";
+    query += " ORDER BY date ASC, createdAt ASC";
 
     const { results } = await context.env.DB.prepare(query).bind(...binds).all();
-    return Response.json(results);
 
+    let runningBalance = 0;
+    const mapped = results.map(row => {
+      const normalizedType = normalizeMovementType(row.type);
+      const amount = Number(row.amount || 0);
+      runningBalance += signedAmount(normalizedType, amount);
+
+      return {
+        ...row,
+        type: normalizedType,
+        amount,
+        balance: includeBalance ? runningBalance : undefined
+      };
+    });
+
+    return Response.json(includeBalance ? mapped : mapped.map(({ balance, ...rest }) => rest));
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
@@ -38,6 +63,7 @@ export async function onRequestPost(context) {
     }
 
     const c = await context.request.json();
+    const normalizedType = normalizeMovementType(c.type);
 
     await context.env.DB.prepare(`
       INSERT INTO cc_movements (
@@ -72,7 +98,7 @@ export async function onRequestPost(context) {
       companyId,
       c.clientId || '',
       c.date || new Date().toISOString().slice(0, 10),
-      c.type || 'debit',
+      normalizedType,
       Number(c.amount || 0),
       c.concept || '',
       c.reference_type || 'manual',
@@ -84,7 +110,6 @@ export async function onRequestPost(context) {
     ).run();
 
     return Response.json({ success: true });
-
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
