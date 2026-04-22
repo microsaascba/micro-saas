@@ -611,7 +611,7 @@
     reader.readAsDataURL(file);
   }
 
-  // ── MAGIA ARCA / AFIP ──
+  // ── MAGIA ARCA / AFIP CON CONTROL DE TIEMPO ──
   async function consultarDatosFiscales() {
     const cuitInput = document.getElementById('cCuil');
     const cuitVal = cuitInput.value.replace(/[^0-9]/g, ''); 
@@ -627,9 +627,8 @@
     loader.style.color = 'var(--primary)';
 
     try {
-        // Obliga a cortar si tarda más de 4 segundos para que no te congele
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 Segundos de espera máxima
         
         let data;
         try {
@@ -666,6 +665,7 @@
         setTimeout(() => loader.style.display = 'none', 4000);
     }
   }
+
   // ── 5. ACCIONES LOGICAS: LEADS ──
   async function cambiarEstadoLead(id, nuevoEstado) {
     const c = dbClientes.find(x => x.id === id);
@@ -753,7 +753,7 @@
   
   function editarCliente(id) {
     const c = dbClientes.find(x => x.id === id); if(!c) return; editingClientId = id; document.getElementById('clienteModalTitle').textContent = 'Editar Cliente';
-    document.getElementById('cTempId').value = id; document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || ''; document.getElementById('cCuil').value = c.cuil || ''; document.getElementById('cAddress').value = c.address || ''; document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || ''; document.getElementById('cFee').value = c.fee; document.getElementById('cDueDate').value = c.dueDate; document.getElementById('cAdminUser').value = c.adminUser || ''; document.getElementById('cAdminPass').value = c.adminPass || ''; document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || ''; 
+    document.getElementById('cTempId').value = id; document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || ''; document.getElementById('cCuil').value = c.cuil || ''; document.getElementById('cAddress').value = c.address || ''; document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || ''; document.getElementById('cFee').value = c.fee || 0; document.getElementById('cDueDate').value = c.dueDate || ''; document.getElementById('cAdminUser').value = c.adminUser || ''; document.getElementById('cAdminPass').value = c.adminPass || ''; document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || ''; 
     
     document.getElementById('cCountry').value = c.country || 'Argentina'; 
     document.getElementById('cProvince').value = c.province || ''; 
@@ -803,13 +803,13 @@
       if (tempId || editingClientId) { const realId = tempId || editingClientId; const idx = dbClientes.findIndex(x => x.id === realId); data.id = realId; data.active = dbClientes[idx].active; dbClientes[idx] = data; } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); dbClientes.push(data); }
       localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('clienteDialog'); 
       const select = document.getElementById('filtroClientePagos'); const currentVal = select.value;
-      select.innerHTML = '<option value="ALL">Mostrar Todos los Clientes</option>' + dbClientes.filter(c => c.type !== 'lead').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-      select.value = currentVal || 'ALL'; renderAll(); 
+      if(select) { select.innerHTML = '<option value="ALL">Mostrar Todos los Clientes</option>' + dbClientes.filter(c => c.type !== 'lead').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join(''); select.value = currentVal || 'ALL'; }
+      renderAll(); 
     }
     btn.textContent = 'Guardar Cliente Oficial'; btn.disabled = false;
   }
 
- async function toggleAcceso(id) { 
+  async function toggleAcceso(id) { 
     const c = dbClientes.find(x => x.id === id); 
     if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { 
       
@@ -827,12 +827,20 @@
         const res = await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }); 
         if(!res.ok) throw new Error(await res.text());
         await loadDataFromCloud(); 
-        alert(`Estado actualizado con éxito.`);
       } catch (err) { 
-        alert("Error de la Base de Datos al intentar bloquear:\n" + err.message + "\n\nAsegurate de haber creado las columnas 'logo', 'city', 'province' y 'country' en D1.");
+        alert("Error de la Base de Datos al intentar cambiar el estado:\n" + err.message);
+        localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); 
         renderAll(); 
       } 
     } 
+  }
+
+  async function borrarCliente(id) {
+    const c = dbClientes.find(x => x.id === id);
+    if(c && confirm(`🚨 ATENCIÓN: ¿Seguro que querés borrar definitivamente a ${c.name}?`)) {
+      try { await fetch(`/api/clients?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud(); } 
+      catch (err) { dbClientes = dbClientes.filter(x => x.id !== id); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); }
+    }
   }
 
   // ── 7. RESTO DEL CÓDIGO (Pagos, Gastos, Presupuestos) ──
