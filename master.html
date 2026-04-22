@@ -927,74 +927,79 @@
   }
   
   async function guardarCliente(e) {
-    e.preventDefault();
+  e.preventDefault();
 
-    const btn = document.getElementById('btnGuardarCli');
-    btn.textContent = 'Guardando...';
-    btn.disabled = true;
+  const btn = document.getElementById('btnGuardarCli');
+  btn.textContent = 'Guardando...';
+  btn.disabled = true;
 
-    const tempId = document.getElementById('cTempId').value;
-    const modulosSeleccionados = Array.from(document.querySelectorAll('input[name="cliModules"]:checked')).map(cb => cb.value);
+  const tempId = document.getElementById('cTempId').value;
+  const modulosSeleccionados = Array.from(
+    document.querySelectorAll('input[name="cliModules"]:checked')
+  ).map(cb => cb.value);
 
-    const currentClient = tempId ? dbClientes.find(x => x.id === tempId) : null;
+  const currentClient = tempId ? dbClientes.find(x => x.id === tempId) : null;
 
-    const data = {
-      id: tempId || editingClientId || ('cli_' + Math.random().toString(36).slice(2, 9)),
-      name: document.getElementById('cName').value.trim(),
-      contact: document.getElementById('cContact').value.trim(),
-      cuil: document.getElementById('cCuil').value.trim(),
-      address: document.getElementById('cAddress').value.trim(),
-      phone: document.getElementById('cPhone').value.trim(),
-      email: document.getElementById('cEmail').value.trim(),
-      fee: Number(document.getElementById('cFee').value || 0),
-      dueDate: document.getElementById('cDueDate').value,
-      active: currentClient ? currentClient.active : true,
-      type: 'client',
-      adminUser: document.getElementById('cAdminUser').value.trim(),
-      adminPass: document.getElementById('cAdminPass').value.trim(),
-      oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser || '',
-      city: document.getElementById('cCity').value.trim(),
-      country: document.getElementById('cCountry').value,
-      allowedModules: modulosSeleccionados,
-      logo: document.getElementById('cLogoBase64').value,
-      createdAt: currentClient?.createdAt || new Date().toISOString()
-    };
+  const clientId = tempId || editingClientId || ('cli_' + Math.random().toString(36).slice(2, 9));
+  const adminUser = document.getElementById('cAdminUser').value.trim();
+  const adminPass = document.getElementById('cAdminPass').value.trim();
 
-    try {
-      await fetchJson('/api/master_clients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+  const data = {
+    id: clientId,
+    name: document.getElementById('cName').value.trim(),
+    contact: document.getElementById('cContact').value.trim(),
+    cuil: document.getElementById('cCuil').value.trim(),
+    address: document.getElementById('cAddress').value.trim(),
+    phone: document.getElementById('cPhone').value.trim(),
+    email: document.getElementById('cEmail').value.trim(),
+    fee: Number(document.getElementById('cFee').value || 0),
+    dueDate: document.getElementById('cDueDate').value,
+    active: currentClient ? currentClient.active : true,
+    type: 'client',
+    adminUser,
+    adminPass,
+    oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser || '',
+    city: document.getElementById('cCity').value.trim(),
+    country: document.getElementById('cCountry').value,
+    allowedModules: modulosSeleccionados,
+    logo: document.getElementById('cLogoBase64').value,
+    createdAt: currentClient?.createdAt || new Date().toISOString()
+  };
 
-      cerrarModal('clienteDialog');
-      await loadDataFromCloud();
-    } catch(err) {
-      const idx = dbClientes.findIndex(x => x.id === data.id);
-      if (idx >= 0) dbClientes[idx] = data;
-      else dbClientes.push(data);
+  const userPayload = {
+    id: currentClient?.userId || ('usr_' + clientId),
+    username: adminUser,
+    password: adminPass,
+    role: 'admin',
+    active: data.active,
+    createdAt: currentClient?.createdAt || new Date().toISOString(),
+    allowedModules: modulosSeleccionados,
+    company_id: clientId
+  };
 
-      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
-      cerrarModal('clienteDialog');
+  try {
+    await fetchJson('/api/master_clients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
 
-      const select = document.getElementById('filtroClientePagos');
-      const currentVal = select.value;
-      if (select) {
-        select.innerHTML =
-          '<option value="ALL">Mostrar Todos los Clientes</option>' +
-          dbClientes
-            .filter(c => c.type !== 'lead')
-            .map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`)
-            .join('');
-        select.value = currentVal || 'ALL';
-      }
+    await fetchJson('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userPayload)
+    });
 
-      renderAll();
-    }
-
-    btn.textContent = 'Guardar Cliente Oficial';
-    btn.disabled = false;
+    cerrarModal('clienteDialog');
+    await loadDataFromCloud();
+  } catch(err) {
+    console.error(err);
+    alert("Error guardando cliente y usuario de acceso.");
   }
+
+  btn.textContent = 'Guardar Cliente Oficial';
+  btn.disabled = false;
+}
 
   async function toggleAcceso(id) {
     const c = dbClientes.find(x => x.id === id);
