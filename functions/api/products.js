@@ -35,8 +35,7 @@ export async function onRequestGet(context) {
     const status = url.searchParams.get('status') || 'Activo';
 
     let query = `
-      SELECT * 
-      FROM products 
+      SELECT * FROM products 
       WHERE company_id = ?
     `;
     const binds = [companyId];
@@ -86,23 +85,58 @@ export async function onRequestPost(context) {
       }
     }
 
-    // STOCK POR SUCURSAL
-    let stockBranches = {};
+    // 🔥 LÓGICA DE SUCURSAL BASE (AUTO-CREACIÓN)
+    let defaultBranchName = 'Central';
     try {
-      stockBranches = typeof data.stock_branches === 'string'
-        ? JSON.parse(data.stock_branches)
-        : (data.stock_branches || {});
-    } catch {
-      stockBranches = { Central: 0 };
+      const { results: branches } = await context.env.DB.prepare(`
+        SELECT name FROM branches 
+        WHERE company_id = ? AND status = 'Activo'
+      `).bind(companyId).all();
+
+      if (branches.length > 0) {
+        defaultBranchName = branches[0].name; // Usamos la primera que exista
+      } else {
+        // No hay sucursales: Creamos "Central" automáticamente
+        const newBranchId = 'br_central_' + Date.now();
+        await context.env.DB.prepare(`
+          INSERT INTO branches (id, company_id, name, address, manager, phone, createdAt, status) 
+          VALUES (?, ?, 'Central', '', '', '', datetime('now'), 'Activo')
+        `).bind(newBranchId, companyId).run();
+      }
+    } catch (e) {
+      // Si la tabla no existe o hay error, asume 'Central'
+      console.warn("Error verificando sucursales, usando 'Central' por defecto.");
     }
 
-    // fallback mínimo
-    if (Object.keys(stockBranches).length === 0) {
-      stockBranches = { Central: safeNumber(data.stock) };
+    // 🔥 CONSTRUCCIÓN PERFECTA DEL STOCK
+    const existingProd = await context.env.DB.prepare(`
+      SELECT stock, stock_branches 
+      FROM products 
+      WHERE id = ? AND company_id = ?
+    `).bind(id, companyId).first();
+
+    let finalStockBranches = {};
+    let finalStockTotal = 0;
+
+    if (existingProd) {
+      // ES EDICIÓN: Protegemos el stock existente, NO lo sobrescribimos con data del frontend.
+      try { finalStockBranches = JSON.parse(existingProd.stock_branches); } catch { finalStockBranches = {}; }
+      
+      // Si estaba corrupto o vacío, lo arreglamos enviando el stock total a la sucursal por defecto
+      if (!finalStockBranches || Object.keys(finalStockBranches).length === 0) {
+        finalStockBranches = { [defaultBranchName]: safeNumber(existingProd.stock) };
+      }
+      finalStockTotal = Object.values(finalStockBranches).reduce((a, b) => a + safeNumber(b), 0);
+    } else {
+      // ES ALTA NUEVA: Asignamos sucursal y stock inicial
+      const branchToUse = safeString(data.initialBranch) || defaultBranchName;
+      const initialStock = safeNumber(data.initialStock);
+      
+      finalStockBranches = { [branchToUse]: initialStock };
+      finalStockTotal = initialStock;
     }
 
-    const totalStock = Object.values(stockBranches).reduce((a, b) => a + safeNumber(b), 0);
-
+    // 🔥 GUARDAR EN BASE DE DATOS
     await context.env.DB.prepare(`
       INSERT INTO products (
         id,
@@ -141,13 +175,13 @@ export async function onRequestPost(context) {
       safeString(data.category),
       safeNumber(data.cost),
       safeNumber(data.price),
-      totalStock,
+      finalStockTotal, // Insertamos el stock total calculado
       data.status || 'Activo',
       safeString(data.promoType),
       safeNumber(data.promoValue),
       safeString(data.promoLinked),
       data.createdAt || new Date().toISOString(),
-      safeJSON(stockBranches, { Central: 0 })
+      safeJSON(finalStockBranches) // Insertamos el JSON perfecto
     ).run();
 
     return Response.json({ success: true });
