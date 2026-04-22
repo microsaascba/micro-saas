@@ -10,7 +10,6 @@
     body { animation: fadeIn 0.15s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     
-    /* ── Estilos específicos del Dashboard ── */
     .hero { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); color: #fff; border-radius: 24px; padding: 28px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; box-shadow: var(--shadow-lg); margin-bottom: 22px; position: relative; overflow: hidden; }
     .hero::after { content: ''; position: absolute; width: 320px; height: 320px; right: -70px; top: -90px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.14), transparent 60%); }
     .hero h2 { margin: 0; font-size: 24px; line-height: 1.2; }
@@ -70,6 +69,14 @@
     .excel-table td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
     .excel-table tbody tr:hover { background-color: #f8fafc; }
 
+    .company-logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: inherit;
+      background: #fff;
+    }
+
     @media (max-width: 1200px) {
       .hero { grid-template-columns: 1fr; }
       .three-col, .two-col-eq { grid-template-columns: 1fr; }
@@ -93,8 +100,8 @@
 
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
+      <div class="brand-logo" id="companyLogo">M</div>
+      <div class="brand-text"><strong id="companyBrandText">Empresa</strong><small>Control del negocio</small></div>
     </div>
     <nav class="nav">
       <a href="dashboard.html" class="active"><span class="nav-icon">📊</span> Dashboard</a>
@@ -156,8 +163,8 @@
     <article class="card card-pad" style="margin-bottom: 18px;">
       <div class="section-head" style="margin-bottom: 15px;">
         <div>
-            <h2 style="margin:0; font-size:18px;">Rendimiento por Sucursal (P&L Operativo)</h2>
-            <p style="margin:4px 0 0; font-size:13px; color:var(--muted);">Ingresos, Costo de Mercadería (CMV) y Utilidad Bruta</p>
+          <h2 style="margin:0; font-size:18px;">Rendimiento por Sucursal (P&L Operativo)</h2>
+          <p style="margin:4px 0 0; font-size:13px; color:var(--muted);">Ingresos, Costo de Mercadería (CMV) y Utilidad Bruta</p>
         </div>
         <a href="ventas.html" class="ghost-link">Ver tickets</a>
       </div>
@@ -207,12 +214,31 @@
 
 <script src="core.js"></script>
 <script>
-// ── FUNCIONES AUXILIARES DE FORMATEO (Faltaban en la versión anterior) ──
-function toNum(v) { return Number(v) || 0; }
-function percent(n) { return (Number(n) || 0).toFixed(1) + '%'; }
-function saleTotal(s) { return typeof s.total === 'number' ? s.total : 0; }
-function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
-function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function toNum(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function percent(n) {
+  return (Number(n) || 0).toFixed(1) + '%';
+}
+
+function saleTotal(s) {
+  return typeof s.total === 'number' ? s.total : 0;
+}
+
+function currency(n) {
+  return new Intl.NumberFormat('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0
+  }).format(n || 0);
+}
+
+function escapeHtml(v) {
+  return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function simpleItem(title, sub, value, note) {
   return `
     <div class="simple-item">
@@ -235,10 +261,25 @@ function toggleMenu() {
 let dbProducts = [];
 let dbSales = [];
 let dbExpenses = [];
+let dbBranches = [];
+
+function applyCompanyBranding() {
+  const companyName = localStorage.getItem('company_name') || 'Empresa';
+  const companyLogo = localStorage.getItem('company_logo') || '';
+
+  const brandText = document.getElementById('companyBrandText');
+  if (brandText) brandText.textContent = companyName;
+
+  const logoBox = document.getElementById('companyLogo');
+  if (logoBox && companyLogo) {
+    logoBox.innerHTML = `<img src="${companyLogo}" alt="Logo empresa" class="company-logo-img">`;
+  }
+}
 
 async function initDashboard() {
   try {
-    // Definir fechas por defecto (Mes actual)
+    applyCompanyBranding();
+
     const d = new Date();
     const primerDiaMes = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
     const hoy = d.toISOString().split('T')[0];
@@ -246,28 +287,29 @@ async function initDashboard() {
     document.getElementById('dashDesde').value = primerDiaMes;
     document.getElementById('dashHasta').value = hoy;
 
-    // Poblar sucursales según Rol
     const role = localStorage.getItem('userRole') || 'admin';
     const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
     const selSuc = document.getElementById('dashSucursal');
     
     if (role === 'admin') {
-        selSuc.innerHTML = '<option value="ALL">Todas las Sucursales</option>';
-        const resB = await fetch('/api/branches');
-        if (resB.ok) {
-            const branches = await resB.json();
-            branches.forEach(b => selSuc.innerHTML += `<option value="${b.name}">${b.name}</option>`);
-        }
+      selSuc.innerHTML = '<option value="ALL">Todas las Sucursales</option>';
+
+      const resB = await apiFetch('/api/branches');
+      if (resB.ok) {
+        dbBranches = await resB.json();
+        dbBranches.forEach(b => {
+          selSuc.innerHTML += `<option value="${b.name}">${b.name}</option>`;
+        });
+      }
     } else {
-        selSuc.innerHTML = `<option value="${terminalActiva}">${terminalActiva}</option>`;
-        selSuc.disabled = true;
+      selSuc.innerHTML = `<option value="${terminalActiva}">${terminalActiva}</option>`;
+      selSuc.disabled = true;
     }
 
-    // Cargar datos
     const [resP, resS, resE] = await Promise.all([
-      fetch('/api/products'),
-      fetch('/api/sales'),
-      fetch('/api/expenses')
+      apiFetch('/api/products'),
+      apiFetch('/api/sales'),
+      apiFetch('/api/expenses')
     ]);
     
     if (resP.ok) dbProducts = await resP.json();
@@ -287,165 +329,195 @@ function computeState() {
   const hasta = document.getElementById('dashHasta').value;
   const sucursal = document.getElementById('dashSucursal').value;
 
-  dbProducts.forEach(p => { p.margin = p.price > 0 ? ((p.price - (p.cost || 0)) / p.price) * 100 : 0; });
-
-  // 1. Filtrar Ventas por Fecha
-  let periodSales = dbSales.filter(s => {
-      const d = s.date || (s.createdAt || '').split('T')[0];
-      return d >= desde && d <= hasta;
+  dbProducts.forEach(p => {
+    p.margin = p.price > 0 ? ((p.price - (p.cost || 0)) / p.price) * 100 : 0;
   });
 
-  // 2. Calcular desglose (Ingresos, CMV, Utilidad) por sucursal ANTES de filtrar
+  let periodSales = dbSales.filter(s => {
+    const d = s.date || (s.createdAt || '').split('T')[0];
+    return d >= desde && d <= hasta && (s.status || '') !== 'Anulada';
+  });
+
   const branchBreakdown = {};
   let totalPeriodoGlobal = 0;
   
   periodSales.forEach(s => {
-      const b = s.branch || 'Central';
-      if (!branchBreakdown[b]) branchBreakdown[b] = { ingresos: 0, cmv: 0 };
-      
-      const tot = typeof s.total === 'number' ? s.total : 0;
-      branchBreakdown[b].ingresos += tot;
-      totalPeriodoGlobal += tot;
+    const b = s.branch || 'Central';
+    if (!branchBreakdown[b]) branchBreakdown[b] = { ingresos: 0, cmv: 0 };
+    
+    const tot = typeof s.total === 'number' ? s.total : 0;
+    branchBreakdown[b].ingresos += tot;
+    totalPeriodoGlobal += tot;
 
-      // Calcular el CMV sumando el costo de cada ítem en el ticket
-      const items = typeof s.items === 'string' ? JSON.parse(s.items) : (s.items || []);
-      items.forEach(i => {
-          branchBreakdown[b].cmv += (toNum(i.qty) || 1) * (toNum(i.cost) || 0);
-      });
+    const items = typeof s.items === 'string'
+      ? JSON.parse(s.items)
+      : (typeof s.itemsJSON === 'string' ? JSON.parse(s.itemsJSON) : (s.items || []));
+
+    items.forEach(i => {
+      branchBreakdown[b].cmv += (toNum(i.qty) || 1) * (toNum(i.cost) || 0);
+    });
   });
 
-  // Calcular la Utilidad y Margen para cada Sucursal
   for (let b in branchBreakdown) {
-      const data = branchBreakdown[b];
-      data.utilidad = data.ingresos - data.cmv;
-      data.margen = data.ingresos > 0 ? (data.utilidad / data.ingresos) * 100 : 0;
+    const data = branchBreakdown[b];
+    data.utilidad = data.ingresos - data.cmv;
+    data.margen = data.ingresos > 0 ? (data.utilidad / data.ingresos) * 100 : 0;
   }
 
-  // 3. Aplicar filtro de Sucursal a las ventas globales para el resto de KPIs
   if (sucursal !== 'ALL') {
-      periodSales = periodSales.filter(s => s.branch === sucursal);
+    periodSales = periodSales.filter(s => s.branch === sucursal);
   }
 
-  const incomePeriod = periodSales.reduce((a,s) => a + (typeof s.total === 'number' ? s.total : 0), 0);
+  const incomePeriod = periodSales.reduce((a, s) => a + (typeof s.total === 'number' ? s.total : 0), 0);
 
-  // 4. Filtrar Egresos (Solo por fecha, que estén pagados y NO anulados)
   const periodExpenses = dbExpenses.filter(e => {
-      const d = e.date || '';
-      return d >= desde && d <= hasta && (e.status || '').toLowerCase() === 'pagado';
+    const d = e.date || '';
+    return d >= desde && d <= hasta &&
+      (e.status || '').toLowerCase() === 'pagado' &&
+      (sucursal === 'ALL' || (e.branch || 'Global') === sucursal || (e.branch || 'Global') === 'Global');
   });
-  const outflowsPeriod = periodExpenses.reduce((a,e) => a + (Number(e.amount)||0), 0);
 
-  const netPeriod = sucursal === 'ALL' ? incomePeriod - outflowsPeriod : incomePeriod;
+  const outflowsPeriod = periodExpenses.reduce((a, e) => a + (Number(e.amount) || 0), 0);
+  const netPeriod = incomePeriod - outflowsPeriod;
 
-  const avgMargin = dbProducts.length ? dbProducts.reduce((a,p) => a + (Number(p.margin)||0), 0) / dbProducts.length : 0;
-  const lowStock  = [...dbProducts].filter(p => (Number(p.stock)||0) <= (Number(p.stockMin)||3) && p.status !== 'Inactivo').sort((a,b)=>(Number(a.stock)||0)-(Number(b.stock)||0)).slice(0,3);
+  const avgMargin = dbProducts.length
+    ? dbProducts.reduce((a, p) => a + (Number(p.margin) || 0), 0) / dbProducts.length
+    : 0;
+
+  const lowStock = [...dbProducts]
+    .filter(p => (Number(p.stock) || 0) <= (Number(p.stockMin) || 3) && p.status !== 'Inactivo')
+    .sort((a, b) => (Number(a.stock) || 0) - (Number(b.stock) || 0))
+    .slice(0, 3);
 
   const topMap = {};
   periodSales.forEach(sale => {
-      const items = typeof sale.items === 'string' ? JSON.parse(sale.items) : (sale.items || []);
-      items.forEach(item => {
-        const k = item.name || 'Producto';
-        if (!topMap[k]) topMap[k] = { name: k, units: 0, revenue: 0 };
-        topMap[k].units += (Number(item.qty) || 1);
-        topMap[k].revenue += (Number(item.qty) * Number(item.price)) || 0;
-      });
+    const items = typeof sale.items === 'string'
+      ? JSON.parse(sale.items)
+      : (typeof sale.itemsJSON === 'string' ? JSON.parse(sale.itemsJSON) : (sale.items || []));
+
+    items.forEach(item => {
+      const k = item.name || 'Producto';
+      if (!topMap[k]) topMap[k] = { name: k, units: 0, revenue: 0 };
+      topMap[k].units += (Number(item.qty) || 1);
+      topMap[k].revenue += (Number(item.qty) * Number(item.price)) || 0;
+    });
   });
-  const topProducts = Object.values(topMap).sort((a,b)=>b.units-a.units).slice(0,4);
 
-  const latestSales = [...periodSales].sort((a,b)=>(b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||'')).slice(0,4);
-  const latestExpenses = [
-    ...dbExpenses.map(e => ({ type:'Gasto', date:e.date, title:e.concept, detail:e.category||'Gasto', amount:-Math.abs(Number(e.amount)||0) }))
-  ].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4);
+  const topProducts = Object.values(topMap).sort((a, b) => b.units - a.units).slice(0, 4);
 
-  const supplierDebtPending = dbExpenses.filter(e => (e.status || '').toLowerCase() === 'pendiente').reduce((a,e) => a + (Number(e.amount)||0), 0);
+  const latestSales = [...periodSales]
+    .sort((a, b) => (b.createdAt || b.date || '').localeCompare(a.createdAt || a.date || ''))
+    .slice(0, 4);
+
+  const latestExpenses = dbExpenses
+    .filter(e => (e.status || '').toLowerCase() !== 'anulado')
+    .map(e => ({
+      type:'Gasto',
+      date:e.date,
+      title:e.concept,
+      detail:e.category || 'Gasto',
+      amount:-Math.abs(Number(e.amount) || 0)
+    }))
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+    .slice(0, 4);
+
+  const supplierDebtPending = dbExpenses
+    .filter(e => (e.status || '').toLowerCase() === 'pendiente')
+    .reduce((a, e) => a + (Number(e.amount) || 0), 0);
 
   return { 
-      products: dbProducts, sales: periodSales, 
-      incomePeriod, outflowsPeriod, netPeriod, avgMargin, lowStock, 
-      topProducts, latestSales, latestExpenses, supplierDebtPending, 
-      branchBreakdown, totalPeriodoGlobal, sucursal 
+    products: dbProducts,
+    sales: periodSales, 
+    incomePeriod,
+    outflowsPeriod,
+    netPeriod,
+    avgMargin,
+    lowStock, 
+    topProducts,
+    latestSales,
+    latestExpenses,
+    supplierDebtPending, 
+    branchBreakdown,
+    totalPeriodoGlobal,
+    sucursal
   };
 }
 
 function renderHero(s) {
+  const companyName = localStorage.getItem('company_name') || 'tu negocio';
   const date = new Intl.DateTimeFormat('es-AR', { weekday:'long', day:'numeric', month:'long' }).format(new Date());
   document.getElementById('topbarDate').textContent = date + ' · Reporte Operativo';
   
-  const textSucursal = s.sucursal === 'ALL' ? 'en la empresa' : `en ${s.sucursal}`;
+  const textSucursal = s.sucursal === 'ALL' ? `en ${companyName}` : `en ${s.sucursal}`;
 
   document.getElementById('heroTitle').textContent = s.incomePeriod > 0
     ? `Vendiste ${currency(s.incomePeriod)} ${textSucursal}.`
     : `No hay ventas registradas en el período seleccionado.`;
     
   let heroTxt = `Facturación: ${currency(s.incomePeriod)}. `;
-  if (s.sucursal === 'ALL') heroTxt += `Egresos globales: ${currency(s.outflowsPeriod)}. `;
+  heroTxt += `Egresos: ${currency(s.outflowsPeriod)}. `;
   heroTxt += `Margen promedio del catálogo: ${percent(s.avgMargin)}.`;
   
   document.getElementById('heroText').textContent = heroTxt;
   
-  let netBadge = '';
-  if (s.sucursal === 'ALL') {
-      netBadge = `<span class="hero-badge ${s.netPeriod >= 0 ? 'success' : 'warning'}">Caja Neta: ${currency(s.netPeriod)}</span>`;
-  } else {
-      netBadge = `<span class="hero-badge primary">Viendo solo ${s.sucursal}</span>`;
-  }
-
   document.getElementById('heroBadges').innerHTML = `
-    ${netBadge}
+    <span class="hero-badge ${s.netPeriod >= 0 ? 'success' : 'warning'}">Caja Neta: ${currency(s.netPeriod)}</span>
     <span class="hero-badge ${s.lowStock.length ? 'warning' : 'success'}">${s.lowStock.length} con stock bajo</span>
+    <span class="hero-badge primary">${s.sucursal === 'ALL' ? 'Todas las sucursales' : s.sucursal}</span>
   `;
 }
 
 function renderKpis(s) {
   const cards = [
-    { label:'Ingresos (Período)',  value:currency(s.incomePeriod), note: s.sucursal === 'ALL' ? 'Todas las sucursales' : `Solo ${s.sucursal}` },
-    { label:'Egresos (Global)',    value:currency(s.outflowsPeriod),note: 'Gastos de la empresa' },
-    { label:'Resultado Caja',      value: s.sucursal === 'ALL' ? currency(s.netPeriod) : 'N/A', note: s.sucursal === 'ALL' ? 'Ingresos vs Egresos' : 'Filtro activo' },
-    { label:'Margen Promedio',     value:percent(s.avgMargin),     note: s.avgMargin >= 25 ? 'Saludable' : 'A revisar' },
+    { label:'Ingresos (Período)', value:currency(s.incomePeriod), note: s.sucursal === 'ALL' ? 'Todas las sucursales' : `Solo ${s.sucursal}` },
+    { label:'Egresos', value:currency(s.outflowsPeriod), note:'Gastos del período' },
+    { label:'Resultado Caja', value:currency(s.netPeriod), note:'Ingresos vs Egresos' },
+    { label:'Margen Promedio', value:percent(s.avgMargin), note: s.avgMargin >= 25 ? 'Saludable' : 'A revisar' }
   ];
+
   document.getElementById('kpiGrid').innerHTML = cards.map(c => `
     <article class="card kpi-card" style="padding: 20px;">
       <div class="kpi-label">${c.label}</div>
-      <div class="kpi-value" style="color: ${c.value === 'N/A' ? 'var(--muted)' : 'inherit'}">${c.value}</div>
+      <div class="kpi-value">${c.value}</div>
       <div class="kpi-sub">${c.note}</div>
     </article>
   `).join('');
 }
 
 function renderBranchBreakdown(s) {
-    const tbody = document.getElementById('branchSalesList');
-    if (Object.keys(s.branchBreakdown).length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:var(--muted);">Sin ventas en el período.</td></tr>';
-        return;
-    }
+  const tbody = document.getElementById('branchSalesList');
+
+  if (Object.keys(s.branchBreakdown).length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:var(--muted);">Sin ventas en el período.</td></tr>';
+    return;
+  }
     
-    // Ordenar de la que más vendió a la que menos vendió
-    const sortedBranches = Object.entries(s.branchBreakdown).sort((a,b) => b[1].ingresos - a[1].ingresos);
+  const sortedBranches = Object.entries(s.branchBreakdown).sort((a, b) => b[1].ingresos - a[1].ingresos);
     
-    tbody.innerHTML = sortedBranches.map(([branchName, data]) => {
-        const colorMargen = data.margen >= 20 ? 'var(--success)' : 'var(--warning)';
-        const bgMargen = data.margen >= 20 ? 'var(--success-soft)' : 'var(--warning-soft)';
+  tbody.innerHTML = sortedBranches.map(([branchName, data]) => {
+    const colorMargen = data.margen >= 20 ? 'var(--success)' : 'var(--warning)';
+    const bgMargen = data.margen >= 20 ? 'var(--success-soft)' : 'var(--warning-soft)';
         
-        return `
-        <tr>
-            <td><strong>📍 ${escapeHtml(branchName)}</strong></td>
-            <td style="text-align:right; font-weight:bold; color:var(--text);">${currency(data.ingresos)}</td>
-            <td style="text-align:right; color:var(--danger);">${currency(data.cmv)}</td>
-            <td style="text-align:right; font-weight:bold; color:var(--success);">${currency(data.utilidad)}</td>
-            <td style="text-align:right;"><span style="background: ${bgMargen}; color: ${colorMargen}; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold;">${data.margen.toFixed(1)}%</span></td>
-        </tr>`;
-    }).join('');
+    return `
+    <tr>
+      <td><strong>📍 ${escapeHtml(branchName)}</strong></td>
+      <td style="text-align:right; font-weight:bold; color:var(--text);">${currency(data.ingresos)}</td>
+      <td style="text-align:right; color:var(--danger);">${currency(data.cmv)}</td>
+      <td style="text-align:right; font-weight:bold; color:var(--success);">${currency(data.utilidad)}</td>
+      <td style="text-align:right;"><span style="background: ${bgMargen}; color: ${colorMargen}; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold;">${data.margen.toFixed(1)}%</span></td>
+    </tr>`;
+  }).join('');
 }
 
 function renderAlerts(s) {
   const alerts = [];
-  if (s.supplierDebtPending > 0)  alerts.push({ cls:'amber', title:'Pagos pendientes', text:`Deuda a proveedores: ${currency(s.supplierDebtPending)}.`, cta:'Revisar', href:'contable.html' });
-  if (s.lowStock.length)          alerts.push({ cls:'red',   title:`Stock crítico`, text:s.lowStock.length + ' artículos necesitan reposición urgente.', cta:'Ver stock', href:'stock.html' });
-  if (!alerts.length)             alerts.push({ cls:'blue',  title:'Todo en orden', text:'El sistema no detectó alertas críticas.', cta:'Actualizar', href:'#' });
+  if (s.supplierDebtPending > 0) alerts.push({ cls:'amber', title:'Pagos pendientes', text:`Deuda a proveedores: ${currency(s.supplierDebtPending)}.`, cta:'Revisar', href:'contable.html' });
+  if (s.lowStock.length) alerts.push({ cls:'red', title:`Stock crítico`, text:s.lowStock.length + ' artículos necesitan reposición urgente.', cta:'Ver stock', href:'stock.html' });
+  if (!alerts.length) alerts.push({ cls:'blue', title:'Todo en orden', text:'El sistema no detectó alertas críticas.', cta:'Actualizar', href:'#' });
 
   document.getElementById('alertList').innerHTML = alerts.map(a => `
     <div class="alert-item">
-      <div class="alert-icon alert-icon-${a.cls}">${a.cls==='red'?'!':a.cls==='amber'?'$':'i'}</div>
+      <div class="alert-icon alert-icon-${a.cls}">${a.cls === 'red' ? '!' : a.cls === 'amber' ? '$' : 'i'}</div>
       <div><h4>${a.title}</h4><p>${a.text}</p></div>
       <a href="${a.href}" class="alert-cta">${a.cta} →</a>
     </div>
@@ -458,33 +530,35 @@ function renderSimpleLists(s) {
     : '<div class="empty">Sin ventas del período.</div>';
 
   document.getElementById('lowStockList').innerHTML = s.lowStock.length
-    ? s.lowStock.map(p => simpleItem(p.name, `Actual: ${p.stock||0} un.`, `<span style="color:var(--danger)">Crítico</span>`, 'Reponer')).join('')
+    ? s.lowStock.map(p => simpleItem(p.name, `Actual: ${p.stock || 0} un.`, `<span style="color:var(--danger)">Crítico</span>`, 'Reponer')).join('')
     : '<div class="empty">Stock saludable.</div>';
 }
 
 function renderActivity(s) {
   document.getElementById('latestSalesList').innerHTML = s.latestSales.length
     ? s.latestSales.map(sale => {
-        const items = typeof sale.items === 'string' ? JSON.parse(sale.items) : (sale.items || []);
-        return `
+      const items = typeof sale.items === 'string'
+        ? JSON.parse(sale.items)
+        : (typeof sale.itemsJSON === 'string' ? JSON.parse(sale.itemsJSON) : (sale.items || []));
+      return `
       <div class="activity-item">
         <div class="activity-left">
           <div class="activity-badge badge-sale">V</div>
           <div>
             <h4>${escapeHtml(sale.client || 'Consumidor Final')}</h4>
-            <p>${(sale.createdAt||sale.date||'').slice(0,10)} · ${items.length} prod. · 📍 ${sale.branch || 'Central'}</p>
+            <p>${(sale.createdAt || sale.date || '').slice(0,10)} · ${items.length} prod. · 📍 ${sale.branch || 'Central'}</p>
           </div>
         </div>
         <span class="amount-pos">+${currency(saleTotal(sale))}</span>
-      </div>`
-      }).join('')
+      </div>`;
+    }).join('')
     : '<div class="empty">Sin ventas recientes.</div>';
 
   document.getElementById('latestOutflowsList').innerHTML = s.latestExpenses.length
     ? s.latestExpenses.map(item => `
       <div class="activity-item">
         <div class="activity-left">
-          <div class="activity-badge badge-expense">${item.type==='Pago'?'P':'G'}</div>
+          <div class="activity-badge badge-expense">${item.type === 'Pago' ? 'P' : 'G'}</div>
           <div><h4>${escapeHtml(item.title)}</h4><p>${item.date} · ${escapeHtml(item.detail)}</p></div>
         </div>
         <span class="amount-neg">${currency(item.amount)}</span>
@@ -502,7 +576,6 @@ function renderDashboard() {
   renderActivity(s);
 }
 
-// Iniciar carga al abrir
 initDashboard();
 </script>
 </body>
