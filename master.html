@@ -734,6 +734,7 @@
     document.getElementById('clienteDialog').showModal();
   }
   
+  // 3. FUNCIÓN PARA GUARDAR/EDITAR CLIENTES OFICIALES
   async function guardarCliente(e) {
     e.preventDefault(); const btn = document.getElementById('btnGuardarCli'); btn.textContent = 'Guardando...'; btn.disabled = true;
     const tempId = document.getElementById('cTempId').value;
@@ -747,15 +748,17 @@
       active: true, type: 'client', 
       adminUser: document.getElementById('cAdminUser').value.trim(), adminPass: document.getElementById('cAdminPass').value.trim(), 
       oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser,
-      city: document.getElementById('cCity').value.trim(), province: document.getElementById('cProvince').value.trim(), country: document.getElementById('cCountry').value,
-      allowedModules: modulosSeleccionados,
-      logo: document.getElementById('cLogoBase64').value // Captura el Logo
+      city: document.getElementById('cCity').value.trim(),
+      province: document.getElementById('cProvince').value.trim(),
+      country: document.getElementById('cCountry').value,
+      allowedModules: modulosSeleccionados
+      // logo: document.getElementById('cLogoBase64').value // Descomenta esta línea si ya integraste la subida de logo visualmente
     };
 
     try {
       if (tempId || editingClientId) { 
         data.id = tempId || editingClientId; 
-        // CORRECCIÓN BUG: Cambiado de PUT a POST
+        // CORRECCIÓN: 'POST' en lugar de 'PUT'
         await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
       } else { 
         data.id = 'cli_' + Math.random().toString(36).substr(2, 9); 
@@ -764,12 +767,16 @@
       cerrarModal('clienteDialog'); await loadDataFromCloud();
     } catch(err) { 
       if (tempId || editingClientId) { const realId = tempId || editingClientId; const idx = dbClientes.findIndex(x => x.id === realId); data.id = realId; data.active = dbClientes[idx].active; dbClientes[idx] = data; } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); dbClientes.push(data); }
-      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('clienteDialog'); renderAll(); 
+      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('clienteDialog'); 
+      const select = document.getElementById('filtroClientePagos'); const currentVal = select.value;
+      select.innerHTML = '<option value="ALL">Mostrar Todos los Clientes</option>' + dbClientes.filter(c => c.type !== 'lead').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      select.value = currentVal || 'ALL'; renderAll(); 
     }
     btn.textContent = 'Guardar Cliente Oficial'; btn.disabled = false;
   }
 
  // 1. FUNCIÓN PARA BLOQUEAR/ACTIVAR
+  a// 1. FUNCIÓN PARA BLOQUEAR/ACTIVAR
   async function toggleAcceso(id) { 
     const c = dbClientes.find(x => x.id === id); 
     if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { 
