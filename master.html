@@ -606,16 +606,26 @@
     document.getElementById('leadDialog').showModal();
   }
 
+  // 2. FUNCIÓN PARA EDITAR/GUARDAR PROSPECTOS (LEADS)
   async function guardarLeadModificado(e) {
     e.preventDefault();
     const id = document.getElementById('lTempId').value;
     const c = dbClientes.find(x => x.id === id);
-    c.name = document.getElementById('lName').value.trim(); c.contact = document.getElementById('lName').value.trim(); c.phone = document.getElementById('lPhone').value.trim(); c.email = document.getElementById('lEmail').value.trim();
+    c.name = document.getElementById('lName').value.trim();
+    c.contact = document.getElementById('lName').value.trim();
+    c.phone = document.getElementById('lPhone').value.trim();
+    c.email = document.getElementById('lEmail').value.trim();
+
     try {
-      // CORRECCIÓN BUG: Cambiado de PUT a POST
+      // CORRECCIÓN: 'POST' en lugar de 'PUT'
       await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) });
-      cerrarModal('leadDialog'); await loadDataFromCloud();
-    } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('leadDialog'); renderAll(); }
+      cerrarModal('leadDialog');
+      await loadDataFromCloud();
+    } catch (err) {
+      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
+      cerrarModal('leadDialog');
+      renderAll();
+    }
   }
 
   function convertirLeadACliente(id) {
@@ -759,15 +769,19 @@
     btn.textContent = 'Guardar Cliente Oficial'; btn.disabled = false;
   }
 
- async function toggleAcceso(id) { 
+ // 1. FUNCIÓN PARA BLOQUEAR/ACTIVAR
+  async function toggleAcceso(id) { 
     const c = dbClientes.find(x => x.id === id); 
     if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { 
       c.active = !c.active; 
       try { 
-        // CORRECCIÓN BUG: Cambiado de PUT a POST
+        // CORRECCIÓN: 'POST' en lugar de 'PUT'
         await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); 
         await loadDataFromCloud(); 
-      } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); } 
+      } catch (err) { 
+        localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); 
+        renderAll(); 
+      } 
     } 
   }
 
