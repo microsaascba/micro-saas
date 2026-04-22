@@ -29,9 +29,7 @@ export async function onRequestPost(context) {
         
         // NUEVO: Logo en Base64
         const logo = data.logo || '';
-       // Extraemos los datos geográficos
-        const city = data.city || '';
-        const country = data.country || 'Argentina';
+       
         
         await context.env.DB.prepare(`
             INSERT INTO clients (id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, type, createdAt, ivaCondition, status, city, country, allowedModules, logo)
