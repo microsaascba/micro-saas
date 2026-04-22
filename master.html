@@ -3,422 +3,453 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Master | Micro SaaS</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>MicroSaas Soluciones | Master Control</title>
   <style>
-    html, body { background-color: #f0f2f7 !important; }
-    body { animation: fadeIn .15s ease-in-out; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
-    .views { max-width: 1300px; margin: 0 auto; width: 100%; }
-    .view { display: none; }
+    :root {
+      --bg: #f8fafc; --panel: #ffffff; --panel-hover: #f1f5f9; --text: #1e293b; --muted: #64748b;
+      --primary: #0ea5e9; --primary-hover: #0284c7; --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+      --line: #e2e8f0; --font: system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+    
+    .sidebar { width: 260px; background: var(--panel); border-right: 1px solid var(--line); display: flex; flex-direction: column; z-index: 999; }
+    .brand { padding: 16px 24px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--line); }
+    .nav { flex: 1; padding: 20px 0; overflow-y: auto; }
+    .nav button { width: 100%; text-align: left; background: transparent; border: none; color: var(--muted); padding: 12px 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; }
+    .nav button:hover { color: var(--text); background: var(--panel-hover); }
+    .nav button.active { color: var(--primary); border-right: 3px solid var(--primary); background: rgba(14, 165, 233, 0.05); }
+    
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar { padding: 15px 40px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; background: var(--bg); }
+    .topbar-left { display: flex; align-items: center; gap: 15px; }
+    .mobile-toggle { display: none; background: transparent; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
+    .topbar h1 { margin: 0; font-size: 20px; color: var(--text); }
+    .content-area { flex: 1; padding: 30px; overflow-y: auto; }
+    
+    .view { display: none; animation: fadeIn 0.3s ease; }
     .view.active { display: block; }
-    .grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap:20px; }
-    .grid-3 { display:grid; grid-template-columns: repeat(3,1fr); gap:20px; }
-    .input-box { background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px; width:100%; font-family:inherit; font-size:14px; outline:none; box-sizing:border-box; }
-    .input-box:focus { border-color: var(--primary); }
-    table { width:100%; border-collapse: collapse; text-align:left; }
-    th { padding:12px 15px; font-size:11px; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--line); }
-    td { padding:12px 15px; border-bottom:1px solid var(--line); font-size:13px; vertical-align: middle; }
-    .badge { padding:4px 8px; border-radius:999px; font-size:11px; font-weight:700; }
-    .badge-success { background:#dcfce7; color:#166534; }
-    .badge-warning { background:#fef3c7; color:#92400e; }
-    .badge-danger { background:#fee2e2; color:#b91c1c; }
-    .badge-neutral { background:#e2e8f0; color:#334155; }
-    .badge-primary { background:#dbeafe; color:#1d4ed8; }
-    .table-actions { display:flex; gap:6px; flex-wrap:wrap; }
-    dialog::backdrop { background: rgba(0,0,0,.5); backdrop-filter: blur(3px); }
-    dialog { border:none; border-radius:12px; box-shadow: var(--shadow-lg); padding:0; margin:auto; }
-    .modal-content { padding:24px; background:#fff; width:100%; box-sizing:border-box; }
-    #loadingOverlay { display:none; position:fixed; inset:0; background:rgba(255,255,255,.7); z-index:9999; justify-content:center; align-items:center; font-weight:bold; color:var(--primary); font-size:18px; }
-    .mobile-toggle { display:none; background:none; border:none; font-size:26px; cursor:pointer; color:#fff; padding:0; margin-right:15px; }
-    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:998; backdrop-filter: blur(2px); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .kpi-card { background: var(--panel); padding: 20px; border-radius: 12px; border: 1px solid var(--line); border-top: 4px solid var(--primary); }
+    .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
+    .kpi-value { font-size: 24px; font-weight: 800; color: var(--text); }
+    
+    .card { background: var(--panel) !important; border-radius: 16px; border: 1px solid var(--line); margin-bottom: 24px; overflow: hidden; }
+    .card-head { padding: 15px 20px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .card-head h2 { margin: 0; font-size: 14px; text-transform: uppercase; color: var(--muted); }
+    
+    .table-wrap { overflow-x: auto; width: 100%; }
+    .master-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 800px; background: var(--panel) !important; color: var(--text) !important; }
+    .master-table th { padding: 12px 20px; background: rgba(0,0,0,0.03) !important; font-size: 11px; text-transform: uppercase; color: var(--muted) !important; border-bottom: 1px solid var(--line) !important; }
+    .master-table td { padding: 12px 20px; border-bottom: 1px solid var(--line) !important; font-size: 13px; vertical-align: middle; background: transparent !important; color: var(--text) !important; }
+    .master-table tr:hover td { background: var(--panel-hover) !important; }
+    .master-table tr:last-child td { border-bottom: none !important; }
+    
+    .badge { padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; display: inline-block; white-space: nowrap; }
+    .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    .badge-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+    .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .badge-neutral { background: rgba(100, 116, 139, 0.1); color: var(--muted); }
+    .badge-primary { background: rgba(14, 165, 233, 0.1); color: var(--primary); }
+    
+    .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-family: inherit; white-space: nowrap; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid var(--line); color: var(--text); }
+    .btn-outline:hover { border-color: var(--muted); background: rgba(0,0,0,0.03); }
+    .btn-danger-text { background: transparent; color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+    
+    .table-actions { display: flex; gap: 6px; }
+    .table-actions button { padding: 6px 10px; font-size: 12px; }
+
+    .date-filter { padding: 8px; border-radius: 8px; border: 1px solid var(--line); font-family: inherit; font-size: 13px; outline: none; }
+    .date-filter:focus { border-color: var(--primary); }
+
+    .status-select { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; outline: none; }
+
+    dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 600px; width: 90%; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.1); }
+    dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+    .modal-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+    .modal-head h3 { margin: 0; font-size: 16px; color: var(--text); }
+    .modal-body { padding: 24px; max-height: 70vh; overflow-y: auto; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .field input, .field select, .field textarea { padding: 10px 12px; background: #ffffff; border: 1px solid var(--line); border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px; width: 100%; }
+    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--primary); }
+    .modal-foot { padding: 20px 24px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 12px; background: rgba(0,0,0,0.02); }
+    
+    .admin-box { background: rgba(14, 165, 233, 0.05); border: 1px solid var(--primary); padding: 15px; border-radius: 8px; margin-top: 10px; }
+    .admin-box p { margin: 0 0 15px 0; font-size: 13px; color: var(--text); }
+
+    .budget-items-table { width: 100%; margin-top: 10px; border-top: 1px solid var(--line); }
+    .budget-items-table input { padding: 6px; background: #ffffff; border: 1px solid var(--line); color: var(--text); border-radius: 4px; width: 100%; font-size: 13px; }
+
     @media (max-width: 900px) {
-      .app { display:flex !important; flex-direction:column !important; }
-      .mobile-toggle { display:block; }
-      .sidebar { position:fixed !important; left:-300px; top:0; height:100vh !important; width:260px !important; z-index:999; transition:left .3s ease; box-shadow:4px 0 25px rgba(0,0,0,.5); }
-      .sidebar.open { left:0 !important; }
-      .sidebar-overlay.open { display:block; }
-      .content { padding:15px !important; width:100%; box-sizing:border-box; }
-      .grid-2, .grid-3 { grid-template-columns:1fr; }
-      .topbar { padding:15px; flex-direction:column; align-items:flex-start !important; gap:15px; }
+      .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; transition: left 0.3s ease; box-shadow: 4px 0 15px rgba(0,0,0,0.1); }
+      .sidebar.open { left: 0; }
+      .mobile-toggle { display: block; }
+      .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 998; }
+      .sidebar-overlay.open { display: block; }
+      .topbar { padding: 10px 20px; }
+      .content-area { padding: 15px; }
+      .form-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-<div id="loadingOverlay">Sincronizando con la nube...</div>
-
-<div class="app">
   <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
 
-  <aside id="sidebar" class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Master</strong><small>Panel administrativo</small></div>
+      <img src="logo.png" alt="Micro Saas Soluciones" style="max-height: 50px; max-width: 100%;">
     </div>
-
     <nav class="nav">
       <button class="active" onclick="switchView('dashboard', this)">📊 Dashboard</button>
-      <button onclick="switchView('leads', this)">🎯 Leads</button>
-      <button onclick="switchView('clientes', this)">🏢 Clientes</button>
-      <button onclick="switchView('pagos', this)">💳 Pagos</button>
-      <button onclick="switchView('gastos', this)">💸 Gastos</button>
-      <button onclick="switchView('presupuestos', this)">📄 Presupuestos</button>
-      <button onclick="logoutMaster()">🚪 Salir</button>
+      <button onclick="switchView('leads', this)">🎯 Leads (Demos)</button>
+      <button onclick="switchView('clientes', this)">🏢 Clientes Oficiales</button>
+      <button onclick="switchView('pagos', this)">💳 Cobros y Facturas</button>
+      <button onclick="switchView('gastos', this)">💸 Mis Gastos</button>
+      <button onclick="switchView('presupuestos', this)">📝 Presupuestos</button>
     </nav>
+    <div style="padding: 20px; border-top: 1px solid var(--line); text-align: center;">
+      <button class="btn btn-outline" style="width: 100%;" onclick="logoutMaster()">Cerrar Sesión</button>
+    </div>
   </aside>
 
-  <main class="content">
-    <header class="topbar" style="display:flex; justify-content:space-between; align-items:center;">
-      <div style="display:flex; align-items:center; width:100%;">
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">
         <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
-        <div class="page-title">
-          <h1 id="pageTitle" style="margin:0;">Dashboard</h1>
-          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Control de clientes, pagos y licencias.</p>
-        </div>
+        <h1 id="pageTitle">Dashboard</h1>
       </div>
-      <div><span id="cloudStatus" class="badge badge-warning">Sincronizando...</span></div>
+      <span id="cloudStatus" class="badge badge-warning">Sincronizando...</span>
     </header>
 
-    <div class="views">
-
-      <section id="view-dashboard" class="view active">
-        <div class="grid-3" style="margin-bottom:20px;">
-          <article class="card card-pad"><div class="kpi-label">MRR</div><div class="kpi-value" id="kpiMrr">$0</div></article>
-          <article class="card card-pad"><div class="kpi-label">Gastos Mes</div><div class="kpi-value" id="kpiGastos">$0</div></article>
-          <article class="card card-pad"><div class="kpi-label">Resultado Neto</div><div class="kpi-value" id="kpiNeto">$0</div></article>
-          <article class="card card-pad"><div class="kpi-label">Clientes Activos</div><div class="kpi-value" id="kpiActivos">0</div></article>
-          <article class="card card-pad"><div class="kpi-label">Leads</div><div class="kpi-value" id="kpiLeads">0</div></article>
+    <div class="content-area">
+      
+      <div id="view-dashboard" class="view active">
+        <div class="kpi-grid">
+          <article class="kpi-card"><div class="kpi-label">MRR (Ingresos)</div><div class="kpi-value" id="kpiMrr">$0</div></article>
+          <article class="kpi-card" style="border-color:var(--danger)"><div class="kpi-label">Gastos del Mes</div><div class="kpi-value" id="kpiGastos" style="color:var(--danger)">$0</div></article>
+          <article class="kpi-card" style="border-color:var(--success)"><div class="kpi-label">Ganancia Neta</div><div class="kpi-value" id="kpiNeto" style="color:var(--success)">$0</div></article>
+          <article class="kpi-card" style="border-color:var(--primary)"><div class="kpi-label">Leads en Demo</div><div class="kpi-value" id="kpiLeads">0</div></article>
+          <article class="kpi-card" style="border-color:var(--muted)"><div class="kpi-label">Clientes Activos</div><div class="kpi-value" id="kpiActivos">0</div></article>
         </div>
 
-        <article class="card card-pad">
-          <h2 style="margin-top:0;">Alertas de vencimiento</h2>
-          <div style="overflow-x:auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Cliente</th>
-                  <th>Teléfono</th>
-                  <th>Vencimiento</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
+        <div class="card">
+          <div class="card-head"><h2>Alertas de Vencimiento (Próximos 7 días)</h2></div>
+          <div class="table-wrap">
+            <table class="master-table">
+              <thead><tr><th>Comercio</th><th>Teléfono</th><th>Vencimiento</th><th>Estado</th></tr></thead>
               <tbody id="alertasTable"></tbody>
             </table>
           </div>
-        </article>
-      </section>
+        </div>
+      </div>
 
-      <section id="view-leads" class="view">
-        <article class="card card-pad">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:15px;">
-            <h2 style="margin:0;">Leads</h2>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <input type="date" id="filtroLeadDesde" class="input-box" onchange="renderLeads()">
-              <input type="date" id="filtroLeadHasta" class="input-box" onchange="renderLeads()">
-              <button class="btn btn-outline" onclick="exportarLeadsExcel()">Exportar</button>
+      <div id="view-leads" class="view">
+        <div class="card">
+          <div class="card-head">
+            <div style="display:flex; align-items:center; gap:15px; flex-wrap: wrap;">
+              <h2 style="margin:0;">Prospectos (Embudo de Ventas)</h2>
+              <div style="display: flex; gap: 5px; align-items: center;">
+                <span style="font-size: 12px; color: var(--muted);">Desde:</span>
+                <input type="date" id="filtroLeadDesde" class="date-filter" onchange="renderLeads()">
+                <span style="font-size: 12px; color: var(--muted); margin-left: 5px;">Hasta:</span>
+                <input type="date" id="filtroLeadHasta" class="date-filter" onchange="renderLeads()">
+              </div>
             </div>
+            <button class="btn btn-outline" onclick="exportarLeadsExcel()">⬇ Excel de Leads</button>
           </div>
-          <div style="overflow-x:auto;">
-            <table>
+          <div class="table-wrap">
+            <table class="master-table">
               <thead>
                 <tr>
-                  <th>Lead</th>
+                  <th>Comercio / Email</th>
                   <th>WhatsApp</th>
-                  <th>Fecha</th>
-                  <th>Estado</th>
-                  <th>Acción</th>
+                  <th>Fecha de Registro</th>
+                  <th>Estado Comercial</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="leadsTable"></tbody>
             </table>
           </div>
-        </article>
-      </section>
+        </div>
+      </div>
 
-      <section id="view-clientes" class="view">
-        <article class="card card-pad" style="margin-bottom:20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-            <h2 style="margin:0;">Clientes Oficiales</h2>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn btn-outline" onclick="exportarClientesExcel()">Exportar</button>
-              <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo Cliente</button>
+      <div id="view-clientes" class="view">
+        <div class="card">
+          <div class="card-head">
+            <h2>Directorio de Clientes Oficiales</h2>
+            <div class="actions">
+              <button class="btn btn-outline" onclick="exportarClientesExcel()">⬇ Excel</button>
+              <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo Cliente Directo</button>
             </div>
           </div>
-        </article>
-
-        <article class="card card-pad">
-          <div style="overflow-x:auto;">
-            <table>
+          <div class="table-wrap">
+            <table class="master-table">
               <thead>
                 <tr>
-                  <th>Cliente</th>
-                  <th>Abono</th>
+                  <th>Comercio / Titular</th>
+                  <th>Abono Mensual</th>
                   <th>Vencimiento</th>
                   <th>Estado</th>
-                  <th>Acción</th>
+                  <th>Acciones Administrativas</th>
                 </tr>
               </thead>
               <tbody id="clientesTable"></tbody>
             </table>
           </div>
-        </article>
-      </section>
+        </div>
+      </div>
 
-      <section id="view-pagos" class="view">
-        <article class="card card-pad" style="margin-bottom:20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-            <h2 style="margin:0;">Pagos</h2>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <select id="filtroClientePagos" class="input-box" onchange="renderPagos()">
-                <option value="ALL">Mostrar Todos los Clientes</option>
+      <div id="view-pagos" class="view">
+        <div class="card">
+          <div class="card-head">
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap: wrap;">
+              <h2 style="margin:0;">Historial de Cobros:</h2>
+              <select id="filtroClientePagos" onchange="renderPagos()" style="padding: 6px 10px; border-radius:8px; background:#fff; color:var(--text); border:1px solid var(--line); outline:none;">
+                <option value="ALL">Mostrar Todos</option>
               </select>
-              <button class="btn btn-outline" onclick="exportarPagosExcel()">Exportar</button>
-              <button class="btn btn-primary" onclick="abrirModalPago()">+ Registrar Pago</button>
             </div>
+            <button class="btn btn-success" onclick="abrirModalPago()">+ Registrar Pago</button>
           </div>
-        </article>
-
-        <article class="card card-pad">
-          <div style="overflow-x:auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Cliente</th>
-                  <th>Periodo</th>
-                  <th>Método</th>
-                  <th>Monto</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
+          <div class="table-wrap">
+            <table class="master-table">
+              <thead><tr><th>Fecha Pago</th><th>Cliente</th><th>Período</th><th>Método / Notas</th><th>Monto</th><th>Acciones</th></tr></thead>
               <tbody id="pagosTable"></tbody>
             </table>
           </div>
-        </article>
-      </section>
+        </div>
+      </div>
 
-      <section id="view-gastos" class="view">
-        <article class="card card-pad" style="margin-bottom:20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-            <h2 style="margin:0;">Gastos internos</h2>
-            <button class="btn btn-primary" onclick="abrirModalGasto()">+ Nuevo Gasto</button>
+      <div id="view-gastos" class="view">
+        <div class="card">
+          <div class="card-head">
+            <h2>Gastos Operativos de MicroSaas</h2>
+            <button class="btn btn-danger-text" onclick="abrirModalGasto()" style="border:1px solid var(--danger)">+ Cargar Gasto</button>
           </div>
-        </article>
-
-        <article class="card card-pad">
-          <div style="overflow-x:auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Concepto</th>
-                  <th>Categoría</th>
-                  <th>Monto</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
+          <div class="table-wrap">
+            <table class="master-table">
+              <thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th><th>Monto</th><th>Acción</th></tr></thead>
               <tbody id="gastosTable"></tbody>
             </table>
           </div>
-        </article>
-      </section>
+        </div>
+      </div>
 
-      <section id="view-presupuestos" class="view">
-        <article class="card card-pad" style="margin-bottom:20px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-            <h2 style="margin:0;">Presupuestos</h2>
-            <button class="btn btn-primary" onclick="abrirModalPresupuesto()">+ Nuevo Presupuesto</button>
+      <div id="view-presupuestos" class="view">
+        <div class="card">
+          <div class="card-head">
+            <h2>Cotizaciones Emitidas</h2>
+            <button class="btn btn-primary" onclick="abrirModalPresupuesto()">+ Crear Presupuesto</button>
           </div>
-        </article>
-
-        <article class="card card-pad">
-          <div style="overflow-x:auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Cliente</th>
-                  <th>Total</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
+          <div class="table-wrap">
+            <table class="master-table">
+              <thead><tr><th>Fecha</th><th>Prospecto / Cliente</th><th>Total</th><th>Acciones</th></tr></thead>
               <tbody id="presupuestosTable"></tbody>
             </table>
           </div>
-        </article>
-      </section>
+        </div>
+      </div>
 
     </div>
   </main>
-</div>
 
-<dialog id="clienteDialog" style="width:100%; max-width:800px;">
-  <div class="modal-content">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid var(--line); padding-bottom:15px;">
-      <h2 id="clienteModalTitle" style="margin:0; font-size:20px;">Nuevo Cliente Oficial</h2>
-      <button type="button" class="btn btn-light" style="padding:6px 12px; border:none;" onclick="cerrarModal('clienteDialog')">✕</button>
+  <dialog id="leadDialog">
+    <div class="modal-head">
+      <h3>Modificar Prospecto</h3>
+      <button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('leadDialog')">✕</button>
     </div>
+    <form onsubmit="guardarLeadModificado(event)">
+      <div class="modal-body form-grid">
+        <input type="hidden" id="lTempId">
+        <div class="field full"><label>Nombre del Comercio</label><input type="text" id="lName" required /></div>
+        <div class="field"><label>WhatsApp</label><input type="text" id="lPhone" required /></div>
+        <div class="field"><label>Email</label><input type="email" id="lEmail" required /></div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline" onclick="cerrarModal('leadDialog')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+      </div>
+    </form>
+  </dialog>
 
+  <dialog id="clienteDialog">
+    <div class="modal-head">
+      <h3 id="clienteModalTitle">Nuevo Cliente</h3>
+      <button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('clienteDialog')">✕</button>
+    </div>
     <form id="clienteForm" onsubmit="guardarCliente(event)">
-      <input type="hidden" id="cTempId">
-
-      <div class="grid-2">
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Nombre del Comercio *</label><input type="text" id="cName" required class="input-box"></div>
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Titular / Contacto</label><input type="text" id="cContact" class="input-box"></div>
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">CUIL / CUIT</label><input type="text" id="cCuil" class="input-box"></div>
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">WhatsApp *</label><input type="text" id="cPhone" class="input-box"></div>
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Dirección</label><input type="text" id="cAddress" class="input-box"></div>
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">País</label><input type="text" id="cCountry" class="input-box" value="Argentina"></div>
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Ciudad</label><input type="text" id="cCity" class="input-box"></div>
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Email *</label><input type="email" id="cEmail" class="input-box"></div>
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Valor Abono ($) *</label><input type="number" id="cFee" class="input-box" min="0" value="0"></div>
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Primer Vencimiento *</label><input type="date" id="cDueDate" class="input-box"></div>
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Usuario Admin *</label><input type="text" id="cAdminUser" class="input-box"></div>
-        <div><label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Contraseña *</label><input type="text" id="cAdminPass" class="input-box"></div>
-      </div>
-
-      <div style="margin-top:18px;">
-        <label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:8px;">Logo</label>
-        <input type="file" id="cLogoInput" class="input-box" accept="image/*" onchange="convertirLogoBase64(event)">
-        <input type="hidden" id="cLogoBase64">
-        <img id="cLogoPreview" style="display:none; max-width:120px; margin-top:10px; border-radius:8px; border:1px solid var(--line);">
-      </div>
-
-      <div style="margin-top:18px;">
-        <label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:8px;">Módulos habilitados</label>
-        <div class="grid-3">
-          <label><input type="checkbox" name="cliModules" value="dashboard" checked> Dashboard</label>
-          <label><input type="checkbox" name="cliModules" value="producto" checked> Productos</label>
-          <label><input type="checkbox" name="cliModules" value="clientes" checked> Clientes</label>
-          <label><input type="checkbox" name="cliModules" value="facturacion" checked> Facturación</label>
-          <label><input type="checkbox" name="cliModules" value="ventas" checked> Ventas</label>
-          <label><input type="checkbox" name="cliModules" value="cc" checked> Cta. Corriente</label>
-          <label><input type="checkbox" name="cliModules" value="contable" checked> Contable</label>
-          <label><input type="checkbox" name="cliModules" value="stock" checked> Stock</label>
-          <label><input type="checkbox" name="cliModules" value="ordenes" checked> Órdenes</label>
-          <label><input type="checkbox" name="cliModules" value="sucursales" checked> Sucursales</label>
-          <label><input type="checkbox" name="cliModules" value="usuarios" checked> Usuarios</label>
+      <div class="modal-body form-grid">
+        <input type="hidden" id="cTempId">
+        <div class="field full"><label>Nombre del Comercio *</label><input type="text" id="cName" required /></div>
+        <div class="field"><label>Titular / Contacto</label><input type="text" id="cContact" /></div>
+        
+        <div class="field"><label>CUIL / CUIT</label><input type="text" id="cCuil" placeholder="Ej: 30112233445" /></div>
+        <div class="field"><label>WhatsApp *</label><input type="text" id="cPhone" required /></div>
+        
+        <div class="field full"><label>Dirección</label><input type="text" id="cAddress" /></div>
+        
+        <div class="field"><label>País</label>
+          <select id="cCountry">
+            <option value="Argentina">Argentina</option>
+            <option value="Uruguay">Uruguay</option>
+            <option value="Chile">Chile</option>
+            <option value="Paraguay">Paraguay</option>
+            <option value="Brasil">Brasil</option>
+            <option value="España">España</option>
+          </select>
         </div>
-      </div>
+        <div class="field"><label>Ciudad</label><input type="text" id="cCity" placeholder="Ej: Ciudad Autónoma de Buenos Aires" /></div>
+        <div class="field"><label>Email *</label><input type="email" id="cEmail" required /></div>
+        <div class="field"><label>Valor Abono ($) *</label><input type="number" id="cFee" required /></div>
+        <div class="field"><label>Primer Vencimiento *</label><input type="date" id="cDueDate" required /></div>
+        
+        <div id="adminConfigBox" class="field full admin-box">
+          <p><strong>Usuario del Sistema Único del Cliente:</strong></p>
+          <div class="form-grid">
+            <div class="field"><label>Usuario Admin *</label><input type="text" id="cAdminUser" required /></div>
+            <div class="field"><label>Contraseña *</label><input type="text" id="cAdminPass" required /></div>
+          </div>
+        </div>
 
-      <div class="grid-2" style="margin-top:18px;">
-        <div>
-          <label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Cantidad máxima de usuarios</label>
-          <input type="number" id="cMaxUsers" class="input-box" min="1" value="1">
-          <small style="color:var(--muted); font-size:12px;">Define cuántos usuarios puede crear el cliente.</small>
+        <div class="field full" style="margin-top: 10px; margin-bottom: 10px; padding: 10px; border: 1px dashed var(--muted); border-radius: 8px; background: #f8fafc;">
+          <label style="color: var(--primary);">Logo de la Empresa (Para facturas y remitos)</label>
+          <div style="display: flex; gap: 15px; align-items: center; margin-top: 5px;">
+            <img id="cLogoPreview" src="" alt="Sin logo" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px; background: #fff; border: 1px solid var(--line); display: none;">
+            <input type="file" id="cLogoInput" accept="image/png, image/jpeg, image/jpg" onchange="convertirLogoBase64(event)" style="border: none; background: transparent; padding: 0;">
+            <input type="hidden" id="cLogoBase64">
+          </div>
         </div>
-        <div style="display:flex; align-items:flex-end;">
-          <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px;">
-            <input type="checkbox" id="cAllowUsers">
-            <span>Permitir que el cliente cree usuarios</span>
-          </label>
-        </div>
-      </div>
 
-      <div class="grid-2" style="margin-top:18px;">
-        <div>
-          <label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Cantidad máxima de sucursales</label>
-          <input type="number" id="cMaxBranches" class="input-box" min="1" value="1">
-          <small style="color:var(--muted); font-size:12px;">Define cuántas sucursales / PDV puede crear.</small>
+        <div class="field full admin-box" style="background: rgba(16, 185, 129, 0.05); border-color: var(--success); margin-top: 15px;">
+          <p style="color: var(--success);"><strong>Módulos Contratados (Plan del Cliente):</strong></p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="dashboard" checked> Dashboard</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="producto" checked> Productos</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="clientes" checked> Clientes</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="facturacion" checked> Facturación</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="ventas" checked> Ventas/Caja</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="cc" checked> Cta. Corriente</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="contable" checked> Contable</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="stock" checked> Stock</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="ordenes" checked> Órdenes</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="sucursales" checked> Sucursales</label>
+            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="usuarios" checked> Usuarios</label>
+          </div>
         </div>
-        <div style="display:flex; align-items:flex-end;">
-          <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px;">
-            <input type="checkbox" id="cAllowBranches">
-            <span>Permitir que el cliente cree sucursales</span>
-          </label>
-        </div>
-      </div>
 
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px; border-top:1px solid var(--line); padding-top:15px;">
-        <button type="button" class="btn btn-light" onclick="cerrarModal('clienteDialog')">Cancelar</button>
+        <div class="field full admin-box" style="margin-top:15px;">
+          <p><strong>Configuración de Límites del Plan:</strong></p>
+
+          <div class="form-grid">
+            <div class="field">
+              <label>Cantidad máxima de usuarios</label>
+              <input type="number" id="cMaxUsers" value="1" min="1" />
+            </div>
+
+            <div class="field">
+              <label>Cantidad máxima de sucursales</label>
+              <input type="number" id="cMaxBranches" value="1" min="1" />
+            </div>
+          </div>
+
+          <div style="margin-top:10px; display:flex; gap:20px;">
+            <label style="display:flex; gap:5px;">
+              <input type="checkbox" id="cAllowUsers">
+              Permitir que el cliente cree usuarios
+            </label>
+
+            <label style="display:flex; gap:5px;">
+              <input type="checkbox" id="cAllowBranches">
+              Permitir que el cliente cree sucursales
+            </label>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline" onclick="cerrarModal('clienteDialog')">Cancelar</button>
         <button type="submit" class="btn btn-primary" id="btnGuardarCli">Guardar Cliente Oficial</button>
       </div>
     </form>
-  </div>
-</dialog>
+  </dialog>
 
-<dialog id="leadDialog" style="width:100%; max-width:500px;">
-  <div class="modal-content">
-    <h2 style="margin-top:0;">Editar Lead</h2>
-    <form onsubmit="guardarLeadModificado(event)">
-      <input type="hidden" id="lTempId">
-      <div style="margin-bottom:15px;"><label>Nombre</label><input id="lName" class="input-box" required></div>
-      <div style="margin-bottom:15px;"><label>WhatsApp</label><input id="lPhone" class="input-box"></div>
-      <div style="margin-bottom:15px;"><label>Email</label><input id="lEmail" class="input-box"></div>
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button type="button" class="btn btn-light" onclick="cerrarModal('leadDialog')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
-      </div>
-    </form>
-  </div>
-</dialog>
-
-<dialog id="pagoDialog" style="width:100%; max-width:500px;">
-  <div class="modal-content">
-    <h2 id="pagoModalTitle" style="margin-top:0;">Registrar Pago</h2>
+  <dialog id="pagoDialog">
+    <div class="modal-head">
+      <h3 id="pagoModalTitle">Registrar Pago</h3>
+      <button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('pagoDialog')">✕</button>
+    </div>
     <form id="pagoForm" onsubmit="guardarPago(event)">
-      <div style="margin-bottom:15px;"><label>Cliente</label><select id="pClient" class="input-box" onchange="autocompletarMontoPago()"></select></div>
-      <div class="grid-2">
-        <div style="margin-bottom:15px;"><label>Fecha</label><input type="date" id="pDate" class="input-box"></div>
-        <div style="margin-bottom:15px;"><label>Periodo</label><input type="month" id="pPeriod" class="input-box"></div>
+      <div class="modal-body form-grid">
+        <div class="field full">
+          <label>Seleccionar Cliente *</label>
+          <select id="pClient" required onchange="autocompletarMontoPago()"></select>
+        </div>
+        <div class="field"><label>Fecha *</label><input type="date" id="pDate" required /></div>
+        <div class="field"><label>Período *</label><input type="month" id="pPeriod" required /></div>
+        <div class="field"><label>Monto ($) *</label><input type="number" id="pAmount" required /></div>
+        <div class="field full"><label>Método *</label>
+          <select id="pMethod" required>
+            <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta / Link de Pago">Tarjeta / Link de Pago</option>
+          </select>
+        </div>
+        <div class="field full"><label>Notas</label><textarea id="pNotes" rows="2"></textarea></div>
       </div>
-      <div class="grid-2">
-        <div style="margin-bottom:15px;"><label>Monto</label><input type="number" id="pAmount" class="input-box"></div>
-        <div style="margin-bottom:15px;"><label>Método</label><select id="pMethod" class="input-box"><option>Efectivo</option><option>Transferencia</option><option>Mercado Pago</option></select></div>
-      </div>
-      <div style="margin-bottom:15px;"><label>Notas</label><input id="pNotes" class="input-box"></div>
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button type="button" class="btn btn-light" onclick="cerrarModal('pagoDialog')">Cancelar</button>
-        <button id="btnGuardarPago" type="submit" class="btn btn-primary">Acreditar Pago</button>
-      </div>
-    </form>
-  </div>
-</dialog>
-
-<dialog id="gastoDialog" style="width:100%; max-width:500px;">
-  <div class="modal-content">
-    <h2 style="margin-top:0;">Nuevo Gasto</h2>
-    <form onsubmit="guardarGasto(event)">
-      <div class="grid-2">
-        <div style="margin-bottom:15px;"><label>Fecha</label><input type="date" id="gDate" class="input-box"></div>
-        <div style="margin-bottom:15px;"><label>Monto</label><input type="number" id="gAmount" class="input-box"></div>
-      </div>
-      <div style="margin-bottom:15px;"><label>Concepto</label><input id="gConcept" class="input-box"></div>
-      <div style="margin-bottom:15px;"><label>Categoría</label><select id="gCat" class="input-box"><option>Publicidad</option><option>Servicios</option><option>Sueldos</option><option>Otros</option></select></div>
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button type="button" class="btn btn-light" onclick="cerrarModal('gastoDialog')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-outline" onclick="cerrarModal('pagoDialog')">Cancelar</button>
+        <button type="submit" class="btn btn-success" id="btnGuardarPago">Acreditar Pago</button>
       </div>
     </form>
-  </div>
-</dialog>
+  </dialog>
 
-<dialog id="presupuestoDialog" style="width:100%; max-width:700px;">
-  <div class="modal-content">
-    <h2 style="margin-top:0;">Nuevo Presupuesto</h2>
-    <form onsubmit="guardarPresupuesto(event)">
-      <div class="grid-2">
-        <div style="margin-bottom:15px;"><label>Cliente</label><input id="preName" class="input-box"></div>
-        <div style="margin-bottom:15px;"><label>Email</label><input id="preEmail" class="input-box"></div>
+  <dialog id="gastoDialog">
+    <div class="modal-head"><h3>Registrar Gasto</h3><button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('gastoDialog')">✕</button></div>
+    <form onsubmit="guardarGasto(event)" class="modal-body form-grid">
+      <div class="field"><label>Fecha *</label><input type="date" id="gDate" required /></div>
+      <div class="field"><label>Monto ($) *</label><input type="number" id="gAmount" required /></div>
+      <div class="field full"><label>Concepto / Detalle *</label><input type="text" id="gConcept" required /></div>
+      <div class="field full"><label>Categoría *</label>
+        <select id="gCat"><option>Infraestructura IT</option><option>Marketing y Publicidad</option><option>Sueldos / Retiros</option><option>Herramientas</option><option>Otros</option></select>
       </div>
-      <div style="margin-bottom:15px;">
-        <table>
-          <thead><tr><th>Descripción</th><th>Cant.</th><th>Precio</th><th></th></tr></thead>
+      <div class="modal-foot" style="grid-column:1/-1">
+        <button type="button" class="btn btn-outline" onclick="cerrarModal('gastoDialog')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar Gasto</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="presupuestoDialog" style="max-width: 750px;">
+    <div class="modal-head"><h3>Nuevo Presupuesto</h3><button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('presupuestoDialog')">✕</button></div>
+    <form onsubmit="guardarPresupuesto(event)" class="modal-body">
+      <div class="form-grid">
+        <div class="field"><label>Cliente / Empresa *</label><input type="text" id="preName" required /></div>
+        <div class="field"><label>Email de Contacto *</label><input type="email" id="preEmail" required /></div>
+      </div>
+      <div style="margin-top:20px;">
+        <label style="font-size:12px; color:var(--muted); font-weight: bold;">ÍTEMS A COTIZAR:</label>
+        <table class="budget-items-table">
+          <thead><tr><th style="text-align:left;">Descripción</th><th width="80">Cant</th><th width="120">Precio</th><th width="40"></th></tr></thead>
           <tbody id="budgetItemsBody"></tbody>
         </table>
+        <button type="button" class="btn btn-outline" onclick="addBudgetItem()" style="margin-top:10px;">+ Agregar Ítem</button>
       </div>
-      <button type="button" class="btn btn-outline" onclick="addBudgetItem()">+ Ítem</button>
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px;">
-        <button type="button" class="btn btn-light" onclick="cerrarModal('presupuestoDialog')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar</button>
+      <div class="modal-foot" style="margin-top: 20px;">
+        <button type="button" class="btn btn-outline" onclick="cerrarModal('presupuestoDialog')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Generar y Guardar</button>
       </div>
     </form>
-  </div>
-</dialog>
+  </dialog>
 
 <script>
   function cerrarModal(id) {
@@ -465,18 +496,8 @@
 
     const dif = Math.ceil((vto - hoy) / 86400000);
 
-    if (dif >= 0 && dif <= 5) {
-      return { texto: `Vence en ${dif}d`, clase: 'badge-warning', status: 'alerta' };
-    }
-
-    if (dif < 0 && dif >= -3) {
-      return { texto: `Gracia ${Math.abs(dif)}d`, clase: 'badge-warning', status: 'gracia' };
-    }
-
-    if (dif <= -4) {
-      return { texto: `Suspendible`, clase: 'badge-danger', status: 'vencido' };
-    }
-
+    if (dif < 0) return { texto: `Vencido (${Math.abs(dif)}d)`, clase: 'badge-danger', status: 'vencido' };
+    if (dif <= 5) return { texto: `Vence en ${dif}d`, clase: 'badge-warning', status: 'alerta' };
     return { texto: 'Al Día', clase: 'badge-success', status: 'ok' };
   }
 
@@ -545,11 +566,7 @@
       dbClientes = dbClientes.map(c => ({
         ...c,
         active: c.active === true || c.active === 1,
-        fee: Number(c.fee || 0),
-        max_users: Number(c.max_users || 1),
-        allow_user_management: Number(c.allow_user_management || 0),
-        max_branches: Number(c.max_branches || 1),
-        allow_branch_management: Number(c.allow_branch_management || 0)
+        fee: Number(c.fee || 0)
       }));
 
       dbPagos = await fetchJson('/api/payments?status=Todos');
@@ -610,7 +627,7 @@
           mrr += Number(c.fee || 0);
           activos++;
         }
-        if (est.status === 'vencido' || est.status === 'alerta' || est.status === 'gracia') {
+        if (est.status === 'vencido' || est.status === 'alerta') {
           alertas.push({ ...c, est });
         }
       });
@@ -692,9 +709,9 @@
           <tr style="${!c.active ? 'opacity:0.5;' : ''}">
             <td>
               <strong>${escapeHtml(c.name)}</strong><br>
-              <small style="color:var(--muted)">👤 ${escapeHtml(c.contact || '-')} | 📞 ${escapeHtml(c.phone || '-')}</small><br>
               <small style="color:var(--muted)">
-                Usuarios: ${Number(c.max_users || 1)} / ${Number(c.allow_user_management || 0) === 1 ? 'gestionables' : 'bloqueados'}
+                👤 ${escapeHtml(c.contact || '-')} | 📞 ${escapeHtml(c.phone || '-')} <br>
+                👥 Usuarios: ${c.maxUsers || 1} | 🏢 Sucursales: ${c.maxBranches || 1}
               </small>
             </td>
             <td><strong>${money(c.fee)}</strong></td>
@@ -873,9 +890,10 @@
     document.getElementById('cAdminUser').value = '';
     document.getElementById('cAdminPass').value = '';
     document.getElementById('cAdminUser').dataset.oldUser = '';
+    
     document.getElementById('cMaxUsers').value = 1;
-    document.getElementById('cAllowUsers').checked = false;
     document.getElementById('cMaxBranches').value = 1;
+    document.getElementById('cAllowUsers').checked = false;
     document.getElementById('cAllowBranches').checked = false;
 
     document.querySelectorAll('input[name="cliModules"]').forEach(cb => cb.checked = true);
@@ -893,14 +911,16 @@
     document.getElementById('cLogoInput').value = '';
     document.getElementById('cLogoBase64').value = '';
     document.getElementById('cLogoPreview').style.display = 'none';
+    
     document.getElementById('cMaxUsers').value = 1;
-    document.getElementById('cAllowUsers').checked = false;
     document.getElementById('cMaxBranches').value = 1;
+    document.getElementById('cAllowUsers').checked = false;
     document.getElementById('cAllowBranches').checked = false;
+    
     document.querySelectorAll('input[name="cliModules"]').forEach(cb => cb.checked = true);
     document.getElementById('clienteDialog').showModal();
   }
-
+  
   function editarCliente(id) {
     const c = dbClientes.find(x => x.id === id);
     if (!c) return;
@@ -921,10 +941,11 @@
     document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || '';
     document.getElementById('cCountry').value = c.country || 'Argentina';
     document.getElementById('cCity').value = c.city || '';
-    document.getElementById('cMaxUsers').value = Number(c.max_users || 1);
-    document.getElementById('cAllowUsers').checked = Number(c.allow_user_management || 0) === 1;
-    document.getElementById('cMaxBranches').value = Number(c.max_branches || 1);
-    document.getElementById('cAllowBranches').checked = Number(c.allow_branch_management || 0) === 1;
+
+    document.getElementById('cMaxUsers').value = c.maxUsers || 1;
+    document.getElementById('cMaxBranches').value = c.maxBranches || 1;
+    document.getElementById('cAllowUsers').checked = Number(c.allowUsers) === 1;
+    document.getElementById('cAllowBranches').checked = Number(c.allowBranches) === 1;
 
     document.getElementById('cLogoBase64').value = c.logo || '';
     if (c.logo) {
@@ -951,7 +972,7 @@
 
     document.getElementById('clienteDialog').showModal();
   }
-
+  
   async function guardarCliente(e) {
     e.preventDefault();
 
@@ -960,25 +981,12 @@
     btn.disabled = true;
 
     const tempId = document.getElementById('cTempId').value;
-    const modulosSeleccionados = Array.from(
-      document.querySelectorAll('input[name="cliModules"]:checked')
-    ).map(cb => cb.value);
+    const modulosSeleccionados = Array.from(document.querySelectorAll('input[name="cliModules"]:checked')).map(cb => cb.value);
 
     const currentClient = tempId ? dbClientes.find(x => x.id === tempId) : null;
 
-    const clientId = tempId || editingClientId || ('cli_' + Math.random().toString(36).slice(2, 9));
-    const adminUser = document.getElementById('cAdminUser').value.trim();
-    const adminPass = document.getElementById('cAdminPass').value.trim();
-
-    if (!adminUser || !adminPass) {
-      alert('Usuario y contraseña son obligatorios.');
-      btn.textContent = 'Guardar Cliente Oficial';
-      btn.disabled = false;
-      return;
-    }
-
     const data = {
-      id: clientId,
+      id: tempId || editingClientId || ('cli_' + Math.random().toString(36).slice(2, 9)),
       name: document.getElementById('cName').value.trim(),
       contact: document.getElementById('cContact').value.trim(),
       cuil: document.getElementById('cCuil').value.trim(),
@@ -989,29 +997,18 @@
       dueDate: document.getElementById('cDueDate').value,
       active: currentClient ? currentClient.active : true,
       type: 'client',
-      adminUser,
-      adminPass,
+      adminUser: document.getElementById('cAdminUser').value.trim(),
+      adminPass: document.getElementById('cAdminPass').value.trim(),
       oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser || '',
       city: document.getElementById('cCity').value.trim(),
       country: document.getElementById('cCountry').value,
       allowedModules: modulosSeleccionados,
       logo: document.getElementById('cLogoBase64').value,
-      createdAt: currentClient?.createdAt || new Date().toISOString(),
-      max_users: Number(document.getElementById('cMaxUsers').value || 1),
-      allow_user_management: document.getElementById('cAllowUsers').checked,
-      max_branches: Number(document.getElementById('cMaxBranches').value || 1),
-      allow_branch_management: document.getElementById('cAllowBranches').checked
-    };
-
-    const userPayload = {
-      id: currentClient?.userId || ('usr_' + clientId),
-      username: adminUser,
-      password: adminPass,
-      role: 'admin',
-      active: data.active,
-      createdAt: currentClient?.createdAt || new Date().toISOString(),
-      allowedModules: modulosSeleccionados,
-      company_id: clientId
+      maxUsers: Number(document.getElementById('cMaxUsers').value || 1),
+      maxBranches: Number(document.getElementById('cMaxBranches').value || 1),
+      allowUsers: document.getElementById('cAllowUsers').checked ? 1 : 0,
+      allowBranches: document.getElementById('cAllowBranches').checked ? 1 : 0,
+      createdAt: currentClient?.createdAt || new Date().toISOString()
     };
 
     try {
@@ -1021,17 +1018,29 @@
         body: JSON.stringify(data)
       });
 
-      await fetchJson('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userPayload)
-      });
-
       cerrarModal('clienteDialog');
       await loadDataFromCloud();
-    } catch (err) {
-      console.error(err);
-      alert("Error guardando cliente y usuario.");
+    } catch(err) {
+      const idx = dbClientes.findIndex(x => x.id === data.id);
+      if (idx >= 0) dbClientes[idx] = data;
+      else dbClientes.push(data);
+
+      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
+      cerrarModal('clienteDialog');
+
+      const select = document.getElementById('filtroClientePagos');
+      const currentVal = select.value;
+      if (select) {
+        select.innerHTML =
+          '<option value="ALL">Mostrar Todos los Clientes</option>' +
+          dbClientes
+            .filter(c => c.type !== 'lead')
+            .map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`)
+            .join('');
+        select.value = currentVal || 'ALL';
+      }
+
+      renderAll();
     }
 
     btn.textContent = 'Guardar Cliente Oficial';
@@ -1053,11 +1062,7 @@
       city: c.city || '',
       country: c.country || 'Argentina',
       allowedModules: c.allowedModules || [],
-      logo: c.logo || '',
-      max_users: Number(c.max_users || 1),
-      allow_user_management: Number(c.allow_user_management || 0) === 1,
-      max_branches: Number(c.max_branches || 1),
-      allow_branch_management: Number(c.allow_branch_management || 0) === 1
+      logo: c.logo || ''
     };
 
     try {
@@ -1066,20 +1071,6 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
-      const users = await fetchJson('/api/users');
-      const userLinked = users.find(u => u.company_id === c.id);
-
-      if (userLinked) {
-        await fetchJson('/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...userLinked,
-            active: nuevoEstado
-          })
-        });
-      }
 
       c.active = nuevoEstado;
       localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
@@ -1095,7 +1086,7 @@
     if (!confirm(`¿Borrar definitivamente el lead ${c.name}?`)) return;
 
     try {
-      await fetch('/api/master_clients?id=' + id, { method: 'DELETE' });
+      await fetch(`/api/master_clients?id=${id}`, { method: 'DELETE' });
       dbClientes = dbClientes.filter(x => x.id !== id);
       localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
       renderAll();
@@ -1191,7 +1182,7 @@
 
       cerrarModal('pagoDialog');
       await loadDataFromCloud();
-    } catch (err) {
+    } catch(err) {
       if (editingPaymentId) {
         const idx = dbPagos.findIndex(x => x.id === editingPaymentId);
         data.id = editingPaymentId;
@@ -1258,9 +1249,9 @@
   function addBudgetItem() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><input type="text" class="p-desc input-box" placeholder="Servicio/Producto" required></td>
-      <td><input type="number" class="p-qty input-box" value="1" required min="1"></td>
-      <td><input type="number" class="p-price input-box" placeholder="Precio" required min="0"></td>
+      <td><input type="text" class="p-desc" placeholder="Servicio/Producto" required></td>
+      <td><input type="number" class="p-qty" value="1" required min="1"></td>
+      <td><input type="number" class="p-price" placeholder="Precio" required min="0"></td>
       <td><button type="button" class="btn btn-danger-text" onclick="this.closest('tr').remove()" style="padding:4px 8px;">❌</button></td>
     `;
     document.getElementById('budgetItemsBody').appendChild(tr);
@@ -1330,7 +1321,7 @@
     link.download = `${nombreArchivo}_${today()}.csv`;
     link.click();
   }
-
+  
   function exportarLeadsExcel() {
     const dateDesde = document.getElementById('filtroLeadDesde').value;
     const dateHasta = document.getElementById('filtroLeadHasta').value;
@@ -1362,10 +1353,6 @@
           "Email": c.email,
           "Abono": c.fee,
           "Vencimiento": c.dueDate,
-          "Usuarios Máx.": c.max_users || 1,
-          "Gestión Usuarios": Number(c.allow_user_management || 0) === 1 ? 'Sí' : 'No',
-          "Sucursales Máx.": c.max_branches || 1,
-          "Gestión Sucursales": Number(c.allow_branch_management || 0) === 1 ? 'Sí' : 'No',
           "Estado": calcEstado(c.dueDate, c.active).texto
         })),
       'Clientes_Oficiales'
