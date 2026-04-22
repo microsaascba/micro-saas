@@ -268,10 +268,28 @@
     }
   }
 
-  function loadClientConfigFromLocal() {
-    clientConfig.maxUsers = Number(localStorage.getItem('company_max_users') || 1);
-    clientConfig.allowUserManagement = Number(localStorage.getItem('company_allow_user_management') || 0);
+async function loadClientConfig() {
+  clientConfig.maxUsers = Number(localStorage.getItem('company_max_users') || 1);
+  clientConfig.allowUserManagement = Number(localStorage.getItem('company_allow_user_management') || 0);
+
+  const companyId = localStorage.getItem('company_id') || '';
+  if (!companyId) return;
+
+  try {
+    const res = await fetch(`/api/master_clients?id=${companyId}`);
+    if (!res.ok) return;
+
+    const company = await res.json();
+
+    clientConfig.maxUsers = Number(company.max_users || 1);
+    clientConfig.allowUserManagement = Number(company.allow_user_management || 0);
+
+    localStorage.setItem('company_max_users', clientConfig.maxUsers);
+    localStorage.setItem('company_allow_user_management', clientConfig.allowUserManagement);
+  } catch (err) {
+    console.warn('No se pudo refrescar config del cliente:', err);
   }
+}
 
   function refreshPlanInfo() {
     const info = document.getElementById('planInfoBox');
@@ -317,23 +335,24 @@
   }
 
   async function initUsuarios() {
-    mostrarCarga(true);
-    try {
-      applyCompanyBranding();
-      loadClientConfigFromLocal();
+  mostrarCarga(true);
+  try {
+    applyCompanyBranding();
 
-      const res = await apiFetch(`${API_URL}/users`);
-      if (res.ok) dbUsers = await res.json();
-    } catch (e) {
-      console.error(e);
-      dbUsers = [];
-    } finally {
-      refreshPlanInfo();
-      aplicarRestriccionesUI();
-      renderUsuarios();
-      mostrarCarga(false);
-    }
+    await loadClientConfig();
+
+    const res = await apiFetch(`${API_URL}/users`);
+    if (res.ok) dbUsers = await res.json();
+  } catch (e) {
+    console.error(e);
+    dbUsers = [];
+  } finally {
+    refreshPlanInfo();
+    aplicarRestriccionesUI();
+    renderUsuarios();
+    mostrarCarga(false);
   }
+}
 
   function sugerirPermisos() {
     const rol = document.getElementById('userRole').value;
