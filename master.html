@@ -797,23 +797,30 @@
     btn.textContent = 'Guardar Cliente Oficial'; btn.disabled = false;
   }
 
-  async function toggleAcceso(id) { 
+ async function toggleAcceso(id) { 
     const c = dbClientes.find(x => x.id === id); 
     if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { 
-      c.active = !c.active; 
-      try { 
-        await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); 
-        await loadDataFromCloud(); 
-      } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); } 
-    } 
-  }
+      
+      // Creamos un objeto blindado asegurando que ningún campo nuevo quede "undefined"
+      const payload = {
+          ...c,
+          active: !c.active,
+          city: c.city || '',
+          province: c.province || '',
+          country: c.country || 'Argentina',
+          allowedModules: c.allowedModules || '[]',
+          logo: c.logo || ''
+      };
 
-  async function borrarCliente(id) {
-    const c = dbClientes.find(x => x.id === id);
-    if(c && confirm(`🚨 ATENCIÓN: ¿Seguro que querés borrar definitivamente a ${c.name}?`)) {
-      try { await fetch(`/api/clients?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud(); } 
-      catch (err) { dbClientes = dbClientes.filter(x => x.id !== id); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); }
-    }
+      try { 
+        await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }); 
+        await loadDataFromCloud(); 
+      } catch (err) { 
+        console.error("Error bloqueando:", err);
+        localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); 
+        renderAll(); 
+      } 
+    } 
   }
 
   // ── 7. RESTO DEL CÓDIGO (Pagos, Gastos, Presupuestos) ──
