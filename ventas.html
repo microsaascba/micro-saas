@@ -336,10 +336,11 @@
       document.getElementById('filterDesde').value = hoy;
       document.getElementById('filterHasta').value = hoy;
 
-      const [resS, resB, resC] = await Promise.all([ 
-        apiFetch('/api/sales')
-        apiFetch('/api/business_clients')
-      ]);
+      cconst [resS, resB, resC] = await Promise.all([ 
+  apiFetch('/api/sales'),
+  apiFetch('/api/branches'),
+  apiFetch('/api/business_clients?withBalance=1')
+]);
       
       if(resS.ok) dbSales = await resS.json();
       if(resC.ok) dbClients = await resC.json();
