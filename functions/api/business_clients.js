@@ -12,21 +12,49 @@ export async function onRequestGet(context) {
 
     const url = new URL(context.request.url);
     const status = url.searchParams.get('status') || 'Activo';
+    const withBalance = url.searchParams.get('withBalance') === '1';
 
-    let query = "SELECT * FROM business_clients WHERE company_id = ?";
+    let query = `
+      SELECT 
+        bc.*,
+        COALESCE(SUM(
+          CASE
+            WHEN LOWER(COALESCE(cc.type, '')) IN ('debit', 'debe', 'cargo') THEN COALESCE(cc.amount, 0)
+            WHEN LOWER(COALESCE(cc.type, '')) IN ('credit', 'haber', 'pago') THEN -COALESCE(cc.amount, 0)
+            ELSE 0
+          END
+        ), 0) AS balance
+      FROM business_clients bc
+      LEFT JOIN cc_movements cc
+        ON cc.clientId = bc.id
+       AND cc.company_id = bc.company_id
+      WHERE bc.company_id = ?
+    `;
+
     const binds = [companyId];
 
-    if (status === 'Todos') {
-      query += " ORDER BY name ASC";
-    } else {
-      query += " AND status = ? ORDER BY name ASC";
+    if (status !== 'Todos') {
+      query += ` AND bc.status = ?`;
       binds.push(status);
     }
 
-    const stmt = context.env.DB.prepare(query).bind(...binds);
-    const { results } = await stmt.all();
+    query += `
+      GROUP BY
+        bc.id, bc.company_id, bc.name, bc.contact, bc.phone, bc.email,
+        bc.cuil, bc.address, bc.iva_condition, bc.status, bc.created_at
+      ORDER BY bc.name ASC
+    `;
 
-    return Response.json(results);
+    const { results } = await context.env.DB.prepare(query).bind(...binds).all();
+
+    if (!withBalance) {
+      return Response.json(results.map(({ balance, ...rest }) => rest));
+    }
+
+    return Response.json(results.map(row => ({
+      ...row,
+      balance: Number(row.balance || 0)
+    })));
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
