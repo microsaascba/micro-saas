@@ -986,30 +986,30 @@
     const currentClient = tempId ? dbClientes.find(x => x.id === tempId) : null;
 
     const data = {
-      id: tempId || editingClientId || ('cli_' + Math.random().toString(36).slice(2, 9)),
-      name: document.getElementById('cName').value.trim(),
-      contact: document.getElementById('cContact').value.trim(),
-      cuil: document.getElementById('cCuil').value.trim(),
-      address: document.getElementById('cAddress').value.trim(),
-      phone: document.getElementById('cPhone').value.trim(),
-      email: document.getElementById('cEmail').value.trim(),
-      fee: Number(document.getElementById('cFee').value || 0),
-      dueDate: document.getElementById('cDueDate').value,
-      active: currentClient ? currentClient.active : true,
-      type: 'client',
-      adminUser: document.getElementById('cAdminUser').value.trim(),
-      adminPass: document.getElementById('cAdminPass').value.trim(),
-      oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser || '',
-      city: document.getElementById('cCity').value.trim(),
-      country: document.getElementById('cCountry').value,
-      allowedModules: modulosSeleccionados,
-      logo: document.getElementById('cLogoBase64').value,
-      maxUsers: Number(document.getElementById('cMaxUsers').value || 1),
-      maxBranches: Number(document.getElementById('cMaxBranches').value || 1),
-      allowUsers: document.getElementById('cAllowUsers').checked ? 1 : 0,
-      allowBranches: document.getElementById('cAllowBranches').checked ? 1 : 0,
-      createdAt: currentClient?.createdAt || new Date().toISOString()
-    };
+  id: clientId,
+  name: document.getElementById('cName').value.trim(),
+  contact: document.getElementById('cContact').value.trim(),
+  cuil: document.getElementById('cCuil').value.trim(),
+  address: document.getElementById('cAddress').value.trim(),
+  phone: document.getElementById('cPhone').value.trim(),
+  email: document.getElementById('cEmail').value.trim(),
+  fee: Number(document.getElementById('cFee').value || 0),
+  dueDate: document.getElementById('cDueDate').value,
+  active: currentClient ? currentClient.active : true,
+  type: 'client',
+  adminUser: adminUser,
+  adminPass: adminPass,
+  oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser || '',
+  city: document.getElementById('cCity').value.trim(),
+  country: document.getElementById('cCountry').value,
+  allowedModules: modulosSeleccionados,
+  logo: document.getElementById('cLogoBase64').value,
+  createdAt: currentClient?.createdAt || new Date().toISOString(),
+  max_users: Number(document.getElementById('cMaxUsers').value || 1),
+  allow_user_management: document.getElementById('cAllowUsers').checked,
+  max_branches: Number(document.getElementById('cMaxBranches').value || 1),
+  allow_branch_management: document.getElementById('cAllowBranches').checked
+};
 
     try {
       await fetchJson('/api/master_clients', {
