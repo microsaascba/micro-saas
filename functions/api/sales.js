@@ -2,6 +2,98 @@ function getCompanyIdFromRequest(request) {
   return request.headers.get('x-company-id') || '';
 }
 
+function safeNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function parseItems(raw) {
+  try {
+    if (Array.isArray(raw)) return raw;
+    if (typeof raw === 'string') return JSON.parse(raw || '[]');
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeItem(item) {
+  return {
+    id: item.id || item.productId || '',
+    productId: item.productId || item.id || '',
+    code: item.code || '',
+    name: item.name || 'Producto',
+    qty: safeNumber(item.qty || item.quantity || 0),
+    quantity: safeNumber(item.quantity || item.qty || 0),
+    price: safeNumber(item.price),
+    cost: safeNumber(item.cost),
+    subtotal: safeNumber(item.subtotal || safeNumber(item.qty || item.quantity || 0) * safeNumber(item.price))
+  };
+}
+
+function parseBranches(stock_branches, stock) {
+  try {
+    const parsed = typeof stock_branches === 'string'
+      ? JSON.parse(stock_branches || '{}')
+      : (stock_branches || {});
+
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {}
+
+  return { Central: safeNumber(stock) };
+}
+
+function calcTotalStock(branches) {
+  return Object.values(branches).reduce((acc, v) => acc + safeNumber(v), 0);
+}
+
+async function moveStock(context, companyId, items, branch, direction) {
+  for (const rawItem of items) {
+    const item = normalizeItem(rawItem);
+    const productId = item.id || item.productId;
+    const qty = safeNumber(item.qty || item.quantity);
+
+    if (!productId || qty <= 0) continue;
+
+    const prod = await context.env.DB.prepare(`
+      SELECT id, stock, stock_branches
+      FROM products
+      WHERE id = ?1 AND company_id = ?2
+      LIMIT 1
+    `).bind(productId, companyId).first();
+
+    if (!prod) continue;
+
+    const branches = parseBranches(prod.stock_branches, prod.stock);
+    const targetBranch = branch || 'Central';
+
+    if (branches[targetBranch] === undefined) branches[targetBranch] = 0;
+
+    const currentBranchStock = safeNumber(branches[targetBranch]);
+    const delta = direction === 'add' ? qty : -qty;
+    const newBranchStock = currentBranchStock + delta;
+
+    if (direction === 'subtract' && newBranchStock < 0) {
+      throw new Error(`Stock insuficiente para "${item.name}" en sucursal "${targetBranch}". Disponible: ${currentBranchStock}`);
+    }
+
+    branches[targetBranch] = newBranchStock;
+
+    await context.env.DB.prepare(`
+      UPDATE products
+      SET stock = ?1, stock_branches = ?2
+      WHERE id = ?3 AND company_id = ?4
+    `).bind(
+      calcTotalStock(branches),
+      JSON.stringify(branches),
+      productId,
+      companyId
+    ).run();
+  }
+}
+
 export async function onRequestGet(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
@@ -10,14 +102,34 @@ export async function onRequestGet(context) {
       return Response.json({ error: 'Falta company_id.' }, { status: 400 });
     }
 
-    const { results } = await context.env.DB.prepare(
-      "SELECT * FROM sales WHERE company_id = ? ORDER BY createdAt DESC"
-    ).bind(companyId).all();
+    const url = new URL(context.request.url);
+    const status = url.searchParams.get('status') || 'Todos';
+
+    let query = `
+      SELECT *
+      FROM sales
+      WHERE company_id = ?1
+    `;
+    const binds = [companyId];
+
+    if (status !== 'Todos') {
+      query += ` AND COALESCE(status, 'Activa') = ?2`;
+      binds.push(status);
+    }
+
+    query += ` ORDER BY createdAt DESC`;
+
+    const { results } = await context.env.DB.prepare(query).bind(...binds).all();
 
     const ventasFormateadas = results.map(venta => ({
       ...venta,
-      items: JSON.parse(venta.itemsJSON || '[]'),
-      client: venta.clientId
+      subtotal: safeNumber(venta.subtotal),
+      promoDiscount: safeNumber(venta.promoDiscount),
+      total: safeNumber(venta.total),
+      isB2B: Number(venta.isB2B) === 1,
+      items: parseItems(venta.itemsJSON).map(normalizeItem),
+      client: venta.clientId || 'Consumidor Final',
+      status: venta.status || 'Activa'
     }));
 
     return Response.json(ventasFormateadas);
@@ -35,83 +147,104 @@ export async function onRequestPost(context) {
     }
 
     const data = await context.request.json();
-    const items = Array.isArray(data.items) ? data.items : [];
-    const itemsString = JSON.stringify(items);
+    const saleId = data.id || `vta_${Date.now()}`;
+    const items = parseItems(data.items).map(normalizeItem);
     const isB2BNum = data.isB2B ? 1 : 0;
-    const clientNameOrId = data.clientId || data.client || 'Consumidor Final';
-    const vendedor = data.seller || 'Admin';
-    const sucursal = data.branch || 'Central';
+    const clientId = data.clientId || data.client || 'Consumidor Final';
+    const seller = data.seller || 'Admin';
+    const branch = data.branch || 'Central';
+    const status = data.status || 'Activa';
 
-    if (items.length > 0) {
-      for (const item of items) {
-        const productId = item.id || item.productId;
-        const qty = Number(item.qty || item.quantity || 0);
+    const existingSale = await context.env.DB.prepare(`
+      SELECT *
+      FROM sales
+      WHERE id = ?1 AND company_id = ?2
+      LIMIT 1
+    `).bind(saleId, companyId).first();
 
-        if (!productId || qty <= 0) continue;
-
-        const { results } = await context.env.DB.prepare(
-          "SELECT id, stock_branches, stock FROM products WHERE id = ? AND company_id = ?"
-        ).bind(productId, companyId).all();
-
-        if (results.length > 0) {
-          const prod = results[0];
-          let branches = {};
-
-          try {
-            branches = JSON.parse(prod.stock_branches || '{}');
-          } catch (e) {
-            branches = { Central: Number(prod.stock || 0) };
-          }
-
-          if (typeof branches !== 'object' || branches === null) {
-            branches = { Central: Number(prod.stock || 0) };
-          }
-
-          if (branches[sucursal] === undefined) branches[sucursal] = 0;
-
-          branches[sucursal] = Number(branches[sucursal] || 0) - qty;
-
-          let newTotalStock = 0;
-          for (const b in branches) {
-            newTotalStock += Number(branches[b] || 0);
-          }
-
-          await context.env.DB.prepare(
-            "UPDATE products SET stock = ?, stock_branches = ? WHERE id = ? AND company_id = ?"
-          ).bind(
-            newTotalStock,
-            JSON.stringify(branches),
-            productId,
-            companyId
-          ).run();
-        }
+    // Caso 1: alta nueva
+    if (!existingSale) {
+      if (status !== 'Anulada') {
+        await moveStock(context, companyId, items, branch, 'subtract');
       }
+
+      await context.env.DB.prepare(`
+        INSERT INTO sales (
+          id, company_id, date, clientId, method, cupon, subtotal,
+          promoDiscount, total, isB2B, itemsJSON, createdAt, seller, branch, status
+        )
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
+      `).bind(
+        saleId,
+        companyId,
+        data.date || new Date().toISOString().split('T')[0],
+        clientId,
+        data.method || '',
+        data.cupon || '',
+        safeNumber(data.subtotal),
+        safeNumber(data.promoDiscount),
+        safeNumber(data.total),
+        isB2BNum,
+        JSON.stringify(items),
+        data.createdAt || new Date().toISOString(),
+        seller,
+        branch,
+        status
+      ).run();
+
+      return Response.json({ success: true, mode: 'inserted' });
     }
 
+    // Caso 2: edición / anulación
+    const existingStatus = existingSale.status || 'Activa';
+    const existingItems = parseItems(existingSale.itemsJSON).map(normalizeItem);
+    const existingBranch = existingSale.branch || 'Central';
+
+    // Si pasa de activa a anulada => repone stock
+    if (existingStatus !== 'Anulada' && status === 'Anulada') {
+      await moveStock(context, companyId, existingItems, existingBranch, 'add');
+    }
+
+    // Si pasa de anulada a activa => vuelve a descontar
+    if (existingStatus === 'Anulada' && status !== 'Anulada') {
+      await moveStock(context, companyId, items, branch, 'subtract');
+    }
+
+    // Si sigue activa y regraban una venta, NO tocar stock para no duplicar descuento
     await context.env.DB.prepare(`
-      INSERT INTO sales (
-        id, company_id, date, clientId, method, cupon, subtotal,
-        promoDiscount, total, isB2B, itemsJSON, createdAt, seller, branch
-      )
-      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
+      UPDATE sales
+      SET
+        date = ?1,
+        clientId = ?2,
+        method = ?3,
+        cupon = ?4,
+        subtotal = ?5,
+        promoDiscount = ?6,
+        total = ?7,
+        isB2B = ?8,
+        itemsJSON = ?9,
+        seller = ?10,
+        branch = ?11,
+        status = ?12
+      WHERE id = ?13 AND company_id = ?14
     `).bind(
-      data.id,
-      companyId,
-      data.date || new Date().toISOString().split('T')[0],
-      clientNameOrId,
+      data.date || existingSale.date || new Date().toISOString().split('T')[0],
+      clientId,
       data.method || '',
       data.cupon || '',
-      Number(data.subtotal || 0),
-      Number(data.promoDiscount || 0),
-      Number(data.total || 0),
+      safeNumber(data.subtotal),
+      safeNumber(data.promoDiscount),
+      safeNumber(data.total),
       isB2BNum,
-      itemsString,
-      data.createdAt || new Date().toISOString(),
-      vendedor,
-      sucursal
+      JSON.stringify(items),
+      seller,
+      branch,
+      status,
+      saleId,
+      companyId
     ).run();
 
-    return Response.json({ success: true });
+    return Response.json({ success: true, mode: 'updated' });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
@@ -132,11 +265,31 @@ export async function onRequestDelete(context) {
       return Response.json({ error: 'Falta id.' }, { status: 400 });
     }
 
-    await context.env.DB.prepare(
-      "DELETE FROM sales WHERE id = ?1 AND company_id = ?2"
-    ).bind(id, companyId).run();
+    const sale = await context.env.DB.prepare(`
+      SELECT *
+      FROM sales
+      WHERE id = ?1 AND company_id = ?2
+      LIMIT 1
+    `).bind(id, companyId).first();
 
-    return Response.json({ success: true });
+    if (!sale) {
+      return Response.json({ error: 'Venta no encontrada.' }, { status: 404 });
+    }
+
+    const currentStatus = sale.status || 'Activa';
+
+    if (currentStatus !== 'Anulada') {
+      const items = parseItems(sale.itemsJSON).map(normalizeItem);
+      await moveStock(context, companyId, items, sale.branch || 'Central', 'add');
+    }
+
+    await context.env.DB.prepare(`
+      UPDATE sales
+      SET status = 'Anulada'
+      WHERE id = ?1 AND company_id = ?2
+    `).bind(id, companyId).run();
+
+    return Response.json({ success: true, message: 'Venta anulada correctamente.' });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
