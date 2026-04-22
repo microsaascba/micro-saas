@@ -659,7 +659,6 @@
     document.getElementById('cEmail').value = c.email || ''; 
     
     document.getElementById('cCountry').value = c.country || 'Argentina';
-    document.getElementById('cProvince').value = c.province || '';
     document.getElementById('cCity').value = c.city || '';
 
     document.getElementById('cLogoInput').value = ''; 
@@ -685,7 +684,6 @@
     document.getElementById('cAdminUser').dataset.oldUser = ''; 
     
     document.getElementById('cCountry').value = 'Argentina'; 
-    document.getElementById('cProvince').value = ''; 
     document.getElementById('cCity').value = '';
 
     document.getElementById('cLogoInput').value = ''; 
@@ -703,7 +701,6 @@
     document.getElementById('cCity').value = c.city || ''; document.getElementById('cTempId').value = id; document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || ''; document.getElementById('cCuil').value = c.cuil || ''; document.getElementById('cAddress').value = c.address || ''; document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || ''; document.getElementById('cFee').value = c.fee || 0; document.getElementById('cDueDate').value = c.dueDate || ''; document.getElementById('cAdminUser').value = c.adminUser || ''; document.getElementById('cAdminPass').value = c.adminPass || ''; document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || ''; 
     
     document.getElementById('cCountry').value = c.country || 'Argentina'; 
-    document.getElementById('cProvince').value = c.province || ''; 
     document.getElementById('cCity').value = c.city || '';
 
     document.getElementById('cLogoBase64').value = c.logo || '';
@@ -734,7 +731,6 @@
       oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser,
       city: document.getElementById('cCity').value.trim(), 
       country: document.getElementById('cCountry').value,
-      city: document.getElementById('cCity').value.trim(), province: document.getElementById('cProvince').value.trim(), country: document.getElementById('cCountry').value,
       allowedModules: modulosSeleccionados,
       logo: document.getElementById('cLogoBase64').value
     };
@@ -766,7 +762,6 @@
           ...c,
           active: !c.active,
           city: c.city || '',
-          province: c.province || '',
           country: c.country || 'Argentina',
           allowedModules: c.allowedModules || '[]',
           logo: c.logo || ''
