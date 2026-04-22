@@ -103,9 +103,10 @@
         if (response.ok && data.success) {
           // GUARDAMOS LA LLAVE DE ACCESO EN EL NAVEGADOR
           localStorage.setItem('activeUser', data.user.username);
-          localStorage.setItem('userRole', data.user.role);
-          localStorage.setItem('allowedModules', JSON.stringify(data.user.allowedModules));
-          localStorage.setItem('saas_logged_in', 'true'); // Retrocompatibilidad para core.js
+localStorage.setItem('userRole', data.user.role);
+localStorage.setItem('allowedModules', JSON.stringify(data.user.allowedModules));
+localStorage.setItem('company_id', data.user.company_id); // 🔥 CLAVE
+localStorage.setItem('saas_logged_in', 'true');
           
           btn.style.background = "#16a34a"; // Verde éxito
           btn.textContent = "¡Acceso Autorizado!";
