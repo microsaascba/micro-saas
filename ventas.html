@@ -337,9 +337,8 @@
       document.getElementById('filterHasta').value = hoy;
 
       const [resS, resB, resC] = await Promise.all([ 
-        fetch('/api/sales'), 
-        fetch('/api/branches'),
-        fetch('/api/clients') 
+        apiFetch('/api/sales')
+        apiFetch('/api/business_clients')
       ]);
       
       if(resS.ok) dbSales = await resS.json();
