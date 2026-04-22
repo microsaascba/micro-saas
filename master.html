@@ -457,25 +457,31 @@
     return `${meses[parseInt(m, 10) - 1]} ${y}`;
   }
 
-  function calcEstado(fechaVto, activo) {
-    if (!activo) return { texto: 'Suspendido', clase: 'badge-neutral', status: 'suspendido' };
+ function calcEstado(fechaVto, activo) {
+  if (!activo) return { texto: 'Suspendido', clase: 'badge-neutral', status: 'suspendido' };
 
-    const hoy = new Date();
-    hoy.setHours(0,0,0,0);
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
 
-    const vto = new Date((fechaVto || today()) + 'T12:00:00');
-    vto.setHours(0,0,0,0);
+  const vto = new Date((fechaVto || today()) + 'T12:00:00');
+  vto.setHours(0,0,0,0);
 
-    const dif = Math.ceil((vto - hoy) / 86400000);
+  const dif = Math.ceil((vto - hoy) / 86400000);
 
-    if (dif < 0) return { texto: `Vencido (${Math.abs(dif)}d)`, clase: 'badge-danger', status: 'vencido' };
-    if (dif <= 5) return { texto: `Vence en ${dif}d`, clase: 'badge-warning', status: 'alerta' };
-    return { texto: 'Al Día', clase: 'badge-success', status: 'ok' };
+  if (dif >= 0 && dif <= 5) {
+    return { texto: `Vence en ${dif}d`, clase: 'badge-warning', status: 'alerta' };
   }
 
-  if (localStorage.getItem('saas_master_logged_in') !== 'true') {
-    window.location.href = 'master-login.html';
+  if (dif < 0 && dif >= -3) {
+    return { texto: `Gracia ${Math.abs(dif)}d`, clase: 'badge-warning', status: 'gracia' };
   }
+
+  if (dif <= -4) {
+    return { texto: `Suspendible`, clase: 'badge-danger', status: 'vencido' };
+  }
+
+  return { texto: 'Al Día', clase: 'badge-success', status: 'ok' };
+}
 
   function logoutMaster() {
     localStorage.removeItem('saas_master_logged_in');
