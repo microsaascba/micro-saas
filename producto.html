@@ -6,7 +6,6 @@
   <title>Productos | Micro SaaS</title>
   
   <style>
-    /* Antídoto destello blanco */
     html, body { background-color: #f0f2f7 !important; }
     body { animation: fadeIn 0.15s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -16,11 +15,9 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
-    /* FIX RESPONSIVE: Sin !important en la grilla principal */
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
-    /* ── NUEVO LAYOUT HORIZONTAL PARA PRODUCTOS ── */
     .layout-stacked { display: flex; flex-direction: column; gap: 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
     
     .form-grid-horizontal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: end; }
@@ -44,14 +41,11 @@
     th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
     td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
 
-    /* Modales */
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     
-    /* Indicador de carga */
     .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
 
-    /* REGLAS OBLIGATORIAS PARA CELULARES */
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
 
@@ -64,7 +58,6 @@
       .topbar { padding: 15px; flex-direction: column; align-items: flex-start; gap: 15px; }
       .topbar-actions { width: 100%; display: flex; justify-content: space-between; }
       .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
-      
       .form-grid-horizontal { grid-template-columns: 1fr 1fr; }
       .col-span-2, .col-span-4 { grid-column: span 2; }
     }
@@ -237,8 +230,15 @@
 
       <article class="card card-pad">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h2 style="margin: 0; font-size: 18px;">Catálogo Activo</h2>
-          <input type="text" id="searchTable" class="input-box" placeholder="Buscar producto o código..." onkeyup="renderTable()" style="max-width: 300px; margin: 0;">
+          <h2 style="margin: 0; font-size: 18px;">Catálogo</h2>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <select id="statusFilter" class="input-box" style="max-width: 180px;" onchange="renderTable()">
+              <option value="Todos">Todos</option>
+              <option value="Activo" selected>Activos</option>
+              <option value="Inactivo">Inactivos</option>
+            </select>
+            <input type="text" id="searchTable" class="input-box" placeholder="Buscar producto o código..." onkeyup="renderTable()" style="max-width: 300px; margin: 0;">
+          </div>
         </div>
         
         <div style="overflow-x: auto;">
@@ -306,8 +306,8 @@
   <div style="padding: 22px;">
     <div style="background: #fff8f1; padding: 15px; border-radius: 8px; border: 1px dashed #f59e0b; margin-bottom: 20px; font-size: 12px; color: #b45309; line-height: 1.6;">
       <strong style="font-size:13px;">Instrucciones de Subida:</strong><br>
-      Sube un archivo .xlsx o .csv. Si no tienes la plantilla, puedes descargarla desde el botón <strong>"Exportar Excel"</strong> en la parte superior.<br>
-      Las columnas deben llamarse <strong>exactamente</strong> así (solo NOMBRE y PRECIO son obligatorias, el resto puede quedar vacío o en cero):<br><br>
+      Sube un archivo .xlsx o .csv. Si no tienes la plantilla, puedes descargarla desde el botón <strong>"Exportar Plantilla"</strong>.<br>
+      Las columnas deben llamarse <strong>exactamente</strong> así:<br><br>
       <div style="display: flex; flex-wrap: wrap; gap: 5px;">
         <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">NOMBRE</span>
         <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">CATEGORIA</span>
@@ -320,7 +320,7 @@
         <span style="background: #fef3c7; padding: 4px 6px; border-radius: 4px; font-family: monospace; font-weight: bold;">TALLE</span>
       </div>
       <br>
-      <em>* Nota: Las unidades de stock no se importan desde aquí. Los ingresos de mercadería deben hacerse desde el módulo de <strong>Stock</strong>. Si un SKU ya existe en el sistema, se actualizarán sus datos comerciales.</em>
+      <em>* El stock no se importa desde aquí. Se administra desde el módulo de Stock. Si un SKU ya existe, se actualizan sus datos comerciales.</em>
     </div>
     
     <form onsubmit="procesarImportacionMasiva(event)">
@@ -338,7 +338,7 @@
 
 <script src="core.js"></script>
 <script>
-  const API_URL = "/api"; 
+  const API_URL = "/api";
   let dbProducts = [];
   let dbCategories = [];
   const PIN_ADMIN = "1234";
@@ -353,13 +353,22 @@
     document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none';
   }
 
-  // --- CARGAR PRODUCTOS Y CATEGORÍAS DESDE LA NUBE ---
+  function toggleMenu() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+  }
+
+  function safeNumber(v) {
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
+  }
+
   async function initProducts() {
     mostrarCarga(true);
     try {
       const [resP, resC] = await Promise.all([
-          fetch(`${API_URL}/products`),
-          fetch(`${API_URL}/categories`)
+        apiFetch(`${API_URL}/products?status=Todos`),
+        apiFetch(`${API_URL}/categories`)
       ]);
       
       if (resP.ok) dbProducts = await resP.json();
@@ -375,58 +384,60 @@
     }
   }
 
-  // --- GESTIÓN DE CATEGORÍAS ---
   function actualizarSelectCategorias(selectedName = null) {
-      const select = document.getElementById('prodCategory');
-      const currentVal = select.value;
+    const select = document.getElementById('prodCategory');
+    const currentVal = select.value;
       
-      const legacyCats = [...new Set(dbProducts.map(p => p.category).filter(c => c))];
-      const activeCats = dbCategories.map(c => c.name);
-      const allCats = [...new Set([...legacyCats, ...activeCats])].sort();
+    const legacyCats = [...new Set(dbProducts.map(p => p.category).filter(c => c))];
+    const activeCats = dbCategories.map(c => c.name);
+    const allCats = [...new Set([...legacyCats, ...activeCats])].sort();
 
-      select.innerHTML = '<option value="">Seleccione o cree una...</option>' + 
-          allCats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    select.innerHTML = '<option value="">Seleccione o cree una...</option>' + 
+      allCats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
       
-      if (selectedName) {
-          select.value = selectedName;
-      } else if (currentVal) {
-          select.value = currentVal;
-      }
+    if (selectedName) {
+      select.value = selectedName;
+    } else if (currentVal) {
+      select.value = currentVal;
+    }
   }
 
   window.abrirModalCategoria = function() {
-      document.getElementById('catName').value = '';
-      document.getElementById('modalCategoria').showModal();
+    document.getElementById('catName').value = '';
+    document.getElementById('modalCategoria').showModal();
   };
 
   window.guardarCategoria = async function(e) {
-      e.preventDefault();
-      const name = document.getElementById('catName').value.trim();
-      const id = 'cat_' + Date.now();
-      const cat = { id, name };
+    e.preventDefault();
+    const name = document.getElementById('catName').value.trim();
+    if (!name) return;
 
-      mostrarCarga(true);
-      try {
-          await fetch(`${API_URL}/categories`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(cat)
-          });
-          dbCategories.push(cat);
-          actualizarSelectCategorias(name);
-          document.getElementById('modalCategoria').close();
-      } catch (err) {
-          alert("Error guardando categoría. Recuerde crear el archivo api/categories.js");
-      } finally {
-          mostrarCarga(false);
-      }
+    const id = 'cat_' + Date.now();
+    const cat = { id, name };
+
+    mostrarCarga(true);
+    try {
+      const res = await apiFetch(`${API_URL}/categories`, {
+        method: 'POST',
+        body: JSON.stringify(cat)
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      dbCategories.push(cat);
+      actualizarSelectCategorias(name);
+      document.getElementById('modalCategoria').close();
+    } catch (err) {
+      alert("Error guardando categoría.");
+    } finally {
+      mostrarCarga(false);
+    }
   };
 
-  // --- RENTABILIDAD ---
   window.calcularRentabilidad = function() {
-    const cost = parseFloat(document.getElementById('prodCost').value) || 0;
-    const expenses = parseFloat(document.getElementById('prodExpenses').value) || 0;
-    const price = parseFloat(document.getElementById('prodPrice').value) || 0;
+    const cost = safeNumber(document.getElementById('prodCost').value);
+    const expenses = safeNumber(document.getElementById('prodExpenses').value);
+    const price = safeNumber(document.getElementById('prodPrice').value);
     
     const profitBox = document.getElementById('prodProfit');
     const marginBox = document.getElementById('prodMargin');
@@ -446,11 +457,15 @@
       marginBox.style.color = margin < 0 ? "var(--danger)" : "var(--success)";
       markupBox.style.color = markup < 0 ? "var(--danger)" : "var(--success)";
     } else if (price > 0 && totalCost === 0) {
-      marginBox.value = "100.0%"; marginBox.style.color = "var(--success)";
-      markupBox.value = "∞"; markupBox.style.color = "var(--success)";
+      marginBox.value = "100.0%";
+      marginBox.style.color = "var(--success)";
+      markupBox.value = "∞";
+      markupBox.style.color = "var(--success)";
     } else {
-      marginBox.value = "0.0%"; marginBox.style.color = "var(--muted)";
-      markupBox.value = "0.0%"; markupBox.style.color = "var(--muted)";
+      marginBox.value = "0.0%";
+      marginBox.style.color = "var(--muted)";
+      markupBox.value = "0.0%";
+      markupBox.style.color = "var(--muted)";
     }
   };
 
@@ -465,178 +480,193 @@
 
   function actualizarSelectCombos() {
     const select = document.getElementById('promoLinked');
-    select.innerHTML = '<option value="">Seleccione producto...</option>' + 
-      dbProducts.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    select.innerHTML = '<option value="">Seleccione producto...</option>' +
+      dbProducts
+        .filter(p => (p.status || 'Activo') !== 'Inactivo')
+        .map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`)
+        .join('');
   }
 
-  // --- EXPORTAR EXCEL / PLANTILLA ---
   window.exportarCatalogoExcel = function() {
-      let dataExport = [];
-      if (dbProducts.length === 0) {
-          dataExport.push({ "NOMBRE": "", "CATEGORIA": "", "SKU": "", "COSTO": 0, "GASTOS": 0, "PRECIO": 0, "ESTADO": "Activo", "COLOR": "", "TALLE": "" });
-      } else {
-          dataExport = dbProducts.map(p => ({
-              "NOMBRE": p.name || "",
-              "CATEGORIA": p.category || "",
-              "SKU": p.code || "",
-              "COSTO": p.cost || 0,
-              "GASTOS": p.expenses || 0,
-              "PRECIO": p.price || 0,
-              "ESTADO": p.status || "Activo",
-              "COLOR": p.color || "",
-              "TALLE": p.size || ""
-          }));
-      }
+    let dataExport = [];
+    if (dbProducts.length === 0) {
+      dataExport.push({ "NOMBRE": "", "CATEGORIA": "", "SKU": "", "COSTO": 0, "GASTOS": 0, "PRECIO": 0, "ESTADO": "Activo", "COLOR": "", "TALLE": "" });
+    } else {
+      dataExport = dbProducts.map(p => ({
+        "NOMBRE": p.name || "",
+        "CATEGORIA": p.category || "",
+        "SKU": p.code || "",
+        "COSTO": p.cost || 0,
+        "GASTOS": p.expenses || 0,
+        "PRECIO": p.price || 0,
+        "ESTADO": p.status || "Activo",
+        "COLOR": p.color || "",
+        "TALLE": p.size || ""
+      }));
+    }
 
-      const ws = XLSX.utils.json_to_sheet(dataExport);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Productos");
-      XLSX.writeFile(wb, `Catalogo_Productos_${todayISO()}.xlsx`);
-  }
+    const ws = XLSX.utils.json_to_sheet(dataExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Productos");
+    XLSX.writeFile(wb, `Catalogo_Productos_${todayISO()}.xlsx`);
+  };
 
-  // --- IMPORTACIÓN MASIVA DESDE EXCEL ---
   window.abrirModalImportar = function() {
-      document.getElementById('importFile').value = '';
-      document.getElementById('modalImportarProductos').showModal();
-  }
+    document.getElementById('importFile').value = '';
+    document.getElementById('modalImportarProductos').showModal();
+  };
 
   window.procesarImportacionMasiva = async function(e) {
-      e.preventDefault();
-      const fileInput = document.getElementById('importFile');
-      if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
+    e.preventDefault();
+    const fileInput = document.getElementById('importFile');
+    if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
 
-      const file = fileInput.files[0];
-      const reader = new FileReader();
+    const file = fileInput.files[0];
+    const reader = new FileReader();
 
-      reader.onload = async function(evt) {
-          const data = new Uint8Array(evt.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(firstSheet);
+    reader.onload = async function(evt) {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(firstSheet);
 
-          if (rows.length === 0) return alert("El archivo está vacío o mal formateado.");
+      if (rows.length === 0) return alert("El archivo está vacío o mal formateado.");
 
-          let prodUpdates = [];
-          let errores = [];
+      let prodUpdates = [];
+      let errores = [];
 
-          rows.forEach((row, index) => {
-              const findVal = (names) => {
-                  const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
-                  return key ? row[key] : null;
-              };
+      rows.forEach((row, index) => {
+        const findVal = (names) => {
+          const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
+          return key ? row[key] : null;
+        };
 
-              const name = String(findVal(['nombre', 'name', 'producto']) || '').trim();
-              const price = parseFloat(findVal(['precio', 'price', 'venta']));
+        const name = String(findVal(['nombre', 'name', 'producto']) || '').trim();
+        const price = parseFloat(findVal(['precio', 'price', 'venta']));
               
-              if (!name) { errores.push(`Fila ${index + 2}: Nombre vacío.`); return; }
-              if (isNaN(price)) { errores.push(`Fila ${index + 2}: Precio inválido para "${name}".`); return; }
+        if (!name) { errores.push(`Fila ${index + 2}: Nombre vacío.`); return; }
+        if (isNaN(price)) { errores.push(`Fila ${index + 2}: Precio inválido para "${name}".`); return; }
 
-              const code = String(findVal(['sku', 'codigo', 'código']) || '').trim();
-              const category = String(findVal(['categoria', 'categoría', 'category']) || '').trim();
-              const cost = parseFloat(findVal(['costo', 'cost'])) || 0;
-              const expenses = parseFloat(findVal(['gastos', 'expenses'])) || 0;
-              let status = String(findVal(['estado', 'status']) || 'Activo').trim();
-              if (status.toLowerCase() !== 'activo' && status.toLowerCase() !== 'inactivo') status = 'Activo';
-              const color = String(findVal(['color']) || '').trim();
-              const size = String(findVal(['talle', 'tamaño', 'size']) || '').trim();
+        const code = String(findVal(['sku', 'codigo', 'código']) || '').trim();
+        const category = String(findVal(['categoria', 'categoría', 'category']) || '').trim();
+        const cost = parseFloat(findVal(['costo', 'cost'])) || 0;
+        const expenses = parseFloat(findVal(['gastos', 'expenses'])) || 0;
+        let status = String(findVal(['estado', 'status']) || 'Activo').trim();
+        if (status.toLowerCase() !== 'activo' && status.toLowerCase() !== 'inactivo') status = 'Activo';
+        const color = String(findVal(['color']) || '').trim();
+        const size = String(findVal(['talle', 'tamaño', 'size']) || '').trim();
 
-              let existingProd = null;
-              if (code) existingProd = dbProducts.find(p => p.code === code);
+        let existingProd = null;
+        if (code) existingProd = dbProducts.find(p => p.code === code);
 
-              const id = existingProd ? existingProd.id : ('prod_' + Math.random().toString(36).substr(2, 9) + Date.now());
+        const id = existingProd ? existingProd.id : ('prod_' + Math.random().toString(36).slice(2, 9) + Date.now());
 
-              const newProd = {
-                  id: id,
-                  name: name,
-                  category: category,
-                  code: code,
-                  cost: cost,
-                  expenses: expenses,
-                  price: price,
-                  status: status,
-                  color: color,
-                  size: size,
-                  stock: existingProd ? existingProd.stock : 0,
-                  stock_branches: existingProd ? existingProd.stock_branches : '{"Central":0}',
-                  promoType: existingProd ? existingProd.promoType : 'none',
-                  promoValue: existingProd ? existingProd.promoValue : 0,
-                  promoLinked: existingProd ? existingProd.promoLinked : '',
-                  createdAt: existingProd ? existingProd.createdAt : new Date().toISOString()
-              };
+        const newProd = {
+          id,
+          name,
+          category,
+          code,
+          cost,
+          expenses,
+          price,
+          status,
+          color,
+          size,
+          stock: existingProd ? existingProd.stock : 0,
+          stock_branches: existingProd ? existingProd.stock_branches : { Central: 0 },
+          promoType: existingProd ? (existingProd.promoType || 'none') : 'none',
+          promoValue: existingProd ? safeNumber(existingProd.promoValue) : 0,
+          promoLinked: existingProd ? (existingProd.promoLinked || '') : '',
+          createdAt: existingProd ? existingProd.createdAt : new Date().toISOString()
+        };
 
-              prodUpdates.push(newProd);
-          });
+        prodUpdates.push(newProd);
+      });
 
-          if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron productos válidos.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
+      if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron productos válidos.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
 
-          let msj = `Se van a importar/actualizar ${prodUpdates.length} artículos en el catálogo.\n`;
-          if (errores.length > 0) msj += `⚠️ Hubo ${errores.length} filas ignoradas por errores:\n` + errores.slice(0,3).join('\n') + `\n`;
-          if (!confirm(msj + `\n¿Confirmás la importación?`)) return;
+      let msj = `Se van a importar/actualizar ${prodUpdates.length} artículos en el catálogo.\n`;
+      if (errores.length > 0) msj += `⚠️ Hubo ${errores.length} filas ignoradas por errores:\n` + errores.slice(0,3).join('\n') + `\n`;
+      if (!confirm(msj + `\n¿Confirmás la importación?`)) return;
 
-          mostrarCarga(true);
-          try {
-              await Promise.all(prodUpdates.map(p => fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(p) })));
+      mostrarCarga(true);
+      try {
+        await Promise.all(prodUpdates.map(p =>
+          apiFetch(`${API_URL}/products`, {
+            method: 'POST',
+            body: JSON.stringify(p)
+          })
+        ));
               
-              document.getElementById('modalImportarProductos').close();
-              alert("✅ Importación de catálogo completada.");
-              await initProducts(); 
-          } catch(err) { 
-              alert("Error de red o timeout durante la subida masiva. Revisa tu conexión."); 
-          } finally { 
-              mostrarCarga(false); 
-          }
-      };
-      reader.readAsArrayBuffer(file);
-  }
+        document.getElementById('modalImportarProductos').close();
+        alert("✅ Importación de catálogo completada.");
+        await initProducts();
+      } catch(err) {
+        alert("Error de red o timeout durante la subida masiva.");
+      } finally {
+        mostrarCarga(false);
+      }
+    };
 
-  // --- GUARDAR PRODUCTO MANUAL EN LA NUBE ---
+    reader.readAsArrayBuffer(file);
+  };
+
   window.guardarProducto = async function(e) {
     e.preventDefault();
+
     const type = document.getElementById('promoType').value;
     if (type === 'combo' && !document.getElementById('promoLinked').value) return alert("Seleccione un producto para el combo.");
-    
+
+    const name = document.getElementById('prodName').value.trim();
+    const category = document.getElementById('prodCategory').value.trim();
+    const price = safeNumber(document.getElementById('prodPrice').value);
+
+    if (!name) return alert("Ingresá el nombre del producto.");
+    if (!category) return alert("Seleccioná una categoría.");
+    if (price <= 0) return alert("Ingresá un precio válido.");
+
     const id = document.getElementById('prodId').value || 'prod_' + Date.now();
     
     let existingProd = dbProducts.find(p => p.id === id);
-    const prodStock = existingProd ? existingProd.stock : 0;
-    const prodBranches = existingProd ? existingProd.stock_branches : '{"Central":0}';
+    const prodStock = existingProd ? safeNumber(existingProd.stock) : 0;
+    const prodBranches = existingProd
+      ? (existingProd.stock_branches || { Central: prodStock })
+      : { Central: 0 };
 
     const prod = {
-      id: id,
-      name: document.getElementById('prodName').value.trim(),
-      category: document.getElementById('prodCategory').value.trim(),
+      id,
+      name,
+      category,
       status: document.getElementById('prodStatus').value,
       code: document.getElementById('prodCode').value.trim(),
-      cost: parseFloat(document.getElementById('prodCost').value) || 0,
-      expenses: parseFloat(document.getElementById('prodExpenses').value) || 0,
-      price: parseFloat(document.getElementById('prodPrice').value) || 0,
+      cost: safeNumber(document.getElementById('prodCost').value),
+      expenses: safeNumber(document.getElementById('prodExpenses').value),
+      price,
       stock: prodStock,
       stock_branches: prodBranches,
       color: document.getElementById('prodColor').value.trim(),
       size: document.getElementById('prodSize').value.trim(),
       promoType: type,
-      promoValue: parseFloat(document.getElementById('promoValue').value) || 0,
-      promoLinked: document.getElementById('promoLinked').value
+      promoValue: safeNumber(document.getElementById('promoValue').value),
+      promoLinked: document.getElementById('promoLinked').value,
+      createdAt: existingProd?.createdAt || new Date().toISOString()
     };
 
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/products`, {
+      const response = await apiFetch(`${API_URL}/products`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(prod)
       });
       
-      if(response.ok) {
-        const idx = dbProducts.findIndex(p => p.id === id);
-        if (idx >= 0) dbProducts[idx] = prod; else dbProducts.unshift(prod);
+      if (response.ok) {
+        await initProducts();
         limpiarFormulario();
-        actualizarSelectCombos();
-        renderTable();
       } else {
-        alert("Error al guardar en la nube.");
+        const msg = await response.text();
+        alert(msg || "Error al guardar.");
       }
-    } catch(error) {
+    } catch (error) {
       console.error("Error guardando:", error);
       alert("Error de conexión. Intentá de nuevo.");
     } finally {
@@ -647,21 +677,22 @@
   window.editarProducto = function(id) {
     const p = dbProducts.find(x => x.id === id);
     if (!p) return;
+
     document.getElementById('formTitle').textContent = "Editar producto";
     document.getElementById('prodId').value = p.id;
-    document.getElementById('prodName').value = p.name;
+    document.getElementById('prodName').value = p.name || '';
     document.getElementById('prodCategory').value = p.category || '';
     document.getElementById('prodStatus').value = p.status || 'Activo';
     document.getElementById('prodCode').value = p.code || '';
-    document.getElementById('prodCost').value = p.cost || 0;
-    document.getElementById('prodExpenses').value = p.expenses || 0;
-    document.getElementById('prodPrice').value = p.price || 0;
-    document.getElementById('prodStock').value = p.stock || 0;
+    document.getElementById('prodCost').value = safeNumber(p.cost);
+    document.getElementById('prodExpenses').value = safeNumber(p.expenses);
+    document.getElementById('prodPrice').value = safeNumber(p.price);
+    document.getElementById('prodStock').value = safeNumber(p.stock);
     document.getElementById('prodColor').value = p.color || '';
     document.getElementById('prodSize').value = p.size || '';
     
     document.getElementById('promoType').value = p.promoType || 'none';
-    document.getElementById('promoValue').value = p.promoValue || '';
+    document.getElementById('promoValue').value = safeNumber(p.promoValue) || '';
     document.getElementById('promoLinked').value = p.promoLinked || '';
     
     calcularRentabilidad();
@@ -673,35 +704,36 @@
     document.getElementById('formTitle').textContent = "Alta de producto";
     document.getElementById('productForm').reset();
     document.getElementById('prodId').value = '';
-    document.getElementById('prodProfit').value = '$0.00'; document.getElementById('prodProfit').style.color = "var(--success)";
-    document.getElementById('prodMargin').value = '0.0%'; document.getElementById('prodMargin').style.color = "var(--primary)";
-    document.getElementById('prodMarkup').value = '0.0%'; document.getElementById('prodMarkup').style.color = "var(--text)";
-    actualizarSelectCategorias(); 
+    document.getElementById('prodProfit').value = '$0.00';
+    document.getElementById('prodProfit').style.color = "var(--success)";
+    document.getElementById('prodMargin').value = '0.0%';
+    document.getElementById('prodMargin').style.color = "var(--primary)";
+    document.getElementById('prodMarkup').value = '0.0%';
+    document.getElementById('prodMarkup').style.color = "var(--text)";
+    document.getElementById('prodStatus').value = 'Activo';
+    actualizarSelectCategorias();
     togglePromoFields();
   };
 
-  // --- ELIMINAR PRODUCTO DE LA NUBE (CON PIN) ---
   window.eliminarProductoPrompt = function(id) {
-    pedirAuthAdmin('borrar permanentemente este producto de la nube', ejecutarEliminacionProducto, id);
+    pedirAuthAdmin('desactivar este producto', ejecutarDesactivacionProducto, id);
   };
 
-  async function ejecutarEliminacionProducto(id) {
+  async function ejecutarDesactivacionProducto(id) {
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/products?id=${id}`, {
+      const response = await apiFetch(`${API_URL}/products?id=${id}`, {
         method: 'DELETE'
       });
 
       if (response.ok) {
-        dbProducts = dbProducts.filter(p => p.id !== id);
-        actualizarSelectCombos();
-        actualizarSelectCategorias();
+        await initProducts();
         renderTable();
       } else {
-        alert("Error al eliminar de la base de datos.");
+        alert("Error al desactivar el producto.");
       }
     } catch(error) {
-      console.error("Error eliminando:", error);
+      console.error("Error desactivando:", error);
       alert("Error de conexión.");
     } finally {
       mostrarCarga(false);
@@ -719,7 +751,8 @@
 
   window.cerrarAdminAuth = function() {
     document.getElementById('adminAuthDialog').close();
-    pendingAdminAction = null; pendingAdminParam = null;
+    pendingAdminAction = null;
+    pendingAdminParam = null;
   };
 
   window.validarAdminAuth = function(e) {
@@ -731,30 +764,36 @@
       if (accion) accion(param);
     } else {
       alert("❌ PIN de administrador incorrecto.");
-      document.getElementById('adminAuthPin').value = ''; 
+      document.getElementById('adminAuthPin').value = '';
       document.getElementById('adminAuthPin').focus();
     }
   };
 
   window.renderTable = function() {
     const term = document.getElementById('searchTable').value.toLowerCase();
-    const filtrados = dbProducts.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)));
+    const statusFilter = document.getElementById('statusFilter').value;
+
+    const filtrados = dbProducts.filter(p => {
+      const matchTerm = (p.name || '').toLowerCase().includes(term) || ((p.code || '').toLowerCase().includes(term));
+      const matchStatus = statusFilter === 'Todos' || (p.status || 'Activo') === statusFilter;
+      return matchTerm && matchStatus;
+    });
     
     const tbody = document.getElementById('tableBody');
     tbody.innerHTML = filtrados.map(p => {
       let promoLabel = '';
       if (p.promoType === '2x1') promoLabel = '<span class="badge-promo">2x1</span>';
-      else if (p.promoType === '2da_unidad') promoLabel = `<span class="badge-promo">2da al ${p.promoValue}%</span>`;
-      else if (p.promoType === 'descuento_directo') promoLabel = `<span class="badge-promo">${p.promoValue}% OFF</span>`;
+      else if (p.promoType === '2da_unidad') promoLabel = `<span class="badge-promo">2da al ${safeNumber(p.promoValue)}%</span>`;
+      else if (p.promoType === 'descuento_directo') promoLabel = `<span class="badge-promo">${safeNumber(p.promoValue)}% OFF</span>`;
       else if (p.promoType === 'combo') promoLabel = `<span class="badge-promo">COMBO</span>`;
 
       let varLabel = '';
       if (p.color) varLabel += `<span class="badge-var">${escapeHtml(p.color)}</span>`;
       if (p.size) varLabel += `<span class="badge-var">${escapeHtml(p.size)}</span>`;
 
-      const costoTotal = (p.cost || 0) + (p.expenses || 0);
-      const utilidad = (p.price || 0) - costoTotal;
-      const isInactive = p.status === 'Inactivo';
+      const costoTotal = safeNumber(p.cost) + safeNumber(p.expenses);
+      const utilidad = safeNumber(p.price) - costoTotal;
+      const isInactive = (p.status || 'Activo') === 'Inactivo';
 
       return `
       <tr style="opacity: ${isInactive ? '0.5' : '1'};">
@@ -763,7 +802,7 @@
           ${isInactive ? '<span style="color:var(--danger); font-size:10px; font-weight:bold; margin-left:5px;">(INACTIVO)</span>' : ''}
           <br>
           <div style="margin-top: 4px;">
-            <small style="color:var(--muted); margin-right:5px;">${p.code||'S/N'} | Cat: ${escapeHtml(p.category||'-')}</small>
+            <small style="color:var(--muted); margin-right:5px;">${p.code || 'S/N'} | Cat: ${escapeHtml(p.category || '-')}</small>
             ${varLabel} ${promoLabel}
           </div>
         </td>
@@ -773,15 +812,15 @@
           <small style="color:${utilidad < 0 ? 'var(--danger)' : 'var(--success)'}; font-size:10px; font-weight:bold;">UB: ${currency(utilidad)}</small>
         </td>
         <td>
-          <span style="background:${p.stock>5?'#dcfce7':'#fee2e2'}; color:${p.stock>5?'#16a34a':'#dc2626'}; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:12px;">
-            ${p.stock}
+          <span style="background:${safeNumber(p.stock) > 5 ? '#dcfce7' : '#fee2e2'}; color:${safeNumber(p.stock) > 5 ? '#16a34a' : '#dc2626'}; padding:2px 8px; border-radius:10px; font-weight:bold; font-size:12px;">
+            ${safeNumber(p.stock)}
           </span>
         </td>
         <td style="text-align: center;">
           <button onclick="editarProducto('${p.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; margin-right:5px;">Editar</button>
-          <button onclick="eliminarProductoPrompt('${p.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Borrar</button>
+          <button onclick="eliminarProductoPrompt('${p.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Desactivar</button>
         </td>
-      </tr>`
+      </tr>`;
     }).join('');
     
     if (filtrados.length === 0) {
