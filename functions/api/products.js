@@ -3,21 +3,42 @@ function getCompanyIdFromRequest(request) {
 }
 
 // ─────────────────────────────────────────────
+// NORMALIZADORES
+// ─────────────────────────────────────────────
+function safeNumber(n) {
+  const v = Number(n);
+  return isNaN(v) ? 0 : v;
+}
+
+function safeString(s) {
+  return String(s || '').trim();
+}
+
+function safeJSON(obj, fallback = {}) {
+  try {
+    if (typeof obj === 'string') return obj;
+    return JSON.stringify(obj || fallback);
+  } catch {
+    return JSON.stringify(fallback);
+  }
+}
+
+// ─────────────────────────────────────────────
 // GET → listar productos
-// ?status=Activo | Inactivo | Todos
 // ─────────────────────────────────────────────
 export async function onRequestGet(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
-
-    if (!companyId) {
-      return Response.json({ error: 'Falta company_id.' }, { status: 400 });
-    }
+    if (!companyId) return Response.json({ error: 'Falta company_id.' }, { status: 400 });
 
     const url = new URL(context.request.url);
     const status = url.searchParams.get('status') || 'Activo';
 
-    let query = "SELECT * FROM products WHERE company_id = ?";
+    let query = `
+      SELECT * 
+      FROM products 
+      WHERE company_id = ?
+    `;
     const binds = [companyId];
 
     if (status !== 'Todos') {
@@ -41,17 +62,46 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
-
-    if (!companyId) {
-      return Response.json({ error: 'Falta company_id.' }, { status: 400 });
-    }
+    if (!companyId) return Response.json({ error: 'Falta company_id.' }, { status: 400 });
 
     const data = await context.request.json();
 
-    const branchesString =
-      typeof data.stock_branches === 'object'
-        ? JSON.stringify(data.stock_branches)
-        : (data.stock_branches || '{"Central":0}');
+    const id = data.id || 'prod_' + Date.now();
+    const name = safeString(data.name);
+    const code = safeString(data.code);
+
+    if (!name) {
+      return Response.json({ error: 'Nombre obligatorio.' }, { status: 400 });
+    }
+
+    // 🔥 CONTROL DUPLICADO CODE
+    if (code) {
+      const existing = await context.env.DB.prepare(`
+        SELECT id FROM products 
+        WHERE code = ?1 AND company_id = ?2 AND id != ?3
+      `).bind(code, companyId, id).first();
+
+      if (existing) {
+        return Response.json({ error: 'Código ya existe.' }, { status: 400 });
+      }
+    }
+
+    // STOCK POR SUCURSAL
+    let stockBranches = {};
+    try {
+      stockBranches = typeof data.stock_branches === 'string'
+        ? JSON.parse(data.stock_branches)
+        : (data.stock_branches || {});
+    } catch {
+      stockBranches = { Central: 0 };
+    }
+
+    // fallback mínimo
+    if (Object.keys(stockBranches).length === 0) {
+      stockBranches = { Central: safeNumber(data.stock) };
+    }
+
+    const totalStock = Object.values(stockBranches).reduce((a, b) => a + safeNumber(b), 0);
 
     await context.env.DB.prepare(`
       INSERT INTO products (
@@ -84,51 +134,49 @@ export async function onRequestPost(context) {
         promoLinked = excluded.promoLinked,
         stock_branches = excluded.stock_branches
     `).bind(
-      data.id,
+      id,
       companyId,
-      data.name || '',
-      data.code || '',
-      data.category || '',
-      Number(data.cost || 0),
-      Number(data.price || 0),
-      Number(data.stock || 0),
+      name,
+      code,
+      safeString(data.category),
+      safeNumber(data.cost),
+      safeNumber(data.price),
+      totalStock,
       data.status || 'Activo',
-      data.promoType || '',
-      Number(data.promoValue || 0),
-      data.promoLinked || '',
+      safeString(data.promoType),
+      safeNumber(data.promoValue),
+      safeString(data.promoLinked),
       data.createdAt || new Date().toISOString(),
-      branchesString
+      safeJSON(stockBranches, { Central: 0 })
     ).run();
 
     return Response.json({ success: true });
+
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
 
 // ─────────────────────────────────────────────
-// DELETE → baja lógica (NO borrar)
+// DELETE → baja lógica
 // ─────────────────────────────────────────────
 export async function onRequestDelete(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
-
-    if (!companyId) {
-      return Response.json({ error: 'Falta company_id.' }, { status: 400 });
-    }
+    if (!companyId) return Response.json({ error: 'Falta company_id.' }, { status: 400 });
 
     const url = new URL(context.request.url);
     const id = url.searchParams.get("id");
 
-    if (!id) {
-      return Response.json({ error: 'Falta id.' }, { status: 400 });
-    }
+    if (!id) return Response.json({ error: 'Falta id.' }, { status: 400 });
 
-    await context.env.DB.prepare(
-      "UPDATE products SET status = 'Inactivo' WHERE id = ?1 AND company_id = ?2"
-    ).bind(id, companyId).run();
+    await context.env.DB.prepare(`
+      UPDATE products 
+      SET status = 'Inactivo' 
+      WHERE id = ?1 AND company_id = ?2
+    `).bind(id, companyId).run();
 
-    return Response.json({ success: true, message: 'Producto desactivado.' });
+    return Response.json({ success: true });
 
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
