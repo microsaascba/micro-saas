@@ -29,20 +29,23 @@ export async function onRequestPost(context) {
         
         // NUEVO: Logo en Base64
         const logo = data.logo || '';
+       // Extraemos los datos geográficos
+        const city = data.city || '';
+        const country = data.country || 'Argentina';
         
         await context.env.DB.prepare(`
-            INSERT INTO clients (id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, type, createdAt, ivaCondition, status, city, province, country, allowedModules, logo)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO clients (id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, type, createdAt, ivaCondition, status, city, country, allowedModules, logo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET 
                 name = excluded.name, contact = excluded.contact, phone = excluded.phone, email = excluded.email,
                 cuil = excluded.cuil, address = excluded.address, fee = excluded.fee, dueDate = excluded.dueDate,
                 active = excluded.active, adminUser = excluded.adminUser, adminPass = excluded.adminPass,
                 type = excluded.type, ivaCondition = excluded.ivaCondition, status = excluded.status,
-                city = excluded.city, province = excluded.province, country = excluded.country, 
+                city = excluded.city, country = excluded.country, 
                 allowedModules = excluded.allowedModules, logo = excluded.logo
         `).bind(
             id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, 
-            type, createdAt, ivaCondition, status, city, province, country, allowedModules, data.logo || ''
+            type, createdAt, ivaCondition, status, city, country, allowedModules, data.logo || ''
         ).run();
 
         return new Response("OK", { status: 200 });
