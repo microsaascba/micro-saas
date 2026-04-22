@@ -534,7 +534,7 @@
     cloudStatus.className = 'badge badge-warning';
 
     try {
-      dbClientes = await fetchJson('/api/clients');
+      dbClientes = await fetchJson('//api/master_clients');
       dbClientes = dbClientes.map(c => ({
         ...c,
         active: c.active === true || c.active === 1,
@@ -786,7 +786,7 @@
     c.adminUser = nuevoEstado;
 
     try {
-      await fetchJson('/api/clients', {
+      await fetchJson('//api/master_clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(c)
@@ -821,7 +821,7 @@
     c.email = document.getElementById('lEmail').value.trim();
 
     try {
-      await fetchJson('/api/clients', {
+      await fetchJson('//api/master_clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(c)
@@ -961,7 +961,7 @@
     };
 
     try {
-      await fetchJson('/api/clients', {
+      await fetchJson('//api/master_clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -1015,7 +1015,7 @@
     };
 
     try {
-      await fetchJson('/api/clients', {
+      await fetchJson('//api/master_clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -1035,7 +1035,7 @@
     if (!confirm(`¿Borrar definitivamente el lead ${c.name}?`)) return;
 
     try {
-      await fetch(`/api/clients?id=${id}`, { method: 'DELETE' });
+      await fetch(`//api/master_clients?id=${id}`, { method: 'DELETE' });
       dbClientes = dbClientes.filter(x => x.id !== id);
       localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
       renderAll();
