@@ -821,7 +821,7 @@
     c.email = document.getElementById('lEmail').value.trim();
 
     try {
-      await fetchJson('//api/master_clients', {
+      await fetchJson('/api/master_clients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(c)
