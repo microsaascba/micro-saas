@@ -1,12 +1,3 @@
-export async function onRequestGet(context) {
-    try {
-        const { results } = await context.env.DB.prepare("SELECT * FROM clients ORDER BY name ASC").all();
-        return new Response(JSON.stringify(results), { headers: { "Content-Type": "application/json" } });
-    } catch (error) {
-        return new Response(`Error GET: ${error.message}`, { status: 500 });
-    }
-}
-
 export async function onRequestPost(context) {
     try {
         const data = await context.request.json();
@@ -36,18 +27,21 @@ export async function onRequestPost(context) {
         const adminPass = data.adminPass || '';
         const allowedModules = data.allowedModules ? JSON.stringify(data.allowedModules) : '[]';
         
+        // NUEVO: Logo en Base64
+        const logo = data.logo || '';
+        
         await context.env.DB.prepare(`
-            INSERT INTO clients (id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, type, createdAt, ivaCondition, status, city, province, country, allowedModules)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO clients (id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, type, createdAt, ivaCondition, status, city, province, country, allowedModules, logo)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET 
                 name = excluded.name, contact = excluded.contact, phone = excluded.phone, email = excluded.email,
                 cuil = excluded.cuil, address = excluded.address, fee = excluded.fee, dueDate = excluded.dueDate,
                 active = excluded.active, adminUser = excluded.adminUser, adminPass = excluded.adminPass,
                 type = excluded.type, ivaCondition = excluded.ivaCondition, status = excluded.status,
-                city = excluded.city, province = excluded.province, country = excluded.country, allowedModules = excluded.allowedModules
+                city = excluded.city, province = excluded.province, country = excluded.country, allowedModules = excluded.allowedModules, logo = excluded.logo
         `).bind(
             id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, 
-            type, createdAt, ivaCondition, status, city, province, country, allowedModules
+            type, createdAt, ivaCondition, status, city, province, country, allowedModules, logo
         ).run();
 
         return new Response("OK", { status: 200 });
