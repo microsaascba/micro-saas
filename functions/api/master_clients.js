@@ -16,44 +16,61 @@ export async function onRequestPost(context) {
 
     await context.env.DB.prepare(`
       INSERT INTO clients (
-        id, name, contact, phone, email, cuil, address,
-        fee, dueDate, active, adminUser, adminPass,
-        type, createdAt, ivaCondition, status,
-        allowedModules, city, province, country, logo
+        id,
+        name,
+        contact,
+        phone,
+        email,
+        cuil,
+        address,
+        fee,
+        dueDate,
+        active,
+        adminUser,
+        adminPass,
+        type,
+        createdAt,
+        ivaCondition,
+        status,
+        allowedModules,
+        city,
+        province,
+        country,
+        logo
       )
-      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7,
-              ?8, ?9, ?10, ?11, ?12,
-              ?13, ?14, ?15, ?16,
-              ?17, ?18, ?19, ?20, ?21)
+      VALUES (
+        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10,
+        ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21
+      )
       ON CONFLICT(id) DO UPDATE SET
-        name=excluded.name,
-        contact=excluded.contact,
-        phone=excluded.phone,
-        email=excluded.email,
-        cuil=excluded.cuil,
-        address=excluded.address,
-        fee=excluded.fee,
-        dueDate=excluded.dueDate,
-        active=excluded.active,
-        adminUser=excluded.adminUser,
-        adminPass=excluded.adminPass,
-        type=excluded.type,
-        ivaCondition=excluded.ivaCondition,
-        status=excluded.status,
-        allowedModules=excluded.allowedModules,
-        city=excluded.city,
-        province=excluded.province,
-        country=excluded.country,
-        logo=excluded.logo
+        name = excluded.name,
+        contact = excluded.contact,
+        phone = excluded.phone,
+        email = excluded.email,
+        cuil = excluded.cuil,
+        address = excluded.address,
+        fee = excluded.fee,
+        dueDate = excluded.dueDate,
+        active = excluded.active,
+        adminUser = excluded.adminUser,
+        adminPass = excluded.adminPass,
+        type = excluded.type,
+        ivaCondition = excluded.ivaCondition,
+        status = excluded.status,
+        allowedModules = excluded.allowedModules,
+        city = excluded.city,
+        province = excluded.province,
+        country = excluded.country,
+        logo = excluded.logo
     `).bind(
       c.id,
-      c.name,
+      c.name || '',
       c.contact || '',
       c.phone || '',
       c.email || '',
       c.cuil || '',
       c.address || '',
-      c.fee || 0,
+      Number(c.fee || 0),
       c.dueDate || '',
       c.active ? 1 : 0,
       c.adminUser || '',
@@ -70,7 +87,6 @@ export async function onRequestPost(context) {
     ).run();
 
     return Response.json({ success: true });
-
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
@@ -79,6 +95,10 @@ export async function onRequestPost(context) {
 export async function onRequestDelete(context) {
   try {
     const id = new URL(context.request.url).searchParams.get('id');
+
+    if (!id) {
+      return Response.json({ error: 'Falta id.' }, { status: 400 });
+    }
 
     await context.env.DB.prepare(`
       DELETE FROM clients WHERE id = ?1
