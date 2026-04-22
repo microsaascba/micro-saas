@@ -302,7 +302,14 @@
         <div class="field"><label>Primer Vencimiento *</label><input type="date" id="cDueDate" required /></div>
         
         <div id="adminConfigBox" class="field full admin-box">
-          <div class="field full admin-box" style="background: rgba(16, 185, 129, 0.05); border-color: var(--success); margin-top: 15px;">
+          <p><strong>Usuario del Sistema Único del Cliente:</strong></p>
+          <div class="form-grid">
+            <div class="field"><label>Usuario Admin *</label><input type="text" id="cAdminUser" required /></div>
+            <div class="field"><label>Contraseña *</label><input type="text" id="cAdminPass" required /></div>
+          </div>
+        </div>
+
+        <div class="field full admin-box" style="background: rgba(16, 185, 129, 0.05); border-color: var(--success); margin-top: 15px;">
           <p style="color: var(--success);"><strong>Módulos Contratados (Plan del Cliente):</strong></p>
           <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
             <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="dashboard" checked> Dashboard</label>
@@ -318,12 +325,7 @@
             <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="usuarios" checked> Usuarios</label>
           </div>
         </div>
-          <p><strong>Usuario del Sistema Único del Cliente:</strong></p>
-          <div class="form-grid">
-            <div class="field"><label>Usuario Admin *</label><input type="text" id="cAdminUser" required /></div>
-            <div class="field"><label>Contraseña *</label><input type="text" id="cAdminPass" required /></div>
-          </div>
-        </div>
+
       </div>
       <div class="modal-foot">
         <button type="button" class="btn btn-outline" onclick="cerrarModal('clienteDialog')">Cancelar</button>
@@ -619,6 +621,9 @@
     document.getElementById('cAdminPass').value = ''; 
     document.getElementById('cAdminUser').dataset.oldUser = '';
     
+    // Seleccionamos todos los modulos por defecto
+    document.querySelectorAll('input[name="cliModules"]').forEach(cb => cb.checked = true);
+
     document.getElementById('clienteDialog').showModal();
   }
 
@@ -626,26 +631,37 @@
   function abrirModalCliente() { 
     editingClientId = null; document.getElementById('cTempId').value = ''; document.getElementById('clienteForm').reset(); 
     document.getElementById('clienteModalTitle').textContent = 'Nuevo Cliente Oficial'; 
-    document.getElementById('cAdminUser').dataset.oldUser = ''; document.getElementById('clienteDialog').showModal(); 
+    document.getElementById('cAdminUser').dataset.oldUser = ''; 
+    document.querySelectorAll('input[name="cliModules"]').forEach(cb => cb.checked = true);
+    document.getElementById('clienteDialog').showModal(); 
   }
   
   function editarCliente(id) {
     const c = dbClientes.find(x => x.id === id); if(!c) return; editingClientId = id; document.getElementById('clienteModalTitle').textContent = 'Editar Cliente';
-    document.getElementById('cTempId').value = id; document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || ''; document.getElementById('cCuil').value = c.cuil || ''; document.getElementById('cAddress').value = c.address || ''; document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || ''; document.getElementById('cFee').value = c.fee; document.getElementById('cDueDate').value = c.dueDate; document.getElementById('cAdminUser').value = c.adminUser || ''; document.getElementById('cAdminPass').value = c.adminPass || ''; document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || ''; document.getElementById('clienteDialog').showModal();
+    document.getElementById('cTempId').value = id; document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || ''; document.getElementById('cCuil').value = c.cuil || ''; document.getElementById('cAddress').value = c.address || ''; document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || ''; document.getElementById('cFee').value = c.fee; document.getElementById('cDueDate').value = c.dueDate; document.getElementById('cAdminUser').value = c.adminUser || ''; document.getElementById('cAdminPass').value = c.adminPass || ''; document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || ''; 
+    
+    document.querySelectorAll('input[name="cliModules"]').forEach(cb => cb.checked = false);
+    let modulos = [];
+    try { modulos = typeof c.allowedModules === 'string' ? JSON.parse(c.allowedModules) : (c.allowedModules || []); } catch(e) {}
+    if(modulos.length > 0) { modulos.forEach(m => { const cb = document.querySelector(`input[name="cliModules"][value="${m}"]`); if(cb) cb.checked = true; }); } else { document.querySelectorAll('input[name="cliModules"]').forEach(cb => cb.checked = true); }
+    
+    document.getElementById('clienteDialog').showModal();
   }
   
   async function guardarCliente(e) {
     e.preventDefault(); const btn = document.getElementById('btnGuardarCli'); btn.textContent = 'Guardando...'; btn.disabled = true;
     const tempId = document.getElementById('cTempId').value;
+    const modulosSeleccionados = Array.from(document.querySelectorAll('input[name="cliModules"]:checked')).map(cb => cb.value);
     
     const data = { 
       name: document.getElementById('cName').value.trim(), contact: document.getElementById('cContact').value.trim(), 
       cuil: document.getElementById('cCuil').value.trim(), address: document.getElementById('cAddress').value.trim(), 
       phone: document.getElementById('cPhone').value.trim(), email: document.getElementById('cEmail').value.trim(), 
       fee: document.getElementById('cFee').value, dueDate: document.getElementById('cDueDate').value, 
-      active: true, type: 'client', // ESTO HACE QUE DESAPAREZCA DE LEADS Y VAYA A CLIENTES
+      active: true, type: 'client', 
       adminUser: document.getElementById('cAdminUser').value.trim(), adminPass: document.getElementById('cAdminPass').value.trim(), 
-      oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser 
+      oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser,
+      allowedModules: modulosSeleccionados
     };
 
     try {
