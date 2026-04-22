@@ -160,29 +160,43 @@
         if (response.ok && data.success) {
           clearSession();
 
-          const user = data.user || {};
-          const company = data.company || {};
+         const user = data.user || {};
+const company = data.company || {};
+const warning = data.warning || null;
+const license = data.license || null;
 
-          localStorage.setItem('activeUser', user.username || '');
-          localStorage.setItem('userRole', user.role || '');
-          localStorage.setItem('allowedModules', JSON.stringify(user.allowedModules || []));
-          localStorage.setItem('company_id', user.company_id || '');
-          localStorage.setItem('saas_logged_in', 'true');
+localStorage.setItem('activeUser', user.username || '');
+localStorage.setItem('userRole', user.role || '');
+localStorage.setItem('allowedModules', JSON.stringify(user.allowedModules || []));
+localStorage.setItem('company_id', user.company_id || '');
+localStorage.setItem('saas_logged_in', 'true');
 
-          localStorage.setItem('saas_username', user.username || '');
-          localStorage.setItem('saas_role', user.role || '');
+localStorage.setItem('saas_username', user.username || '');
+localStorage.setItem('saas_role', user.role || '');
 
-          localStorage.setItem('company_name', company.name || '');
-          localStorage.setItem('company_logo', company.logo || '');
-          localStorage.setItem('company_cuil', company.cuil || '');
-          localStorage.setItem('company_email', company.email || '');
-          localStorage.setItem('company_phone', company.phone || '');
-          localStorage.setItem('company_address', company.address || '');
-          localStorage.setItem('company_city', company.city || '');
-          localStorage.setItem('company_country', company.country || '');
-          localStorage.setItem('company_iva_condition', company.ivaCondition || '');
+localStorage.setItem('company_name', company.name || '');
+localStorage.setItem('company_logo', company.logo || '');
+localStorage.setItem('company_cuil', company.cuil || '');
+localStorage.setItem('company_email', company.email || '');
+localStorage.setItem('company_phone', company.phone || '');
+localStorage.setItem('company_address', company.address || '');
+localStorage.setItem('company_city', company.city || '');
+localStorage.setItem('company_country', company.country || '');
+localStorage.setItem('company_iva_condition', company.ivaCondition || '');
 
-          hydrateCompanyUI(company);
+localStorage.setItem('license_due_date', license?.dueDate || '');
+localStorage.setItem('license_days_to_due', license?.daysToDue ?? '');
+localStorage.setItem('license_days_past_due', license?.daysPastDue ?? '');
+localStorage.setItem('license_warning', warning ? JSON.stringify(warning) : '');
+
+hydrateCompanyUI(company);
+
+if (warning) {
+  errorMsg.textContent = warning.message;
+  errorMsg.style.display = 'block';
+  errorMsg.style.background = warning.type === 'grace_period' ? '#fff7ed' : '#fef3c7';
+  errorMsg.style.color = warning.type === 'grace_period' ? '#c2410c' : '#92400e';
+}
 
           const targetPage = resolveTargetPage(user);
 
