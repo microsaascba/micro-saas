@@ -319,7 +319,16 @@
 
         <div class="field"><label>Email *</label><input type="email" id="cEmail" required /></div>
         <div class="field"><label>Valor Abono ($) *</label><input type="number" id="cFee" required /></div>
-        <div class="field"><label>Primer Vencimiento *</label><input type="date" id="cDueDate" required /></div>
+        <div class="field"><label>Primer Vencimiento *</label><input type="date" id="cDueDate" required /></div
+                                                                                                            
+        <div class="field full" style="margin-top: 10px; margin-bottom: 10px; padding: 10px; border: 1px dashed var(--muted); border-radius: 8px; background: #f8fafc;">
+          <label style="color: var(--primary);">Logo de la Empresa (Para facturas y remitos)</label>
+          <div style="display: flex; gap: 15px; align-items: center; margin-top: 5px;">
+            <img id="cLogoPreview" src="" alt="Sin logo" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px; background: #fff; border: 1px solid var(--line); display: none;">
+            <input type="file" id="cLogoInput" accept="image/png, image/jpeg, image/jpg" onchange="convertirLogoBase64(event)" style="border: none; background: transparent; padding: 0;">
+            <input type="hidden" id="cLogoBase64">
+          </div>
+        </div>                                                                                                    
         
         <div id="adminConfigBox" class="field full admin-box">
           <p><strong>Usuario del Sistema Único del Cliente:</strong></p>
