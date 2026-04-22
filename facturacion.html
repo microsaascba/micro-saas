@@ -447,15 +447,30 @@
     }; 
 
     try {
-      const resV = await fetch(`${API_URL}/sales`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(venta) });
+      const resV = await apiFetch(`${API_URL}/sales`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(venta) });
       if(!resV.ok) throw new Error(await resV.text());
       
-      if(isB2B && cid) {
-        const mov = { id: 'cc_' + Date.now(), clientId: cid, date: dateStr, type: 'debe', amount: total, concept: `Ticket #${venta.id.split('_')[1]}` };
-        const resCC = await fetch(`${API_URL}/cc_movements`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(mov) });
-        if(!resCC.ok) throw new Error("Cta Cte Error: " + await resCC.text());
-      }
+     if (isB2B && cid) {
+  const mov = {
+    id: 'cc_' + Date.now(),
+    clientId: cid,
+    date: dateStr,
+    type: 'debit', // 🔥 ESTÁNDAR CORRECTO
+    amount: total,
+    concept: `Venta Ticket #${venta.id.split('_')[1]}`,
+    reference_type: 'sale',
+    reference_id: venta.id,
+    branch: terminalActiva,
+    seller: localStorage.getItem('activeUser') || 'Admin'
+  };
 
+  const resCC = await apiFetch(`${API_URL}/cc_movements`, {
+    method: 'POST',
+    body: JSON.stringify(mov)
+  });
+
+  if (!resCC.ok) throw new Error("Cta Cte Error: " + await resCC.text());
+}
       alert(isB2B ? "📓 Guardado en Cta. Cte." : "✅ Venta finalizada.");
       localStorage.setItem('last_sale_to_print', JSON.stringify(venta));
 
