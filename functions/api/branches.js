@@ -54,15 +54,16 @@ export async function onRequestPost(context) {
 
     const data = await context.request.json();
 
-    const id = data.id || `suc_${Date.now()}`;
+    let id = data.id || `suc_${Date.now()}`;
     const name = safeString(data.name);
 
     if (!name) {
       return Response.json({ error: 'El nombre de la sucursal es obligatorio.' }, { status: 400 });
     }
 
-    const existingName = await context.env.DB.prepare(`
-      SELECT id
+    // Buscamos si ya existe el nombre
+    const existingBranch = await context.env.DB.prepare(`
+      SELECT id, status
       FROM branches
       WHERE LOWER(name) = LOWER(?1)
         AND company_id = ?2
@@ -70,8 +71,16 @@ export async function onRequestPost(context) {
       LIMIT 1
     `).bind(name, companyId, id).first();
 
-    if (existingName) {
-      return Response.json({ error: 'Ya existe una sucursal con ese nombre.' }, { status: 400 });
+    if (existingBranch) {
+      if (existingBranch.status === 'Inactivo') {
+        // Si está inactiva, en lugar de dar error, vamos a "reciclarla"
+        // Le asignamos a nuestra variable 'id' el id de la inactiva.
+        // Así el INSERT ON CONFLICT la pisará y reactivará.
+        id = existingBranch.id;
+      } else {
+        // Si ya está Activa, entonces sí es un duplicado y bloqueamos
+        return Response.json({ error: 'Ya existe una sucursal activa con ese nombre.' }, { status: 400 });
+      }
     }
 
     await context.env.DB.prepare(`
@@ -100,7 +109,7 @@ export async function onRequestPost(context) {
       safeString(data.manager),
       safeString(data.phone),
       data.createdAt || new Date().toISOString(),
-      safeString(data.status || 'Activo')
+      safeString(data.status || 'Activo') // Al reactivar, se pondrá en 'Activo'
     ).run();
 
     return Response.json({ success: true, id });
