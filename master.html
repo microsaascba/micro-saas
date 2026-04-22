@@ -610,20 +610,12 @@
     e.preventDefault();
     const id = document.getElementById('lTempId').value;
     const c = dbClientes.find(x => x.id === id);
-    c.name = document.getElementById('lName').value.trim();
-    c.contact = document.getElementById('lName').value.trim();
-    c.phone = document.getElementById('lPhone').value.trim();
-    c.email = document.getElementById('lEmail').value.trim();
-
+    c.name = document.getElementById('lName').value.trim(); c.contact = document.getElementById('lName').value.trim(); c.phone = document.getElementById('lPhone').value.trim(); c.email = document.getElementById('lEmail').value.trim();
     try {
-      await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) });
-      cerrarModal('leadDialog');
-      await loadDataFromCloud();
-    } catch (err) {
-      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
-      cerrarModal('leadDialog');
-      renderAll();
-    }
+      // CORRECCIÓN BUG: Cambiado de PUT a POST
+      await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) });
+      cerrarModal('leadDialog'); await loadDataFromCloud();
+    } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('leadDialog'); renderAll(); }
   }
 
   function convertirLeadACliente(id) {
@@ -685,33 +677,50 @@
     }
   }
 
+  function convertirLogoBase64(event) {
+    const file = event.target.files[0];
+    if (!file) {
+      document.getElementById('cLogoBase64').value = '';
+      document.getElementById('cLogoPreview').style.display = 'none';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('cLogoBase64').value = e.target.result;
+      document.getElementById('cLogoPreview').src = e.target.result;
+      document.getElementById('cLogoPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file); // Convierte la imagen a texto
+  }
+
   // ── 6. ACCIONES LOGICAS: CLIENTES ──
-  function abrirModalCliente() { 
+ function abrirModalCliente() { 
     editingClientId = null; document.getElementById('cTempId').value = ''; document.getElementById('clienteForm').reset(); 
     document.getElementById('clienteModalTitle').textContent = 'Nuevo Cliente Oficial'; 
     document.getElementById('cAdminUser').dataset.oldUser = ''; 
+    document.getElementById('cCountry').value = 'Argentina'; document.getElementById('cProvince').value = ''; document.getElementById('cCity').value = '';
     
-    document.getElementById('cCountry').value = 'Argentina'; 
-    document.getElementById('cProvince').value = ''; 
-    document.getElementById('cCity').value = '';
+    // Limpiar Logo
+    document.getElementById('cLogoInput').value = ''; document.getElementById('cLogoBase64').value = ''; document.getElementById('cLogoPreview').style.display = 'none';
 
     document.querySelectorAll('input[name="cliModules"]').forEach(cb => cb.checked = true);
     document.getElementById('clienteDialog').showModal(); 
   }
   
-  function editarCliente(id) {
+ function editarCliente(id) {
     const c = dbClientes.find(x => x.id === id); if(!c) return; editingClientId = id; document.getElementById('clienteModalTitle').textContent = 'Editar Cliente';
     document.getElementById('cTempId').value = id; document.getElementById('cName').value = c.name; document.getElementById('cContact').value = c.contact || ''; document.getElementById('cCuil').value = c.cuil || ''; document.getElementById('cAddress').value = c.address || ''; document.getElementById('cPhone').value = c.phone; document.getElementById('cEmail').value = c.email || ''; document.getElementById('cFee').value = c.fee; document.getElementById('cDueDate').value = c.dueDate; document.getElementById('cAdminUser').value = c.adminUser || ''; document.getElementById('cAdminPass').value = c.adminPass || ''; document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || ''; 
+    document.getElementById('cCountry').value = c.country || 'Argentina'; document.getElementById('cProvince').value = c.province || ''; document.getElementById('cCity').value = c.city || '';
     
-    document.getElementById('cCountry').value = c.country || 'Argentina'; 
-    document.getElementById('cProvince').value = c.province || ''; 
-    document.getElementById('cCity').value = c.city || '';
+    // Cargar Logo
+    document.getElementById('cLogoBase64').value = c.logo || '';
+    if (c.logo) { document.getElementById('cLogoPreview').src = c.logo; document.getElementById('cLogoPreview').style.display = 'block'; } 
+    else { document.getElementById('cLogoPreview').style.display = 'none'; }
+    document.getElementById('cLogoInput').value = '';
 
     document.querySelectorAll('input[name="cliModules"]').forEach(cb => cb.checked = false);
-    let modulos = [];
-    try { modulos = typeof c.allowedModules === 'string' ? JSON.parse(c.allowedModules) : (c.allowedModules || []); } catch(e) {}
+    let modulos = []; try { modulos = typeof c.allowedModules === 'string' ? JSON.parse(c.allowedModules) : (c.allowedModules || []); } catch(e) {}
     if(modulos.length > 0) { modulos.forEach(m => { const cb = document.querySelector(`input[name="cliModules"][value="${m}"]`); if(cb) cb.checked = true; }); } else { document.querySelectorAll('input[name="cliModules"]').forEach(cb => cb.checked = true); }
-    
     document.getElementById('clienteDialog').showModal();
   }
   
@@ -728,16 +737,16 @@
       active: true, type: 'client', 
       adminUser: document.getElementById('cAdminUser').value.trim(), adminPass: document.getElementById('cAdminPass').value.trim(), 
       oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser,
-      city: document.getElementById('cCity').value.trim(),
-      province: document.getElementById('cProvince').value.trim(),
-      country: document.getElementById('cCountry').value,
-      allowedModules: modulosSeleccionados
+      city: document.getElementById('cCity').value.trim(), province: document.getElementById('cProvince').value.trim(), country: document.getElementById('cCountry').value,
+      allowedModules: modulosSeleccionados,
+      logo: document.getElementById('cLogoBase64').value // Captura el Logo
     };
 
     try {
       if (tempId || editingClientId) { 
         data.id = tempId || editingClientId; 
-        await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+        // CORRECCIÓN BUG: Cambiado de PUT a POST
+        await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
       } else { 
         data.id = 'cli_' + Math.random().toString(36).substr(2, 9); 
         await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) }); 
@@ -745,22 +754,21 @@
       cerrarModal('clienteDialog'); await loadDataFromCloud();
     } catch(err) { 
       if (tempId || editingClientId) { const realId = tempId || editingClientId; const idx = dbClientes.findIndex(x => x.id === realId); data.id = realId; data.active = dbClientes[idx].active; dbClientes[idx] = data; } else { data.id = 'cli_' + Math.random().toString(36).substr(2, 9); dbClientes.push(data); }
-      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('clienteDialog'); 
-      const select = document.getElementById('filtroClientePagos'); const currentVal = select.value;
-      select.innerHTML = '<option value="ALL">Mostrar Todos los Clientes</option>' + dbClientes.filter(c => c.type !== 'lead').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-      select.value = currentVal || 'ALL'; renderAll(); 
+      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); cerrarModal('clienteDialog'); renderAll(); 
     }
     btn.textContent = 'Guardar Cliente Oficial'; btn.disabled = false;
   }
 
-  async function toggleAcceso(id) { const c = dbClientes.find(x => x.id === id); if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { c.active = !c.active; try { await fetch('/api/clients', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); await loadDataFromCloud(); } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); } } }
-
-  async function borrarCliente(id) {
-    const c = dbClientes.find(x => x.id === id);
-    if(c && confirm(`🚨 ATENCIÓN: ¿Seguro que querés borrar definitivamente a ${c.name}?`)) {
-      try { await fetch(`/api/clients?id=${id}`, { method: 'DELETE' }); await loadDataFromCloud(); } 
-      catch (err) { dbClientes = dbClientes.filter(x => x.id !== id); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); }
-    }
+ async function toggleAcceso(id) { 
+    const c = dbClientes.find(x => x.id === id); 
+    if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { 
+      c.active = !c.active; 
+      try { 
+        // CORRECCIÓN BUG: Cambiado de PUT a POST
+        await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(c) }); 
+        await loadDataFromCloud(); 
+      } catch (err) { localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); renderAll(); } 
+    } 
   }
 
   // ── 7. RESTO DEL CÓDIGO (Pagos, Gastos, Presupuestos) ──
