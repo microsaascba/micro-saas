@@ -468,6 +468,14 @@
     cloudStatus.textContent = 'Sincronizando...'; cloudStatus.className = 'badge badge-warning';
     try {
       const resC = await fetch('/api/clients');
+      
+      // 🚨 VALIDACIÓN CRÍTICA: ¿El servidor nos dio HTML en vez de datos?
+      const contentType = resC.headers.get("content-type");
+      if (contentType && contentType.includes("text/html")) {
+          alert("🚨 ERROR CRÍTICO DE BACKEND:\nCloudflare devolvió una página HTML en lugar de datos JSON.\n\nEsto significa que tu carpeta 'functions' no está siendo detectada o compilada por Cloudflare Pages. Revisa la estructura de tu GitHub.");
+          throw new Error("La API devolvió HTML.");
+      }
+
       if (!resC.ok) throw new Error("Error obteniendo clientes");
       dbClientes = await resC.json(); 
       dbClientes.forEach(c => c.active = (c.active === 1 || c.active === true)); 
@@ -825,11 +833,19 @@
 
       try { 
         const res = await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }); 
+        
+        // 🚨 PREVENIR FALLO SILENCIOSO
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+            throw new Error("El servidor devolvió HTML. La API de Cloudflare no está funcionando.");
+        }
+        
         if(!res.ok) throw new Error(await res.text());
+        
         await loadDataFromCloud(); 
+        alert(`Estado actualizado con éxito.`);
       } catch (err) { 
-        alert("Error de la Base de Datos al intentar cambiar el estado:\n" + err.message);
-        localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); 
+        alert("Error al intentar actualizar el estado:\n" + err.message);
         renderAll(); 
       } 
     } 
