@@ -1,10 +1,54 @@
 export async function onRequestGet(context) {
   try {
+    const url = new URL(context.request.url);
+    const id = url.searchParams.get('id');
+
+    if (id) {
+      const row = await context.env.DB.prepare(`
+        SELECT *
+        FROM clients
+        WHERE id = ?1
+        LIMIT 1
+      `).bind(id).first();
+
+      if (!row) {
+        return Response.json({ error: 'Cliente no encontrado.' }, { status: 404 });
+      }
+
+      return Response.json({
+        ...row,
+        active: Number(row.active) === 1,
+        fee: Number(row.fee || 0),
+        max_users: Number(row.max_users || 1),
+        allow_user_management: Number(row.allow_user_management || 0),
+        max_branches: Number(row.max_branches || 1),
+        allow_branch_management: Number(row.allow_branch_management || 0),
+        allowedModules: (() => {
+          try { return JSON.parse(row.allowedModules || '[]'); } catch { return []; }
+        })()
+      });
+    }
+
     const { results } = await context.env.DB.prepare(`
-      SELECT * FROM clients ORDER BY createdAt DESC
+      SELECT *
+      FROM clients
+      ORDER BY createdAt DESC
     `).all();
 
-    return Response.json(results);
+    const formatted = results.map(c => ({
+      ...c,
+      active: Number(c.active) === 1,
+      fee: Number(c.fee || 0),
+      max_users: Number(c.max_users || 1),
+      allow_user_management: Number(c.allow_user_management || 0),
+      max_branches: Number(c.max_branches || 1),
+      allow_branch_management: Number(c.allow_branch_management || 0),
+      allowedModules: (() => {
+        try { return JSON.parse(c.allowedModules || '[]'); } catch { return []; }
+      })()
+    }));
+
+    return Response.json(formatted);
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
@@ -12,7 +56,7 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   try {
-    const c = await context.request.json();
+    const data = await context.request.json();
 
     await context.env.DB.prepare(`
       INSERT INTO clients (
@@ -36,11 +80,16 @@ export async function onRequestPost(context) {
         city,
         province,
         country,
-        logo
+        logo,
+        max_users,
+        allow_user_management,
+        max_branches,
+        allow_branch_management
       )
       VALUES (
         ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10,
-        ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21
+        ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20,
+        ?21, ?22, ?23, ?24, ?25
       )
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name,
@@ -61,29 +110,37 @@ export async function onRequestPost(context) {
         city = excluded.city,
         province = excluded.province,
         country = excluded.country,
-        logo = excluded.logo
+        logo = excluded.logo,
+        max_users = excluded.max_users,
+        allow_user_management = excluded.allow_user_management,
+        max_branches = excluded.max_branches,
+        allow_branch_management = excluded.allow_branch_management
     `).bind(
-      c.id,
-      c.name || '',
-      c.contact || '',
-      c.phone || '',
-      c.email || '',
-      c.cuil || '',
-      c.address || '',
-      Number(c.fee || 0),
-      c.dueDate || '',
-      c.active ? 1 : 0,
-      c.adminUser || '',
-      c.adminPass || '',
-      c.type || 'client',
-      c.createdAt || new Date().toISOString(),
-      c.ivaCondition || '',
-      c.status || 'Activo',
-      JSON.stringify(c.allowedModules || []),
-      c.city || '',
-      c.province || '',
-      c.country || 'Argentina',
-      c.logo || ''
+      data.id,
+      data.name || '',
+      data.contact || '',
+      data.phone || '',
+      data.email || '',
+      data.cuil || '',
+      data.address || '',
+      Number(data.fee || 0),
+      data.dueDate || '',
+      data.active ? 1 : 0,
+      data.adminUser || '',
+      data.adminPass || '',
+      data.type || 'client',
+      data.createdAt || new Date().toISOString(),
+      data.ivaCondition || '',
+      data.status || 'Activo',
+      JSON.stringify(data.allowedModules || []),
+      data.city || '',
+      data.province || '',
+      data.country || 'Argentina',
+      data.logo || '',
+      Number(data.max_users || 1),
+      data.allow_user_management ? 1 : 0,
+      Number(data.max_branches || 1),
+      data.allow_branch_management ? 1 : 0
     ).run();
 
     return Response.json({ success: true });
@@ -101,7 +158,8 @@ export async function onRequestDelete(context) {
     }
 
     await context.env.DB.prepare(`
-      DELETE FROM clients WHERE id = ?1
+      DELETE FROM clients
+      WHERE id = ?1
     `).bind(id).run();
 
     return Response.json({ success: true });
