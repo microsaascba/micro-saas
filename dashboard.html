@@ -120,6 +120,7 @@
 
   <main class="content">
     <header class="topbar">
+      <div id="licenseBanner" style="display:none; margin-bottom:18px; padding:14px 16px; border-radius:12px; font-weight:600;"></div>
       <div class="topbar-left">
         <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
         <div class="page-title">
@@ -574,6 +575,31 @@ function renderDashboard() {
   renderAlerts(s);
   renderSimpleLists(s);
   renderActivity(s);
+}
+
+
+  function renderLicenseBanner() {
+  const rawWarning = localStorage.getItem('license_warning');
+  const banner = document.getElementById('licenseBanner');
+  if (!banner || !rawWarning) return;
+
+  try {
+    const warning = JSON.parse(rawWarning);
+    if (!warning || !warning.message) return;
+
+    banner.style.display = 'block';
+    banner.textContent = warning.message;
+
+    if (warning.type === 'grace_period') {
+      banner.style.background = '#fff7ed';
+      banner.style.color = '#c2410c';
+      banner.style.border = '1px solid #fdba74';
+    } else {
+      banner.style.background = '#fef3c7';
+      banner.style.color = '#92400e';
+      banner.style.border = '1px solid #fcd34d';
+    }
+  } catch {}
 }
 
 initDashboard();
