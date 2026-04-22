@@ -2,6 +2,10 @@ function getCompanyIdFromRequest(request) {
   return request.headers.get('x-company-id') || '';
 }
 
+// ─────────────────────────────────────────────
+// GET → listar productos
+// ?status=Activo | Inactivo | Todos
+// ─────────────────────────────────────────────
 export async function onRequestGet(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
@@ -10,9 +14,20 @@ export async function onRequestGet(context) {
       return Response.json({ error: 'Falta company_id.' }, { status: 400 });
     }
 
-    const { results } = await context.env.DB.prepare(
-      "SELECT * FROM products WHERE company_id = ? ORDER BY name ASC"
-    ).bind(companyId).all();
+    const url = new URL(context.request.url);
+    const status = url.searchParams.get('status') || 'Activo';
+
+    let query = "SELECT * FROM products WHERE company_id = ?";
+    const binds = [companyId];
+
+    if (status !== 'Todos') {
+      query += " AND (status = ? OR status IS NULL)";
+      binds.push(status);
+    }
+
+    query += " ORDER BY name ASC";
+
+    const { results } = await context.env.DB.prepare(query).bind(...binds).all();
 
     return Response.json(results);
   } catch (error) {
@@ -20,6 +35,9 @@ export async function onRequestGet(context) {
   }
 }
 
+// ─────────────────────────────────────────────
+// POST → crear / actualizar producto
+// ─────────────────────────────────────────────
 export async function onRequestPost(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
@@ -37,8 +55,20 @@ export async function onRequestPost(context) {
 
     await context.env.DB.prepare(`
       INSERT INTO products (
-        id, company_id, name, code, category, cost, price, stock, status,
-        promoType, promoValue, promoLinked, createdAt, stock_branches
+        id,
+        company_id,
+        name,
+        code,
+        category,
+        cost,
+        price,
+        stock,
+        status,
+        promoType,
+        promoValue,
+        promoLinked,
+        createdAt,
+        stock_branches
       )
       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)
       ON CONFLICT(id) DO UPDATE SET
@@ -76,6 +106,9 @@ export async function onRequestPost(context) {
   }
 }
 
+// ─────────────────────────────────────────────
+// DELETE → baja lógica (NO borrar)
+// ─────────────────────────────────────────────
 export async function onRequestDelete(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
@@ -92,10 +125,11 @@ export async function onRequestDelete(context) {
     }
 
     await context.env.DB.prepare(
-      "DELETE FROM products WHERE id = ?1 AND company_id = ?2"
+      "UPDATE products SET status = 'Inactivo' WHERE id = ?1 AND company_id = ?2"
     ).bind(id, companyId).run();
 
-    return Response.json({ success: true });
+    return Response.json({ success: true, message: 'Producto desactivado.' });
+
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
