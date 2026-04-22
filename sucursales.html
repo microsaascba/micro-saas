@@ -9,39 +9,52 @@
     html, body { background-color: #f0f2f7 !important; }
     body { animation: fadeIn 0.15s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    
-    /* FIX RESPONSIVE: Quitamos !important a la grilla para que responda en móviles */
+
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
-    
+
     .layout-2col { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
     @media (max-width: 1000px) { .layout-2col { grid-template-columns: 1fr; } }
-    
+
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
+
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
     td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
-    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
 
-    /* REGLAS OBLIGATORIAS PARA CELULARES */
+    #loadingOverlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center;
+      align-items: center; font-weight: bold; color: var(--primary); font-size: 18px;
+    }
+
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
-    
+
+    .company-logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: inherit;
+      background: #fff;
+    }
+
     @media (max-width: 900px) {
       .app { display: flex !important; flex-direction: column !important; }
       .mobile-toggle { display: block; }
       .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
       .sidebar.open { left: 0 !important; }
       .sidebar-overlay.open { display: block; }
-      
+
       .topbar { padding: 15px; flex-direction: column; align-items: flex-start !important; gap: 15px; }
       .topbar-actions { width: 100%; }
       .topbar-actions button { width: 100%; }
-      
+
       .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
     }
   </style>
@@ -52,11 +65,11 @@
 
 <div class="app">
   <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
-  
+
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-logo">M</div>
-      <div class="brand-text"><strong id="sidebarUserName">Usuario: Admin</strong><small>Control del negocio</small></div>
+      <div class="brand-logo" id="companyLogo">M</div>
+      <div class="brand-text"><strong id="companyBrandText">Empresa</strong><small>Control del negocio</small></div>
     </div>
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
@@ -67,7 +80,7 @@
       <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
-      <a href="ordenes.html" class="nav-icon"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="ordenes.html"><span class="nav-icon">📋</span> Órdenes</a>
       <a href="sucursales.html" class="active"><span class="nav-icon">🏪</span> Sucursales</a>
       <a href="usuarios.html"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
@@ -91,21 +104,21 @@
       <article class="card card-pad">
         <h2 style="margin: 0 0 5px 0; font-size: 18px;" id="formTitle">Alta de Sucursal</h2>
         <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Datos del nuevo punto de venta o depósito.</p>
-        
+
         <form id="branchForm" onsubmit="guardarSucursal(event)">
           <input type="hidden" id="branchId">
-          
+
           <div style="margin-bottom: 15px;">
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Nombre de la Sucursal *</label>
             <input type="text" id="branchName" class="input-box" required placeholder="Ej: Sucursal Centro">
           </div>
-          
+
           <div style="margin-bottom: 15px;">
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Dirección</label>
             <input type="text" id="branchAddress" class="input-box" placeholder="Ej: Av. Principal 123">
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
             <div>
               <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Encargado</label>
               <input type="text" id="branchManager" class="input-box" placeholder="Nombre">
@@ -116,6 +129,14 @@
             </div>
           </div>
 
+          <div style="margin-bottom: 25px;">
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Estado</label>
+            <select id="branchStatus" class="input-box">
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
+          </div>
+
           <div style="display: flex; gap: 10px;">
             <button type="button" class="btn btn-light" style="flex:1;" onclick="limpiarFormulario()">Cancelar</button>
             <button type="submit" class="btn btn-primary" style="flex:2;" id="btnSave">Guardar Sucursal</button>
@@ -124,7 +145,15 @@
       </article>
 
       <article class="card card-pad">
-        <h2 style="margin: 0 0 20px 0; font-size: 18px;">Directorio de Locales</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+          <h2 style="margin: 0; font-size: 18px;">Directorio de Locales</h2>
+          <select id="filterBranchStatus" class="input-box" onchange="initBranches()" style="max-width: 180px;">
+            <option value="Activo">Activas</option>
+            <option value="Todos">Todas</option>
+            <option value="Inactivo">Inactivas</option>
+          </select>
+        </div>
+
         <div style="overflow-x: auto;">
           <table>
             <thead>
@@ -132,6 +161,7 @@
                 <th>Nombre</th>
                 <th>Dirección</th>
                 <th>Encargado</th>
+                <th>Estado</th>
                 <th style="text-align: center;">Acciones</th>
               </tr>
             </thead>
@@ -158,13 +188,17 @@
   </form>
 </dialog>
 
-<dialog id="modalTerminal" style="width: 100%; max-width: 400px;">
+<dialog id="modalTerminal" style="width: 100%; max-width: 420px;">
   <div class="modal-content">
     <h2 style="margin: 0 0 10px 0; font-size:18px;">Vincular Dispositivo</h2>
     <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Asigná esta computadora a una sucursal fija para evitar errores de facturación.</p>
-    
-    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seleccionar Destino</label>
-    <select id="selectTerminalBranch" class="input-box" style="margin-bottom: 25px;"></select>
+
+    <div style="margin-bottom: 10px;">
+      <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seleccionar Destino</label>
+      <select id="selectTerminalBranch" class="input-box" style="margin-top: 6px;"></select>
+    </div>
+
+    <div id="terminalActualBox" style="font-size: 13px; color: var(--muted); margin-bottom: 25px;"></div>
 
     <div style="display: flex; gap: 10px; justify-content: flex-end;">
       <button class="btn btn-light" onclick="document.getElementById('modalTerminal').close()">Cancelar</button>
@@ -175,34 +209,79 @@
 
 <script src="core.js"></script>
 <script>
-  const API_URL = "/api"; 
+  const API_URL = "/api";
   let dbBranches = [];
   const PIN_ADMIN = "1234";
   let pendingAdminAction = null;
   let pendingAdminParam = null;
 
-  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
+  function escapeHtml(v) {
+    return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function mostrarCarga(mostrar) {
+    document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none';
+  }
+
+  function applyCompanyBranding() {
+    const companyName = localStorage.getItem('company_name') || 'Empresa';
+    const companyLogo = localStorage.getItem('company_logo') || '';
+
+    const brandText = document.getElementById('companyBrandText');
+    if (brandText) brandText.textContent = companyName;
+
+    const logoBox = document.getElementById('companyLogo');
+    if (logoBox && companyLogo) {
+      logoBox.innerHTML = `<img src="${companyLogo}" alt="Logo empresa" class="company-logo-img">`;
+    }
+  }
+
+  function toggleMenu() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+  }
 
   async function initBranches() {
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/branches`);
+      applyCompanyBranding();
+
+      const status = document.getElementById('filterBranchStatus').value || 'Activo';
+      const response = await apiFetch(`${API_URL}/branches?status=${encodeURIComponent(status)}`);
       if (response.ok) dbBranches = await response.json();
-    } catch (error) { console.error("Error:", error); } 
-    finally { mostrarCarga(false); renderTable(); }
+    } catch (error) {
+      console.error("Error:", error);
+      dbBranches = [];
+    } finally {
+      mostrarCarga(false);
+      renderTable();
+    }
   }
 
   function abrirConfigTerminal() {
-    if(localStorage.getItem('userRole') !== 'admin') return alert("Solo el administrador puede configurar terminales.");
+    if ((localStorage.getItem('userRole') || '') !== 'admin') {
+      return alert("Solo el administrador puede configurar terminales.");
+    }
+
     const select = document.getElementById('selectTerminalBranch');
-    select.innerHTML = dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+    const activas = dbBranches.filter(b => (b.status || 'Activo') === 'Activo');
+    select.innerHTML = activas.map(b => `<option value="${b.name}">${escapeHtml(b.name)}</option>`).join('');
+
+    const actual = localStorage.getItem('terminal_assigned_branch') || '';
+    document.getElementById('terminalActualBox').innerHTML = actual
+      ? `Terminal actualmente vinculada a: <strong>${escapeHtml(actual)}</strong>`
+      : `Esta terminal no tiene una sucursal vinculada todavía.`;
+
+    if (actual) select.value = actual;
+
     document.getElementById('modalTerminal').showModal();
   }
 
   function confirmarVinculo() {
     const branch = document.getElementById('selectTerminalBranch').value;
-    if(confirm(`¿Confirmás que esta computadora pertenece a: ${branch}?`)) {
+    if (!branch) return alert("Seleccioná una sucursal.");
+
+    if (confirm(`¿Confirmás que esta computadora pertenece a: ${branch}?`)) {
       localStorage.setItem('terminal_assigned_branch', branch);
       alert("✅ Terminal vinculada con éxito. El sistema operará bajo esta sucursal.");
       location.reload();
@@ -211,39 +290,51 @@
 
   async function guardarSucursal(e) {
     e.preventDefault();
+
     const id = document.getElementById('branchId').value || 'br_' + Date.now();
+    const existing = dbBranches.find(x => x.id === id);
+
     const branch = {
-      id: id,
+      id,
       name: document.getElementById('branchName').value.trim(),
       address: document.getElementById('branchAddress').value.trim(),
       manager: document.getElementById('branchManager').value.trim(),
       phone: document.getElementById('branchPhone').value.trim(),
-      createdAt: new Date().toISOString()
+      status: document.getElementById('branchStatus').value,
+      createdAt: existing?.createdAt || new Date().toISOString()
     };
 
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/branches`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(branch)
+      const response = await apiFetch(`${API_URL}/branches`, {
+        method: 'POST',
+        body: JSON.stringify(branch)
       });
-      if(response.ok) {
-        const idx = dbBranches.findIndex(c => c.id === id);
-        if (idx >= 0) dbBranches[idx] = branch; else dbBranches.unshift(branch);
-        limpiarFormulario(); renderTable();
-      } else alert("Error al guardar.");
-    } catch(error) { alert("Error de conexión."); } 
-    finally { mostrarCarga(false); }
+
+      if (response.ok) {
+        limpiarFormulario();
+        await initBranches();
+      } else {
+        alert("Error al guardar.");
+      }
+    } catch (error) {
+      alert("Error de conexión.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   function editarSucursal(id) {
     const c = dbBranches.find(x => x.id === id);
     if (!c) return;
+
     document.getElementById('formTitle').textContent = "Editar Sucursal";
     document.getElementById('branchId').value = c.id;
-    document.getElementById('branchName').value = c.name;
+    document.getElementById('branchName').value = c.name || '';
     document.getElementById('branchAddress').value = c.address || '';
     document.getElementById('branchManager').value = c.manager || '';
     document.getElementById('branchPhone').value = c.phone || '';
+    document.getElementById('branchStatus').value = c.status || 'Activo';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -251,60 +342,102 @@
     document.getElementById('formTitle').textContent = "Alta de Sucursal";
     document.getElementById('branchForm').reset();
     document.getElementById('branchId').value = '';
+    document.getElementById('branchStatus').value = 'Activo';
   }
 
   function eliminarSucursalPrompt(id) {
     const c = dbBranches.find(x => x.id === id);
-    if(c && c.name.toLowerCase() === 'central') return alert("La sucursal Central no puede ser eliminada.");
+    if (c && (c.name || '').toLowerCase() === 'central') {
+      return alert("La sucursal Central no puede ser eliminada.");
+    }
     pedirAuthAdmin(ejecutarEliminacionSucursal, id);
   }
 
   async function ejecutarEliminacionSucursal(id) {
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/branches?id=${id}`, { method: 'DELETE' });
-      if (response.ok) { dbBranches = dbBranches.filter(c => c.id !== id); renderTable(); } 
-      else alert("Error al eliminar.");
-    } catch(error) { alert("Error de conexión."); } 
-    finally { mostrarCarga(false); }
+      const response = await apiFetch(`${API_URL}/branches?id=${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        await initBranches();
+        if (result.logicalDelete) {
+          alert(result.message || "La sucursal fue desactivada.");
+        }
+      } else {
+        alert("Error al eliminar.");
+      }
+    } catch (error) {
+      alert("Error de conexión.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   function pedirAuthAdmin(funcionExito, param = null) {
-    pendingAdminAction = funcionExito; pendingAdminParam = param;
+    pendingAdminAction = funcionExito;
+    pendingAdminParam = param;
     document.getElementById('adminAuthPin').value = '';
     document.getElementById('adminAuthDialog').showModal();
     setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
   }
 
-  function cerrarAdminAuth() { document.getElementById('adminAuthDialog').close(); pendingAdminAction = null; pendingAdminParam = null; }
+  function cerrarAdminAuth() {
+    document.getElementById('adminAuthDialog').close();
+    pendingAdminAction = null;
+    pendingAdminParam = null;
+  }
 
   function validarAdminAuth(e) {
     e.preventDefault();
     if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
-      const accion = pendingAdminAction; const param = pendingAdminParam;
-      cerrarAdminAuth(); if (accion) accion(param);
-    } else { alert("❌ PIN incorrecto."); document.getElementById('adminAuthPin').value = ''; document.getElementById('adminAuthPin').focus(); }
+      const accion = pendingAdminAction;
+      const param = pendingAdminParam;
+      cerrarAdminAuth();
+      if (accion) accion(param);
+    } else {
+      alert("❌ PIN incorrecto.");
+      document.getElementById('adminAuthPin').value = '';
+      document.getElementById('adminAuthPin').focus();
+    }
   }
 
   function renderTable() {
     const tbody = document.getElementById('tableBody');
+
+    if (!dbBranches.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding: 30px;">No hay sucursales registradas.</td></tr>';
+      return;
+    }
+
     tbody.innerHTML = dbBranches.map(c => {
-      const isCentral = c.name.toLowerCase() === 'central';
-      const deleteBtn = isCentral ? '' : `<button onclick="eliminarSucursalPrompt('${c.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Borrar</button>`;
-      
+      const isCentral = (c.name || '').toLowerCase() === 'central';
+      const estado = c.status || 'Activo';
+
+      const badge = estado === 'Activo'
+        ? `<span style="background:#dcfce7;color:#166534;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;">Activo</span>`
+        : `<span style="background:#fee2e2;color:#b91c1c;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;">Inactivo</span>`;
+
+      const deleteBtn = isCentral
+        ? ''
+        : `<button onclick="eliminarSucursalPrompt('${c.id}')" style="background:transparent; border:1px solid #fee2e2; color:var(--danger); border-radius:6px; padding:4px 8px; cursor:pointer;">Borrar</button>`;
+
       return `
-      <tr>
+      <tr style="${estado === 'Inactivo' ? 'opacity:0.6;' : ''}">
         <td><strong>${escapeHtml(c.name)}</strong></td>
         <td><span style="color:var(--muted);">${escapeHtml(c.address || '-')}</span></td>
         <td>
           <div style="font-size:13px;">${escapeHtml(c.manager || '-')}</div>
           <small style="color:var(--muted);">${escapeHtml(c.phone || '-')}</small>
         </td>
+        <td>${badge}</td>
         <td style="text-align: center;">
           <button onclick="editarSucursal('${c.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; margin-right:5px;">Editar</button>
           ${deleteBtn}
         </td>
-      </tr>`
+      </tr>`;
     }).join('');
   }
 
