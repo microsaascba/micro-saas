@@ -19,10 +19,11 @@ export async function onRequestGet(context) {
         ...row,
         active: Number(row.active) === 1,
         fee: Number(row.fee || 0),
-        max_users: Number(row.max_users || 1),
-        allow_user_management: Number(row.allow_user_management || 0),
-        max_branches: Number(row.max_branches || 1),
-        allow_branch_management: Number(row.allow_branch_management || 0),
+        // CORRECCIÓN: Devolvemos camelCase para que el frontend lo entienda
+        maxUsers: Number(row.max_users || 1),
+        allowUsers: Number(row.allow_user_management || 0),
+        maxBranches: Number(row.max_branches || 1),
+        allowBranches: Number(row.allow_branch_management || 0),
         allowedModules: (() => {
           try { return JSON.parse(row.allowedModules || '[]'); } catch { return []; }
         })()
@@ -39,10 +40,11 @@ export async function onRequestGet(context) {
       ...c,
       active: Number(c.active) === 1,
       fee: Number(c.fee || 0),
-      max_users: Number(c.max_users || 1),
-      allow_user_management: Number(c.allow_user_management || 0),
-      max_branches: Number(c.max_branches || 1),
-      allow_branch_management: Number(c.allow_branch_management || 0),
+      // CORRECCIÓN: Devolvemos camelCase para que el frontend lo entienda
+      maxUsers: Number(c.max_users || 1),
+      allowUsers: Number(c.allow_user_management || 0),
+      maxBranches: Number(c.max_branches || 1),
+      allowBranches: Number(c.allow_branch_management || 0),
       allowedModules: (() => {
         try { return JSON.parse(c.allowedModules || '[]'); } catch { return []; }
       })()
@@ -137,10 +139,11 @@ export async function onRequestPost(context) {
       data.province || '',
       data.country || 'Argentina',
       data.logo || '',
-      Number(data.max_users || 1),
-      data.allow_user_management ? 1 : 0,
-      Number(data.max_branches || 1),
-      data.allow_branch_management ? 1 : 0
+      // CORRECCIÓN: Leemos de data.maxUsers (camelCase) como lo manda el HTML
+      Number(data.maxUsers || 1),
+      data.allowUsers ? 1 : 0,
+      Number(data.maxBranches || 1),
+      data.allowBranches ? 1 : 0
     ).run();
 
     return Response.json({ success: true });
