@@ -1,3 +1,12 @@
+export async function onRequestGet(context) {
+    try {
+        const { results } = await context.env.DB.prepare("SELECT * FROM clients ORDER BY name ASC").all();
+        return new Response(JSON.stringify(results), { headers: { "Content-Type": "application/json" } });
+    } catch (error) {
+        return new Response(`Error GET: ${error.message}`, { status: 500 });
+    }
+}
+
 export async function onRequestPost(context) {
     try {
         const data = await context.request.json();
@@ -13,23 +22,33 @@ export async function onRequestPost(context) {
         const status = data.status || 'Activo';
         const createdAt = data.createdAt || new Date().toISOString();
         
-        // NUEVO: Recibimos los módulos permitidos para esta empresa
+        // Campos Geográficos
+        const city = data.city || '';
+        const province = data.province || '';
+        const country = data.country || 'Argentina';
+
+        // Campos Exclusivos del Master
+        const contact = data.contact || '';
+        const fee = data.fee || 0;
+        const dueDate = data.dueDate || '';
+        const active = data.active !== undefined ? (data.active ? 1 : 0) : 1;
+        const adminUser = data.adminUser || '';
+        const adminPass = data.adminPass || '';
         const allowedModules = data.allowedModules ? JSON.stringify(data.allowedModules) : '[]';
         
         await context.env.DB.prepare(`
-            INSERT INTO clients (id, name, cuil, address, type, email, phone, ivaCondition, status, createdAt, allowedModules)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO clients (id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, type, createdAt, ivaCondition, status, city, province, country, allowedModules)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET 
-                name = excluded.name,
-                cuil = excluded.cuil,
-                address = excluded.address,
-                type = excluded.type,
-                email = excluded.email,
-                phone = excluded.phone,
-                ivaCondition = excluded.ivaCondition,
-                status = excluded.status,
-                allowedModules = excluded.allowedModules
-        `).bind(id, name, cuil, address, type, email, phone, ivaCondition, status, createdAt, allowedModules).run();
+                name = excluded.name, contact = excluded.contact, phone = excluded.phone, email = excluded.email,
+                cuil = excluded.cuil, address = excluded.address, fee = excluded.fee, dueDate = excluded.dueDate,
+                active = excluded.active, adminUser = excluded.adminUser, adminPass = excluded.adminPass,
+                type = excluded.type, ivaCondition = excluded.ivaCondition, status = excluded.status,
+                city = excluded.city, province = excluded.province, country = excluded.country, allowedModules = excluded.allowedModules
+        `).bind(
+            id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, 
+            type, createdAt, ivaCondition, status, city, province, country, allowedModules
+        ).run();
 
         return new Response("OK", { status: 200 });
     } catch (error) {
