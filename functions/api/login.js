@@ -21,7 +21,8 @@ export async function onRequestPost(context) {
       );
     }
 
-    const user = await context.env.DB.prepare(`
+    // 1. Buscar primero en la tabla de empleados / sub-usuarios (users)
+    let user = await context.env.DB.prepare(`
       SELECT
         id,
         username,
@@ -35,6 +36,28 @@ export async function onRequestPost(context) {
       LIMIT 1
     `).bind(username, password).first();
 
+    // 2. Si no se encontró, buscar si es el Administrador Principal (Dueño de la empresa) en la tabla clients
+    if (!user) {
+      const clientAdmin = await context.env.DB.prepare(`
+        SELECT
+          id as id,
+          adminUser as username,
+          'admin' as role,
+          active,
+          allowedModules,
+          id as company_id,
+          adminPass as password
+        FROM clients
+        WHERE adminUser = ?1 AND adminPass = ?2
+        LIMIT 1
+      `).bind(username, password).first();
+
+      if (clientAdmin) {
+        user = clientAdmin; // Si coincide, lo tratamos como un usuario con rol 'admin'
+      }
+    }
+
+    // 3. Si no existe en ninguna de las dos tablas, rechazamos el login
     if (!user) {
       return Response.json(
         { success: false, error: "Usuario o contraseña incorrectos." },
@@ -180,6 +203,7 @@ export async function onRequestPost(context) {
       companyModules = [];
     }
 
+    // Si es el admin principal (desde clients), userModules será igual a companyModules.
     const finalModules =
       Array.isArray(userModules) && userModules.length > 0
         ? userModules
