@@ -14,7 +14,6 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
   <style>
-    /* FIX RESPONSIVE: Sin !important en la grilla principal */
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
@@ -62,7 +61,6 @@
       .firma-line { border-top: 1px solid #000; width: 40%; text-align: center; padding-top: 4px; font-size: 10px; }
     }
     
-    /* REGLAS OBLIGATORIAS PARA CELULARES */
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
 
@@ -72,12 +70,9 @@
       .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
       .sidebar.open { left: 0 !important; }
       .sidebar-overlay.open { display: block; }
-      
-      /* Ajuste específico para la topbar en Stock porque tiene muchos botones */
       .topbar { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
       .topbar-actions { justify-content: flex-start; width: 100%; }
-      .topbar-actions button { flex: 1 1 auto; /* Los botones se acomodan solos */ }
-      
+      .topbar-actions button { flex: 1 1 auto; }
       .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
     }
   </style>
@@ -148,7 +143,6 @@
 
     <div class="layout-1col">
       <article class="card card-pad">
-        
         <div class="tabs">
           <button class="tab-btn active" onclick="switchTab('tab-inventario', this)">Estado de Inventario (Columnas por Sucursal)</button>
           <button class="tab-btn" onclick="switchTab('tab-movimientos', this)">Historial de Remitos y Compras</button>
@@ -164,8 +158,7 @@
 
           <div style="overflow-x: auto;">
             <table class="excel-table">
-              <thead id="tableHeadStock">
-                </thead>
+              <thead id="tableHeadStock"></thead>
               <tbody id="tableBodyStock"></tbody>
             </table>
           </div>
@@ -187,8 +180,7 @@
                   <th style="text-align: center;">Acciones</th>
                 </tr>
               </thead>
-              <tbody id="tableBodyHistory">
-              </tbody>
+              <tbody id="tableBodyHistory"></tbody>
             </table>
           </div>
         </div>
@@ -352,7 +344,7 @@
   </div>
 </dialog>
 
-  <dialog id="modalTransferenciaMasiva" style="width: 100%; max-width: 600px;">
+<dialog id="modalTransferenciaMasiva" style="width: 100%; max-width: 600px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
       <h2 style="margin: 0; font-size:20px;">Transferencia Masiva (Excel)</h2>
@@ -433,8 +425,7 @@
   let dbProducts = [];
   let dbBranches = [];
   let dbSuppliers = [];
-  let dbExpenses = []; 
-  
+  let dbExpenses = [];
   let historyLogs = getData('saas_movements_log', []);
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -445,58 +436,94 @@
     btnElement.classList.add('active');
     document.getElementById(tabId).classList.add('active');
   }
+  function todayISO() { return new Date().toISOString().split('T')[0]; }
+  function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR').format(Number(n || 0)); }
+  function toggleMenu() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+  }
 
   function getBranches(prod) {
-    if (!prod.stock_branches) return { "Central": prod.stock || 0 };
+    if (!prod.stock_branches) return { "Central": Number(prod.stock || 0) };
     try {
-      const parsed = JSON.parse(prod.stock_branches);
-      return typeof parsed === 'object' ? parsed : { "Central": prod.stock || 0 };
-    } catch(e) { return { "Central": prod.stock || 0 }; }
+      const parsed = typeof prod.stock_branches === 'string' ? JSON.parse(prod.stock_branches) : prod.stock_branches;
+      return typeof parsed === 'object' && parsed !== null ? parsed : { "Central": Number(prod.stock || 0) };
+    } catch(e) {
+      return { "Central": Number(prod.stock || 0) };
+    }
+  }
+
+  async function saveProduct(product) {
+    const payload = {
+      ...product,
+      stock_branches: typeof product.stock_branches === 'string'
+        ? product.stock_branches
+        : JSON.stringify(product.stock_branches || { Central: Number(product.stock || 0) })
+    };
+
+    const res = await apiFetch(`${API_URL}/products`, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      throw new Error(await res.text());
+    }
   }
 
   function logMovement(type, origin, dest, summary, itemsArray, isPurchase = false) {
-      const log = {
-          id: (isPurchase ? 'ING-' : 'REM-') + Math.floor(Math.random()*90000 + 10000),
-          date: new Date().toISOString(),
-          type: type,
-          origen: origin,
-          destino: dest,
-          user: localStorage.getItem('activeUser') || 'Admin',
-          summary: summary,
-          items: itemsArray
-      };
-      historyLogs.unshift(log);
-      setData('saas_movements_log', historyLogs);
-      renderHistory();
+    const log = {
+      id: (isPurchase ? 'ING-' : 'REM-') + Math.floor(Math.random() * 90000 + 10000),
+      date: new Date().toISOString(),
+      type,
+      origen: origin,
+      destino: dest,
+      user: localStorage.getItem('activeUser') || 'Admin',
+      summary,
+      items: itemsArray
+    };
+    historyLogs.unshift(log);
+    setData('saas_movements_log', historyLogs);
+    renderHistory();
+    return log;
   }
 
   async function initStock() {
     mostrarCarga(true);
     try {
       const [resP, resB, resS, resE] = await Promise.all([
-          fetch(`${API_URL}/products`), 
-          fetch(`${API_URL}/branches`), 
-          fetch(`${API_URL}/suppliers`),
-          fetch(`${API_URL}/expenses`)
+        apiFetch(`${API_URL}/products?status=Todos`),
+        apiFetch(`${API_URL}/branches`),
+        apiFetch(`${API_URL}/suppliers`),
+        apiFetch(`${API_URL}/expenses`)
       ]);
+
       if (resP.ok) dbProducts = await resP.json();
       if (resB.ok) dbBranches = await resB.json();
       if (resS.ok) dbSuppliers = await resS.json();
       if (resE.ok) dbExpenses = await resE.json();
-    } catch (error) { console.error(error); } 
-    finally {
-      const branchOptions = dbBranches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+
+    } catch (error) {
+      console.error(error);
+    } finally {
+      const branchOptions = dbBranches.map(b => `<option value="${b.name}">${escapeHtml(b.name)}</option>`).join('');
       const filter = document.getElementById('branchFilter');
-      if(filter) filter.innerHTML = '<option value="ALL">Todas las Sucursales</option>' + branchOptions;
+      if (filter) filter.innerHTML = '<option value="ALL">Todas las Sucursales</option>' + branchOptions;
       
       const destElements = ['masivaDestino', 'ingresoDestino', 'transfOrigen', 'transfDestino', 'ajusteSucursal', 'transfMasivaOrigen', 'transfMasivaDestino'];
-      destElements.forEach(id => { if(document.getElementById(id)) document.getElementById(id).innerHTML = branchOptions; });
+      destElements.forEach(id => {
+        if (document.getElementById(id)) document.getElementById(id).innerHTML = branchOptions;
+      });
 
       const supplierOptions = '<option value="">Seleccioná...</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
       document.getElementById('ingresoProveedor').innerHTML = supplierOptions;
       document.getElementById('masivaProv').innerHTML = supplierOptions;
 
-      const prodOptions = dbProducts.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+      const prodOptions = dbProducts
+        .filter(p => (p.status || 'Activo') !== 'Inactivo')
+        .map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`)
+        .join('');
+
       document.getElementById('ingresoProducto').innerHTML = prodOptions;
       document.getElementById('transfProducto').innerHTML = prodOptions;
       document.getElementById('ajusteProducto').innerHTML = prodOptions;
@@ -508,28 +535,28 @@
   }
 
   function cargarFacturasProv(tipo) {
-      const provId = document.getElementById(tipo === 'ingreso' ? 'ingresoProveedor' : 'masivaProv').value;
-      const facSelect = document.getElementById(tipo === 'ingreso' ? 'ingresoFactura' : 'masivaFactura');
+    const provId = document.getElementById(tipo === 'ingreso' ? 'ingresoProveedor' : 'masivaProv').value;
+    const facSelect = document.getElementById(tipo === 'ingreso' ? 'ingresoFactura' : 'masivaFactura');
 
-      if (!provId) {
-          facSelect.innerHTML = '<option value="">Seleccioná un proveedor primero...</option>';
-          facSelect.disabled = true;
-          return;
-      }
+    if (!provId) {
+      facSelect.innerHTML = '<option value="">Seleccioná un proveedor primero...</option>';
+      facSelect.disabled = true;
+      return;
+    }
 
-      const facturasDelProveedor = dbExpenses.filter(e => e.supplierId === provId);
+    const facturasDelProveedor = dbExpenses.filter(e => e.supplierId === provId);
 
-      if (facturasDelProveedor.length === 0) {
-          facSelect.innerHTML = '<option value="">No hay facturas cargadas para este proveedor en Contabilidad</option>';
-          facSelect.disabled = true;
-          return;
-      }
+    if (facturasDelProveedor.length === 0) {
+      facSelect.innerHTML = '<option value="">No hay facturas cargadas para este proveedor en Contabilidad</option>';
+      facSelect.disabled = true;
+      return;
+    }
 
-      facSelect.innerHTML = '<option value="">Seleccioná la factura cruzada...</option>' + facturasDelProveedor.map(f => {
-          const nombreFac = `${f.invoiceType || 'Comprobante'} ${f.invoiceNum || 'S/N'}`;
-          return `<option value="${nombreFac}">${nombreFac} - (Valor factura: ${currency(f.amount)})</option>`;
-      }).join('');
-      facSelect.disabled = false;
+    facSelect.innerHTML = '<option value="">Seleccioná la factura cruzada...</option>' + facturasDelProveedor.map(f => {
+      const nombreFac = `${f.invoiceType || 'Comprobante'} ${f.invoiceNum || 'S/N'}`;
+      return `<option value="${nombreFac}">${nombreFac} - (Valor factura: ${currency(f.amount)})</option>`;
+    }).join('');
+    facSelect.disabled = false;
   }
 
   function renderStock() {
@@ -542,10 +569,10 @@
 
     let branchToView = 'ALL';
     if (role === 'cajera' || role === 'vendedora' || role === 'pos') {
-        branchToView = terminalActiva;
-        if (branchFilterEl) branchFilterEl.style.display = 'none';
+      branchToView = terminalActiva;
+      if (branchFilterEl) branchFilterEl.style.display = 'none';
     } else {
-        branchToView = branchFilterEl ? branchFilterEl.value : 'ALL';
+      branchToView = branchFilterEl ? branchFilterEl.value : 'ALL';
     }
 
     let theadHtml = `<tr>
@@ -553,53 +580,55 @@
       <th>Producto / Descripción</th>
       <th>Precio Venta</th>
       <th style="background:#e2e8f0; color:#0f172a; text-align:center;">STOCK TOTAL</th>`;
-    
+
     if (branchToView === 'ALL') {
-        dbBranches.forEach(b => { theadHtml += `<th style="text-align:center;">${escapeHtml(b.name)}</th>`; });
+      dbBranches.forEach(b => { theadHtml += `<th style="text-align:center;">${escapeHtml(b.name)}</th>`; });
     } else {
-        theadHtml += `<th style="text-align:center;">${escapeHtml(branchToView)}</th>`;
+      theadHtml += `<th style="text-align:center;">${escapeHtml(branchToView)}</th>`;
     }
     theadHtml += `<th style="background:#e0e7ff; color:#1d4ed8; text-align:right;">Valorizado (PVP)</th></tr>`;
     thead.innerHTML = theadHtml;
 
     let kpiUnidades = 0, kpiBajo = 0, kpiCero = 0, kpiValorizado = 0;
-    const filtrados = dbProducts.filter(p => p.name.toLowerCase().includes(term) || (p.code && p.code.toLowerCase().includes(term)));
+    const filtrados = dbProducts.filter(p =>
+      ((p.name || '').toLowerCase().includes(term) || ((p.code || '').toLowerCase().includes(term)))
+    );
     const tbody = document.getElementById('tableBodyStock');
     
     tbody.innerHTML = filtrados.map(p => {
       const branches = getBranches(p);
       let stockTotalGlobal = 0;
-      for (let b in branches) stockTotalGlobal += parseInt(branches[b]);
+      for (let b in branches) stockTotalGlobal += Number(branches[b] || 0);
       
       let branchCellsHtml = '';
       let displayStockForKPI = 0;
 
       if (branchToView === 'ALL') {
-          displayStockForKPI = stockTotalGlobal;
-          dbBranches.forEach(b => {
-              const qty = parseInt(branches[b.name] || 0);
-              const colorStyle = qty === 0 ? 'color:var(--danger);' : '';
-              branchCellsHtml += `<td class="col-number" style="${colorStyle}">${qty}</td>`;
-          });
+        displayStockForKPI = stockTotalGlobal;
+        dbBranches.forEach(b => {
+          const qty = Number(branches[b.name] || 0);
+          const colorStyle = qty === 0 ? 'color:var(--danger);' : '';
+          branchCellsHtml += `<td class="col-number" style="${colorStyle}">${qty}</td>`;
+        });
       } else {
-          displayStockForKPI = parseInt(branches[branchToView] || 0);
-          const colorStyle = displayStockForKPI === 0 ? 'color:var(--danger);' : '';
-          branchCellsHtml += `<td class="col-number" style="${colorStyle}">${displayStockForKPI}</td>`;
+        displayStockForKPI = Number(branches[branchToView] || 0);
+        const colorStyle = displayStockForKPI === 0 ? 'color:var(--danger);' : '';
+        branchCellsHtml += `<td class="col-number" style="${colorStyle}">${displayStockForKPI}</td>`;
       }
 
       kpiUnidades += displayStockForKPI;
-      kpiValorizado += (displayStockForKPI * (p.price || 0)); 
+      kpiValorizado += (displayStockForKPI * Number(p.price || 0));
       if (displayStockForKPI <= 3 && displayStockForKPI > 0) kpiBajo++;
       if (displayStockForKPI === 0) kpiCero++;
 
       return `
-      <tr>
+      <tr style="${(p.status || 'Activo') === 'Inactivo' ? 'opacity:.5;' : ''}">
         <td><span style="color:var(--muted); font-family:monospace; font-size: 11px;">${p.code || '-'}</span></td>
         <td><strong>${escapeHtml(p.name)}</strong><br><small style="color:var(--muted)">${escapeHtml(p.category || '')}</small></td>
         <td>${currency(p.price)}</td>
         <td class="col-number" style="background:#f8fafc;">${stockTotalGlobal}</td>
         ${branchCellsHtml}
-        <td class="col-val">${currency(displayStockForKPI * (p.price || 0))}</td>
+        <td class="col-val">${currency(displayStockForKPI * Number(p.price || 0))}</td>
       </tr>`;
     }).join('');
 
@@ -612,179 +641,186 @@
   }
 
   function renderHistory() {
-      const term = document.getElementById('searchHistory').value.toLowerCase();
-      const tbody = document.getElementById('tableBodyHistory');
+    const term = document.getElementById('searchHistory').value.toLowerCase();
+    const tbody = document.getElementById('tableBodyHistory');
       
-      const filtrados = historyLogs.filter(log => log.id.toLowerCase().includes(term) || log.origen.toLowerCase().includes(term) || log.destino.toLowerCase().includes(term));
+    const filtrados = historyLogs.filter(log =>
+      (log.id || '').toLowerCase().includes(term) ||
+      (log.origen || '').toLowerCase().includes(term) ||
+      (log.destino || '').toLowerCase().includes(term)
+    );
 
-      if (filtrados.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted);">No hay movimientos.</td></tr>';
-          return;
-      }
+    if (filtrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted);">No hay movimientos.</td></tr>';
+      return;
+    }
 
-      tbody.innerHTML = filtrados.map(log => {
-          const isIngreso = log.type === 'Ingreso Compra';
-          const isTransf = log.type === 'Transferencia';
+    tbody.innerHTML = filtrados.map(log => {
+      const isIngreso = log.type === 'Ingreso Compra';
+      const isTransf = log.type === 'Transferencia';
           
-          let badge = '';
-          if (isIngreso) badge = `<span style="background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Ingreso Compra</span>`;
-          else if (isTransf) badge = `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Transferencia</span>`;
-          else badge = `<span style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Ajuste</span>`;
+      let badge = '';
+      if (isIngreso) badge = `<span style="background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Ingreso Compra</span>`;
+      else if (isTransf) badge = `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Transferencia</span>`;
+      else badge = `<span style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Ajuste</span>`;
           
-          const d = new Date(log.date);
-          const fechaStr = `${d.toLocaleDateString('es-AR')}<br><small style="color:var(--muted)">${d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})} hs</small>`;
+      const d = new Date(log.date);
+      const fechaStr = `${d.toLocaleDateString('es-AR')}<br><small style="color:var(--muted)">${d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})} hs</small>`;
 
-          return `
-          <tr>
-            <td>${fechaStr}</td>
-            <td><strong>${log.id}</strong></td>
-            <td>${badge}</td>
-            <td><strong>${escapeHtml(log.origen)}</strong> ${log.destino ? '➔ <strong>'+escapeHtml(log.destino)+'</strong>' : ''}</td>
-            <td>${escapeHtml(log.summary)}<br><small style="color:var(--muted);">Resp: ${escapeHtml(log.user)}</small></td>
-            <td style="text-align: center;">
-              ${(isTransf || isIngreso) ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick='imprimirRemito(${JSON.stringify(log).replace(/'/g, "&apos;")})'>🖨️ Remito</button>` : '-'}
-            </td>
-          </tr>`;
-      }).join('');
+      return `
+      <tr>
+        <td>${fechaStr}</td>
+        <td><strong>${log.id}</strong></td>
+        <td>${badge}</td>
+        <td><strong>${escapeHtml(log.origen || '')}</strong> ${log.destino ? '➔ <strong>'+escapeHtml(log.destino)+'</strong>' : ''}</td>
+        <td>${escapeHtml(log.summary || '')}<br><small style="color:var(--muted);">Resp: ${escapeHtml(log.user || '')}</small></td>
+        <td style="text-align: center;">
+          ${(isTransf || isIngreso) ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick='imprimirRemito(${JSON.stringify(log).replace(/'/g, "&apos;")})'>🖨️ Remito</button>` : '-'}
+        </td>
+      </tr>`;
+    }).join('');
   }
 
   function imprimirRemito(log) {
-      document.getElementById('remitoTitle').textContent = log.type === 'Ingreso Compra' ? `RECEPCIÓN N° ${log.id}` : `REMITO N° ${log.id}`;
-      document.getElementById('remitoDate').textContent = `Fecha: ${new Date(log.date).toLocaleString('es-AR')}`;
-      document.getElementById('remitoOrigen').textContent = log.origen;
-      document.getElementById('remitoDestino').textContent = log.destino;
-      document.getElementById('remitoAutorizante').textContent = `Autoriza: ${log.user}`;
-      document.getElementById('remitoRef').textContent = log.summary;
+    document.getElementById('remitoTitle').textContent = log.type === 'Ingreso Compra' ? `RECEPCIÓN N° ${log.id}` : `REMITO N° ${log.id}`;
+    document.getElementById('remitoDate').textContent = `Fecha: ${new Date(log.date).toLocaleString('es-AR')}`;
+    document.getElementById('remitoOrigen').textContent = log.origen;
+    document.getElementById('remitoDestino').textContent = log.destino;
+    document.getElementById('remitoAutorizante').textContent = `Autoriza: ${log.user}`;
+    document.getElementById('remitoRef').textContent = log.summary;
 
-      const tbody = document.getElementById('remitoItemsBody');
-      tbody.innerHTML = log.items.map(i => `<tr><td>${escapeHtml(i.code)}</td><td>${escapeHtml(i.name)}</td><td style="text-align:center; font-weight:bold; font-size:12px;">${i.qty}</td></tr>`).join('');
-      window.print();
+    const tbody = document.getElementById('remitoItemsBody');
+    tbody.innerHTML = (log.items || []).map(i => `<tr><td>${escapeHtml(i.code)}</td><td>${escapeHtml(i.name)}</td><td style="text-align:center; font-weight:bold; font-size:12px;">${i.qty}</td></tr>`).join('');
+    window.print();
   }
 
   function descargarExcelValorizado() {
-      if(dbProducts.length === 0) return alert("No hay datos.");
+    if (dbProducts.length === 0) return alert("No hay datos.");
       
-      const rows = dbProducts.map(p => {
-          const branches = getBranches(p);
-          let stockTotalGlobal = 0;
-          for (let b in branches) stockTotalGlobal += parseInt(branches[b]);
+    const rows = dbProducts.map(p => {
+      const branches = getBranches(p);
+      let stockTotalGlobal = 0;
+      for (let b in branches) stockTotalGlobal += Number(branches[b] || 0);
 
-          let rowData = {
-              "SKU": p.code || '',
-              "Producto": p.name,
-              "Categoria": p.category || '',
-              "Precio Venta": p.price || 0,
-              "STOCK TOTAL": stockTotalGlobal
-          };
+      let rowData = {
+        "SKU": p.code || '',
+        "Producto": p.name,
+        "Categoria": p.category || '',
+        "Precio Venta": p.price || 0,
+        "STOCK TOTAL": stockTotalGlobal
+      };
 
-          dbBranches.forEach(b => { rowData[b.name] = parseInt(branches[b.name] || 0); });
-          
-          rowData["VALORIZADO (PVP)"] = stockTotalGlobal * (p.price || 0);
-          return rowData;
-      });
+      dbBranches.forEach(b => { rowData[b.name] = Number(branches[b.name] || 0); });
+      rowData["VALORIZADO (PVP)"] = stockTotalGlobal * Number(p.price || 0);
+      return rowData;
+    });
 
-      const headers = Object.keys(rows[0]);
-      const csvContent = [headers.join(';'), ...rows.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
-      link.download = `Inventario_Valorizado_PVP_${todayISO()}.csv`;
-      link.click();
+    const headers = Object.keys(rows[0]);
+    const csvContent = [headers.join(';'), ...rows.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
+    link.download = `Inventario_Valorizado_PVP_${todayISO()}.csv`;
+    link.click();
   }
 
   function abrirModalAjuste() { document.getElementById('modalAjuste').showModal(); }
   function abrirModalTransferencia() { document.getElementById('modalTransferencia').showModal(); }
   function abrirModalIngresoCompra() { 
-      document.getElementById('ingresoFactura').innerHTML = '<option value="">Seleccioná un proveedor primero...</option>';
-      document.getElementById('ingresoFactura').disabled = true;
-      document.getElementById('modalIngresoCompra').showModal(); 
+    document.getElementById('ingresoFactura').innerHTML = '<option value="">Seleccioná un proveedor primero...</option>';
+    document.getElementById('ingresoFactura').disabled = true;
+    document.getElementById('modalIngresoCompra').showModal(); 
   }
 
   function abrirModalTransferenciaMasiva() { 
-      document.getElementById('transfMasivaFile').value = ''; 
-      document.getElementById('modalTransferenciaMasiva').showModal(); 
+    document.getElementById('transfMasivaFile').value = ''; 
+    document.getElementById('modalTransferenciaMasiva').showModal(); 
   }
 
   async function procesarTransferenciaMasiva(e) {
-      e.preventDefault();
-      const origen = document.getElementById('transfMasivaOrigen').value;
-      const destino = document.getElementById('transfMasivaDestino').value;
-      const fileInput = document.getElementById('transfMasivaFile');
+    e.preventDefault();
+    const origen = document.getElementById('transfMasivaOrigen').value;
+    const destino = document.getElementById('transfMasivaDestino').value;
+    const fileInput = document.getElementById('transfMasivaFile');
 
-      if (origen === destino) return alert("La sucursal de origen y destino no pueden ser la misma.");
-      if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
+    if (origen === destino) return alert("La sucursal de origen y destino no pueden ser la misma.");
+    if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
 
-      const file = fileInput.files[0];
-      const reader = new FileReader();
+    const file = fileInput.files[0];
+    const reader = new FileReader();
 
-      reader.onload = async function(evt) {
-          const data = new Uint8Array(evt.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(firstSheet);
+    reader.onload = async function(evt) {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(firstSheet);
 
-          if (rows.length === 0) return alert("El archivo está vacío o mal formateado.");
+      if (rows.length === 0) return alert("El archivo está vacío o mal formateado.");
 
-          let prodUpdates = [];
-          let errores = [];
-          let itemsParaRemito = [];
+      let prodUpdates = [];
+      let errores = [];
+      let itemsParaRemito = [];
 
-          rows.forEach((row, index) => {
-              const findVal = (names) => {
-                  const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
-                  return key ? row[key] : null;
-              };
+      rows.forEach((row, index) => {
+        const findVal = (names) => {
+          const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
+          return key ? row[key] : null;
+        };
 
-              const sku = String(findVal(['sku', 'codigo', 'código']) || '').trim();
-              const cant = parseInt(findVal(['cantidad', 'cant', 'qty']));
+        const sku = String(findVal(['sku', 'codigo', 'código']) || '').trim();
+        const cant = parseInt(findVal(['cantidad', 'cant', 'qty']));
 
-              if (!sku || isNaN(cant) || cant <= 0) return;
+        if (!sku || isNaN(cant) || cant <= 0) return;
 
-              const prod = dbProducts.find(p => p.code == sku);
-              if (!prod) { errores.push(`Fila ${index + 2}: SKU ${sku} no existe en catálogo.`); return; }
+        const prod = dbProducts.find(p => p.code == sku);
+        if (!prod) { errores.push(`Fila ${index + 2}: SKU ${sku} no existe en catálogo.`); return; }
 
-              let branches = getBranches(prod);
+        let branches = getBranches(prod);
               
-              if (branches[origen] === undefined || branches[origen] < cant) {
-                  errores.push(`Fila ${index + 2}: Sin stock suficiente de ${sku} en ${origen} (Disponible: ${branches[origen] || 0}).`);
-                  return;
-              }
+        if ((branches[origen] === undefined ? 0 : Number(branches[origen])) < cant) {
+          errores.push(`Fila ${index + 2}: Sin stock suficiente de ${sku} en ${origen} (Disponible: ${branches[origen] || 0}).`);
+          return;
+        }
 
-              if (branches[destino] === undefined) branches[destino] = 0;
+        if (branches[destino] === undefined) branches[destino] = 0;
               
-              branches[origen] -= cant;
-              branches[destino] += cant;
+        branches[origen] = Number(branches[origen] || 0) - cant;
+        branches[destino] = Number(branches[destino] || 0) + cant;
               
-              let stockTotal = 0;
-              for (let b in branches) stockTotal += branches[b];
+        let stockTotal = 0;
+        for (let b in branches) stockTotal += Number(branches[b] || 0);
               
-              prodUpdates.push({ ...prod, stock_branches: branches, stock: stockTotal });
-              itemsParaRemito.push({ code: prod.code, name: prod.name, qty: cant });
-          });
+        prodUpdates.push({ ...prod, stock_branches: branches, stock: stockTotal });
+        itemsParaRemito.push({ code: prod.code, name: prod.name, qty: cant });
+      });
 
-          if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron transferencias válidas.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
+      if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron transferencias válidas.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
 
-          let msj = `Vas a transferir ${itemsParaRemito.length} referencias de ${origen} a ${destino}.\n`;
-          if (errores.length > 0) msj += `⚠️ Hubo ${errores.length} filas ignoradas por errores o falta de stock:\n` + errores.slice(0,3).join('\n') + `\n`;
-          if (!confirm(msj + `\n¿Confirmás la transferencia masiva?`)) return;
+      let msj = `Vas a transferir ${itemsParaRemito.length} referencias de ${origen} a ${destino}.\n`;
+      if (errores.length > 0) msj += `⚠️ Hubo ${errores.length} filas ignoradas por errores o falta de stock:\n` + errores.slice(0,3).join('\n') + `\n`;
+      if (!confirm(msj + `\n¿Confirmás la transferencia masiva?`)) return;
 
-          mostrarCarga(true);
-          try {
-              await Promise.all(prodUpdates.map(p => fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(p) })));
-              logMovement('Transferencia', origen, destino, `Transferencia Masiva (Lote Excel)`, itemsParaRemito);
-              document.getElementById('modalTransferenciaMasiva').close();
-              await initStock(); 
-              alert("✅ Transferencia Masiva completada. Remito interno generado en el historial.");
-          } catch(err) { alert("Error de conexión durante la transferencia."); } 
-          finally { mostrarCarga(false); }
-      };
-      reader.readAsArrayBuffer(file);
+      mostrarCarga(true);
+      try {
+        await Promise.all(prodUpdates.map(saveProduct));
+        logMovement('Transferencia', origen, destino, `Transferencia Masiva (Lote Excel)`, itemsParaRemito);
+        document.getElementById('modalTransferenciaMasiva').close();
+        await initStock();
+        alert("✅ Transferencia Masiva completada. Remito interno generado en el historial.");
+      } catch(err) {
+        alert("Error de conexión durante la transferencia.");
+      } finally {
+        mostrarCarga(false);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
   }
   
   function abrirModalIngresoMasivo() { 
-      document.getElementById('masivaFile').value = ''; 
-      document.getElementById('masivaFactura').innerHTML = '<option value="">Seleccioná un proveedor primero...</option>';
-      document.getElementById('masivaFactura').disabled = true;
-      document.getElementById('modalIngresoMasivo').showModal(); 
+    document.getElementById('masivaFile').value = ''; 
+    document.getElementById('masivaFactura').innerHTML = '<option value="">Seleccioná un proveedor primero...</option>';
+    document.getElementById('masivaFactura').disabled = true;
+    document.getElementById('modalIngresoMasivo').showModal(); 
   }
 
   async function procesarIngresoCompra(e) {
@@ -795,8 +831,8 @@
     const provId = document.getElementById('ingresoProveedor').value;
     const fac = document.getElementById('ingresoFactura').value;
     
-    if(!provId || !fac) return alert("Seleccioná el proveedor y la factura cruzada.");
-    if(isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
+    if (!provId || !fac) return alert("Seleccioná el proveedor y la factura cruzada.");
+    if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
 
     const provObj = dbSuppliers.find(s => s.id === provId);
     const provName = provObj ? provObj.name : 'Proveedor';
@@ -804,94 +840,103 @@
     const prod = dbProducts.find(p => p.id === prodId);
     let branches = getBranches(prod);
     if (branches[destino] === undefined) branches[destino] = 0;
-    branches[destino] += cant;
+    branches[destino] = Number(branches[destino] || 0) + cant;
 
     let stockTotal = 0;
-    for (let b in branches) stockTotal += branches[b];
+    for (let b in branches) stockTotal += Number(branches[b] || 0);
+
     prod.stock_branches = branches; 
     prod.stock = stockTotal;
 
     mostrarCarga(true);
     try {
-      await fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(prod) });
-      logMovement('Ingreso Compra', `${provName}`, destino, `Factura cruzada: ${fac}`, [{code: prod.code||'S/N', name: prod.name, qty: cant}], true);
+      await saveProduct(prod);
+      logMovement('Ingreso Compra', `${provName}`, destino, `Factura cruzada: ${fac}`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}], true);
       document.getElementById('formIngresoCompra').reset();
       document.getElementById('modalIngresoCompra').close();
-      renderStock();
+      await initStock();
       alert("Ingreso de mercadería registrado con éxito.");
-    } catch(err) { alert("Error."); } finally { mostrarCarga(false); }
+    } catch(err) {
+      alert("Error.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   async function procesarIngresoMasivo(e) {
-      e.preventDefault();
-      const destino = document.getElementById('masivaDestino').value;
-      const provId = document.getElementById('masivaProv').value;
-      const fac = document.getElementById('masivaFactura').value;
-      const fileInput = document.getElementById('masivaFile');
+    e.preventDefault();
+    const destino = document.getElementById('masivaDestino').value;
+    const provId = document.getElementById('masivaProv').value;
+    const fac = document.getElementById('masivaFactura').value;
+    const fileInput = document.getElementById('masivaFile');
 
-      if(!provId || !fac) return alert("Seleccioná el proveedor y la factura cruzada.");
-      if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
+    if (!provId || !fac) return alert("Seleccioná el proveedor y la factura cruzada.");
+    if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
 
-      const provObj = dbSuppliers.find(s => s.id === provId);
-      const provName = provObj ? provObj.name : 'Proveedor';
+    const provObj = dbSuppliers.find(s => s.id === provId);
+    const provName = provObj ? provObj.name : 'Proveedor';
 
-      const file = fileInput.files[0];
-      const reader = new FileReader();
+    const file = fileInput.files[0];
+    const reader = new FileReader();
 
-      reader.onload = async function(evt) {
-          const data = new Uint8Array(evt.target.result);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const rows = XLSX.utils.sheet_to_json(firstSheet);
+    reader.onload = async function(evt) {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(firstSheet);
 
-          if (rows.length === 0) return alert("El archivo está vacío o mal formateado.");
+      if (rows.length === 0) return alert("El archivo está vacío o mal formateado.");
 
-          let prodUpdates = [];
-          let errores = [];
-          let itemsParaRemito = [];
+      let prodUpdates = [];
+      let errores = [];
+      let itemsParaRemito = [];
 
-          rows.forEach((row, index) => {
-              const findVal = (names) => {
-                  const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
-                  return key ? row[key] : null;
-              };
+      rows.forEach((row, index) => {
+        const findVal = (names) => {
+          const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
+          return key ? row[key] : null;
+        };
 
-              const sku = String(findVal(['sku', 'codigo', 'código']) || '').trim();
-              const cant = parseInt(findVal(['cantidad', 'cant', 'stock', 'qty']));
+        const sku = String(findVal(['sku', 'codigo', 'código']) || '').trim();
+        const cant = parseInt(findVal(['cantidad', 'cant', 'stock', 'qty']));
 
-              if (!sku || isNaN(cant) || cant <= 0) return;
+        if (!sku || isNaN(cant) || cant <= 0) return;
 
-              const prod = dbProducts.find(p => p.code == sku);
-              if (!prod) { errores.push(`Fila ${index + 2}: SKU ${sku} no existe en catálogo.`); return; }
+        const prod = dbProducts.find(p => p.code == sku);
+        if (!prod) { errores.push(`Fila ${index + 2}: SKU ${sku} no existe en catálogo.`); return; }
 
-              let branches = getBranches(prod);
-              if (branches[destino] === undefined) branches[destino] = 0;
-              branches[destino] += cant;
+        let branches = getBranches(prod);
+        if (branches[destino] === undefined) branches[destino] = 0;
+        branches[destino] = Number(branches[destino] || 0) + cant;
               
-              let stockTotal = 0;
-              for (let b in branches) stockTotal += branches[b];
+        let stockTotal = 0;
+        for (let b in branches) stockTotal += Number(branches[b] || 0);
               
-              prodUpdates.push({ ...prod, stock_branches: branches, stock: stockTotal });
-              itemsParaRemito.push({ code: prod.code, name: prod.name, qty: cant });
-          });
+        prodUpdates.push({ ...prod, stock_branches: branches, stock: stockTotal });
+        itemsParaRemito.push({ code: prod.code, name: prod.name, qty: cant });
+      });
 
-          if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron productos válidos.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
+      if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron productos válidos.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
 
-          let msj = `Vas a ingresar ${itemsParaRemito.length} referencias a ${destino}.\nCruzado con: ${fac}\n`;
-          if (errores.length > 0) msj += `⚠️ Hubo ${errores.length} filas ignoradas por errores:\n` + errores.slice(0,3).join('\n') + `\n`;
-          if (!confirm(msj + `\n¿Confirmás el ingreso de mercadería?`)) return;
+      let msj = `Vas a ingresar ${itemsParaRemito.length} referencias a ${destino}.\nCruzado con: ${fac}\n`;
+      if (errores.length > 0) msj += `⚠️ Hubo ${errores.length} filas ignoradas por errores:\n` + errores.slice(0,3).join('\n') + `\n`;
+      if (!confirm(msj + `\n¿Confirmás el ingreso de mercadería?`)) return;
 
-          mostrarCarga(true);
-          try {
-              await Promise.all(prodUpdates.map(p => fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(p) })));
-              logMovement('Ingreso Compra', `${provName}`, destino, `Carga masiva vinculada a: ${fac}`, itemsParaRemito, true);
-              document.getElementById('modalIngresoMasivo').close();
-              await initStock(); 
-              alert("✅ Ingreso Masivo completado. Remito interno generado.");
-          } catch(err) { alert("Error de conexión durante el ingreso."); } 
-          finally { mostrarCarga(false); }
-      };
-      reader.readAsArrayBuffer(file);
+      mostrarCarga(true);
+      try {
+        await Promise.all(prodUpdates.map(saveProduct));
+        logMovement('Ingreso Compra', `${provName}`, destino, `Carga masiva vinculada a: ${fac}`, itemsParaRemito, true);
+        document.getElementById('modalIngresoMasivo').close();
+        await initStock();
+        alert("✅ Ingreso Masivo completado. Remito interno generado.");
+      } catch(err) {
+        alert("Error de conexión durante el ingreso.");
+      } finally {
+        mostrarCarga(false);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
   }
 
   async function procesarAjuste(e) {
@@ -901,29 +946,34 @@
     const tipo = document.getElementById('ajusteTipo').value;
     const cant = parseInt(document.getElementById('ajusteCant').value);
     
-    if(isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
+    if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
     const prod = dbProducts.find(p => p.id === prodId);
     let branches = getBranches(prod);
     if (branches[branch] === undefined) branches[branch] = 0;
 
-    if (tipo === 'ingreso') branches[branch] += cant;
+    if (tipo === 'ingreso') branches[branch] = Number(branches[branch] || 0) + cant;
     else {
-      if (branches[branch] < cant) return alert("Stock insuficiente para restar.");
-      branches[branch] -= cant;
+      if (Number(branches[branch] || 0) < cant) return alert("Stock insuficiente para restar.");
+      branches[branch] = Number(branches[branch] || 0) - cant;
     }
 
     let stockTotal = 0;
-    for (let b in branches) stockTotal += branches[b];
+    for (let b in branches) stockTotal += Number(branches[b] || 0);
+
     prod.stock_branches = branches; 
     prod.stock = stockTotal;
 
     mostrarCarga(true);
     try {
-      await fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(prod) });
-      logMovement('Ajuste', branch, '', `${tipo === 'ingreso'?'+':'-'}${cant} un. - ${prod.name}`, [{code: prod.code||'S/N', name: prod.name, qty: cant}]);
+      await saveProduct(prod);
+      logMovement('Ajuste', branch, '', `${tipo === 'ingreso' ? '+' : '-'}${cant} un. - ${prod.name}`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}]);
       document.getElementById('modalAjuste').close();
-      renderStock();
-    } catch(err) { alert("Error."); } finally { mostrarCarga(false); }
+      await initStock();
+    } catch(err) {
+      alert("Error.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   async function procesarTransferencia(e) {
@@ -933,24 +983,33 @@
     const destino = document.getElementById('transfDestino').value;
     const cant = parseInt(document.getElementById('transfCant').value);
 
-    if(origen === destino || isNaN(cant) || cant <= 0) return alert("Error en datos.");
+    if (origen === destino || isNaN(cant) || cant <= 0) return alert("Error en datos.");
     const prod = dbProducts.find(p => p.id === prodId);
     let branches = getBranches(prod);
 
-    if (branches[origen] === undefined || branches[origen] < cant) return alert(`Sin stock en ${origen}.`);
+    if ((branches[origen] === undefined ? 0 : Number(branches[origen])) < cant) return alert(`Sin stock en ${origen}.`);
     if (branches[destino] === undefined) branches[destino] = 0;
 
-    branches[origen] -= cant;
-    branches[destino] += cant;
+    branches[origen] = Number(branches[origen] || 0) - cant;
+    branches[destino] = Number(branches[destino] || 0) + cant;
+
+    let stockTotal = 0;
+    for (let b in branches) stockTotal += Number(branches[b] || 0);
+
     prod.stock_branches = branches;
+    prod.stock = stockTotal;
 
     mostrarCarga(true);
     try {
-      await fetch(`${API_URL}/products`, { method: 'POST', body: JSON.stringify(prod) });
-      logMovement('Transferencia', origen, destino, `Traslado interno`, [{code: prod.code||'S/N', name: prod.name, qty: cant}]);
+      await saveProduct(prod);
+      logMovement('Transferencia', origen, destino, `Traslado interno`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}]);
       document.getElementById('modalTransferencia').close();
-      renderStock();
-    } catch(err) { alert("Error."); } finally { mostrarCarga(false); }
+      await initStock();
+    } catch(err) {
+      alert("Error.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   initStock();
