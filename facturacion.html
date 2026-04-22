@@ -12,7 +12,6 @@
   </style>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    /* FIX RESPONSIVE: Sin !important en la grilla principal */
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a;}
     
@@ -41,7 +40,6 @@
     
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); }
 
-    /* REGLAS OBLIGATORIAS PARA CELULARES */
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
     
@@ -55,13 +53,8 @@
       .topbar { padding: 15px; display: flex; align-items: center; justify-content: space-between; }
       .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
       
-      /* Apilar controles de pago y total en móviles */
       .checkout-footer { grid-template-columns: 1fr; }
-      
-      /* Asegurar que la tabla no rompa el ancho de la pantalla */
       .table-responsive-wrapper { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
-      
-      /* Ajuste para los botones de pago que se vean bien apretados */
       .pay-btn { padding: 10px; font-size: 13px; flex: 1 1 40%; }
     }
   </style>
@@ -164,11 +157,13 @@
 <script src="core.js"></script>
 <script>
   const API_URL = "/api";
-  let dbProducts = []; let dbClients = []; let cart = [];
-  let currentPaymentMethod = 'Efectivo'; let isB2B = false;
+  let dbProducts = [];
+  let dbClients = [];
+  let cart = [];
+  let currentPaymentMethod = 'Efectivo';
+  let isB2B = false;
   let filteredProducts = [];
 
-  // VARIABLE DE SUCURSAL GLOBAL
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
 
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
@@ -176,21 +171,24 @@
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
 
-  // FUNCIÓN PARA LEER STOCK DEL LOCAL
   function getLocalStock(prod) {
-      if (!prod.stock_branches) return parseInt(prod.stock || 0);
-      try {
-          const branches = JSON.parse(prod.stock_branches);
-          return parseInt(branches[terminalActiva] || 0);
-      } catch(e) {
-          return parseInt(prod.stock || 0);
-      }
+    if (!prod.stock_branches) return parseInt(prod.stock || 0);
+    try {
+      const branches = JSON.parse(prod.stock_branches);
+      return parseInt(branches[terminalActiva] || 0);
+    } catch(e) {
+      return parseInt(prod.stock || 0);
+    }
   }
 
   async function initPOS() {
     mostrarCarga(true);
     try {
-      const [resP, resC] = await Promise.all([   apiFetch(`${API_URL}/products`),   apiFetch(`${API_URL}/business_clients?withBalance=1`) ]);
+      const [resP, resC] = await Promise.all([
+        apiFetch(`${API_URL}/products`),
+        apiFetch(`${API_URL}/business_clients?withBalance=1`)
+      ]);
+
       if (!resP.ok) console.error("Error D1 Productos:", await resP.text());
       if (!resC.ok) console.error("Error D1 Clientes:", await resC.text());
 
@@ -199,11 +197,11 @@
 
       console.log(`✅ D1 Conectado: ${dbProducts.length} productos y ${dbClients.length} clientes encontrados.`);
       renderCart();
-    } catch (e) { 
-      console.error("Error de conexión:", e); 
-    } finally { 
-      mostrarCarga(false); 
-      document.getElementById('posSearch').focus(); 
+    } catch (e) {
+      console.error("Error de conexión:", e);
+    } finally {
+      mostrarCarga(false);
+      document.getElementById('posSearch').focus();
     }
   }
 
@@ -216,23 +214,34 @@
     }
   });
 
-  // --- BUSQUEDA CLIENTES ---
   window.verificarClienteLibre = function() {
     const term = document.getElementById('clientName').value.toLowerCase().trim();
-    if (term === "") { document.getElementById('clientId').value = ''; activarModoB2C(); }
+    if (term === "") {
+      document.getElementById('clientId').value = '';
+      activarModoB2C();
+    }
     
     const clientResults = document.getElementById('clientResults');
-    if (term.length < 1) { clientResults.classList.remove('active'); return; }
+    if (term.length < 1) {
+      clientResults.classList.remove('active');
+      return;
+    }
 
-    const filtrados = dbClients.filter(c => 
-      ((c.name || '').toLowerCase().includes(term)) || 
+    const filtrados = dbClients.filter(c =>
+      ((c.name || '').toLowerCase().includes(term)) ||
       ((c.cuil || '').toLowerCase().includes(term))
     ).slice(0, 5);
 
-    clientResults.innerHTML = filtrados.length === 0 ? '<div style="padding:15px; text-align:center; color:var(--muted);">Dejar como Consumidor Final</div>' : filtrados.map(c => `
-      <div class="autocomplete-item" onclick="seleccionarClientePOS('${c.id}', '${escapeHtml(c.name)}')">
-        <div><strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small></div>
-      </div>`).join('');
+    clientResults.innerHTML = filtrados.length === 0
+      ? '<div style="padding:15px; text-align:center; color:var(--muted);">Dejar como Consumidor Final</div>'
+      : filtrados.map(c => `
+        <div class="autocomplete-item" onclick="seleccionarClientePOS('${c.id}', '${escapeHtml(c.name).replace(/'/g, "\\'")}')">
+          <div>
+            <strong>${escapeHtml(c.name)}</strong><br>
+            <small>${c.cuil || 'Sin CUIT'}${Number(c.balance || 0) > 0 ? ` | Saldo: ${currency(c.balance)}` : ''}</small>
+          </div>
+        </div>`).join('');
+
     clientResults.classList.add('active');
   };
 
@@ -244,8 +253,8 @@
   };
 
   function activarModoB2C() {
-    isB2B = false; 
-    document.getElementById('payMethodsB2C').style.display = 'flex'; 
+    isB2B = false;
+    document.getElementById('payMethodsB2C').style.display = 'flex';
     document.getElementById('payMethodsB2B').style.display = 'none';
     document.getElementById('cuponContainer').style.display = 'none';
     document.getElementById('btnCobrar').textContent = "Confirmar e Imprimir (F12)";
@@ -253,88 +262,84 @@
   }
 
   function activarModoB2B() {
-    isB2B = true; currentPaymentMethod = 'A Cuenta Corriente';
-    document.getElementById('payMethodsB2C').style.display = 'none'; 
+    isB2B = true;
+    currentPaymentMethod = 'A Cuenta Corriente';
+    document.getElementById('payMethodsB2C').style.display = 'none';
     document.getElementById('payMethodsB2B').style.display = 'flex';
     document.getElementById('cuponContainer').style.display = 'none';
     document.getElementById('btnCobrar').textContent = "Confirmar en Cuenta Corriente (F12)";
   }
 
-  // --- LÓGICA DE MOSTRAR/OCULTAR CUPÓN ---
   function setPayment(method, btn, focus = true) {
     if (isB2B) return;
     currentPaymentMethod = method;
     document.querySelectorAll('#payMethodsB2C .pay-btn').forEach(b => b.classList.remove('active'));
-    if(btn) btn.classList.add('active');
+    if (btn) btn.classList.add('active');
     
     const cupon = document.getElementById('cuponContainer');
-    // Solo se abre el cupón si es Crédito
-    if (method === 'Crédito') { 
-      cupon.style.display = 'block'; 
-      if(focus) document.getElementById('cuponNumber').focus(); 
-    } else { 
-      cupon.style.display = 'none'; 
-      document.getElementById('cuponNumber').value = ''; 
-      if(focus) document.getElementById('posSearch').focus(); 
+    if (method === 'Crédito') {
+      cupon.style.display = 'block';
+      if (focus) document.getElementById('cuponNumber').focus();
+    } else {
+      cupon.style.display = 'none';
+      document.getElementById('cuponNumber').value = '';
+      if (focus) document.getElementById('posSearch').focus();
     }
   }
 
-  // --- BUSQUEDA PRODUCTOS MANUAL ---
   document.getElementById('posSearch').addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
     const searchResults = document.getElementById('searchResults');
-    if (term.length < 1) { searchResults.classList.remove('active'); return; }
+    if (term.length < 1) {
+      searchResults.classList.remove('active');
+      return;
+    }
 
-    filteredProducts = dbProducts.filter(p => 
-      ((p.name || '').toLowerCase().includes(term)) || 
+    filteredProducts = dbProducts.filter(p =>
+      ((p.name || '').toLowerCase().includes(term)) ||
       ((p.code || '').toLowerCase().includes(term))
     ).slice(0, 10);
 
     if (filteredProducts.length === 0) {
-        searchResults.innerHTML = '<div style="padding:15px; text-align:center; color:var(--danger); font-weight:bold;">No se encontró el producto</div>';
+      searchResults.innerHTML = '<div style="padding:15px; text-align:center; color:var(--danger); font-weight:bold;">No se encontró el producto</div>';
     } else {
-        searchResults.innerHTML = filteredProducts.map((p, idx) => {
-          const localStock = getLocalStock(p);
-          const colorStock = localStock > 0 ? 'var(--success)' : 'var(--danger)';
-          
-          return `
-          <div class="autocomplete-item" onclick="agregarAlCarrito(${idx})">
-            <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code || 'S/N'} | <span style="color:${colorStock}; font-weight:bold;">Stock Local: ${localStock}</span></small></div>
-            <div style="font-weight:800; color:var(--primary);">${currency(p.price)}</div>
-          </div>`;
-        }).join('');
+      searchResults.innerHTML = filteredProducts.map((p, idx) => {
+        const localStock = getLocalStock(p);
+        const colorStock = localStock > 0 ? 'var(--success)' : 'var(--danger)';
+        
+        return `
+        <div class="autocomplete-item" onclick="agregarAlCarrito(${idx})">
+          <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code || 'S/N'} | <span style="color:${colorStock}; font-weight:bold;">Stock Local: ${localStock}</span></small></div>
+          <div style="font-weight:800; color:var(--primary);">${currency(p.price)}</div>
+        </div>`;
+      }).join('');
     }
     searchResults.classList.add('active');
   });
 
-  // --- INTEGRACIÓN LECTOR DE CÓDIGO DE BARRAS (Captura el "Enter") ---
   document.getElementById('posSearch').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-      e.preventDefault(); // Evita que la pantalla se recargue
+      e.preventDefault();
       const term = e.target.value.trim();
       if (term === '') return;
 
-      // Buscamos coincidencia EXACTA por código de barras / SKU
       const prodExacto = dbProducts.find(p => p.code && p.code.toLowerCase() === term.toLowerCase());
 
       if (prodExacto) {
-        // Replicamos la validación de stock y agregado al carrito
         const localStock = getLocalStock(prodExacto);
         const existe = cart.find(i => i.id === prodExacto.id);
         const qtyDeseada = existe ? existe.qty + 1 : 1;
 
         if (qtyDeseada > localStock) {
-            alert(`❌ STOCK INSUFICIENTE\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés facturar sin stock físico.`);
+          alert(`❌ STOCK INSUFICIENTE\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés facturar sin stock físico.`);
         } else {
-            if (existe) existe.qty++; else cart.unshift({ ...prodExacto, qty: 1 });
-            renderCart();
+          if (existe) existe.qty++; else cart.unshift({ ...prodExacto, qty: 1 });
+          renderCart();
         }
       } else {
-        // Alerta si el código escaneado no está en la base de datos
         alert(`⚠️ El código "${term}" no está registrado en el catálogo.`);
       }
       
-      // Limpiamos el buscador y lo dejamos listo para el siguiente escaneo (pistoleo continuo)
       e.target.value = '';
       document.getElementById('searchResults').classList.remove('active');
     }
@@ -346,26 +351,27 @@
     const existe = cart.find(i => i.id === p.id);
     const qtyDeseada = existe ? existe.qty + 1 : 1;
 
-    // PROTECCIÓN DE STOCK NEGATIVO
     if (qtyDeseada > localStock) {
-        alert(`❌ STOCK INSUFICIENTE\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés facturar sin stock físico.`);
-        document.getElementById('posSearch').value = '';
-        document.getElementById('searchResults').classList.remove('active');
-        document.getElementById('posSearch').focus();
-        return;
+      alert(`❌ STOCK INSUFICIENTE\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés facturar sin stock físico.`);
+      document.getElementById('posSearch').value = '';
+      document.getElementById('searchResults').classList.remove('active');
+      document.getElementById('posSearch').focus();
+      return;
     }
 
     if (existe) existe.qty++; else cart.unshift({ ...p, qty: 1 });
-    document.getElementById('posSearch').value = ''; 
+    document.getElementById('posSearch').value = '';
     document.getElementById('searchResults').classList.remove('active');
-    document.getElementById('posSearch').focus(); renderCart();
+    document.getElementById('posSearch').focus();
+    renderCart();
   }
 
   function renderCart() {
     const tbody = document.getElementById('cartBody');
     let total = 0;
     tbody.innerHTML = cart.map(i => {
-      const sub = i.price * i.qty; total += sub;
+      const sub = i.price * i.qty;
+      total += sub;
       return `<tr>
         <td style="color: var(--muted);">${i.code || '-'}</td>
         <td><strong>${escapeHtml(i.name)}</strong></td>
@@ -381,108 +387,124 @@
         <td style="text-align:center;"><button onclick="quitar('${i.id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">✕</button></td>
       </tr>`;
     }).join('');
-    if(!cart.length) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted);">El comprobante está vacío.<br><small>Buscá un artículo para comenzar.</small></td></tr>';
+    if (!cart.length) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted);">El comprobante está vacío.<br><small>Buscá un artículo para comenzar.</small></td></tr>';
     document.getElementById('txtTotal').textContent = currency(total);
   }
 
- window.updateQty = (id, v) => { 
-    const i = cart.find(x => x.id === id); 
-    if(i) {
-        // Aseguramos que no baje de 1
-        const nuevaCant = parseInt(v) > 0 ? parseInt(v) : 1;
-        const pDB = dbProducts.find(p => p.id === id);
-        const localStock = getLocalStock(pDB);
+  window.updateQty = (id, v) => {
+    const i = cart.find(x => x.id === id);
+    if (i) {
+      const nuevaCant = parseInt(v) > 0 ? parseInt(v) : 1;
+      const pDB = dbProducts.find(p => p.id === id);
+      const localStock = getLocalStock(pDB);
 
-        // PROTECCIÓN DE STOCK NEGATIVO EN EL CARRITO
-        if (nuevaCant > localStock) {
-            alert(`❌ STOCK INSUFICIENTE\nSolo tenés ${localStock} unidades disponibles en ${terminalActiva}.`);
-            renderCart(); // Resetea visualmente al número viejo
-            return;
-        }
-        i.qty = nuevaCant;
+      if (nuevaCant > localStock) {
+        alert(`❌ STOCK INSUFICIENTE\nSolo tenés ${localStock} unidades disponibles en ${terminalActiva}.`);
+        renderCart();
+        return;
+      }
+      i.qty = nuevaCant;
     }
-    renderCart(); 
+    renderCart();
   };
   
   window.quitar = (id) => { cart = cart.filter(x => x.id !== id); renderCart(); };
-  window.cancelarVenta = () => { if(confirm("¿Vaciar?")) { cart = []; renderCart(); } };
+  window.cancelarVenta = () => { if (confirm("¿Vaciar?")) { cart = []; renderCart(); } };
 
-  // --- COBRO CON VALIDACIÓN DE CUPÓN ---
   window.procesarVenta = async function() {
-    if(!cart.length) return;
-    if(!confirm(isB2B ? "¿Confirmar y enviar deuda a la Cuenta Corriente?" : "¿Confirmar venta e imprimir ticket?")) return;
+    if (!cart.length) return;
+    if (!confirm(isB2B ? "¿Confirmar y enviar deuda a la Cuenta Corriente?" : "¿Confirmar venta e imprimir ticket?")) return;
     
-    // VALIDACIÓN: Si es Crédito, obligar a poner cupón
     let cuponText = '';
     if (!isB2B && currentPaymentMethod === 'Crédito') {
       cuponText = document.getElementById('cuponNumber').value.trim();
-      if (!cuponText) { 
-        alert("⚠️ Ingresá el número de lote/cupón para poder cobrar con Tarjeta de Crédito."); 
-        document.getElementById('cuponNumber').focus(); 
-        return; 
+      if (!cuponText) {
+        alert("⚠️ Ingresá el número de lote/cupón para poder cobrar con Tarjeta de Crédito.");
+        document.getElementById('cuponNumber').focus();
+        return;
       }
     }
 
-   mostrarCarga(true);
+    mostrarCarga(true);
     const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
     const dateStr = todayISO();
     const cid = document.getElementById('clientId').value;
 
-    // LIMPIEZA Y GUARDADO EXPLÍCITO DEL COSTO HISTÓRICO
     const itemsLimpios = cart.map(i => ({
-        id: i.id,
-        code: i.code || '',
-        name: i.name,
-        price: i.price,
-        cost: i.cost || 0, // <-- ACÁ SELLAMOS EL COSTO PARA EL CMV
-        qty: i.qty,
-        subtotal: i.price * i.qty
+      id: i.id,
+      code: i.code || '',
+      name: i.name,
+      price: i.price,
+      cost: i.cost || 0,
+      qty: i.qty,
+      subtotal: i.price * i.qty
     }));
 
     const venta = {
-      id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: dateStr,
-      branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
-      clientId: cid || 'Consumidor Final', client: document.getElementById('clientName').value || 'Consumidor Final',
-      method: currentPaymentMethod, cupon: cuponText, subtotal: total, promoDiscount: 0, total: total, isB2B: isB2B, items: itemsLimpios
-    }; 
+      id: 'vta_' + Date.now(),
+      createdAt: new Date().toISOString(),
+      date: dateStr,
+      branch: terminalActiva,
+      seller: localStorage.getItem('activeUser') || 'Admin',
+      clientId: cid || 'Consumidor Final',
+      client: document.getElementById('clientName').value || 'Consumidor Final',
+      method: currentPaymentMethod,
+      cupon: cuponText,
+      subtotal: total,
+      promoDiscount: 0,
+      total: total,
+      isB2B: isB2B,
+      items: itemsLimpios
+    };
 
     try {
-      const resV = await apiFetch(`${API_URL}/sales`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(venta) });
-      if(!resV.ok) throw new Error(await resV.text());
+      const resV = await apiFetch(`${API_URL}/sales`, {
+        method: 'POST',
+        body: JSON.stringify(venta)
+      });
+
+      if (!resV.ok) throw new Error(await resV.text());
       
-     if (isB2B && cid) {
-  const mov = {
-    id: 'cc_' + Date.now(),
-    clientId: cid,
-    date: dateStr,
-    type: 'debit',
-    amount: total,
-    concept: `Venta Ticket #${venta.id.split('_')[1]}`,
-    reference_type: 'sale',
-    reference_id: venta.id,
-    branch: terminalActiva,
-    seller: localStorage.getItem('activeUser') || 'Admin'
-  };
+      if (isB2B && cid) {
+        const mov = {
+          id: 'cc_' + Date.now(),
+          clientId: cid,
+          date: dateStr,
+          type: 'debit',
+          amount: total,
+          concept: `Venta Ticket #${venta.id.split('_')[1]}`,
+          reference_type: 'sale',
+          reference_id: venta.id,
+          branch: terminalActiva,
+          seller: localStorage.getItem('activeUser') || 'Admin'
+        };
 
-  const resCC = await apiFetch(`${API_URL}/cc_movements`, {
-    method: 'POST',
-    body: JSON.stringify(mov)
-  });
+        const resCC = await apiFetch(`${API_URL}/cc_movements`, {
+          method: 'POST',
+          body: JSON.stringify(mov)
+        });
 
-  if (!resCC.ok) throw new Error("Cta Cte Error: " + await resCC.text());
-}
+        if (!resCC.ok) throw new Error("Cta Cte Error: " + await resCC.text());
+      }
+
       alert(isB2B ? "📓 Guardado en Cta. Cte." : "✅ Venta finalizada.");
       localStorage.setItem('last_sale_to_print', JSON.stringify(venta));
 
-      cart = []; document.getElementById('clientName').value = 'Consumidor Final'; document.getElementById('clientId').value = '';
+      cart = [];
+      document.getElementById('clientName').value = 'Consumidor Final';
+      document.getElementById('clientId').value = '';
       if (currentPaymentMethod === 'Crédito') document.getElementById('cuponNumber').value = '';
       const ventaFueB2B = isB2B;
-      activarModoB2C(); renderCart();
+      activarModoB2C();
+      renderCart();
       
       if (!ventaFueB2B) window.open('imprimir_ticket.html', '_blank');
 
-    } catch(e) { alert("Error: " + e.message); }
-    finally { mostrarCarga(false); }
+    } catch (e) {
+      alert("Error: " + e.message);
+    } finally {
+      mostrarCarga(false);
+    }
   };
 
   initPOS();
