@@ -37,6 +37,14 @@
       display: flex; justify-content: center; align-items: center;
       font-size: 28px; font-weight: 900;
       margin: 0 auto 20px auto;
+      overflow: hidden;
+    }
+
+    .brand-logo-large img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: white;
     }
 
     .login-title { margin: 0 0 5px; font-size: 22px; color: var(--text, #1e293b); }
@@ -57,7 +65,7 @@
 <body>
 
   <div class="login-card">
-    <div class="brand-logo-large">M</div>
+    <div class="brand-logo-large" id="brandBox">M</div>
     <h1 class="login-title">Bienvenido</h1>
     <p class="login-sub">Ingresá tus credenciales para continuar</p>
 
@@ -79,6 +87,54 @@
   </div>
 
   <script>
+    function clearSession() {
+      const keys = [
+        'activeUser',
+        'userRole',
+        'allowedModules',
+        'company_id',
+        'company_name',
+        'company_logo',
+        'company_cuil',
+        'company_email',
+        'company_phone',
+        'company_address',
+        'company_city',
+        'company_country',
+        'company_iva_condition',
+        'saas_logged_in',
+        'saas_username',
+        'saas_role'
+      ];
+      keys.forEach(k => localStorage.removeItem(k));
+    }
+
+    function resolveTargetPage(user) {
+      let targetPage = 'dashboard.html';
+
+      if (user.role === 'administrativo') targetPage = 'contable.html';
+      if (user.role === 'cajera' || user.role === 'vendedora' || user.role === 'pos') targetPage = 'facturacion.html';
+
+      const moduleName = targetPage.replace('.html', '');
+
+      if (user.role !== 'admin' && Array.isArray(user.allowedModules) && !user.allowedModules.includes(moduleName)) {
+        if (user.allowedModules.length > 0) {
+          targetPage = user.allowedModules[0] + '.html';
+        } else {
+          return null;
+        }
+      }
+
+      return targetPage;
+    }
+
+    function hydrateCompanyUI(company) {
+      if (!company) return;
+      if (company.logo) {
+        document.getElementById('brandBox').innerHTML = `<img src="${company.logo}" alt="Logo empresa">`;
+      }
+    }
+
     async function procesarLogin(e) {
       e.preventDefault();
       
@@ -90,6 +146,7 @@
       btn.disabled = true;
       btn.textContent = "Verificando...";
       errorMsg.style.display = 'none';
+      errorMsg.textContent = '';
 
       try {
         const response = await fetch('/api/login', {
@@ -101,45 +158,60 @@
         const data = await response.json();
 
         if (response.ok && data.success) {
-          // GUARDAMOS LA LLAVE DE ACCESO EN EL NAVEGADOR
-          localStorage.setItem('activeUser', data.user.username);
-localStorage.setItem('userRole', data.user.role);
-localStorage.setItem('allowedModules', JSON.stringify(data.user.allowedModules));
-localStorage.setItem('company_id', data.user.company_id); // 🔥 CLAVE
-localStorage.setItem('saas_logged_in', 'true');
-          
-          btn.style.background = "#16a34a"; // Verde éxito
-          btn.textContent = "¡Acceso Autorizado!";
-          
-          // --- LÓGICA DE REDIRECCIÓN INTELIGENTE ---
-          let targetPage = 'dashboard.html';
-          if (data.user.role === 'administrativo') targetPage = 'contable.html';
-          if (data.user.role === 'cajera' || data.user.role === 'vendedora' || data.user.role === 'pos') targetPage = 'facturacion.html';
+          clearSession();
 
-          // Seguridad: Si no tiene permiso a la página objetivo, le damos la primera que tenga permitida
-          const moduleName = targetPage.replace('.html', '');
-          if (data.user.role !== 'admin' && data.user.allowedModules && !data.user.allowedModules.includes(moduleName)) {
-              if (data.user.allowedModules.length > 0) {
-                  targetPage = data.user.allowedModules[0] + '.html';
-              } else {
-                  errorMsg.textContent = "Tu usuario no tiene ningún módulo asignado.";
-                  errorMsg.style.display = 'block';
-                  btn.disabled = false;
-                  btn.textContent = "Ingresar al sistema";
-                  btn.style.background = "";
-                  return;
-              }
+          const user = data.user || {};
+          const company = data.company || {};
+
+          localStorage.setItem('activeUser', user.username || '');
+          localStorage.setItem('userRole', user.role || '');
+          localStorage.setItem('allowedModules', JSON.stringify(user.allowedModules || []));
+          localStorage.setItem('company_id', user.company_id || '');
+          localStorage.setItem('saas_logged_in', 'true');
+
+          localStorage.setItem('saas_username', user.username || '');
+          localStorage.setItem('saas_role', user.role || '');
+
+          localStorage.setItem('company_name', company.name || '');
+          localStorage.setItem('company_logo', company.logo || '');
+          localStorage.setItem('company_cuil', company.cuil || '');
+          localStorage.setItem('company_email', company.email || '');
+          localStorage.setItem('company_phone', company.phone || '');
+          localStorage.setItem('company_address', company.address || '');
+          localStorage.setItem('company_city', company.city || '');
+          localStorage.setItem('company_country', company.country || '');
+          localStorage.setItem('company_iva_condition', company.ivaCondition || '');
+
+          hydrateCompanyUI(company);
+
+          const targetPage = resolveTargetPage(user);
+
+          if (!targetPage) {
+            errorMsg.textContent = "Tu usuario no tiene ningún módulo asignado.";
+            errorMsg.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = "Ingresar al sistema";
+            btn.style.background = "";
+            clearSession();
+            return;
           }
-          
-          // Redirigimos al módulo que le corresponde
-          setTimeout(() => { window.location.href = targetPage; }, 500);
+
+          btn.style.background = "#16a34a";
+          btn.textContent = "¡Acceso Autorizado!";
+
+          setTimeout(() => {
+            window.location.href = targetPage;
+          }, 500);
+
         } else {
+          clearSession();
           errorMsg.textContent = data.error || "Error desconocido.";
           errorMsg.style.display = 'block';
           btn.disabled = false;
           btn.textContent = "Ingresar al sistema";
         }
       } catch (error) {
+        clearSession();
         errorMsg.textContent = "Error de red. Verificá tu conexión.";
         errorMsg.style.display = 'block';
         btn.disabled = false;
