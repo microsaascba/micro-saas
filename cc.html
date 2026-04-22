@@ -13,7 +13,6 @@
   
   <link rel="stylesheet" href="styles.css" />
   <style>
-    /* FIX RESPONSIVE: Le quitamos los !important a la grilla para que pueda cambiar en móviles */
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
@@ -39,7 +38,6 @@
     
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
 
-    /* ESTILOS DE FACTURA OFICIAL PARA IMPRESIÓN */
     #printSection { display: none; }
     @media print {
       @page { margin: 15mm; size: A4 portrait; }
@@ -66,7 +64,6 @@
       .print-total-final { display: flex; justify-content: space-between; font-size: 18px; font-weight: 900; margin-top: 10px; border-top: 2px solid #000; padding-top: 5px; }
     }
     
-    /* REGLAS OBLIGATORIAS PARA CELULARES */
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
     
@@ -123,8 +120,7 @@
         <div style="padding: 20px; border-bottom: 1px solid var(--line); background: var(--panel-2);">
           <input type="text" id="searchCli" class="input-box" placeholder="Buscar cliente..." onkeyup="renderClientList()">
         </div>
-        <div id="clientList" style="max-height: 65vh; overflow-y: auto;">
-          </div>
+        <div id="clientList" style="max-height: 65vh; overflow-y: auto;"></div>
       </article>
 
       <article class="card card-pad" id="ledgerPanel" style="display: none;">
@@ -140,8 +136,8 @@
         </div>
 
         <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-          <button class="btn btn-primary" onclick="abrirModalMovimiento('haber')">⬇ Ingresar Pago (Cobranza)</button>
-          <button class="btn btn-outline" style="border-color: var(--danger); color: var(--danger);" onclick="abrirModalMovimiento('debe')">⬆ Cargar Deuda Manual</button>
+          <button class="btn btn-primary" onclick="abrirModalMovimiento('credit')">⬇ Ingresar Pago (Cobranza)</button>
+          <button class="btn btn-outline" style="border-color: var(--danger); color: var(--danger);" onclick="abrirModalMovimiento('debit')">⬆ Cargar Deuda Manual</button>
         </div>
 
         <div style="overflow-x: auto; border: 1px solid var(--line); border-radius: 8px;">
@@ -152,6 +148,7 @@
                 <th>Concepto / Factura</th>
                 <th style="text-align: right;">Debe (Cargo)</th>
                 <th style="text-align: right;">Haber (Pago)</th>
+                <th style="text-align: right;">Saldo</th>
                 <th style="text-align: center;">Acciones</th>
               </tr>
             </thead>
@@ -276,59 +273,51 @@
 <script>
   const API_URL = "/api";
   let dbClients = [];
-  let dbCcMovements = []; 
-  let dbSales = []; 
+  let dbCcMovements = [];
+  let dbSales = [];
   let selectedClientId = null;
 
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
-  
   function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
 
   async function initCC() {
     mostrarCarga(true);
     try {
       const [resCli, resCc, resSales] = await Promise.all([
-        fetch(`${API_URL}/clients`), fetch(`${API_URL}/cc_movements`), fetch(`${API_URL}/sales`)
+        apiFetch(`${API_URL}/business_clients?withBalance=1`),
+        apiFetch(`${API_URL}/cc_movements?withBalance=1`),
+        apiFetch(`${API_URL}/sales`)
       ]);
       
-      if(resCli.ok) dbClients = await resCli.json();
-      if(resCc.ok) dbCcMovements = await resCc.json();
+      if (resCli.ok) dbClients = await resCli.json();
+      if (resCc.ok) dbCcMovements = await resCc.json();
       
-      if(resSales.ok) {
-          dbSales = await resSales.json();
-          dbSales.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
-          dbSales.forEach((s, index) => {
-              s.factNum = 1000 + index;
-          });
+      if (resSales.ok) {
+        dbSales = await resSales.json();
+        dbSales.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        dbSales.forEach((s, index) => {
+          s.factNum = 1000 + index;
+        });
       }
       
-    } catch (error) { console.error("Error de conexión:", error); } 
-    finally {
+    } catch (error) {
+      console.error("Error de conexión:", error);
+    } finally {
       mostrarCarga(false);
       renderClientList();
-      if (selectedClientId) renderLedger();
+      if (selectedClientId) await renderLedger();
     }
-  }
-
-  function getClientBalance(clientId) {
-    let saldo = 0;
-    const movs = dbCcMovements.filter(m => m.clientId === clientId);
-    movs.forEach(m => {
-      if (m.type === 'debe') saldo += m.amount;
-      if (m.type === 'haber') saldo -= m.amount;
-    });
-    return saldo;
   }
 
   function renderClientList() {
     const term = document.getElementById('searchCli').value.toLowerCase();
-    const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term));
+    const filtrados = dbClients.filter(c => (c.name || '').toLowerCase().includes(term));
     const listDiv = document.getElementById('clientList');
     
     listDiv.innerHTML = filtrados.map(c => {
-      const saldo = getClientBalance(c.id);
+      const saldo = Number(c.balance || 0);
       const isSelected = selectedClientId === c.id ? 'selected' : '';
       const colorSaldo = saldo > 0 ? 'var(--danger)' : (saldo < 0 ? 'var(--success)' : 'var(--muted)');
       
@@ -336,7 +325,7 @@
       <div class="client-list-item ${isSelected}" onclick="seleccionarCliente('${c.id}')">
         <div>
           <strong style="display:block; font-size:14px; color:var(--text);">${escapeHtml(c.name)}</strong>
-          <span style="font-size:11px; color:var(--muted);">${c.type === 'client' ? 'Mayorista' : 'Minorista'}</span>
+          <span style="font-size:11px; color:var(--muted);">${c.cuil || 'Sin CUIT'}</span>
         </div>
         <div style="text-align:right;">
           <strong style="color:${colorSaldo}; font-size:15px;">${currency(saldo)}</strong>
@@ -344,10 +333,10 @@
       </div>`;
     }).join('');
     
-    if(filtrados.length === 0) listDiv.innerHTML = '<div style="padding:20px; text-align:center; color:var(--muted); font-size:13px;">No hay clientes.</div>';
+    if (filtrados.length === 0) listDiv.innerHTML = '<div style="padding:20px; text-align:center; color:var(--muted); font-size:13px;">No hay clientes.</div>';
   }
 
-  function seleccionarCliente(id) {
+  async function seleccionarCliente(id) {
     selectedClientId = id;
     renderClientList(); 
     
@@ -358,39 +347,52 @@
     document.getElementById('ledgerPanel').style.display = 'block';
     
     document.getElementById('lblCliName').textContent = c.name;
-    document.getElementById('lblCliInfo').textContent = `${c.cuil ? 'CUIT: '+c.cuil : 'Sin CUIT'} - ${c.type === 'client' ? 'Mayorista' : 'Minorista'}`;
+    document.getElementById('lblCliInfo').textContent = `${c.cuil ? 'CUIT: ' + c.cuil : 'Sin CUIT'} - ${c.iva_condition || 'Consumidor Final'}`;
+    document.getElementById('lblCliBalance').textContent = currency(Number(c.balance || 0));
+    document.getElementById('lblCliBalance').style.color = Number(c.balance || 0) > 0 ? 'var(--danger)' : (Number(c.balance || 0) < 0 ? 'var(--success)' : 'var(--text)');
     
-    renderLedger();
+    await renderLedger();
   }
 
-  function renderLedger() {
+  async function renderLedger() {
     if (!selectedClientId) return;
     
+    try {
+      const res = await apiFetch(`${API_URL}/cc_movements?clientId=${encodeURIComponent(selectedClientId)}&withBalance=1`);
+      if (res.ok) {
+        dbCcMovements = await res.json();
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
     const tbody = document.getElementById('ledgerBody');
-    const movs = dbCcMovements.filter(m => m.clientId === selectedClientId).sort((a,b) => new Date(b.date) - new Date(a.date));
+    const movs = [...dbCcMovements].sort((a, b) => {
+      const da = `${a.date || ''} ${a.createdAt || ''}`;
+      const db = `${b.date || ''} ${b.createdAt || ''}`;
+      return db.localeCompare(da);
+    });
     
     let html = '';
     movs.forEach(m => {
-      const isDebe = m.type === 'debe';
-      const isHaber = m.type === 'haber';
-      const formatDate = m.date.split('-').reverse().join('/');
+      const isDebe = m.type === 'debit';
+      const isHaber = m.type === 'credit';
+      const formatDate = (m.date || '').split('-').reverse().join('/') || '-';
       
       let displayConcept = escapeHtml(m.concept);
       let isFacturaClickable = false;
 
-      if (!isHaber && m.concept.toLowerCase().includes('ticket #')) {
-          const ticketNumber = m.concept.split('#')[1]?.trim();
-          const saleObj = dbSales.find(s => s.id.includes(ticketNumber));
-          
-          if (saleObj) {
-              displayConcept = `Fact. ${saleObj.factNum}`;
-              isFacturaClickable = true;
-          }
+      if (!isHaber && String(m.reference_type || '').toLowerCase() === 'sale' && m.reference_id) {
+        const saleObj = dbSales.find(s => s.id === m.reference_id);
+        if (saleObj) {
+          displayConcept = `Fact. ${saleObj.factNum}`;
+          isFacturaClickable = true;
+        }
       }
 
-      const conceptHtml = isFacturaClickable 
-          ? `<a href="#" onclick="verDetalleFactura('${m.id}'); return false;" style="color:var(--primary); font-weight:800; text-decoration:none; border-bottom:1px dashed var(--primary);">📄 ${displayConcept}</a>` 
-          : `<strong>${displayConcept}</strong>`;
+      const conceptHtml = isFacturaClickable
+        ? `<a href="#" onclick="verDetalleFactura('${m.id}'); return false;" style="color:var(--primary); font-weight:800; text-decoration:none; border-bottom:1px dashed var(--primary);">📄 ${displayConcept}</a>`
+        : `<strong>${displayConcept}</strong>`;
 
       html += `
       <tr>
@@ -398,6 +400,7 @@
         <td>${conceptHtml}</td>
         <td style="text-align:right;" class="${isDebe ? 'ledger-debe' : ''}">${isDebe ? currency(m.amount) : '-'}</td>
         <td style="text-align:right;" class="${isHaber ? 'ledger-haber' : ''}">${isHaber ? currency(m.amount) : '-'}</td>
+        <td style="text-align:right; font-weight:800;">${currency(Number(m.balance || 0))}</td>
         <td style="text-align:center;">
           <button class="btn-outline" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="prepararImpresion('${m.id}')">
               📄 PDF
@@ -406,168 +409,168 @@
       </tr>`;
     });
     
-    if (movs.length === 0) html = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">Sin movimientos en la cuenta.</td></tr>';
+    if (movs.length === 0) html = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted);">Sin movimientos en la cuenta.</td></tr>';
     
     tbody.innerHTML = html;
-    
-    const saldoFinal = getClientBalance(selectedClientId);
-    const boxSaldo = document.getElementById('lblCliBalance');
-    boxSaldo.textContent = currency(saldoFinal);
-    boxSaldo.style.color = saldoFinal > 0 ? 'var(--danger)' : (saldoFinal < 0 ? 'var(--success)' : 'var(--text)');
+
+    const cli = dbClients.find(c => c.id === selectedClientId);
+    if (cli) {
+      const saldoFinal = Number(cli.balance || 0);
+      const boxSaldo = document.getElementById('lblCliBalance');
+      boxSaldo.textContent = currency(saldoFinal);
+      boxSaldo.style.color = saldoFinal > 0 ? 'var(--danger)' : (saldoFinal < 0 ? 'var(--success)' : 'var(--text)');
+    }
   }
 
   function verDetalleFactura(movId) {
-      const mov = dbCcMovements.find(m => m.id === movId);
-      if(!mov) return;
+    const mov = dbCcMovements.find(m => m.id === movId);
+    if (!mov) return;
 
-      const ticketNumber = mov.concept.split('#')[1]?.trim();
-      const saleObj = dbSales.find(s => s.id.includes(ticketNumber));
+    const saleObj = dbSales.find(s => s.id === mov.reference_id);
+    if (saleObj && saleObj.items) {
+      const itemsList = typeof saleObj.items === 'string' ? JSON.parse(saleObj.items) : saleObj.items;
       
-      if(saleObj && saleObj.items) {
-          const itemsList = typeof saleObj.items === 'string' ? JSON.parse(saleObj.items) : saleObj.items;
-          
-          document.getElementById('detalleFacTitle').textContent = `Detalle Factura N° ${saleObj.factNum}`;
-          
-          document.getElementById('detalleFacBody').innerHTML = itemsList.map(i => `
-            <tr>
-              <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:center; font-weight:bold;">${i.qty}</td>
-              <td style="padding: 10px; border-bottom: 1px solid var(--line);">${escapeHtml(i.name)}</td>
-              <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:right;">${currency(i.price)}</td>
-              <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:right; font-weight:bold;">${currency(i.price * i.qty)}</td>
-            </tr>
-          `).join('');
+      document.getElementById('detalleFacTitle').textContent = `Detalle Factura N° ${saleObj.factNum}`;
+      
+      document.getElementById('detalleFacBody').innerHTML = itemsList.map(i => `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:center; font-weight:bold;">${i.qty}</td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--line);">${escapeHtml(i.name)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:right;">${currency(i.price)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:right; font-weight:bold;">${currency(i.price * i.qty)}</td>
+        </tr>
+      `).join('');
 
-          document.getElementById('detalleFacTotal').textContent = currency(mov.amount);
-          
-          document.getElementById('btnImprimirDesdeModal').onclick = () => {
-              document.getElementById('modalDetalleFac').close();
-              prepararImpresion(movId);
-          };
+      document.getElementById('detalleFacTotal').textContent = currency(mov.amount);
+      
+      document.getElementById('btnImprimirDesdeModal').onclick = () => {
+        document.getElementById('modalDetalleFac').close();
+        prepararImpresion(movId);
+      };
 
-          document.getElementById('modalDetalleFac').showModal();
-      }
+      document.getElementById('modalDetalleFac').showModal();
+    }
   }
 
   function prepararImpresion(movId) {
-      const mov = dbCcMovements.find(m => m.id === movId);
-      const cli = dbClients.find(c => c.id === selectedClientId);
-      if(!mov || !cli) return;
+    const mov = dbCcMovements.find(m => m.id === movId);
+    const cli = dbClients.find(c => c.id === selectedClientId);
+    if (!mov || !cli) return;
 
-      const isPago = mov.type === 'haber';
-      const isFacturaA = (!isPago && cli.type === 'client');
+    const isPago = mov.type === 'credit';
+    const isFacturaA = !isPago && cli.iva_condition === 'Responsable Inscripto';
+    
+    let numeroComprobante = "0001-" + String(Math.floor(Math.random() * 900000) + 100000).padStart(8, '0');
+    let saleObj = null;
+
+    if (isPago) {
+      document.getElementById('printDocTitle').textContent = 'RECIBO OFICIAL';
+      document.getElementById('printDocLetter').textContent = 'X';
+      document.getElementById('printDocCod').textContent = 'Doc. no válido como factura';
+      document.getElementById('printSaleCond').textContent = 'Cobranza de Cta. Cte.';
+    } else {
+      document.getElementById('printDocTitle').textContent = 'FACTURA';
+      document.getElementById('printDocLetter').textContent = isFacturaA ? 'A' : 'B';
+      document.getElementById('printDocCod').textContent = isFacturaA ? 'Cod. 001' : 'Cod. 006';
+      document.getElementById('printSaleCond').textContent = 'Cuenta Corriente';
       
-      let numeroComprobante = "0001-" + String(Math.floor(Math.random() * 900000) + 100000).padStart(8, '0');
-      let saleObj = null;
-
-      if (isPago) {
-          document.getElementById('printDocTitle').textContent = 'RECIBO OFICIAL';
-          document.getElementById('printDocLetter').textContent = 'X';
-          document.getElementById('printDocCod').textContent = 'Doc. no válido como factura';
-          document.getElementById('printSaleCond').textContent = 'Cobranza de Cta. Cte.';
-      } else {
-          document.getElementById('printDocTitle').textContent = 'FACTURA';
-          document.getElementById('printDocLetter').textContent = isFacturaA ? 'A' : 'B';
-          document.getElementById('printDocCod').textContent = isFacturaA ? 'Cod. 001' : 'Cod. 006';
-          document.getElementById('printSaleCond').textContent = 'Cuenta Corriente';
-          
-          const ticketNumber = mov.concept.split('#')[1]?.trim();
-          saleObj = dbSales.find(s => s.id.includes(ticketNumber));
-          if(saleObj) {
-             numeroComprobante = "0001-" + String(saleObj.factNum).padStart(8, '0');
-          }
+      saleObj = dbSales.find(s => s.id === mov.reference_id);
+      if (saleObj) {
+        numeroComprobante = "0001-" + String(saleObj.factNum).padStart(8, '0');
       }
+    }
+    
+    document.getElementById('printDocNum').textContent = numeroComprobante;
+    document.getElementById('printDate').textContent = (mov.date || '').split('-').reverse().join('/');
+    
+    document.getElementById('printCliName').textContent = cli.name;
+    document.getElementById('printCliDoc').textContent = cli.cuil || '---';
+    document.getElementById('printCliAddr').textContent = cli.address || 'Consumidor Final';
+    document.getElementById('printCliIva').textContent = cli.iva_condition || 'Consumidor Final';
+
+    const tableBody = document.getElementById('printTableBody');
+    const tableHeader = document.getElementById('printTableHeader');
+    const totalsBox = document.getElementById('printTotalsBox');
+    
+    let htmlItems = '';
+    let htmlTotals = '';
+
+    if (!isPago && saleObj && saleObj.items) {
+      const itemsList = typeof saleObj.items === 'string' ? JSON.parse(saleObj.items) : saleObj.items;
       
-      document.getElementById('printDocNum').textContent = numeroComprobante;
-      document.getElementById('printDate').textContent = mov.date.split('-').reverse().join('/');
-      
-      document.getElementById('printCliName').textContent = cli.name;
-      document.getElementById('printCliDoc').textContent = cli.cuil || '---';
-      document.getElementById('printCliAddr').textContent = cli.address || 'Consumidor Final';
-      document.getElementById('printCliIva').textContent = isFacturaA ? 'Responsable Inscripto' : 'Consumidor Final';
-
-      const tableBody = document.getElementById('printTableBody');
-      const tableHeader = document.getElementById('printTableHeader');
-      const totalsBox = document.getElementById('printTotalsBox');
-      
-      let htmlItems = '';
-      let htmlTotals = '';
-
-      if (!isPago && saleObj && saleObj.items) {
-          const itemsList = typeof saleObj.items === 'string' ? JSON.parse(saleObj.items) : saleObj.items;
-          
-          if (isFacturaA) {
-              tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 50%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO NETO</th><th style="width: 10%; text-align: right;">% IVA</th><th style="width: 15%; text-align: right;">SUBTOTAL NETO</th></tr>`;
-              
-              let totalNeto = 0;
-              htmlItems = itemsList.map(i => {
-                  const precioNeto = i.price / 1.21;
-                  const subNeto = (i.price / 1.21) * i.qty;
-                  totalNeto += subNeto;
-                  return `<tr>
-                    <td style="text-align:center;">${i.qty}</td>
-                    <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
-                    <td style="text-align:right;">${currency(precioNeto)}</td>
-                    <td style="text-align:right;">21%</td>
-                    <td style="text-align:right;">${currency(subNeto)}</td>
-                  </tr>`;
-              }).join('');
-
-              const totalIva = totalNeto * 0.21;
-              htmlTotals = `
-                <div class="print-total-line"><span>Subtotal:</span><span>${currency(totalNeto)}</span></div>
-                <div class="print-total-line"><span>IVA 21%:</span><span>${currency(totalIva)}</span></div>
-                <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
-              `;
-          } else {
-              tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 60%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO UNIT.</th><th style="width: 15%; text-align: right;">SUBTOTAL</th></tr>`;
-              
-              let totalSubtotal = 0;
-              htmlItems = itemsList.map(i => {
-                  const sub = i.qty * i.price;
-                  totalSubtotal += sub;
-                  return `<tr>
-                    <td style="text-align:center;">${i.qty}</td>
-                    <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
-                    <td style="text-align:right;">${currency(i.price)}</td>
-                    <td style="text-align:right;">${currency(sub)}</td>
-                  </tr>`;
-              }).join('');
-
-              htmlTotals = `
-                <div class="print-total-line"><span>Subtotal:</span><span>${currency(totalSubtotal)}</span></div>
-                <div class="print-total-line"><span>IVA:</span><span>${currency(0)}</span></div>
-                <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
-              `;
-          }
-      }
-
-      if (!htmlItems) {
-          tableHeader.innerHTML = `<tr><th style="width: 80%;">CONCEPTO DE LA OPERACIÓN</th><th style="width: 20%; text-align: right;">IMPORTE</th></tr>`;
-          htmlItems = `<tr>
-            <td style="padding: 20px 10px;"><strong style="font-size:14px;">${escapeHtml(mov.concept)}</strong></td>
-            <td style="text-align:right; font-weight:bold; font-size:16px;">${currency(mov.amount)}</td>
+      if (isFacturaA) {
+        tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 50%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO NETO</th><th style="width: 10%; text-align: right;">% IVA</th><th style="width: 15%; text-align: right;">SUBTOTAL NETO</th></tr>`;
+        
+        let totalNeto = 0;
+        htmlItems = itemsList.map(i => {
+          const precioNeto = i.price / 1.21;
+          const subNeto = (i.price / 1.21) * i.qty;
+          totalNeto += subNeto;
+          return `<tr>
+            <td style="text-align:center;">${i.qty}</td>
+            <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
+            <td style="text-align:right;">${currency(precioNeto)}</td>
+            <td style="text-align:right;">21%</td>
+            <td style="text-align:right;">${currency(subNeto)}</td>
           </tr>`;
-          htmlTotals = `
-            <div class="print-total-line"><span>Subtotal:</span><span>${currency(mov.amount)}</span></div>
-            <div class="print-total-line"><span>IVA:</span><span>${currency(0)}</span></div>
-            <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
-          `;
-      }
+        }).join('');
 
-      tableBody.innerHTML = htmlItems;
-      totalsBox.innerHTML = htmlTotals;
-      document.getElementById('printSignatureArea').style.display = isPago ? 'block' : 'none';
-      
-      window.print();
+        const totalIva = totalNeto * 0.21;
+        htmlTotals = `
+          <div class="print-total-line"><span>Subtotal:</span><span>${currency(totalNeto)}</span></div>
+          <div class="print-total-line"><span>IVA 21%:</span><span>${currency(totalIva)}</span></div>
+          <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
+        `;
+      } else {
+        tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 60%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO UNIT.</th><th style="width: 15%; text-align: right;">SUBTOTAL</th></tr>`;
+        
+        let totalSubtotal = 0;
+        htmlItems = itemsList.map(i => {
+          const sub = i.qty * i.price;
+          totalSubtotal += sub;
+          return `<tr>
+            <td style="text-align:center;">${i.qty}</td>
+            <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
+            <td style="text-align:right;">${currency(i.price)}</td>
+            <td style="text-align:right;">${currency(sub)}</td>
+          </tr>`;
+        }).join('');
+
+        htmlTotals = `
+          <div class="print-total-line"><span>Subtotal:</span><span>${currency(totalSubtotal)}</span></div>
+          <div class="print-total-line"><span>IVA:</span><span>${currency(0)}</span></div>
+          <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
+        `;
+      }
+    }
+
+    if (!htmlItems) {
+      tableHeader.innerHTML = `<tr><th style="width: 80%;">CONCEPTO DE LA OPERACIÓN</th><th style="width: 20%; text-align: right;">IMPORTE</th></tr>`;
+      htmlItems = `<tr>
+        <td style="padding: 20px 10px;"><strong style="font-size:14px;">${escapeHtml(mov.concept)}</strong></td>
+        <td style="text-align:right; font-weight:bold; font-size:16px;">${currency(mov.amount)}</td>
+      </tr>`;
+      htmlTotals = `
+        <div class="print-total-line"><span>Subtotal:</span><span>${currency(mov.amount)}</span></div>
+        <div class="print-total-line"><span>IVA:</span><span>${currency(0)}</span></div>
+        <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
+      `;
+    }
+
+    tableBody.innerHTML = htmlItems;
+    totalsBox.innerHTML = htmlTotals;
+    document.getElementById('printSignatureArea').style.display = isPago ? 'block' : 'none';
+    
+    window.print();
   }
 
   function abrirModalMovimiento(tipo) {
-    if(!selectedClientId) return;
+    if (!selectedClientId) return;
     document.getElementById('movType').value = tipo;
     document.getElementById('movAmount').value = '';
-    document.getElementById('movConcept').value = tipo === 'haber' ? 'Pago recibido a cuenta' : 'Cargo manual / Ajuste';
-    document.getElementById('modalTitle').textContent = tipo === 'haber' ? 'Ingresar Cobranza' : 'Cargar Deuda';
-    document.getElementById('btnSaveMov').style.background = tipo === 'haber' ? 'var(--success)' : 'var(--danger)';
+    document.getElementById('movConcept').value = tipo === 'credit' ? 'Pago recibido a cuenta' : 'Cargo manual / Ajuste';
+    document.getElementById('modalTitle').textContent = tipo === 'credit' ? 'Ingresar Cobranza' : 'Cargar Deuda';
+    document.getElementById('btnSaveMov').style.background = tipo === 'credit' ? 'var(--success)' : 'var(--danger)';
     document.getElementById('modalMov').showModal();
   }
 
@@ -575,28 +578,38 @@
 
   async function guardarMovimiento(e) {
     e.preventDefault();
-    if(!selectedClientId) return;
+    if (!selectedClientId) return;
     
     const mov = {
       id: 'cc_' + Date.now(),
       clientId: selectedClientId,
       date: todayISO(),
-      type: document.getElementById('movType').value,
+      type: document.getElementById('movType').value === 'credit' ? 'credit' : 'debit',
       amount: parseFloat(document.getElementById('movAmount').value),
-      concept: document.getElementById('movConcept').value.trim()
+      concept: document.getElementById('movConcept').value.trim(),
+      reference_type: 'manual',
+      reference_id: ''
     };
     
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/cc_movements`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mov)
+      const response = await apiFetch(`${API_URL}/cc_movements`, {
+        method: 'POST',
+        body: JSON.stringify(mov)
       });
-      if(response.ok) {
-        dbCcMovements.unshift(mov);
+
+      if (response.ok) {
         cerrarModalMov();
-        renderClientList(); renderLedger();     
-      } else { alert("Error al procesar en D1."); }
-    } catch(err) { alert("Error de conexión."); } finally { mostrarCarga(false); }
+        await initCC();
+        if (selectedClientId) await seleccionarCliente(selectedClientId);
+      } else {
+        alert("Error al procesar en D1.");
+      }
+    } catch (err) {
+      alert("Error de conexión.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   initCC();
