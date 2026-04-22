@@ -190,7 +190,7 @@
   async function initPOS() {
     mostrarCarga(true);
     try {
-      const [resP, resC] = await Promise.all([fetch(`${API_URL}/products`), fetch(`${API_URL}/clients`)]);
+      const [resP, resC] = await Promise.all([   apiFetch(`${API_URL}/products`),   apiFetch(`${API_URL}/business_clients?withBalance=1`) ]);
       if (!resP.ok) console.error("Error D1 Productos:", await resP.text());
       if (!resC.ok) console.error("Error D1 Clientes:", await resC.text());
 
