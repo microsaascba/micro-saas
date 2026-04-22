@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Usuarios | Micro SaaS</title>
-  
+
   <style>
     html, body { background-color: #f0f2f7 !important; }
     body { animation: fadeIn 0.15s ease-in-out; }
@@ -13,14 +13,14 @@
 
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .app { display: grid !important; grid-template-columns: 260px 1fr !important; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px !important; height: 100vh; position: sticky; top: 0; background: #0f172a; }
-    
+    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
+    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+
     .layout-1col { max-width: 1000px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
-    
+
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
-    
+
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
     td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
@@ -28,12 +28,70 @@
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
-    
-    .permissions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px dashed var(--line); }
+
+    .permissions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      background: var(--panel-2);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px dashed var(--line);
+    }
     .perm-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text); font-weight: 500; cursor: pointer; }
     .perm-item input { accent-color: var(--primary); width: 16px; height: 16px; cursor: pointer; }
-    
-    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
+
+    #loadingOverlay {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center;
+      align-items: center; font-weight: bold; color: var(--primary); font-size: 18px;
+    }
+
+    .company-logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: inherit;
+      background: #fff;
+    }
+
+    .info-box {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+
+    .warn-box {
+      background: #fff7ed;
+      border: 1px solid #fdba74;
+      color: #c2410c;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 18px;
+      display: none;
+    }
+
+    .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
+    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+
+    @media (max-width: 900px) {
+      .app { display: flex !important; flex-direction: column !important; }
+      .mobile-toggle { display: block; }
+      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
+      .sidebar.open { left: 0 !important; }
+      .sidebar-overlay.open { display: block; }
+
+      .topbar { padding: 15px; flex-direction: column; align-items: flex-start !important; gap: 15px; }
+      .topbar-actions { width: 100%; }
+      .topbar-actions button { width: 100%; }
+
+      .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
+    }
   </style>
 </head>
 <body>
@@ -41,10 +99,12 @@
 <div id="loadingOverlay">Sincronizando con la nube...</div>
 
 <div class="app">
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
+
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
+      <div class="brand-logo" id="companyLogo">M</div>
+      <div class="brand-text"><strong id="companyBrandText">Empresa</strong><small>Control del negocio</small></div>
     </div>
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
@@ -55,30 +115,39 @@
       <a href="cc.html"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
-      <a href="ordenes.html" class="nav-icon"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="ordenes.html"><span class="nav-icon">📋</span> Órdenes</a>
       <a href="sucursales.html"><span class="nav-icon">🏪</span> Sucursales</a>
       <a href="usuarios.html" class="active"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
   </aside>
 
   <main class="content">
-    <header class="topbar">
-      <div class="page-title">
-        <h1 style="margin:0; font-size: 26px;">Gestión de Usuarios</h1>
-        <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Alta de personal y control de permisos modulares.</p>
+    <header class="topbar" style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; width: 100%;">
+        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
+        <div class="page-title">
+          <h1 style="margin:0; font-size: 26px;">Gestión de Usuarios</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Alta de personal y control de permisos modulares.</p>
+        </div>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo Usuario</button>
+        <button id="btnNuevoUsuario" class="btn btn-primary" onclick="abrirModalUsuario()">+ Nuevo Usuario</button>
       </div>
     </header>
 
     <div class="layout-1col">
+      <div class="info-box" id="planInfoBox">
+        Cargando configuración del plan...
+      </div>
+
+      <div class="warn-box" id="planWarnBox"></div>
+
       <article class="card card-pad">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap:12px; flex-wrap:wrap;">
           <h2 style="margin: 0; font-size: 18px;">Directorio de Personal</h2>
           <input type="text" id="searchUser" class="input-box" placeholder="Buscar usuario..." onkeyup="renderUsuarios()" style="max-width: 300px; margin: 0;">
         </div>
-        
+
         <div style="overflow-x: auto;">
           <table>
             <thead>
@@ -104,10 +173,10 @@
       <h2 id="userModalTitle" style="margin: 0; font-size:20px;">Alta de Usuario</h2>
       <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarModalUsuario()">✕</button>
     </div>
-    
+
     <form onsubmit="guardarUsuario(event)">
       <input type="hidden" id="userId">
-      
+
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Nombre de Usuario *</label>
@@ -138,7 +207,7 @@
 
       <div style="margin-bottom: 24px;">
         <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 8px;">Módulos Permitidos (Control de Acceso)</label>
-       <div class="permissions-grid" id="permGrid">
+        <div class="permissions-grid" id="permGrid">
           <label class="perm-item"><input type="checkbox" name="modules" value="dashboard"> Dashboard</label>
           <label class="perm-item"><input type="checkbox" name="modules" value="producto"> Productos</label>
           <label class="perm-item"><input type="checkbox" name="modules" value="clientes"> Clientes</label>
@@ -150,10 +219,11 @@
           <label class="perm-item"><input type="checkbox" name="modules" value="sucursales"> Sucursales</label>
           <label class="perm-item"><input type="checkbox" name="modules" value="usuarios"> Usuarios</label>
         </div>
+      </div>
 
       <div style="display: flex; align-items: center;">
         <button type="button" id="btnDeleteUser" class="btn" style="background: #fee2e2; color: var(--danger); border: none; display: none; font-weight:bold; padding: 12px 20px;" onclick="eliminarUsuarioPrompt()">🗑️ Borrar</button>
-        
+
         <div style="margin-left: auto; display: flex; gap: 10px;">
           <button type="button" class="btn btn-light" onclick="cerrarModalUsuario()">Cancelar</button>
           <button type="submit" class="btn btn-primary" style="padding: 12px 24px;">Guardar Usuario</button>
@@ -167,60 +237,152 @@
 <script>
   const API_URL = "/api";
   let dbUsers = [];
-  
-  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
+  let clientConfig = {
+    maxUsers: 1,
+    allowUserManagement: 0
+  };
+
+  function escapeHtml(v) {
+    return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function mostrarCarga(mostrar) {
+    document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none';
+  }
+
+  function toggleMenu() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+  }
+
+  function applyCompanyBranding() {
+    const companyName = localStorage.getItem('company_name') || 'Empresa';
+    const companyLogo = localStorage.getItem('company_logo') || '';
+
+    const brandText = document.getElementById('companyBrandText');
+    if (brandText) brandText.textContent = companyName;
+
+    const logoBox = document.getElementById('companyLogo');
+    if (logoBox && companyLogo) {
+      logoBox.innerHTML = `<img src="${companyLogo}" alt="Logo empresa" class="company-logo-img">`;
+    }
+  }
+
+  function loadClientConfigFromLocal() {
+    clientConfig.maxUsers = Number(localStorage.getItem('company_max_users') || 1);
+    clientConfig.allowUserManagement = Number(localStorage.getItem('company_allow_user_management') || 0);
+  }
+
+  function refreshPlanInfo() {
+    const info = document.getElementById('planInfoBox');
+    const warn = document.getElementById('planWarnBox');
+    const total = dbUsers.length;
+
+    info.innerHTML = `
+      <strong>Plan actual:</strong>
+      ${clientConfig.allowUserManagement === 1 ? 'gestión de usuarios habilitada' : 'gestión de usuarios bloqueada'} ·
+      <strong>Usuarios usados:</strong> ${total}/${clientConfig.maxUsers}
+    `;
+
+    warn.style.display = 'none';
+    warn.textContent = '';
+
+    if (clientConfig.allowUserManagement !== 1) {
+      warn.style.display = 'block';
+      warn.textContent = 'Tu plan actual no permite crear usuarios nuevos. Contactá al administrador.';
+    } else if (total >= clientConfig.maxUsers) {
+      warn.style.display = 'block';
+      warn.textContent = `Llegaste al límite de usuarios de tu plan (${clientConfig.maxUsers}).`;
+    }
+  }
+
+  function aplicarRestriccionesUI() {
+    const btn = document.getElementById('btnNuevoUsuario');
+    if (!btn) return;
+
+    if (clientConfig.allowUserManagement !== 1) {
+      btn.style.display = 'none';
+      return;
+    }
+
+    btn.style.display = 'inline-flex';
+
+    if (dbUsers.length >= clientConfig.maxUsers) {
+      btn.disabled = true;
+      btn.textContent = 'Límite alcanzado';
+    } else {
+      btn.disabled = false;
+      btn.textContent = '+ Nuevo Usuario';
+    }
+  }
 
   async function initUsuarios() {
     mostrarCarga(true);
     try {
-      const res = await fetch(`${API_URL}/users`);
-      if(res.ok) dbUsers = await res.json();
-    } catch (e) { console.error(e); } 
-    finally { 
-      renderUsuarios(); 
-      mostrarCarga(false); 
+      applyCompanyBranding();
+      loadClientConfigFromLocal();
+
+      const res = await apiFetch(`${API_URL}/users`);
+      if (res.ok) dbUsers = await res.json();
+    } catch (e) {
+      console.error(e);
+      dbUsers = [];
+    } finally {
+      refreshPlanInfo();
+      aplicarRestriccionesUI();
+      renderUsuarios();
+      mostrarCarga(false);
     }
   }
 
-  // Auto-seleccionar permisos sugeridos según el rol elegido
   function sugerirPermisos() {
     const rol = document.getElementById('userRole').value;
     const checkboxes = document.querySelectorAll('input[name="modules"]');
-    checkboxes.forEach(cb => cb.checked = false); // Limpiar todos
-    
+    checkboxes.forEach(cb => cb.checked = false);
+
     let permitidos = [];
     if (rol === 'vendedora') permitidos = ['producto', 'clientes', 'facturacion', 'cc'];
     if (rol === 'cajera') permitidos = ['facturacion', 'ventas', 'cc'];
     if (rol === 'administrativo') permitidos = ['dashboard', 'producto', 'clientes', 'facturacion', 'ventas', 'cc', 'contable', 'stock'];
-    if (rol === 'encargado' || rol === 'admin') permitidos = ['dashboard', 'producto', 'clientes', 'facturacion', 'ventas', 'cc', 'contable', 'stock', 'usuarios'];
+    if (rol === 'encargado') permitidos = ['dashboard', 'producto', 'clientes', 'facturacion', 'ventas', 'cc', 'stock'];
+    if (rol === 'admin') permitidos = ['dashboard', 'producto', 'clientes', 'facturacion', 'ventas', 'cc', 'contable', 'stock', 'usuarios'];
 
     checkboxes.forEach(cb => {
-      if(permitidos.includes(cb.value)) cb.checked = true;
+      if (permitidos.includes(cb.value)) cb.checked = true;
     });
   }
 
   function abrirModalUsuario(id = null) {
+    if (!id) {
+      if (clientConfig.allowUserManagement !== 1) {
+        return alert("Tu plan no permite crear usuarios.");
+      }
+      if (dbUsers.length >= clientConfig.maxUsers) {
+        return alert("Llegaste al límite de usuarios de tu plan.");
+      }
+    }
+
     const title = document.getElementById('userModalTitle');
     const btnDel = document.getElementById('btnDeleteUser');
     document.querySelectorAll('input[name="modules"]').forEach(cb => cb.checked = false);
-    
+
     if (id) {
       const u = dbUsers.find(x => x.id === id);
       if (!u) return;
+
       title.textContent = "Editar Usuario";
       document.getElementById('userId').value = u.id;
-      document.getElementById('userName').value = u.username;
-      document.getElementById('userPass').value = u.password;
-      document.getElementById('userRole').value = u.role;
+      document.getElementById('userName').value = u.username || '';
+      document.getElementById('userPass').value = u.password || '';
+      document.getElementById('userRole').value = u.role || 'vendedora';
       document.getElementById('userStatus').value = u.active ? "1" : "0";
-      
+
       (u.allowedModules || []).forEach(mod => {
         const cb = document.querySelector(`input[name="modules"][value="${mod}"]`);
-        if(cb) cb.checked = true;
+        if (cb) cb.checked = true;
       });
-      
-      btnDel.style.display = (u.username === 'admin') ? 'none' : 'block'; // Proteger al admin root
+
+      btnDel.style.display = (u.username === 'admin') ? 'none' : 'block';
     } else {
       title.textContent = "Alta de Usuario";
       document.getElementById('userId').value = '';
@@ -229,77 +391,131 @@
       document.getElementById('userRole').value = 'vendedora';
       document.getElementById('userStatus').value = "1";
       sugerirPermisos();
-      btnDel.style.display = 'none'; 
+      btnDel.style.display = 'none';
     }
-    
+
     document.getElementById('modalUsuario').showModal();
   }
 
-  function cerrarModalUsuario() { document.getElementById('modalUsuario').close(); }
+  function cerrarModalUsuario() {
+    document.getElementById('modalUsuario').close();
+  }
 
   async function guardarUsuario(e) {
     e.preventDefault();
+
+    const isNew = !document.getElementById('userId').value;
+
+    if (clientConfig.allowUserManagement !== 1) {
+      alert("Tu plan no permite crear usuarios.");
+      return;
+    }
+
+    if (isNew && dbUsers.length >= clientConfig.maxUsers) {
+      alert("Llegaste al límite de usuarios de tu plan.");
+      return;
+    }
+
     const id = document.getElementById('userId').value || 'usr_' + Date.now();
-    
-    // Recolectar checkboxes marcados
-    const modulosSeleccionados = Array.from(document.querySelectorAll('input[name="modules"]:checked')).map(cb => cb.value);
+    const role = document.getElementById('userRole').value;
+    const username = document.getElementById('userName').value.trim();
+
+    if (role === 'admin') {
+      const anotherAdmin = dbUsers.find(u => u.role === 'admin' && u.id !== id);
+      if (anotherAdmin) {
+        alert("Ya existe un administrador en esta cuenta.");
+        return;
+      }
+    }
+
+    const modulosSeleccionados = Array.from(
+      document.querySelectorAll('input[name="modules"]:checked')
+    ).map(cb => cb.value);
 
     const user = {
       id: id,
-      username: document.getElementById('userName').value.trim(),
+      username: username,
       password: document.getElementById('userPass').value.trim(),
-      role: document.getElementById('userRole').value,
+      role: role,
       active: document.getElementById('userStatus').value === "1",
       allowedModules: modulosSeleccionados,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      company_id: localStorage.getItem('company_id') || ''
     };
 
-    // Evitar que el admin principal se auto-quite el acceso a usuarios
     if (user.username === 'admin' && !user.allowedModules.includes('usuarios')) {
-        alert("El usuario 'admin' principal debe tener acceso al módulo Usuarios obligatoriamente para no bloquear el sistema.");
-        return;
+      alert("El usuario admin debe conservar acceso al módulo Usuarios.");
+      return;
     }
 
     mostrarCarga(true);
     try {
-      await fetch(`${API_URL}/users`, { method: 'POST', body: JSON.stringify(user) });
-      const idx = dbUsers.findIndex(x => x.id === id);
-      if (idx >= 0) dbUsers[idx] = user; else dbUsers.unshift(user);
-      cerrarModalUsuario(); renderUsuarios();
-    } catch(err) { alert("Error guardando usuario."); }
-    finally { mostrarCarga(false); }
+      const res = await apiFetch(`${API_URL}/users`, {
+        method: 'POST',
+        body: JSON.stringify(user)
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || 'Error guardando usuario.');
+      }
+
+      await initUsuarios();
+      cerrarModalUsuario();
+    } catch (err) {
+      console.error(err);
+      alert("Error guardando usuario.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   async function eliminarUsuarioPrompt() {
     const id = document.getElementById('userId').value;
-    if(!id) return;
-    if(!confirm("¿Borrar definitivamente este usuario? No podrá ingresar más al sistema.")) return;
-    
+    if (!id) return;
+
+    const user = dbUsers.find(u => u.id === id);
+    if (user && user.username === 'admin') {
+      return alert("El usuario admin principal no puede eliminarse.");
+    }
+
+    if (!confirm("¿Borrar definitivamente este usuario? No podrá ingresar más al sistema.")) return;
+
     mostrarCarga(true);
     try {
-      await fetch(`${API_URL}/users?id=${id}`, { method: 'DELETE' });
-      dbUsers = dbUsers.filter(u => u.id !== id);
-      cerrarModalUsuario(); renderUsuarios();
-    } catch(err) { alert("Error eliminando."); }
-    finally { mostrarCarga(false); }
+      const res = await apiFetch(`${API_URL}/users?id=${id}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      await initUsuarios();
+      cerrarModalUsuario();
+    } catch (err) {
+      alert("Error eliminando usuario.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   function renderUsuarios() {
     const term = document.getElementById('searchUser').value.toLowerCase();
     const tbody = document.getElementById('tableBodyUsuarios');
-    
-    const filtrados = dbUsers.filter(u => u.username.toLowerCase().includes(term));
+
+    const filtrados = dbUsers.filter(u =>
+      (u.username || '').toLowerCase().includes(term)
+    );
 
     tbody.innerHTML = filtrados.map(u => {
-      const statusBadge = u.active 
+      const statusBadge = u.active
         ? `<span style="color:#16a34a; font-weight:bold;">Activo</span>`
         : `<span style="color:#dc2626; font-weight:bold;">Bloqueado</span>`;
-        
-      const roleDisplay = u.role.charAt(0).toUpperCase() + u.role.slice(1);
-      
+
+      const roleDisplay = (u.role || '').charAt(0).toUpperCase() + (u.role || '').slice(1);
+
       const modulesCount = (u.allowedModules || []).length;
-      const modulesDisplay = modulesCount === 9 
-        ? `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold;">Acceso Total</span>`
+      const modulesDisplay = modulesCount >= 9
+        ? `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 8px; border-radius:10px; font-size:11px; font-weight:bold;">Acceso Alto</span>`
         : `<span style="color:var(--muted); font-size:12px;">${modulesCount} módulos</span>`;
 
       return `
