@@ -6,13 +6,17 @@
   <title>Ingreso | Micro SaaS</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    html, body { 
-      height: 100%; margin: 0; padding: 0;
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
       background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-      display: flex; justify-content: center; align-items: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       font-family: 'Inter', system-ui, sans-serif;
     }
-    
+
     .login-card {
       background: #ffffff;
       padding: 40px;
@@ -32,10 +36,14 @@
     .brand-logo-large {
       background: var(--primary, #2563eb);
       color: white;
-      width: 60px; height: 60px;
+      width: 60px;
+      height: 60px;
       border-radius: 14px;
-      display: flex; justify-content: center; align-items: center;
-      font-size: 28px; font-weight: 900;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 28px;
+      font-weight: 900;
       margin: 0 auto 20px auto;
       overflow: hidden;
     }
@@ -51,15 +59,55 @@
     .login-sub { margin: 0 0 30px; font-size: 14px; color: var(--muted, #64748b); }
 
     .input-group { text-align: left; margin-bottom: 20px; }
-    .input-group label { display: block; font-size: 12px; font-weight: 700; color: var(--muted, #64748b); margin-bottom: 6px; text-transform: uppercase; }
-    .input-box { width: 100%; padding: 14px; border: 2px solid var(--line, #e2e8f0); border-radius: 10px; font-size: 15px; outline: none; transition: 0.2s; box-sizing: border-box; }
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted, #64748b);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .input-box {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid var(--line, #e2e8f0);
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      transition: 0.2s;
+      box-sizing: border-box;
+    }
+
     .input-box:focus { border-color: var(--primary, #2563eb); }
 
-    .btn-login { width: 100%; padding: 16px; font-size: 16px; font-weight: bold; background: var(--primary, #2563eb); color: white; border: none; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+    .btn-login {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: bold;
+      background: var(--primary, #2563eb);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
     .btn-login:hover { background: #1d4ed8; }
     .btn-login:disabled { background: var(--muted, #64748b); cursor: not-allowed; }
 
-    #errorMsg { color: #dc2626; background: #fee2e2; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; margin-bottom: 20px; display: none; }
+    #errorMsg {
+      color: #dc2626;
+      background: #fee2e2;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      display: none;
+      text-align: left;
+    }
   </style>
 </head>
 <body>
@@ -76,7 +124,7 @@
         <label>Usuario</label>
         <input type="text" id="username" class="input-box" required placeholder="Ej: admin" autofocus>
       </div>
-      
+
       <div class="input-group">
         <label>Contraseña</label>
         <input type="password" id="password" class="input-box" required placeholder="••••••••">
@@ -102,6 +150,14 @@
         'company_city',
         'company_country',
         'company_iva_condition',
+        'company_max_users',
+        'company_allow_user_management',
+        'company_max_branches',
+        'company_allow_branch_management',
+        'license_due_date',
+        'license_days_to_due',
+        'license_days_past_due',
+        'license_warning',
         'saas_logged_in',
         'saas_username',
         'saas_role'
@@ -137,7 +193,7 @@
 
     async function procesarLogin(e) {
       e.preventDefault();
-      
+
       const btn = document.getElementById('btnSubmit');
       const errorMsg = document.getElementById('errorMsg');
       const u = document.getElementById('username').value.trim();
@@ -147,6 +203,8 @@
       btn.textContent = "Verificando...";
       errorMsg.style.display = 'none';
       errorMsg.textContent = '';
+      errorMsg.style.background = '#fee2e2';
+      errorMsg.style.color = '#dc2626';
 
       try {
         const response = await fetch('/api/login', {
@@ -160,49 +218,56 @@
         if (response.ok && data.success) {
           clearSession();
 
-         const user = data.user || {};
-const company = data.company || {};
-const warning = data.warning || null;
-const license = data.license || null;
+          const user = data.user || {};
+          const company = data.company || {};
+          const warning = data.warning || null;
+          const license = data.license || null;
 
-localStorage.setItem('activeUser', user.username || '');
-localStorage.setItem('userRole', user.role || '');
-localStorage.setItem('allowedModules', JSON.stringify(user.allowedModules || []));
-localStorage.setItem('company_id', user.company_id || '');
-localStorage.setItem('saas_logged_in', 'true');
+          localStorage.setItem('activeUser', user.username || '');
+          localStorage.setItem('userRole', user.role || '');
+          localStorage.setItem('allowedModules', JSON.stringify(user.allowedModules || []));
+          localStorage.setItem('company_id', user.company_id || '');
+          localStorage.setItem('saas_logged_in', 'true');
 
-localStorage.setItem('saas_username', user.username || '');
-localStorage.setItem('saas_role', user.role || '');
+          localStorage.setItem('saas_username', user.username || '');
+          localStorage.setItem('saas_role', user.role || '');
 
-localStorage.setItem('company_name', company.name || '');
-localStorage.setItem('company_logo', company.logo || '');
-localStorage.setItem('company_cuil', company.cuil || '');
-localStorage.setItem('company_email', company.email || '');
-localStorage.setItem('company_phone', company.phone || '');
-localStorage.setItem('company_address', company.address || '');
-localStorage.setItem('company_city', company.city || '');
-localStorage.setItem('company_country', company.country || '');
-localStorage.setItem('company_iva_condition', company.ivaCondition || '');
+          localStorage.setItem('company_name', company.name || '');
+          localStorage.setItem('company_logo', company.logo || '');
+          localStorage.setItem('company_cuil', company.cuil || '');
+          localStorage.setItem('company_email', company.email || '');
+          localStorage.setItem('company_phone', company.phone || '');
+          localStorage.setItem('company_address', company.address || '');
+          localStorage.setItem('company_city', company.city || '');
+          localStorage.setItem('company_country', company.country || '');
+          localStorage.setItem('company_iva_condition', company.ivaCondition || '');
 
-localStorage.setItem('license_due_date', license?.dueDate || '');
-localStorage.setItem('license_days_to_due', license?.daysToDue ?? '');
-localStorage.setItem('license_days_past_due', license?.daysPastDue ?? '');
-localStorage.setItem('license_warning', warning ? JSON.stringify(warning) : '');
+          localStorage.setItem('company_max_users', company.max_users || 1);
+          localStorage.setItem('company_allow_user_management', company.allow_user_management || 0);
+          localStorage.setItem('company_max_branches', company.max_branches || 1);
+          localStorage.setItem('company_allow_branch_management', company.allow_branch_management || 0);
 
-hydrateCompanyUI(company);
+          localStorage.setItem('license_due_date', license?.dueDate || '');
+          localStorage.setItem('license_days_to_due', license?.daysToDue ?? '');
+          localStorage.setItem('license_days_past_due', license?.daysPastDue ?? '');
+          localStorage.setItem('license_warning', warning ? JSON.stringify(warning) : '');
 
-if (warning) {
-  errorMsg.textContent = warning.message;
-  errorMsg.style.display = 'block';
-  errorMsg.style.background = warning.type === 'grace_period' ? '#fff7ed' : '#fef3c7';
-  errorMsg.style.color = warning.type === 'grace_period' ? '#c2410c' : '#92400e';
-}
+          hydrateCompanyUI(company);
+
+          if (warning) {
+            errorMsg.textContent = warning.message;
+            errorMsg.style.display = 'block';
+            errorMsg.style.background = warning.type === 'grace_period' ? '#fff7ed' : '#fef3c7';
+            errorMsg.style.color = warning.type === 'grace_period' ? '#c2410c' : '#92400e';
+          }
 
           const targetPage = resolveTargetPage(user);
 
           if (!targetPage) {
             errorMsg.textContent = "Tu usuario no tiene ningún módulo asignado.";
             errorMsg.style.display = 'block';
+            errorMsg.style.background = '#fee2e2';
+            errorMsg.style.color = '#dc2626';
             btn.disabled = false;
             btn.textContent = "Ingresar al sistema";
             btn.style.background = "";
@@ -221,6 +286,8 @@ if (warning) {
           clearSession();
           errorMsg.textContent = data.error || "Error desconocido.";
           errorMsg.style.display = 'block';
+          errorMsg.style.background = '#fee2e2';
+          errorMsg.style.color = '#dc2626';
           btn.disabled = false;
           btn.textContent = "Ingresar al sistema";
         }
@@ -228,6 +295,8 @@ if (warning) {
         clearSession();
         errorMsg.textContent = "Error de red. Verificá tu conexión.";
         errorMsg.style.display = 'block';
+        errorMsg.style.background = '#fee2e2';
+        errorMsg.style.color = '#dc2626';
         btn.disabled = false;
         btn.textContent = "Ingresar al sistema";
       }
