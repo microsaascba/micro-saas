@@ -38,10 +38,11 @@ export async function onRequestPost(context) {
                 cuil = excluded.cuil, address = excluded.address, fee = excluded.fee, dueDate = excluded.dueDate,
                 active = excluded.active, adminUser = excluded.adminUser, adminPass = excluded.adminPass,
                 type = excluded.type, ivaCondition = excluded.ivaCondition, status = excluded.status,
-                city = excluded.city, province = excluded.province, country = excluded.country, allowedModules = excluded.allowedModules, logo = excluded.logo
+                city = excluded.city, province = excluded.province, country = excluded.country, 
+                allowedModules = excluded.allowedModules, logo = excluded.logo
         `).bind(
             id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, 
-            type, createdAt, ivaCondition, status, city, province, country, allowedModules, logo
+            type, createdAt, ivaCondition, status, city, province, country, allowedModules, data.logo || ''
         ).run();
 
         return new Response("OK", { status: 200 });
