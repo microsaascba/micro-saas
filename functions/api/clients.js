@@ -2,9 +2,6 @@ function getCompanyIdFromRequest(request) {
   return request.headers.get('x-company-id') || '';
 }
 
-// ─────────────────────────────────────────────
-// GET → listar clientes del negocio
-// ─────────────────────────────────────────────
 export async function onRequestGet(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
@@ -13,20 +10,28 @@ export async function onRequestGet(context) {
       return Response.json({ error: 'Falta company_id.' }, { status: 400 });
     }
 
-    const { results } = await context.env.DB.prepare(
-      "SELECT * FROM business_clients WHERE company_id = ? ORDER BY name ASC"
-    ).bind(companyId).all();
+    const url = new URL(context.request.url);
+    const status = url.searchParams.get('status') || 'Activo';
+
+    let query = "SELECT * FROM business_clients WHERE company_id = ?";
+    const binds = [companyId];
+
+    if (status === 'Todos') {
+      query += " ORDER BY name ASC";
+    } else {
+      query += " AND status = ? ORDER BY name ASC";
+      binds.push(status);
+    }
+
+    const stmt = context.env.DB.prepare(query).bind(...binds);
+    const { results } = await stmt.all();
 
     return Response.json(results);
-
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
 
-// ─────────────────────────────────────────────
-// POST → crear / actualizar cliente
-// ─────────────────────────────────────────────
 export async function onRequestPost(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
@@ -79,15 +84,11 @@ export async function onRequestPost(context) {
     ).run();
 
     return Response.json({ success: true });
-
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
 
-// ─────────────────────────────────────────────
-// DELETE → borrar cliente
-// ─────────────────────────────────────────────
 export async function onRequestDelete(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
@@ -97,18 +98,17 @@ export async function onRequestDelete(context) {
     }
 
     const url = new URL(context.request.url);
-    const id = url.searchParams.get("id");
+    const id = url.searchParams.get('id');
 
     if (!id) {
       return Response.json({ error: 'Falta id.' }, { status: 400 });
     }
 
     await context.env.DB.prepare(
-      "DELETE FROM business_clients WHERE id = ?1 AND company_id = ?2"
+      "UPDATE business_clients SET status = 'Inactivo' WHERE id = ?1 AND company_id = ?2"
     ).bind(id, companyId).run();
 
-    return Response.json({ success: true });
-
+    return Response.json({ success: true, message: 'Cliente desactivado correctamente.' });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
