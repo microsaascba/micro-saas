@@ -468,22 +468,31 @@
     cloudStatus.textContent = 'Sincronizando...'; cloudStatus.className = 'badge badge-warning';
     try {
       const resC = await fetch('/api/clients');
-      if(resC.ok) { dbClientes = await resC.json(); dbClientes.forEach(c => c.active = (c.active === 1 || c.active === true)); localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); }
+      if (!resC.ok) throw new Error("Error obteniendo clientes");
+      dbClientes = await resC.json(); 
+      dbClientes.forEach(c => c.active = (c.active === 1 || c.active === true)); 
+      localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); 
+      
       const resP = await fetch('/api/payments');
-      if(resP.ok) dbPagos = await resP.json();
+      if (!resP.ok) throw new Error("Error obteniendo pagos");
+      dbPagos = await resP.json();
       cloudStatus.textContent = 'Conectado a D1'; cloudStatus.className = 'badge badge-success';
     } catch(e) {
-      dbClientes = JSON.parse(localStorage.getItem('saas_db_clientes')) || [];
-      dbPagos = JSON.parse(localStorage.getItem('saas_db_pagos')) || [];
+      console.warn("Error D1, usando caché:", e);
+      try { dbClientes = JSON.parse(localStorage.getItem('saas_db_clientes')) || []; } catch(err){ dbClientes = []; }
+      try { dbPagos = JSON.parse(localStorage.getItem('saas_db_pagos')) || []; } catch(err){ dbPagos = []; }
       cloudStatus.textContent = 'Modo Local'; cloudStatus.className = 'badge badge-neutral';
     }
     
-    dbGastos = JSON.parse(localStorage.getItem('master_db_gastos')) || [];
-    dbPresupuestos = JSON.parse(localStorage.getItem('master_db_presupuestos')) || [];
+    try { dbGastos = JSON.parse(localStorage.getItem('master_db_gastos')) || []; } catch(err){ dbGastos = []; }
+    try { dbPresupuestos = JSON.parse(localStorage.getItem('master_db_presupuestos')) || []; } catch(err){ dbPresupuestos = []; }
 
-    const select = document.getElementById('filtroClientePagos'); const currentVal = select.value;
-    select.innerHTML = '<option value="ALL">Mostrar Todos los Clientes</option>' + dbClientes.filter(c => c.type !== 'lead').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
-    select.value = currentVal || 'ALL';
+    const select = document.getElementById('filtroClientePagos'); 
+    if(select) {
+      const currentVal = select.value;
+      select.innerHTML = '<option value="ALL">Mostrar Todos los Clientes</option>' + dbClientes.filter(c => c.type !== 'lead').map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+      select.value = currentVal || 'ALL';
+    }
     
     renderAll();
   }
@@ -618,42 +627,45 @@
     loader.style.color = 'var(--primary)';
 
     try {
-        const response = await fetch(`https://afip.ws/api/v1/cuit/${cuitVal}`);
-        if(response.ok) {
-            const data = await response.json();
-            if(data && data.denominacion) {
-                document.getElementById('cName').value = data.denominacion || '';
-                if(data.domicilio_fiscal) {
-                    document.getElementById('cAddress').value = data.domicilio_fiscal.direccion || '';
-                    document.getElementById('cCity').value = data.domicilio_fiscal.localidad || '';
-                    document.getElementById('cProvince').value = data.domicilio_fiscal.provincia || '';
-                }
-                loader.textContent = '¡Datos encontrados!';
-                loader.style.color = 'var(--success)';
-                setTimeout(() => loader.style.display = 'none', 3000);
-            } else {
-                throw new Error("CUIT no encontrado.");
+        // Obliga a cortar si tarda más de 4 segundos para que no te congele
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        
+        let data;
+        try {
+            const response = await fetch(`https://afip.ws/api/v1/cuit/${cuitVal}`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            if(!response.ok) throw new Error("Timeout o caída API primaria");
+            data = await response.json();
+        } catch (errorApiPrimaria) {
+            clearTimeout(timeoutId);
+            console.warn("Pasando a API de respaldo...", errorApiPrimaria);
+            const fallbackResponse = await fetch(`https://api.sifereweb.gov.ar/cuit/${cuitVal}`);
+            if(!fallbackResponse.ok) throw new Error("Ambas APIs caídas");
+            const fallbackData = await fallbackResponse.json();
+            data = { denominacion: fallbackData.razon_social, domicilio_fiscal: null };
+        }
+
+        if(data && data.denominacion) {
+            document.getElementById('cName').value = data.denominacion || '';
+            if(data.domicilio_fiscal) {
+                document.getElementById('cAddress').value = data.domicilio_fiscal.direccion || '';
+                document.getElementById('cCity').value = data.domicilio_fiscal.localidad || '';
+                document.getElementById('cProvince').value = data.domicilio_fiscal.provincia || '';
             }
+            loader.textContent = '¡Datos encontrados!';
+            loader.style.color = 'var(--success)';
+            setTimeout(() => loader.style.display = 'none', 3000);
         } else {
-             const fallbackResponse = await fetch(`https://api.sifereweb.gov.ar/cuit/${cuitVal}`);
-             if(fallbackResponse.ok) {
-                 const fallbackData = await fallbackResponse.json();
-                 document.getElementById('cName').value = fallbackData.razon_social || '';
-                 loader.textContent = '¡Datos encontrados!';
-                 loader.style.color = 'var(--success)';
-                 setTimeout(() => loader.style.display = 'none', 3000);
-             } else {
-                 throw new Error("Error en servidores.");
-             }
+            throw new Error("CUIT no encontrado.");
         }
     } catch(e) {
-        console.warn("Fallo en la consulta:", e);
-        loader.textContent = 'Carga manual requerida.';
+        console.warn("Fallo total en la consulta:", e);
+        loader.textContent = 'Servidores caídos. Carga manual.';
         loader.style.color = 'var(--warning)';
         setTimeout(() => loader.style.display = 'none', 4000);
     }
   }
-
   // ── 5. ACCIONES LOGICAS: LEADS ──
   async function cambiarEstadoLead(id, nuevoEstado) {
     const c = dbClientes.find(x => x.id === id);
@@ -801,7 +813,6 @@
     const c = dbClientes.find(x => x.id === id); 
     if(c && confirm(`¿Seguro que querés ${c.active ? 'BLOQUEAR' : 'REACTIVAR'} a ${c.name}?`)) { 
       
-      // Creamos un objeto blindado asegurando que ningún campo nuevo quede "undefined"
       const payload = {
           ...c,
           active: !c.active,
@@ -813,11 +824,12 @@
       };
 
       try { 
-        await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }); 
+        const res = await fetch('/api/clients', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }); 
+        if(!res.ok) throw new Error(await res.text());
         await loadDataFromCloud(); 
+        alert(`Estado actualizado con éxito.`);
       } catch (err) { 
-        console.error("Error bloqueando:", err);
-        localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes)); 
+        alert("Error de la Base de Datos al intentar bloquear:\n" + err.message + "\n\nAsegurate de haber creado las columnas 'logo', 'city', 'province' y 'country' en D1.");
         renderAll(); 
       } 
     } 
