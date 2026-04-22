@@ -1,3 +1,13 @@
+function startOfDay(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function diffDays(fromDate, toDate) {
+  return Math.ceil((toDate - fromDate) / 86400000);
+}
+
 export async function onRequestPost(context) {
   try {
     const body = await context.request.json();
@@ -18,7 +28,8 @@ export async function onRequestPost(context) {
         role,
         active,
         allowedModules,
-        company_id
+        company_id,
+        password
       FROM users
       WHERE username = ?1 AND password = ?2
       LIMIT 1
@@ -78,11 +89,80 @@ export async function onRequestPost(context) {
       );
     }
 
-    if (Number(company.active) !== 1) {
-      return Response.json(
-        { success: false, error: "La empresa está desactivada. Contactá al administrador." },
-        { status: 403 }
-      );
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dueDate = company.dueDate ? startOfDay(company.dueDate) : null;
+    let daysToDue = null;
+    let daysPastDue = null;
+    let loginWarning = null;
+
+    if (dueDate) {
+      daysToDue = diffDays(today, dueDate);
+      daysPastDue = daysToDue < 0 ? Math.abs(daysToDue) : 0;
+
+      // Bloqueo automático desde el día 4 de atraso
+      if (daysToDue <= -4) {
+        await context.env.DB.prepare(`
+          UPDATE clients
+          SET active = 0
+          WHERE id = ?1
+        `).bind(company.id).run();
+
+        await context.env.DB.prepare(`
+          UPDATE users
+          SET active = 0
+          WHERE company_id = ?1
+        `).bind(company.id).run();
+
+        return Response.json(
+          {
+            success: false,
+            error: `Licencia vencida. La cuenta fue suspendida automáticamente por superar los 3 días de gracia.`,
+            code: "LICENSE_SUSPENDED",
+            company: {
+              id: company.id,
+              name: company.name,
+              dueDate: company.dueDate,
+              daysPastDue
+            }
+          },
+          { status: 403 }
+        );
+      }
+
+      // Si el cliente ya quedó desactivado manualmente
+      if (Number(company.active) !== 1) {
+        return Response.json(
+          { success: false, error: "La empresa está desactivada. Contactá al administrador." },
+          { status: 403 }
+        );
+      }
+
+      // Aviso 5 días antes
+      if (daysToDue >= 0 && daysToDue <= 5) {
+        loginWarning = {
+          type: "upcoming_due",
+          message: `Tu licencia vence en ${daysToDue} día${daysToDue === 1 ? '' : 's'}.`,
+          daysToDue
+        };
+      }
+
+      // Aviso en gracia
+      if (daysToDue < 0 && daysToDue >= -3) {
+        loginWarning = {
+          type: "grace_period",
+          message: `Tu licencia está vencida hace ${daysPastDue} día${daysPastDue === 1 ? '' : 's'}. Tenés hasta 3 días de gracia.`,
+          daysPastDue
+        };
+      }
+    } else {
+      if (Number(company.active) !== 1) {
+        return Response.json(
+          { success: false, error: "La empresa está desactivada. Contactá al administrador." },
+          { status: 403 }
+        );
+      }
     }
 
     let userModules = [];
@@ -133,7 +213,13 @@ export async function onRequestPost(context) {
         province: company.province || '',
         country: company.country || 'Argentina',
         logo: company.logo || ''
-      }
+      },
+      license: {
+        dueDate: company.dueDate || '',
+        daysToDue,
+        daysPastDue
+      },
+      warning: loginWarning
     });
   } catch (error) {
     return Response.json(
