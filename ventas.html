@@ -318,296 +318,160 @@
 
 <script src="core.js"></script>
 <script>
-  function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
-  function todayISO() { return new Date().toISOString().split('T')[0]; }
-  function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0); }
-  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+function toggleMenu() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('open');
+}
 
-  let dbSales = [];
-  let dbClients = []; 
-  const PIN_ADMIN = "1234";
-  let pendingAdminAction = null; let pendingAdminParam = null;
+function todayISO() { return new Date().toISOString().split('T')[0]; }
+function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR').format(n || 0); }
+function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
 
-  async function initVentas() {
-    mostrarCarga(true);
-    try {
-      const hoy = todayISO();
-      document.getElementById('filterDesde').value = hoy;
-      document.getElementById('filterHasta').value = hoy;
+let dbSales = [];
+let dbClients = [];
 
-      cconst [resS, resB, resC] = await Promise.all([ 
-  apiFetch('/api/sales'),
-  apiFetch('/api/branches'),
-  apiFetch('/api/business_clients?withBalance=1')
-]);
-      
-      if(resS.ok) dbSales = await resS.json();
-      if(resC.ok) dbClients = await resC.json();
-      
-      const role = localStorage.getItem('userRole') || 'admin';
-      const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
-      const selSuc = document.getElementById('filterSucursal');
-      
-      if (role === 'admin') {
-          selSuc.innerHTML = `<option value="ALL">Todas las Sucursales</option>`;
-          if (resB.ok) {
-              const branches = await resB.json();
-              branches.forEach(b => {
-                  const selected = b.name === terminalActiva ? 'selected' : '';
-                  selSuc.innerHTML += `<option value="${b.name}" ${selected}>${b.name}</option>`;
-              });
-          }
-      } else {
-          selSuc.innerHTML = `<option value="${terminalActiva}">${terminalActiva}</option>`;
-          selSuc.disabled = true;
+const PIN_ADMIN = "1234";
+let pendingAdminAction = null;
+let pendingAdminParam = null;
+
+async function initVentas() {
+  mostrarCarga(true);
+
+  try {
+    const hoy = todayISO();
+    document.getElementById('filterDesde').value = hoy;
+    document.getElementById('filterHasta').value = hoy;
+
+    const [resS, resB, resC] = await Promise.all([
+      apiFetch('/api/sales'),
+      apiFetch('/api/branches'),
+      apiFetch('/api/business_clients?withBalance=1')
+    ]);
+
+    if (resS.ok) dbSales = await resS.json();
+    if (resC.ok) dbClients = await resC.json();
+
+    const role = localStorage.getItem('userRole') || 'admin';
+    const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+    const selSuc = document.getElementById('filterSucursal');
+
+    if (role === 'admin') {
+      selSuc.innerHTML = `<option value="ALL">Todas</option>`;
+      if (resB.ok) {
+        const branches = await resB.json();
+        branches.forEach(b => {
+          const selected = b.name === terminalActiva ? 'selected' : '';
+          selSuc.innerHTML += `<option value="${b.name}" ${selected}>${b.name}</option>`;
+        });
       }
-
-      renderVentas();
-    } catch(e) { console.error(e); } finally { mostrarCarga(false); }
-  }
-
-  function getClientName(clientIdOrName) {
-      if(!clientIdOrName) return 'Consumidor Final';
-      const c = dbClients.find(client => client.id === clientIdOrName);
-      return c ? c.name : clientIdOrName; 
-  }
-
-  function renderVentas() {
-    const desde = document.getElementById('filterDesde').value;
-    const hasta = document.getElementById('filterHasta').value;
-    const sucursal = document.getElementById('filterSucursal').value;
-    const search = document.getElementById('searchVenta').value.toLowerCase();
-    const tbody = document.getElementById('tbodyVentas');
-
-    if (desde === todayISO() && hasta === todayISO()) {
-        document.getElementById('titleHistorial').textContent = 'Historial del Día';
     } else {
-        document.getElementById('titleHistorial').textContent = 'Historial del Período';
+      selSuc.innerHTML = `<option value="${terminalActiva}">${terminalActiva}</option>`;
+      selSuc.disabled = true;
     }
 
-    let total = 0, efectivo = 0, transf = 0, tarjetas = 0, ctaCte = 0, count = 0;
-    
-    const sortedSales = [...dbSales].sort((a,b) => (b.createdAt||b.date||'').localeCompare(a.createdAt||a.date||''));
+    renderVentas();
 
-    const filtradas = sortedSales.filter(s => {
-        const d = s.date || (s.createdAt || '').split('T')[0];
-        const matchFechas = d >= desde && d <= hasta;
-        const matchSucursal = sucursal === 'ALL' || s.branch === sucursal;
-        
-        const realClientName = getClientName(s.client || s.clientId).toLowerCase();
-        const matchSearch = search === '' || s.id.toLowerCase().includes(search) || realClientName.includes(search) || (s.method||'').toLowerCase().includes(search);
-        
-        return matchFechas && matchSucursal && matchSearch;
+  } catch (e) {
+    console.error(e);
+  } finally {
+    mostrarCarga(false);
+  }
+}
+
+function getClientName(clientId) {
+  if (!clientId) return 'Consumidor Final';
+  const c = dbClients.find(x => x.id === clientId);
+  return c ? c.name : 'Consumidor Final';
+}
+
+function renderVentas() {
+  const desde = document.getElementById('filterDesde').value;
+  const hasta = document.getElementById('filterHasta').value;
+  const sucursal = document.getElementById('filterSucursal').value;
+  const search = document.getElementById('searchVenta').value.toLowerCase();
+
+  const tbody = document.getElementById('tbodyVentas');
+
+  let total = 0, efectivo = 0, transf = 0, tarjetas = 0, ctaCte = 0, count = 0;
+
+  const filtradas = dbSales.filter(s => {
+    const d = s.date || (s.createdAt || '').split('T')[0];
+    const cliente = getClientName(s.clientId).toLowerCase();
+
+    return (
+      d >= desde &&
+      d <= hasta &&
+      (sucursal === 'ALL' || s.branch === sucursal) &&
+      (
+        search === '' ||
+        s.id.toLowerCase().includes(search) ||
+        cliente.includes(search)
+      )
+    );
+  });
+
+  tbody.innerHTML = filtradas.map(s => {
+    const cliente = getClientName(s.clientId);
+    const isAnulada = s.status === 'Anulada';
+
+    if (!isAnulada) {
+      total += s.total;
+      count++;
+
+      if (s.method === 'Efectivo') efectivo += s.total;
+      else if (s.method === 'Transferencia') transf += s.total;
+      else if (s.method === 'A Cuenta Corriente') ctaCte += s.total;
+      else tarjetas += s.total;
+    }
+
+    return `
+    <tr style="${isAnulada ? 'opacity:0.5;text-decoration:line-through;' : ''}">
+      <td>${s.date}</td>
+      <td>${s.seller || 'Admin'}</td>
+      <td>${s.id}</td>
+      <td>${cliente}</td>
+      <td>${s.method}</td>
+      <td style="text-align:right;">${currency(s.total)}</td>
+      <td style="text-align:center;">
+        <button onclick='verDetalle(${JSON.stringify(s)})'>Ver</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('kpiTotal').textContent = currency(total);
+  document.getElementById('kpiEfectivo').textContent = currency(efectivo);
+  document.getElementById('kpiTransf').textContent = currency(transf);
+  document.getElementById('kpiTarjetas').textContent = currency(tarjetas);
+
+  window.dataZ = { total, efectivo, transf, tarjetas, ctaCte, count };
+}
+
+async function ejecutarAnulacion(id) {
+  mostrarCarga(true);
+
+  try {
+    const vta = dbSales.find(s => s.id === id);
+    if (!vta) return;
+
+    vta.status = 'Anulada';
+
+    await apiFetch('/api/sales', {
+      method: 'POST',
+      body: JSON.stringify(vta)
     });
 
-    tbody.innerHTML = filtradas.map(s => {
-        const dObj = new Date(s.createdAt || s.date);
-        const fechaHora = `${dObj.toLocaleDateString('es-AR')} <small style="color:var(--muted);">${dObj.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</small>`;
-        const isAnulada = s.status === 'Anulada';
-        
-        if (!isAnulada) {
-            total += s.total;
-            count++;
-            if (s.method === 'Efectivo') efectivo += s.total;
-            else if (s.method === 'Transferencia') transf += s.total;
-            else if (s.method === 'A Cuenta Corriente') ctaCte += s.total;
-            else tarjetas += s.total;
-        }
+    renderVentas();
+    alert("Venta anulada");
 
-        let badgeMethod = '';
-        if (s.method === 'Efectivo') badgeMethod = `<span style="color:#16a34a; font-weight:bold;">💵 Efectivo</span>`;
-        else if (s.method === 'Transferencia') badgeMethod = `<span style="color:#3b82f6; font-weight:bold;">📱 Transferencia</span>`;
-        else if (s.method === 'A Cuenta Corriente') badgeMethod = `<span style="background:var(--warning-soft); color:var(--warning); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Cta. Cte.</span>`;
-        else badgeMethod = `<span style="color:#f97316; font-weight:bold;">💳 ${s.method}</span>`;
-
-        const displayName = getClientName(s.client || s.clientId);
-
-        return `
-        <tr style="${isAnulada ? 'opacity:0.5; text-decoration:line-through;' : ''}">
-            <td>${fechaHora}</td>
-            <td><strong>${escapeHtml(s.seller||'Admin')}</strong><br><small style="color:var(--muted)">📍 ${escapeHtml(s.branch || 'Central')}</small></td>
-            <td>N° ${s.id.split('_')[1] || s.id}</td>
-            <td><strong>${escapeHtml(displayName)}</strong></td>
-            <td>${isAnulada ? '<span style="color:var(--danger); font-weight:bold;">ANULADA</span>' : badgeMethod}<br><small style="color:var(--muted)">${escapeHtml(s.cupon || '')}</small></td>
-            <td style="text-align:right; font-weight:bold;">${currency(s.total)}</td>
-            <td style="text-align:center; display:flex; justify-content:center; gap:5px;">
-                <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick='verDetalle(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Revisar</button>
-                <button class="btn-light" style="padding:4px 8px; font-size:11px;" onclick='imprimirTicket(${JSON.stringify(s).replace(/'/g, "&apos;")})'>🖨️ Ticket</button>
-            </td>
-        </tr>`;
-    }).join('');
-
-    if (filtradas.length === 0) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 30px; color:var(--muted);">No hay ventas registradas en esta caja o período.</td></tr>';
-
-    document.getElementById('kpiTotal').textContent = currency(total);
-    document.getElementById('kpiEfectivo').textContent = currency(efectivo);
-    document.getElementById('kpiTransf').textContent = currency(transf);
-    document.getElementById('kpiTarjetas').textContent = currency(tarjetas);
-    
-    window.dataZ = { total, efectivo, transf, tarjetas, ctaCte, count, desde, hasta, sucursal };
+  } catch (e) {
+    alert("Error");
+  } finally {
+    mostrarCarga(false);
   }
+}
 
-  function imprimirTicket(s) {
-      const displayName = getClientName(s.client || s.clientId);
-      
-      document.getElementById('ptDate').textContent = new Date(s.createdAt || s.date).toLocaleString('es-AR');
-      document.getElementById('ptId').textContent = s.id.split('_')[1] || s.id;
-      document.getElementById('ptBranch').textContent = s.branch || 'Central';
-      document.getElementById('ptSeller').textContent = s.seller || 'Admin';
-      document.getElementById('ptClient').textContent = displayName;
-      document.getElementById('ptMethod').textContent = s.method || 'Efectivo';
-
-      const items = typeof s.items === 'string' ? JSON.parse(s.items) : (s.items || []);
-      document.getElementById('ptItems').innerHTML = items.map(i => `
-        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-            <span>${i.qty}x ${escapeHtml(i.name)}</span>
-            <span>${currency(i.price * i.qty)}</span>
-        </div>
-      `).join('');
-
-      document.getElementById('ptTotal').textContent = currency(s.total);
-
-      document.querySelectorAll('.print-area').forEach(el => el.style.display = 'none');
-      document.getElementById('printTicketVenta').style.display = 'block';
-      window.print();
-      document.getElementById('printTicketVenta').style.display = 'none';
-  }
-
-  function imprimirTicketDesdeModal() {
-      const id = document.getElementById('detalleIdVenta').value;
-      const vta = dbSales.find(s => s.id === id);
-      if (vta) {
-          document.getElementById('modalDetalleVenta').close();
-          imprimirTicket(vta);
-      }
-  }
-
-  function iniciarCierreZ() {
-      if (window.dataZ.count === 0) return alert("No hay operaciones para realizar un cierre de caja.");
-      pedirAuthAdmin('imprimir el reporte Z y asentar el cierre del turno', ejecutarCierreZ);
-  }
-
-  function ejecutarCierreZ() {
-      const z = window.dataZ;
-      let dateTxt = z.desde === z.hasta ? `Fecha: ${z.desde}` : `Período: ${z.desde} al ${z.hasta}`;
-      
-      document.getElementById('zDate').textContent = dateTxt;
-      document.getElementById('zBranch').textContent = `Sucursal: ${z.sucursal === 'ALL' ? 'Todas' : z.sucursal}`;
-      document.getElementById('zCash').textContent = currency(z.efectivo);
-      document.getElementById('zTransf').textContent = currency(z.transf);
-      document.getElementById('zCards').textContent = currency(z.tarjetas);
-      document.getElementById('zDebt').textContent = currency(z.ctaCte);
-      document.getElementById('zTotal').textContent = currency(z.total);
-      document.getElementById('zCount').textContent = z.count;
-
-      document.querySelectorAll('.print-area').forEach(el => el.style.display = 'none');
-      document.getElementById('printZ').style.display = 'block';
-      window.print();
-      document.getElementById('printZ').style.display = 'none';
-  }
-
-  function verDetalle(s) {
-      const displayName = getClientName(s.client || s.clientId);
-      
-      document.getElementById('detalleTitle').textContent = `Ticket #${s.id.split('_')[1] || s.id}`;
-      document.getElementById('detalleCliente').textContent = displayName;
-      document.getElementById('detalleVendedor').textContent = `${s.seller || 'Admin'} - ${s.branch || 'Central'}`;
-      document.getElementById('detallePago').textContent = s.method || 'Efectivo';
-      document.getElementById('detalleCupon').textContent = s.cupon || 'N/A';
-      document.getElementById('detalleTotal').textContent = currency(s.total);
-      document.getElementById('detalleIdVenta').value = s.id;
-
-      const items = typeof s.items === 'string' ? JSON.parse(s.items) : (s.items || []);
-      document.getElementById('detalleItemsBody').innerHTML = items.map(i => `
-        <tr>
-            <td style="padding:8px; border-bottom:1px solid var(--line); font-size:12px; color:var(--muted);">${i.code || '-'}</td>
-            <td style="padding:8px; border-bottom:1px solid var(--line); font-size:13px; font-weight:bold;">${escapeHtml(i.name)}</td>
-            <td style="padding:8px; border-bottom:1px solid var(--line); text-align:center; font-weight:bold;">x${i.qty}</td>
-            <td style="padding:8px; border-bottom:1px solid var(--line); text-align:right;">${currency(i.price * i.qty)}</td>
-        </tr>
-      `).join('');
-
-      document.getElementById('modalDetalleVenta').showModal();
-  }
-
-  function anularVentaPrompt() {
-      const id = document.getElementById('detalleIdVenta').value;
-      const vta = dbSales.find(s => s.id === id);
-      if(!vta || vta.status === 'Anulada') { alert("Esta venta ya está anulada."); return; }
-      
-      pedirAuthAdmin('anular esta venta (El monto se descontará de la caja)', ejecutarAnulacion, id);
-  }
-
-  async function ejecutarAnulacion(id) {
-      mostrarCarga(true);
-      try {
-          const vta = dbSales.find(s => s.id === id);
-          if(!vta) return;
-          vta.status = 'Anulada';
-          await apiFetch('/api/sales', {
-  method: 'POST',
-  body: JSON.stringify(vta)
-});
-          
-          document.getElementById('modalDetalleVenta').close();
-          renderVentas();
-          alert("✅ Venta anulada correctamente.");
-      } catch(e) { alert("Error al anular la venta."); } finally { mostrarCarga(false); }
-  }
-
-  function exportarExcelVentas() {
-      const desde = document.getElementById('filterDesde').value;
-      const hasta = document.getElementById('filterHasta').value;
-      const sucursal = document.getElementById('filterSucursal').value;
-      
-      const filtradas = dbSales.filter(s => {
-          const d = s.date || (s.createdAt || '').split('T')[0];
-          return d >= desde && d <= hasta && (sucursal === 'ALL' || s.branch === sucursal) && s.status !== 'Anulada';
-      });
-
-      if (filtradas.length === 0) return alert("No hay ventas para exportar en este período.");
-
-      const csvData = filtradas.map(s => {
-          const displayName = getClientName(s.client || s.clientId);
-          const itemsStr = (typeof s.items === 'string' ? JSON.parse(s.items) : (s.items||[])).map(i => `${i.qty}x ${i.name}`).join(' | ');
-          return {
-              "Fecha": s.date || (s.createdAt||'').split('T')[0],
-              "Ticket ID": s.id.split('_')[1] || s.id,
-              "Sucursal": s.branch || 'Central',
-              "Vendedor": s.seller || 'Admin',
-              "Cliente": displayName,
-              "Medio de Pago": s.method || 'Efectivo',
-              "Total": s.total,
-              "Detalle de Productos": itemsStr
-          };
-      });
-
-      const headers = Object.keys(csvData[0]);
-      const csvContent = [headers.join(';'), ...csvData.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
-      link.download = `Reporte_Ventas_${desde}_al_${hasta}.csv`;
-      link.click();
-  }
-
-  function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
-      document.getElementById('authActionText').textContent = accionTexto;
-      pendingAdminAction = funcionExito; pendingAdminParam = param;
-      document.getElementById('adminAuthPin').value = '';
-      document.getElementById('adminAuthDialog').showModal();
-      setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
-  }
-  function cerrarAdminAuth() { document.getElementById('adminAuthDialog').close(); pendingAdminAction = null; pendingAdminParam = null; }
-  function validarAdminAuth(e) {
-      e.preventDefault();
-      if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
-          const accion = pendingAdminAction; const param = pendingAdminParam;
-          cerrarAdminAuth(); if (accion) accion(param);
-      } else { alert("❌ PIN incorrecto."); document.getElementById('adminAuthPin').value = ''; document.getElementById('adminAuthPin').focus(); }
-  }
-
-  initVentas();
+initVentas();
 </script>
 </body>
 </html>
