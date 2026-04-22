@@ -13,7 +13,6 @@
 
   <link rel="stylesheet" href="styles.css" />
   <style>
-    /* FIX RESPONSIVE: Sin !important en la grilla principal */
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
@@ -35,7 +34,6 @@
     
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
 
-    /* REGLAS OBLIGATORIAS PARA CELULARES */
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
     
@@ -63,8 +61,8 @@
   
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
+      <div class="brand-logo" id="companyLogo">M</div>
+      <div class="brand-text"><strong id="companyBrandText">Empresa</strong><small>Control del negocio</small></div>
     </div>
     <nav class="nav">
       <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
@@ -315,7 +313,7 @@
       <input type="hidden" id="suppId">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
         <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Razón Social / Nombre *</label><input type="text" id="suppName" required class="input-box"></div>
-        <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT (11 dígitos) *</label><input type="text" id="suppCuit" class="input-box" placeholder="Ej: 30123456789"></div>
+        <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT (11 dígitos)</label><input type="text" id="suppCuit" class="input-box" placeholder="Ej: 30123456789"></div>
         <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Condición frente al IVA</label><select id="suppIva" class="input-box"><option value="Responsable Inscripto">Responsable Inscripto</option><option value="Monotributo">Monotributo</option><option value="Exento">Exento</option><option value="Consumidor Final">Consumidor Final</option></select></div>
         <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Persona de Contacto</label><input type="text" id="suppContact" class="input-box"></div>
         <div><label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Teléfono</label><input type="text" id="suppPhone" class="input-box"></div>
@@ -431,27 +429,49 @@
   function getMonthPrefix() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
   function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
 
+  function applyCompanyBranding() {
+    const companyName = localStorage.getItem('company_name') || 'Empresa';
+    const companyLogo = localStorage.getItem('company_logo') || '';
+
+    const brandText = document.getElementById('companyBrandText');
+    if (brandText) brandText.textContent = companyName;
+
+    const logoBox = document.getElementById('companyLogo');
+    if (logoBox && companyLogo) {
+      logoBox.innerHTML = `<img src="${companyLogo}" alt="Logo empresa" style="width:100%;height:100%;object-fit:contain;border-radius:inherit;background:#fff;">`;
+    }
+  }
+
+  function toggleMenu() {
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('open');
+  }
+
   async function initContable() {
     mostrarCarga(true);
     try {
+      applyCompanyBranding();
+
       const [resE, resS, resSup, resB] = await Promise.all([ 
-          fetch(`${API_URL}/expenses`), 
-          fetch(`${API_URL}/sales`), 
-          fetch(`${API_URL}/suppliers`),
-          fetch(`${API_URL}/branches`)
+        apiFetch(`${API_URL}/expenses?status=Todos`), 
+        apiFetch(`${API_URL}/sales?status=Todos`), 
+        apiFetch(`${API_URL}/suppliers`),
+        apiFetch(`${API_URL}/branches`)
       ]);
       
-      if(resE.ok) dbExpenses = await resE.json();
-      if(resS.ok) dbSales = await resS.json();
-      if(resSup.ok) dbSuppliers = await resSup.json();
-      if(resB.ok) branches = await resB.json();
+      if (resE.ok) dbExpenses = await resE.json();
+      if (resS.ok) dbSales = await resS.json();
+      if (resSup.ok) dbSuppliers = await resSup.json();
+      if (resB.ok) branches = await resB.json();
       
-      const branchOptions = '<option value="Global">Gasto Global / Empresa</option>' + branches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+      const branchOptions = '<option value="Global">Gasto Global / Empresa</option>' +
+        branches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
       const expBranchEl = document.getElementById('expBranch');
-      if(expBranchEl) expBranchEl.innerHTML = branchOptions;
+      if (expBranchEl) expBranchEl.innerHTML = branchOptions;
 
-    } catch (e) { console.error(e); } 
-    finally { 
+    } catch (e) {
+      console.error(e);
+    } finally { 
       actualizarSelectProveedores();
       renderContable(); 
       mostrarCarga(false); 
@@ -460,71 +480,76 @@
 
   function actualizarSelectProveedores() {
     const sel = document.getElementById('expSupplier');
-    sel.innerHTML = '<option value="Varios/Consumidor Final">Varios / Consumidor Final</option>' + 
+    sel.innerHTML =
+      '<option value="Varios/Consumidor Final">Varios / Consumidor Final</option>' + 
       dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
   }
 
   function sumarTotalGasto() {
-      const n = parseFloat(document.getElementById('expNeto').value) || 0;
-      const i = parseFloat(document.getElementById('expIva').value) || 0;
-      const o = parseFloat(document.getElementById('expOtros').value) || 0;
-      document.getElementById('expAmount').value = (n + i + o).toFixed(2);
+    const n = parseFloat(document.getElementById('expNeto').value) || 0;
+    const i = parseFloat(document.getElementById('expIva').value) || 0;
+    const o = parseFloat(document.getElementById('expOtros').value) || 0;
+    document.getElementById('expAmount').value = (n + i + o).toFixed(2);
   }
 
-  // ── GESTIÓN DE PROVEEDORES (Directorio y Edición) ──
   function abrirDirectorioProveedores() {
-      document.getElementById('searchProveedor').value = '';
-      renderDirectorioProveedores();
-      document.getElementById('modalListaProveedores').showModal();
+    document.getElementById('searchProveedor').value = '';
+    renderDirectorioProveedores();
+    document.getElementById('modalListaProveedores').showModal();
   }
 
   function renderDirectorioProveedores() {
-      const term = document.getElementById('searchProveedor').value.toLowerCase();
-      const tbody = document.getElementById('bodyListaProveedores');
+    const term = document.getElementById('searchProveedor').value.toLowerCase();
+    const tbody = document.getElementById('bodyListaProveedores');
       
-      const filtrados = dbSuppliers.filter(s => s.name.toLowerCase().includes(term) || (s.cuit && s.cuit.includes(term)));
+    const filtrados = dbSuppliers.filter(s =>
+      (s.name || '').toLowerCase().includes(term) ||
+      ((s.cuit || '').includes(term))
+    );
       
-      tbody.innerHTML = filtrados.map(s => `
-        <tr>
-          <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);"><strong>${escapeHtml(s.name)}</strong></td>
-          <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);">${escapeHtml(s.cuit || '-')}</td>
-          <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);">${escapeHtml(s.phone || '-')}</td>
-          <td style="padding: 10px 15px; border-bottom: 1px solid var(--line); text-align:center; display:flex; justify-content:center; gap:5px;">
-            <button class="btn-outline" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="abrirModalProveedor('${s.id}')">✎ Editar</button>
-            <button class="btn-danger-text" style="padding:4px 8px; font-size:11px; border: 1px solid #fee2e2; color: var(--danger); background: transparent; border-radius: 6px; cursor: pointer;" onclick="eliminarProveedorPrompt('${s.id}')">🗑️</button>
-          </td>
-        </tr>
-      `).join('');
+    tbody.innerHTML = filtrados.map(s => `
+      <tr>
+        <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);"><strong>${escapeHtml(s.name)}</strong></td>
+        <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);">${escapeHtml(s.cuit || '-')}</td>
+        <td style="padding: 10px 15px; border-bottom: 1px solid var(--line);">${escapeHtml(s.phone || '-')}</td>
+        <td style="padding: 10px 15px; border-bottom: 1px solid var(--line); text-align:center; display:flex; justify-content:center; gap:5px;">
+          <button class="btn-outline" style="padding:4px 8px; font-size:11px; cursor:pointer;" onclick="abrirModalProveedor('${s.id}')">✎ Editar</button>
+          <button class="btn-danger-text" style="padding:4px 8px; font-size:11px; border: 1px solid #fee2e2; color: var(--danger); background: transparent; border-radius: 6px; cursor: pointer;" onclick="eliminarProveedorPrompt('${s.id}')">🗑️</button>
+        </td>
+      </tr>
+    `).join('');
       
-      if(filtrados.length === 0) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color:var(--muted);">No se encontraron proveedores.</td></tr>';
+    if (filtrados.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color:var(--muted);">No se encontraron proveedores.</td></tr>';
+    }
   }
 
   function abrirModalProveedor(id = null) {
     const title = document.getElementById('proveedorModalTitle');
     if (id) {
-        const s = dbSuppliers.find(x => x.id === id);
-        if (!s) return;
-        title.textContent = "Editar Proveedor";
-        document.getElementById('suppId').value = s.id;
-        document.getElementById('suppName').value = s.name;
-        document.getElementById('suppCuit').value = s.cuit || '';
-        document.getElementById('suppIva').value = s.ivaCondition || 'Responsable Inscripto';
-        document.getElementById('suppContact').value = s.contactPerson || '';
-        document.getElementById('suppPhone').value = s.phone || '';
-        document.getElementById('suppEmail').value = s.email || '';
-        document.getElementById('suppAddress').value = s.address || '';
-        document.getElementById('suppNotes').value = s.notes || '';
+      const s = dbSuppliers.find(x => x.id === id);
+      if (!s) return;
+      title.textContent = "Editar Proveedor";
+      document.getElementById('suppId').value = s.id;
+      document.getElementById('suppName').value = s.name;
+      document.getElementById('suppCuit').value = s.cuit || '';
+      document.getElementById('suppIva').value = s.ivaCondition || 'Responsable Inscripto';
+      document.getElementById('suppContact').value = s.contactPerson || '';
+      document.getElementById('suppPhone').value = s.phone || '';
+      document.getElementById('suppEmail').value = s.email || '';
+      document.getElementById('suppAddress').value = s.address || '';
+      document.getElementById('suppNotes').value = s.notes || '';
     } else {
-        title.textContent = "Alta de Proveedor / Acreedor";
-        document.getElementById('suppId').value = '';
-        document.getElementById('suppName').value = '';
-        document.getElementById('suppCuit').value = '';
-        document.getElementById('suppIva').value = 'Responsable Inscripto';
-        document.getElementById('suppContact').value = '';
-        document.getElementById('suppPhone').value = '';
-        document.getElementById('suppEmail').value = '';
-        document.getElementById('suppAddress').value = '';
-        document.getElementById('suppNotes').value = '';
+      title.textContent = "Alta de Proveedor / Acreedor";
+      document.getElementById('suppId').value = '';
+      document.getElementById('suppName').value = '';
+      document.getElementById('suppCuit').value = '';
+      document.getElementById('suppIva').value = 'Responsable Inscripto';
+      document.getElementById('suppContact').value = '';
+      document.getElementById('suppPhone').value = '';
+      document.getElementById('suppEmail').value = '';
+      document.getElementById('suppAddress').value = '';
+      document.getElementById('suppNotes').value = '';
     }
     document.getElementById('modalProveedor').showModal();
   }
@@ -536,27 +561,27 @@
     const name = document.getElementById('suppName').value.trim();
 
     if (cuit !== "") {
-        const cuitRegex = /^\d{11}$/;
-        if (!cuitRegex.test(cuit)) {
-            alert("❌ Error: El CUIT debe contener exactamente 11 números, sin guiones ni espacios.");
-            return;
-        }
-        const duplicadoCUIT = dbSuppliers.find(s => s.cuit === cuit && s.id !== id);
-        if (duplicadoCUIT) {
-            alert(`❌ Error: El CUIT ${cuit} ya está registrado para el proveedor "${duplicadoCUIT.name}".\nNo se puede guardar un CUIT duplicado.`);
-            return;
-        }
+      const cuitRegex = /^\d{11}$/;
+      if (!cuitRegex.test(cuit)) {
+        alert("❌ Error: El CUIT debe contener exactamente 11 números, sin guiones ni espacios.");
+        return;
+      }
+      const duplicadoCUIT = dbSuppliers.find(s => s.cuit === cuit && s.id !== id);
+      if (duplicadoCUIT) {
+        alert(`❌ Error: El CUIT ${cuit} ya está registrado para el proveedor "${duplicadoCUIT.name}".`);
+        return;
+      }
     }
 
-    const duplicadoNombre = dbSuppliers.find(s => s.name.toLowerCase() === name.toLowerCase() && s.id !== id);
+    const duplicadoNombre = dbSuppliers.find(s => (s.name || '').toLowerCase() === name.toLowerCase() && s.id !== id);
     if (duplicadoNombre) {
-         if(!confirm(`⚠️ Atención: Ya existe un proveedor llamado "${duplicadoNombre.name}".\n¿Estás seguro de que querés guardarlo de todas formas?`)) return;
+      if (!confirm(`⚠️ Ya existe un proveedor llamado "${duplicadoNombre.name}". ¿Querés guardarlo igual?`)) return;
     }
     
     const sup = {
-      id: id,
-      name: name,
-      cuit: cuit,
+      id,
+      name,
+      cuit,
       ivaCondition: document.getElementById('suppIva').value,
       contactPerson: document.getElementById('suppContact').value.trim(),
       phone: document.getElementById('suppPhone').value.trim(),
@@ -568,15 +593,24 @@
     
     mostrarCarga(true);
     try {
-      await fetch(`${API_URL}/suppliers`, { method: 'POST', body: JSON.stringify(sup) });
+      const res = await apiFetch(`${API_URL}/suppliers`, { method: 'POST', body: JSON.stringify(sup) });
+      if (!res.ok) throw new Error(await res.text());
+
       const idx = dbSuppliers.findIndex(x => x.id === id);
       if (idx >= 0) dbSuppliers[idx] = sup; else dbSuppliers.unshift(sup);
+
       actualizarSelectProveedores();
-      if (document.getElementById('modalListaProveedores').open) renderDirectorioProveedores();
-      else document.getElementById('expSupplier').value = sup.id; 
+      if (document.getElementById('modalListaProveedores').open) {
+        renderDirectorioProveedores();
+      } else {
+        document.getElementById('expSupplier').value = sup.id;
+      }
       document.getElementById('modalProveedor').close();
-    } catch(err) { alert("Error guardando proveedor."); }
-    finally { mostrarCarga(false); }
+    } catch(err) {
+      alert("Error guardando proveedor.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   function eliminarProveedorPrompt(id) {
@@ -586,15 +620,20 @@
   async function ejecutarEliminacionProveedor(id) {
     mostrarCarga(true);
     try {
-      await fetch(`${API_URL}/suppliers?id=${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`${API_URL}/suppliers?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(await res.text());
+
       dbSuppliers = dbSuppliers.filter(s => s.id !== id);
       actualizarSelectProveedores();
       if (document.getElementById('modalListaProveedores').open) renderDirectorioProveedores();
       renderContable();
-    } catch(err) { alert("Error al intentar eliminar el proveedor."); } finally { mostrarCarga(false); }
+    } catch(err) {
+      alert("Error al intentar eliminar el proveedor.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
-  // ── LÓGICA DEL MODAL COMPROBANTES ──
   function abrirModalGasto(id = null) {
     const form = document.getElementById('expenseForm');
     const btnDel = document.getElementById('btnDeleteExpense');
@@ -605,6 +644,7 @@
     if (id) {
       const exp = dbExpenses.find(e => e.id === id);
       if (!exp) return;
+
       title.textContent = "Editar Comprobante";
       document.getElementById('expId').value = exp.id;
       document.getElementById('expDate').value = exp.date;
@@ -613,33 +653,33 @@
       document.getElementById('expSupplier').value = exp.supplierId || 'Varios/Consumidor Final';
       
       const expBranchEl = document.getElementById('expBranch');
-      if(expBranchEl) expBranchEl.value = exp.branch || 'Global';
+      if (expBranchEl) expBranchEl.value = exp.branch || 'Global';
 
       document.getElementById('expIva').value = exp.ivaAmount || 0;
       document.getElementById('expOtros').value = exp.nonTaxedAmount || 0;
-      document.getElementById('expNeto').value = (exp.amount - (exp.ivaAmount || 0) - (exp.nonTaxedAmount || 0)).toFixed(2);
+      document.getElementById('expNeto').value = (Number(exp.amount || 0) - Number(exp.ivaAmount || 0) - Number(exp.nonTaxedAmount || 0)).toFixed(2);
       document.getElementById('expAmount').value = exp.amount;
       
       document.getElementById('expConcept').value = exp.concept;
       document.getElementById('expCategory').value = exp.category;
 
-      if (exp.status !== 'Anulado' && exp.status !== 'Pagado' && exp.status !== 'Pendiente') exp.status = 'Pagado'; 
+      if (exp.status !== 'Anulado' && exp.status !== 'Pagado' && exp.status !== 'Pendiente') exp.status = 'Pagado';
       
       const statusSelect = document.getElementById('expStatus');
       if (exp.status === 'Anulado' && !Array.from(statusSelect.options).some(o => o.value === 'Anulado')) {
-          statusSelect.add(new Option('🚫 Comprobante Anulado', 'Anulado'));
+        statusSelect.add(new Option('🚫 Comprobante Anulado', 'Anulado'));
       }
       
       document.getElementById('expStatus').value = exp.status;
-      document.getElementById('expMethod').value = exp.method;
+      document.getElementById('expMethod').value = exp.method || 'Transferencia';
       
       if (exp.status === 'Anulado') {
-          btnDel.style.display = 'none';
-          document.getElementById('btnSaveExpense').style.display = 'none';
-          document.getElementById('gastoModalTitle').textContent = "Comprobante Anulado (Solo Lectura)";
+        btnDel.style.display = 'none';
+        document.getElementById('btnSaveExpense').style.display = 'none';
+        document.getElementById('gastoModalTitle').textContent = "Comprobante Anulado (Solo Lectura)";
       } else {
-          btnDel.style.display = 'block'; 
-          document.getElementById('btnSaveExpense').style.display = 'block';
+        btnDel.style.display = 'block';
+        document.getElementById('btnSaveExpense').style.display = 'block';
       }
     } else {
       title.textContent = "Carga de Comprobante / Gasto";
@@ -647,35 +687,38 @@
       document.getElementById('expDate').value = todayISO();
       
       const expBranchEl = document.getElementById('expBranch');
-      if(expBranchEl) expBranchEl.value = 'Global';
+      if (expBranchEl) expBranchEl.value = 'Global';
 
-      btnDel.style.display = 'none'; 
+      btnDel.style.display = 'none';
       document.getElementById('btnSaveExpense').style.display = 'block';
       
       const statusSelect = document.getElementById('expStatus');
-      if (Array.from(statusSelect.options).some(o => o.value === 'Anulado')) {
-           Array.from(statusSelect.options).find(o => o.value === 'Anulado').remove();
-      }
+      const anulOpt = Array.from(statusSelect.options).find(o => o.value === 'Anulado');
+      if (anulOpt) anulOpt.remove();
     }
     
     document.getElementById('modalGasto').showModal();
   }
 
-  function cerrarModalGasto() { document.getElementById('modalGasto').close(); }
+  function cerrarModalGasto() {
+    document.getElementById('modalGasto').close();
+  }
 
   async function guardarGasto(e) {
     e.preventDefault();
     const id = document.getElementById('expId').value || 'exp_' + Date.now();
     const expBranchEl = document.getElementById('expBranch');
 
+    const existing = dbExpenses.find(x => x.id === id);
+
     const exp = {
-      id: id,
+      id,
       date: document.getElementById('expDate').value,
       invoiceType: document.getElementById('expInvoiceType').value,
       invoiceNum: document.getElementById('expInvoiceNum').value.trim(),
       supplierId: document.getElementById('expSupplier').value,
       branch: expBranchEl ? expBranchEl.value : 'Global',
-      loadedBy: localStorage.getItem('activeUser') || 'Admin', 
+      loadedBy: existing?.loadedBy || localStorage.getItem('activeUser') || 'Admin',
       amount: parseFloat(document.getElementById('expAmount').value) || 0,
       ivaAmount: parseFloat(document.getElementById('expIva').value) || 0,
       nonTaxedAmount: parseFloat(document.getElementById('expOtros').value) || 0,
@@ -683,67 +726,87 @@
       category: document.getElementById('expCategory').value,
       status: document.getElementById('expStatus').value,
       method: document.getElementById('expMethod').value,
-      createdAt: new Date().toISOString()
+      canceledBy: existing?.canceledBy || '',
+      createdAt: existing?.createdAt || new Date().toISOString()
     };
 
     mostrarCarga(true);
     try {
-      await fetch(`${API_URL}/expenses`, { method: 'POST', body: JSON.stringify(exp) });
+      const res = await apiFetch(`${API_URL}/expenses`, { method: 'POST', body: JSON.stringify(exp) });
+      if (!res.ok) throw new Error(await res.text());
+
       const idx = dbExpenses.findIndex(x => x.id === id);
       if (idx >= 0) dbExpenses[idx] = exp; else dbExpenses.unshift(exp);
-      cerrarModalGasto(); renderContable();
-    } catch(err) { alert("Error guardando comprobante."); }
-    finally { mostrarCarga(false); }
+
+      cerrarModalGasto();
+      renderContable();
+    } catch(err) {
+      alert("Error guardando comprobante.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
-  // LÓGICA DE ANULACIÓN CORREGIDA PARA EVITAR CONGELAMIENTO
   function anularGastoPrompt() {
     const id = document.getElementById('expId').value;
-    if(!id) return;
+    if (!id) return;
     
-    // FIX: Cerramos el modalGasto PRIMERO para que los fondos oscuros no se superpongan
-    cerrarModalGasto(); 
-    
+    cerrarModalGasto();
     pedirAuthAdmin('anular este comprobante de forma permanente', ejecutarAnulacionGasto, id);
   }
 
   async function ejecutarAnulacionGasto(id) {
     mostrarCarga(true);
     try {
-      const exp = dbExpenses.find(e => e.id === id);
-      if(!exp) return;
-      
-      exp.status = 'Anulado';
-      exp.canceledBy = localStorage.getItem('activeUser') || 'Admin';
+      const canceledBy = localStorage.getItem('activeUser') || 'Admin';
+      const res = await apiFetch(`${API_URL}/expenses?id=${id}&canceledBy=${encodeURIComponent(canceledBy)}`, {
+        method: 'DELETE'
+      });
+      if (!res.ok) throw new Error(await res.text());
 
-      await fetch(`${API_URL}/expenses`, { method: 'POST', body: JSON.stringify(exp) });
+      const exp = dbExpenses.find(e => e.id === id);
+      if (exp) {
+        exp.status = 'Anulado';
+        exp.canceledBy = canceledBy;
+      }
+
       renderContable();
-    } catch(err) { alert("Error anulando el comprobante."); }
-    finally { mostrarCarga(false); }
+    } catch(err) {
+      alert("Error anulando el comprobante.");
+    } finally {
+      mostrarCarga(false);
+    }
   }
 
   function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
     document.getElementById('authActionText').textContent = accionTexto;
-    pendingAdminAction = funcionExito; pendingAdminParam = param;
+    pendingAdminAction = funcionExito;
+    pendingAdminParam = param;
     document.getElementById('adminAuthPin').value = '';
     document.getElementById('adminAuthDialog').showModal();
     setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
   }
 
   function cerrarAdminAuth() { 
-      document.getElementById('adminAuthDialog').close(); 
-      pendingAdminAction = null; pendingAdminParam = null; 
+    document.getElementById('adminAuthDialog').close(); 
+    pendingAdminAction = null;
+    pendingAdminParam = null; 
   }
 
   function validarAdminAuth(e) {
     e.preventDefault();
     if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
-      const accion = pendingAdminAction; const param = pendingAdminParam;
-      cerrarAdminAuth(); if (accion) accion(param);
-    } else { alert("❌ PIN incorrecto."); document.getElementById('adminAuthPin').value = ''; document.getElementById('adminAuthPin').focus(); }
+      const accion = pendingAdminAction;
+      const param = pendingAdminParam;
+      cerrarAdminAuth();
+      if (accion) accion(param);
+    } else {
+      alert("❌ PIN incorrecto.");
+      document.getElementById('adminAuthPin').value = '';
+      document.getElementById('adminAuthPin').focus();
+    }
   }
 
-  // ── RENDERIZADO Y FILTROS ──
   function renderContable() {
     const today = todayISO();
     const currentMonth = getMonthPrefix();
@@ -759,28 +822,33 @@
     const tbody = document.getElementById('tableBodyGastos');
     let rowsHtml = '';
 
-    const sortedExpenses = [...dbExpenses].sort((a,b) => new Date(b.date) - new Date(a.date));
+    const sortedExpenses = [...dbExpenses].sort((a, b) => new Date(b.date) - new Date(a.date));
     
     const filteredExpenses = sortedExpenses.filter(exp => {
       let supName = exp.supplierId;
-      if(supName !== 'Varios/Consumidor Final') {
+      if (supName !== 'Varios/Consumidor Final') {
         const pObj = dbSuppliers.find(s => s.id === exp.supplierId);
-        if(pObj) supName = pObj.name;
+        if (pObj) supName = pObj.name;
       }
-      const matchSearch = exp.concept.toLowerCase().includes(searchTerm) || 
-                          supName.toLowerCase().includes(searchTerm) || 
-                          (exp.invoiceNum || '').toLowerCase().includes(searchTerm);
+
+      const matchSearch =
+        (exp.concept || '').toLowerCase().includes(searchTerm) || 
+        String(supName || '').toLowerCase().includes(searchTerm) || 
+        ((exp.invoiceNum || '').toLowerCase().includes(searchTerm));
+
       const matchStatus = filterStatus === 'ALL' || exp.status === filterStatus;
       const matchCategory = filterCategory === 'ALL' || exp.category === filterCategory;
+
       return matchSearch && matchStatus && matchCategory;
     });
 
     filteredExpenses.forEach(exp => {
       let supName = exp.supplierId;
-      if(supName !== 'Varios/Consumidor Final') {
+      if (supName !== 'Varios/Consumidor Final') {
         const pObj = dbSuppliers.find(s => s.id === exp.supplierId);
-        if(pObj) supName = pObj.name;
+        if (pObj) supName = pObj.name;
       }
+
       let statusBadge = '';
       if (exp.status === 'Pagado') statusBadge = `<span style="color:#16a34a; font-weight:bold;">Pagado</span>`;
       else if (exp.status === 'Pendiente') statusBadge = `<span style="color:#b45309; font-weight:bold;">A Pagar</span>`;
@@ -793,7 +861,9 @@
       
       const fechaParts = exp.date.split('-');
       const fechaLocal = fechaParts.length === 3 ? `${fechaParts[2]}/${fechaParts[1]}/${fechaParts[0]}` : exp.date;
-      const branchNameTag = exp.branch && exp.branch !== 'Global' ? `<br><small style="color:var(--primary); font-weight:bold;">📍 ${escapeHtml(exp.branch)}</small>` : '';
+      const branchNameTag = exp.branch && exp.branch !== 'Global'
+        ? `<br><small style="color:var(--primary); font-weight:bold;">📍 ${escapeHtml(exp.branch)}</small>`
+        : '';
 
       rowsHtml += `
       <tr style="${isAnul ? 'opacity:0.5;' : ''}">
@@ -813,19 +883,26 @@
       </tr>`;
     });
 
-    if (filteredExpenses.length === 0) { rowsHtml = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No se encontraron comprobantes.</td></tr>'; }
+    if (filteredExpenses.length === 0) {
+      rowsHtml = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No se encontraron comprobantes.</td></tr>';
+    }
     tbody.innerHTML = rowsHtml;
 
     sortedExpenses.forEach(exp => {
-      if (exp.status === 'Anulado') return; 
-      if (exp.date === today) { gastosDia += exp.amount; countDia++; }
-      if (exp.date.startsWith(currentMonth)) {
-        comprasDevengadasMes += exp.amount; 
-        if (exp.status === 'Pagado') pagosMes += exp.amount; else pendientesMes += exp.amount; 
+      if (exp.status === 'Anulado') return;
+      if (exp.date === today) { gastosDia += Number(exp.amount || 0); countDia++; }
+      if ((exp.date || '').startsWith(currentMonth)) {
+        comprasDevengadasMes += Number(exp.amount || 0);
+        if (exp.status === 'Pagado') pagosMes += Number(exp.amount || 0);
+        else pendientesMes += Number(exp.amount || 0);
       }
     });
 
-    dbSales.forEach(venta => { if ((venta.date || '').startsWith(currentMonth) && venta.status !== 'Anulada') { ingresosMes += venta.total; } });
+    dbSales.forEach(venta => {
+      if ((venta.date || '').startsWith(currentMonth) && venta.status !== 'Anulada') {
+        ingresosMes += Number(venta.total || 0);
+      }
+    });
 
     document.getElementById('kpiGastosDia').textContent = currency(gastosDia);
     document.getElementById('kpiCountDia').textContent = `${countDia} comprobantes procesados`;
@@ -842,7 +919,6 @@
     document.getElementById('resNeto').style.color = cajaNeta < 0 ? 'var(--danger)' : 'var(--success)';
   }
 
-  // ── LÓGICA DE CIERRE DE MES (ESTADO DE RESULTADOS PROFESIONAL) ──
   function abrirModalCierreMes() {
     const d = new Date();
     document.getElementById('cierreMesInput').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -852,9 +928,9 @@
 
   function calcularCierreMes() {
     const periodo = document.getElementById('cierreMesInput').value;
-    if(!periodo) return;
+    if (!periodo) return;
 
-    const esMonotributista = true; 
+    const esMonotributista = true;
 
     const ventasMes = dbSales.filter(s => (s.date || '').startsWith(periodo) && s.status !== 'Anulada');
     const gastosMes = dbExpenses.filter(e => (e.date || '').startsWith(periodo) && e.status !== 'Anulado');
@@ -863,15 +939,17 @@
     let gastosBrutos = 0, ivaCreditoTotal = 0;
 
     ventasMes.forEach(v => {
-        ventasBrutas += v.total;
-        const items = typeof v.items === 'string' ? JSON.parse(v.items) : (v.items || []);
-        items.forEach(i => { cmvTotal += (i.qty * (i.cost || 0)); });
-        if (!esMonotributista) ivaDebito += (v.total - (v.total / 1.21)); 
+      ventasBrutas += Number(v.total || 0);
+      const items = typeof v.items === 'string'
+        ? JSON.parse(v.items)
+        : (typeof v.itemsJSON === 'string' ? JSON.parse(v.itemsJSON) : (v.items || []));
+      items.forEach(i => { cmvTotal += ((Number(i.qty || 0) || 0) * (Number(i.cost || 0) || 0)); });
+      if (!esMonotributista) ivaDebito += (Number(v.total || 0) - (Number(v.total || 0) / 1.21));
     });
 
     gastosMes.forEach(g => {
-        gastosBrutos += g.amount;
-        if (!esMonotributista) ivaCreditoTotal += (g.ivaAmount || 0);
+      gastosBrutos += Number(g.amount || 0);
+      if (!esMonotributista) ivaCreditoTotal += Number(g.ivaAmount || 0);
     });
 
     const ventasNetasReal = esMonotributista ? ventasBrutas : (ventasBrutas - ivaDebito);
@@ -896,26 +974,33 @@
 
     const posIvaBox = document.getElementById('cmPosicionIvaBox');
     if (esMonotributista) {
-        posIvaBox.innerHTML = `<div style="font-size:12px; color:var(--muted); font-style:italic;">Perfil Monotributista: Reporte gerencial. El IVA no se discrimina.</div>`;
+      posIvaBox.innerHTML = `<div style="font-size:12px; color:var(--muted); font-style:italic;">Perfil Monotributista: Reporte gerencial. El IVA no se discrimina.</div>`;
     } else {
-        const posicionIva = ivaDebito - ivaCreditoTotal;
-        posIvaBox.innerHTML = `<span id="cmPosicionIvaTexto">${posicionIva > 0 ? 'A Pagar IVA:' : 'Saldo a Favor IVA:'}</span><strong style="color:${posicionIva > 0 ? 'var(--danger)' : 'var(--success)'}">${currency(Math.abs(posicionIva))}</strong>`;
+      const posicionIva = ivaDebito - ivaCreditoTotal;
+      posIvaBox.innerHTML = `<span id="cmPosicionIvaTexto">${posicionIva > 0 ? 'A Pagar IVA:' : 'Saldo a Favor IVA:'}</span><strong style="color:${posicionIva > 0 ? 'var(--danger)' : 'var(--success)'}">${currency(Math.abs(posicionIva))}</strong>`;
     }
   }
 
   function exportarExcel() {
-    if(dbExpenses.length === 0) return alert("No hay movimientos para exportar.");
+    if (dbExpenses.length === 0) return alert("No hay movimientos para exportar.");
     const csvData = dbExpenses.map(e => {
       let supName = e.supplierId;
-      if(supName !== 'Varios/Consumidor Final') {
+      if (supName !== 'Varios/Consumidor Final') {
         const pObj = dbSuppliers.find(s => s.id === e.supplierId);
-        if(pObj) supName = pObj.name;
+        if (pObj) supName = pObj.name;
       }
       return {
-        "Fecha": e.date, "Comprobante": e.invoiceType, "Numero": e.invoiceNum || '-',
-        "Proveedor": supName, "Concepto": e.concept, "Sucursal": e.branch || 'Global',
-        "Total": e.amount, "IVA": e.ivaAmount || 0, "Estado": e.status, 
-        "Cargado Por": e.loadedBy || '', "Anulado Por": e.canceledBy || ''
+        "Fecha": e.date,
+        "Comprobante": e.invoiceType,
+        "Numero": e.invoiceNum || '-',
+        "Proveedor": supName,
+        "Concepto": e.concept,
+        "Sucursal": e.branch || 'Global',
+        "Total": e.amount,
+        "IVA": e.ivaAmount || 0,
+        "Estado": e.status,
+        "Cargado Por": e.loadedBy || '',
+        "Anulado Por": e.canceledBy || ''
       };
     });
     const headers = Object.keys(csvData[0]);
