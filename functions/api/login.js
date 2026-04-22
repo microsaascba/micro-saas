@@ -76,7 +76,11 @@ export async function onRequestPost(context) {
         city,
         province,
         country,
-        logo
+        logo,
+        max_users,
+        allow_user_management,
+        max_branches,
+        allow_branch_management
       FROM clients
       WHERE id = ?1
       LIMIT 1
@@ -101,7 +105,6 @@ export async function onRequestPost(context) {
       daysToDue = diffDays(today, dueDate);
       daysPastDue = daysToDue < 0 ? Math.abs(daysToDue) : 0;
 
-      // Bloqueo automático desde el día 4 de atraso
       if (daysToDue <= -4) {
         await context.env.DB.prepare(`
           UPDATE clients
@@ -118,7 +121,7 @@ export async function onRequestPost(context) {
         return Response.json(
           {
             success: false,
-            error: `Licencia vencida. La cuenta fue suspendida automáticamente por superar los 3 días de gracia.`,
+            error: "Licencia vencida. La cuenta fue suspendida automáticamente por superar los 3 días de gracia.",
             code: "LICENSE_SUSPENDED",
             company: {
               id: company.id,
@@ -131,7 +134,6 @@ export async function onRequestPost(context) {
         );
       }
 
-      // Si el cliente ya quedó desactivado manualmente
       if (Number(company.active) !== 1) {
         return Response.json(
           { success: false, error: "La empresa está desactivada. Contactá al administrador." },
@@ -139,7 +141,6 @@ export async function onRequestPost(context) {
         );
       }
 
-      // Aviso 5 días antes
       if (daysToDue >= 0 && daysToDue <= 5) {
         loginWarning = {
           type: "upcoming_due",
@@ -148,7 +149,6 @@ export async function onRequestPost(context) {
         };
       }
 
-      // Aviso en gracia
       if (daysToDue < 0 && daysToDue >= -3) {
         loginWarning = {
           type: "grace_period",
@@ -212,7 +212,11 @@ export async function onRequestPost(context) {
         city: company.city || '',
         province: company.province || '',
         country: company.country || 'Argentina',
-        logo: company.logo || ''
+        logo: company.logo || '',
+        max_users: Number(company.max_users || 1),
+        allow_user_management: Number(company.allow_user_management || 0),
+        max_branches: Number(company.max_branches || 1),
+        allow_branch_management: Number(company.allow_branch_management || 0)
       },
       license: {
         dueDate: company.dueDate || '',
