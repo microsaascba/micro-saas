@@ -97,7 +97,17 @@ function getUserRole() {
 
 function getAllowedModules() {
   try {
-    return JSON.parse(localStorage.getItem('allowedModules') || '[]');
+    // 1. Buscamos la lista de módulos permitidos
+    let modulesStr = localStorage.getItem('allowedModules');
+    if (modulesStr) return JSON.parse(modulesStr);
+
+    // 2. Si no está directo, lo buscamos dentro de user (como guarda tu login)
+    let userStr = localStorage.getItem('user');
+    if (userStr) {
+      let userData = JSON.parse(userStr);
+      return userData.allowedModules || [];
+    }
+    return [];
   } catch {
     return [];
   }
@@ -158,12 +168,22 @@ function logout() {
   localStorage.removeItem('activeUser');
   localStorage.removeItem('userRole');
   localStorage.removeItem('allowedModules');
+  localStorage.removeItem('user');
   localStorage.removeItem('company_id');
   localStorage.removeItem('saas_logged_in');
   localStorage.removeItem('saas_username');
   localStorage.removeItem('saas_role');
   window.location.href = 'login.html';
 }
+
+// --- LÓGICA DE MENÚ RESPONSIVE ---
+window.toggleMenu = function () {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+
+  if (sidebar) sidebar.classList.toggle('open');
+  if (overlay) overlay.classList.toggle('open');
+};
 
 // ── Lógica Principal que se ejecuta al cargar la página ──────
 document.addEventListener('DOMContentLoaded', () => {
@@ -172,9 +192,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const isLoginPage = path.includes('login');
   const companyId = getCompanyId();
 
+  // Marcar menú activo
   document.querySelectorAll('.nav a').forEach(a => {
     const href = a.getAttribute('href');
     if (href && href.includes(currentPage)) a.classList.add('active');
+  });
+
+  // Cerrar menú en móviles al hacer clic
+  document.querySelectorAll('.sidebar .nav a').forEach(link => {
+    link.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar) sidebar.classList.remove('open');
+        if (overlay) overlay.classList.remove('open');
+      }
+    });
   });
 
   if (!companyId && !isLoginPage) {
@@ -182,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // --- 2. VERIFICACIÓN DE LICENCIA SAAS ---
+  // --- VERIFICACIÓN DE LICENCIA SAAS ---
   const masterDB = JSON.parse(localStorage.getItem('saas_db_clientes')) || [];
   const licencia = masterDB.find(c => c.id === SAAS_LICENSE_ID) || masterDB[0];
 
@@ -197,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
               <p style="margin: 0; font-size: 14px; color: #f8fafc;">Comercio: <strong>${licencia.name}</strong></p>
             </div>
-            <p style="font-size:14px; color:#64748b;">Comunícate con Viggo Professional para regularizar el servicio.</p>
+            <p style="font-size:14px; color:#64748b;">Comunícate con Soporte para regularizar el servicio.</p>
           </div>
         </div>
       `;
@@ -229,11 +262,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- 3. CONTROL DE SESIÓN, PERMISOS Y TERMINAL FÍSICA ---
+  // --- CONTROL DE SESIÓN, PERMISOS Y TERMINAL FÍSICA ---
   const activeUser = getActiveUser();
   const role = getUserRole();
-  const isLogged = (activeUser !== null && activeUser !== undefined && activeUser !== '') || (localStorage.getItem('saas_logged_in') === 'true');
+  const isLogged = (activeUser !== null && activeUser !== '') || (localStorage.getItem('saas_logged_in') === 'true');
   const allowedModules = getAllowedModules();
+  
+  console.log("Rol:", role);
+  console.log("Módulos permitidos cargados:", allowedModules);
 
   const terminalBranch = localStorage.getItem('terminal_assigned_branch');
 
@@ -261,6 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!document.querySelector('a[href="sucursales.html"]')) {
         const sucLink = document.createElement('a');
         sucLink.href = 'sucursales.html';
+        sucLink.setAttribute('data-module', 'sucursales');
         if (currentPage === 'sucursales') sucLink.classList.add('active');
         sucLink.innerHTML = '<span class="nav-icon">🏪</span> Sucursales';
         nav.appendChild(sucLink);
@@ -269,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (role === 'admin' && !document.querySelector('a[href="usuarios.html"]')) {
         const usersLink = document.createElement('a');
         usersLink.href = 'usuarios.html';
+        usersLink.setAttribute('data-module', 'usuarios');
         if (currentPage === 'usuarios') usersLink.classList.add('active');
         usersLink.innerHTML = '<span class="nav-icon">👥</span> Usuarios';
         nav.appendChild(usersLink);
@@ -305,23 +343,31 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const navLinks = document.querySelectorAll('.sidebar .nav a:not(#btnLogout)');
-    navLinks.forEach(link => {
+    // --- ELIMINAR MÓDULOS NO CONTRATADOS DEL DOM ---
+    if (allowedModules.length > 0) {
+      document.querySelectorAll('.nav a[data-module]').forEach(link => {
+        const moduleName = link.getAttribute('data-module');
+        if (!allowedModules.includes(moduleName)) {
+          link.remove(); // Se elimina incluso para el dueño si no pagó por ello
+        }
+      });
+    }
+
+    // --- RESTRICCIONES EXTRA POR ROL DE EMPLEADO ---
+    document.querySelectorAll('.sidebar .nav a:not(#btnLogout)').forEach(link => {
       const href = link.getAttribute('href');
       if (href) {
         const moduleName = href.split('.html')[0];
-
-        if (allowedModules.length > 0 && !allowedModules.includes(moduleName) && role !== 'admin') {
-          link.style.display = 'none';
-        }
-
         if (role !== 'admin' && (moduleName === 'usuarios' || moduleName === 'sucursales')) link.style.display = 'none';
         if ((role === 'encargado' || role === 'pos') && (moduleName === 'dashboard' || moduleName === 'contable')) link.style.display = 'none';
         if (role === 'pos' && moduleName === 'stock') link.style.display = 'none';
       }
     });
 
-    if (allowedModules.length > 0 && !allowedModules.includes(currentPage) && role !== 'admin') {
+    // --- REDIRECCIÓN SI INTENTA ENTRAR FORZADO POR URL ---
+    const modulosOmitidos = ['dashboard', 'login', 'index']; 
+    if (allowedModules.length > 0 && !allowedModules.includes(currentPage) && !modulosOmitidos.includes(currentPage)) {
+      
       let homePage = 'dashboard.html';
       if (role === 'administrativo') homePage = 'contable.html';
       if (role === 'cajera' || role === 'vendedora' || role === 'pos') homePage = 'facturacion.html';
@@ -331,22 +377,18 @@ document.addEventListener('DOMContentLoaded', () => {
         homePage = allowedModules.length > 0 ? allowedModules[0] + '.html' : 'login.html';
       }
 
-      if (currentPage === 'dashboard') {
-        window.location.href = homePage;
-        return;
-      }
-
       document.body.innerHTML = `
         <div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; font-family: sans-serif; background: #f8fafc; color: #334155;">
           <h1 style="font-size: 80px; margin: 0;">🛑</h1>
-          <h2 style="font-size: 24px; margin: 10px 0;">Acceso Denegado</h2>
-          <p style="margin-bottom: 20px;">Tu usuario no tiene permisos para ver este módulo.</p>
+          <h2 style="font-size: 24px; margin: 10px 0;">Módulo Bloqueado</h2>
+          <p style="margin-bottom: 20px;">No cuentas con acceso a este módulo.</p>
           <button onclick="window.location.href='${homePage}'" style="padding: 12px 24px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">Ir a mi panel principal</button>
         </div>
       `;
       return;
     }
 
+    // --- LÓGICA CAJA / POS ---
     if (role === 'pos' || role === 'cajera') {
       const botonesProhibidos = ['#newProductBtn', '#importBtn', '#exportBtn', '#openAdjustBtn', '#btnOpenExpense', '#btnOpenSupplier'];
       botonesProhibidos.forEach(id => {
@@ -366,6 +408,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- CSS GLOBAL ---
   const globalCss = document.createElement('style');
   globalCss.innerHTML = `
     html, body { overflow-x: hidden !important; }
@@ -388,82 +431,3 @@ document.addEventListener('DOMContentLoaded', () => {
   `;
   document.head.appendChild(globalCss);
 });
-
-// --- LÓGICA DE MENÚ RESPONSIVE ---
-window.toggleMenu = function () {
-  const sidebar = document.querySelector('.sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
-
-  if (sidebar) sidebar.classList.toggle('open');
-  if (overlay) overlay.classList.toggle('open');
-};
-
-document.addEventListener('DOMContentLoaded', () => {
-  const navLinks = document.querySelectorAll('.sidebar .nav a');
-  navLinks.forEach(link => {
-    link.addEventListener('click', () => {
-      if (window.innerWidth <= 768) {
-        const sidebar = document.querySelector('.sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
-        if (sidebar) sidebar.classList.remove('open');
-        if (overlay) overlay.classList.remove('open');
-      }
-    });
-  });
-});
-
-// Función para filtrar el menú según el plan contratado
-function filtrarMenuPorModulos() {
-  try {
-    let allowedModules = [];
-
-    // INTENTO 1: Buscar si existe la variable directa 'allowedModules'
-    let modulosDirectos = localStorage.getItem('allowedModules');
-    if (modulosDirectos) {
-        allowedModules = JSON.parse(modulosDirectos);
-    } 
-    // INTENTO 2: Buscar si están dentro del objeto 'user' (la forma más común de guardar el login)
-    else {
-        let userDataStr = localStorage.getItem('user');
-        if (userDataStr) {
-            let userData = JSON.parse(userDataStr);
-            allowedModules = userData.allowedModules || [];
-        }
-    }
-
-    // Para diagnóstico: Esto imprimirá en la consola de F12 los módulos que el sistema detecta
-    console.log("Módulos permitidos detectados por core.js:", allowedModules);
-
-    // Si sigue vacío, abortamos para no borrar todo el menú
-    if (!Array.isArray(allowedModules) || allowedModules.length === 0) {
-        console.warn("No se encontraron restricciones de módulos. Se mostrará el menú completo.");
-        return;
-    }
-
-    // Ahora sí, recorremos el menú y eliminamos lo que no está en la lista
-    document.querySelectorAll('.nav a[data-module]').forEach(link => {
-      const moduleName = link.getAttribute('data-module');
-      if (!allowedModules.includes(moduleName)) {
-        link.remove(); // Borra el botón del menú
-      }
-    });
-
-  } catch (error) {
-    console.error("Error al filtrar el menú:", error);
-  }
-}
-
-// Ejecutar automáticamente al cargar
-document.addEventListener('DOMContentLoaded', filtrarMenuPorModulos);
-
-// Agrega esto dentro de tu función de inicialización en core.js
-const currentPage = window.location.pathname.split('/').pop().replace('.html', '');
-const modulosOmitidos = ['dashboard', 'login', 'index']; // Páginas que siempre se ven
-
-if (!modulosOmitidos.includes(currentPage)) {
-    const userData = JSON.parse(localStorage.getItem('user') || '{}');
-    const allowed = userData.allowedModules || [];
-    if (allowed.length > 0 && !allowed.includes(currentPage)) {
-        window.location.href = 'dashboard.html';
-    }
-}
