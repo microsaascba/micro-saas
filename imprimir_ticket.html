@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ticket de Venta</title>
+  <style>
+    /* Estilos optimizados para impresora térmica 80mm */
+    body { 
+        font-family: 'Courier New', Courier, monospace; 
+        font-size: 12px; 
+        margin: 0 auto; 
+        padding: 10px; 
+        width: 80mm; 
+        color: #000; 
+    }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .bold { font-weight: bold; }
+    .separator { border-top: 1px dashed #000; margin: 8px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+    th, td { padding: 4px 0; vertical-align: top; }
+    th { text-align: left; border-bottom: 1px dashed #000; }
+    .logo { max-width: 120px; margin-bottom: 10px; }
+    
+    @media print {
+        @page { margin: 0; }
+        body { margin: 0; padding: 5mm; }
+    }
+  </style>
+</head>
+<body>
+  <div id="ticket"></div>
+
+  <script>
+    function currency(n) { 
+        return '$ ' + Number(n).toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 0}); 
+    }
+    
+    // Leemos la última venta que facturacion.html guardó en la memoria
+    const sale = JSON.parse(localStorage.getItem('last_sale_to_print'));
+
+    if (!sale) {
+      document.getElementById('ticket').innerHTML = '<div class="center bold">Error: No hay venta registrada para imprimir.</div>';
+    } else {
+      // Leemos los datos de la empresa guardados en el login
+      const cName = localStorage.getItem('company_name') || 'Comercio';
+      const cAdd = localStorage.getItem('company_address') || '';
+      const cPhone = localStorage.getItem('company_phone') || '';
+      const logo = localStorage.getItem('company_logo') || '';
+
+      let html = '<div class="center">';
+      if (logo && logo !== 'undefined') html += `<img src="${logo}" class="logo"><br>`;
+      html += `<div class="bold" style="font-size:18px; margin-bottom: 5px;">${cName}</div>`;
+      if (cAdd) html += `<div>${cAdd}</div>`;
+      if (cPhone) html += `<div>Tel: ${cPhone}</div>`;
+      html += `</div><div class="separator"></div>`;
+
+      // Datos de la venta
+      html += `<div><span class="bold">Fecha:</span> ${new Date(sale.createdAt).toLocaleString('es-AR')}</div>`;
+      html += `<div><span class="bold">Ticket N°:</span> ${sale.id.split('_')[1]}</div>`;
+      html += `<div><span class="bold">Sucursal:</span> ${sale.branch || 'Central'}</div>`;
+      html += `<div><span class="bold">Cliente:</span> ${sale.client || 'Consumidor Final'}</div>`;
+      html += `<div><span class="bold">Pago:</span> ${sale.method} ${sale.cupon ? '(Lote: '+sale.cupon+')' : ''}</div>`;
+      html += `<div><span class="bold">Atendió:</span> ${sale.seller || ''}</div>`;
+      html += `<div class="separator"></div>`;
+
+      // Tabla de artículos
+      html += `<table><thead><tr><th>Cant</th><th>Detalle</th><th class="right">Subt</th></tr></thead><tbody>`;
+      sale.items.forEach(i => {
+        html += `<tr>
+          <td style="width: 15%;">${i.qty}</td>
+          <td style="width: 55%;">${i.name}</td>
+          <td class="right bold" style="width: 30%;">${currency(i.subtotal)}</td>
+        </tr>`;
+      });
+      html += `</tbody></table><div class="separator"></div>`;
+
+      // Totales
+      html += `<div class="right bold" style="font-size:18px;">TOTAL: ${currency(sale.total)}</div>`;
+      html += `<div class="separator"></div>`;
+      html += `<div class="center" style="margin-top:15px; font-size:11px;">¡Gracias por su compra!</div>`;
+      html += `<div class="center" style="margin-top:5px; font-size:10px; color:#555;">Documento no válido como factura.</div>`;
+
+      document.getElementById('ticket').innerHTML = html;
+
+      // Dispara la ventana de impresión medio segundo después de cargar y luego cierra la pestaña
+      setTimeout(() => {
+        window.print();
+        // Opcional: descomentá la siguiente línea si querés que la pestaña se cierre sola tras imprimir
+        // window.close(); 
+      }, 500);
+    }
+  </script>
+</body>
+</html>
