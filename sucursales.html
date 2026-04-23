@@ -190,19 +190,23 @@
 
 <dialog id="modalTerminal" style="width: 100%; max-width: 420px;">
   <div class="modal-content">
-    <h2 style="margin: 0 0 10px 0; font-size:18px;">Vincular Dispositivo</h2>
-    <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Asigná esta computadora a una sucursal fija para evitar errores de facturación.</p>
+    <h2 style="margin: 0 0 10px 0; font-size:18px;">Configuración de Equipo</h2>
+    <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Asigná esta computadora a una sucursal fija para que las ventas y el stock se procesen en el lugar correcto.</p>
 
-    <div style="margin-bottom: 10px;">
-      <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seleccionar Destino</label>
+    <div id="terminalActualBox" style="padding: 12px; border-radius: 8px; background: #f8fafc; border: 1px solid var(--line); font-size: 13px; margin-bottom: 20px;">
+      </div>
+
+    <div style="margin-bottom: 25px;">
+      <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Cambiar o Asignar Sucursal</label>
       <select id="selectTerminalBranch" class="input-box" style="margin-top: 6px;"></select>
     </div>
 
-    <div id="terminalActualBox" style="font-size: 13px; color: var(--muted); margin-bottom: 25px;"></div>
-
-    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-      <button class="btn btn-light" onclick="document.getElementById('modalTerminal').close()">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarVinculo()">Vincular esta PC</button>
+    <div style="display: flex; gap: 10px; justify-content: space-between;">
+      <button class="btn btn-outline" style="border-color: var(--danger); color: var(--danger);" onclick="desvincularPC()">Desvincular PC</button>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-light" onclick="document.getElementById('modalTerminal').close()">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarVinculo()">Aplicar</button>
+      </div>
     </div>
   </div>
 </dialog>
@@ -260,30 +264,55 @@
 
   function abrirConfigTerminal() {
     if ((localStorage.getItem('userRole') || '') !== 'admin') {
-      return alert("Solo el administrador puede configurar terminales.");
+      return alert("Solo el administrador o encargado puede configurar terminales.");
     }
 
     const select = document.getElementById('selectTerminalBranch');
     const activas = dbBranches.filter(b => (b.status || 'Activo') === 'Activo');
-    select.innerHTML = activas.map(b => `<option value="${b.name}">${escapeHtml(b.name)}</option>`).join('');
+    
+    // Armamos la lista de sucursales disponibles
+    select.innerHTML = '<option value="">-- Seleccionar Destino --</option>' + 
+      activas.map(b => `<option value="${b.name}">${escapeHtml(b.name)}</option>`).join('');
 
-    const actual = localStorage.getItem('terminal_assigned_branch') || '';
-    document.getElementById('terminalActualBox').innerHTML = actual
-      ? `Terminal actualmente vinculada a: <strong>${escapeHtml(actual)}</strong>`
-      : `Esta terminal no tiene una sucursal vinculada todavía.`;
+    // Verificamos el estado actual
+    const actual = localStorage.getItem('terminal_assigned_branch');
+    const statusBox = document.getElementById('terminalActualBox');
 
-    if (actual) select.value = actual;
+    if (actual && actual !== 'null' && actual !== '') {
+      statusBox.innerHTML = `✅ Esta PC está asignada a: <strong style="color:var(--primary); font-size:15px; display:block; margin-top:5px;">${escapeHtml(actual)}</strong>`;
+      select.value = actual;
+    } else {
+      statusBox.innerHTML = `⚠️ <strong>Terminal Libre:</strong> No se pueden realizar ventas hasta asignar una sucursal.`;
+      select.value = '';
+    }
 
     document.getElementById('modalTerminal').showModal();
   }
 
   function confirmarVinculo() {
     const branch = document.getElementById('selectTerminalBranch').value;
-    if (!branch) return alert("Seleccioná una sucursal.");
+    
+    if (!branch) return alert("Por favor, seleccioná una sucursal de la lista.");
 
-    if (confirm(`¿Confirmás que esta computadora pertenece a: ${branch}?`)) {
+    if (confirm(`¿Confirmás que esta computadora físicamente está en la sucursal: ${branch}?`)) {
       localStorage.setItem('terminal_assigned_branch', branch);
-      alert("✅ Terminal vinculada con éxito. El sistema operará bajo esta sucursal.");
+      alert(`✅ Terminal vinculada a ${branch} exitosamente.`);
+      document.getElementById('modalTerminal').close();
+      location.reload(); // Recarga para aplicar los cambios en todo el sistema
+    }
+  }
+
+  function desvincularPC() {
+    const actual = localStorage.getItem('terminal_assigned_branch');
+    
+    if (!actual || actual === 'null' || actual === '') {
+      return alert("Esta PC ya se encuentra desvinculada.");
+    }
+
+    if (confirm("⚠️ ¿Estás seguro que querés desvincular esta PC?\n\nDejará de poder facturar o afectar el stock hasta que vuelva a ser asignada a un local.")) {
+      localStorage.removeItem('terminal_assigned_branch');
+      alert("🚫 PC Desvinculada. Se bloqueará el módulo de ventas.");
+      document.getElementById('modalTerminal').close();
       location.reload();
     }
   }
