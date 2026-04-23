@@ -3,85 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Comprobante de Venta</title>
+  <title>Comprobante | Micro SaaS</title>
   <style>
+    /* Tipografía y reset */
     body {
       font-family: 'Inter', system-ui, sans-serif;
-      font-size: 10px; /* Reducción general de base */
+      font-size: 10px;
       margin: 0;
       padding: 15px;
       background: #e2e8f0; 
-      color: #1e293b;
+      color: #0f172a;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
+    /* Contenedor A5 Portrait */
     .invoice-box {
       width: 148mm; 
       min-height: 210mm; 
       background: #fff;
-      padding: 6mm;
+      padding: 8mm;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       box-sizing: border-box;
       position: relative;
+      display: flex;
+      flex-direction: column;
     }
 
-    .header {
+    /* --- ENCABEZADO LEGAL (TIPO A/B/C) --- */
+    .doc-header {
+      display: grid;
+      grid-template-columns: 1fr 50px 1fr;
+      gap: 15px;
+      border-bottom: 2px solid #cbd5e1;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+      align-items: start;
+    }
+
+    /* Bloque Izquierdo: Emisor */
+    .emisor-info {
       display: flex;
-      justify-content: space-between;
-      align-items: center; /* Alineación central para mayor prolijidad */
-      border-bottom: 1.5px solid #cbd5e1;
-      padding-bottom: 8px;
-      margin-bottom: 12px;
+      flex-direction: column;
+      gap: 5px;
     }
     .company-logo {
-      max-width: 100px;
-      max-height: 45px;
+      max-width: 120px;
+      max-height: 50px;
       object-fit: contain;
-    }
-    .company-details {
-      text-align: right;
+      margin-bottom: 5px;
     }
     .company-name {
-      font-size: 14px; /* Más pequeño y elegante */
+      font-size: 14px;
       font-weight: 900;
-      color: #0f172a;
-      margin: 0 0 2px 0;
-      text-transform: uppercase;
-    }
-    .company-info {
-      font-size: 9px;
-      color: #64748b;
       margin: 0;
-      line-height: 1.2;
-    }
-
-    .doc-title {
-      text-align: center;
-      font-size: 12px;
-      font-weight: bold;
-      letter-spacing: 0.5px;
-      margin-bottom: 12px;
       text-transform: uppercase;
-      background: #f8fafc;
-      padding: 5px;
-      border: 1px solid #e2e8f0;
+      color: #1e293b;
     }
+    .company-details p { margin: 1px 0; font-size: 9px; color: #475569; }
 
-    .sale-info {
+    /* Bloque Central: Letra */
+    .center-letter {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: -5px;
+    }
+    .letter-box {
+      width: 40px;
+      height: 40px;
+      border: 2px solid #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 900;
+      background: #fff;
+    }
+    .doc-code { font-size: 8px; font-weight: bold; margin-top: 3px; color: #475569; }
+
+    /* Bloque Derecho: Datos del Comprobante */
+    .doc-info { text-align: right; }
+    .doc-title {
+      font-size: 20px;
+      font-weight: 900;
+      margin: 0 0 5px 0;
+      letter-spacing: 1px;
+      color: #0f172a;
+    }
+    .doc-info p { margin: 2px 0; font-size: 10px; color: #334155; }
+    .doc-info strong { color: #0f172a; }
+
+    /* --- DATOS DEL CLIENTE --- */
+    .client-box {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 15px;
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 12px;
+      gap: 10px;
       font-size: 10px;
     }
-    .info-block strong { color: #475569; display: inline-block; width: 55px; }
+    .client-box p { margin: 3px 0; color: #334155; }
+    .client-box strong { color: #0f172a; display: inline-block; width: 65px; }
 
+    /* --- TABLA DE ITEMS --- */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 12px;
+      margin-bottom: 15px;
     }
     th {
       text-align: left;
@@ -89,51 +122,74 @@
       text-transform: uppercase;
       background: #f1f5f9;
       color: #475569;
-      padding: 5px;
-      border-bottom: 1.5px solid #cbd5e1;
+      padding: 6px;
+      border-top: 1px solid #cbd5e1;
+      border-bottom: 2px solid #cbd5e1;
     }
     td {
-      padding: 5px;
+      padding: 6px;
       border-bottom: 1px solid #e2e8f0;
       vertical-align: middle;
       font-size: 10px;
+      color: #1e293b;
     }
 
-    /* TOTALES - REDUCCIÓN MÁXIMA */
+    /* --- TOTALES --- */
+    .totals-wrapper {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: auto; /* Empuja los totales hacia abajo si hay espacio */
+    }
     .totals-box {
-      width: 40%;
-      float: right;
-      border: 1px solid #e2e8f0;
-      border-radius: 4px;
-      padding: 6px;
+      width: 45%;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 8px;
       background: #f8fafc;
     }
     .total-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 3px;
-      font-size: 10px; /* Tamaño reducido */
+      margin-bottom: 4px;
+      font-size: 10px;
+      color: #475569;
     }
     .grand-total {
-      font-size: 12px; /* Reducción de 14px a 12px */
+      font-size: 14px;
       font-weight: 900;
       color: #0f172a;
-      margin-top: 4px;
-      padding-top: 4px;
-      border-top: 1.5px solid #cbd5e1;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 2px solid #cbd5e1;
     }
 
-    .clearfix::after { content: ""; clear: both; display: table; }
+    /* --- FIRMA (SOLO PARA RECIBOS) --- */
+    .signature-box {
+      display: none;
+      margin-top: 30px;
+      text-align: center;
+      width: 40%;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .signature-line {
+      border-top: 1px solid #0f172a;
+      padding-top: 5px;
+      font-size: 9px;
+      color: #475569;
+    }
 
+    /* --- FOOTER --- */
     .footer {
       text-align: center;
       margin-top: 20px;
-      font-size: 8.5px;
+      font-size: 8px;
       color: #64748b;
       border-top: 1px dashed #cbd5e1;
-      padding-top: 8px;
+      padding-top: 10px;
     }
 
+    /* --- BOTONES WEB --- */
     .no-print {
       position: fixed;
       top: 15px;
@@ -150,7 +206,9 @@
       font-weight: bold;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       font-size: 11px;
+      transition: 0.2s;
     }
+    .btn:hover { transform: translateY(-2px); }
     .btn-back { background: #334155; color: white; }
     .btn-print { background: #2563eb; color: white; }
 
@@ -158,7 +216,7 @@
       @page { size: A5 portrait; margin: 0; }
       body { background: #fff; padding: 0; display: block; }
       .no-print { display: none; }
-      .invoice-box { box-shadow: none; border: none; width: 100%; min-height: auto; padding: 6mm; }
+      .invoice-box { box-shadow: none; border: none; width: 100%; min-height: 100vh; padding: 8mm; }
     }
   </style>
 </head>
@@ -171,27 +229,43 @@
 
   <div class="invoice-box">
     
-    <div class="header">
-      <div id="printLogoContainer"></div>
-      <div class="company-details">
-        <h1 class="company-name" id="printCompName">EMPRESA</h1>
-        <p class="company-info" id="printCompInfo">
-          Dirección Principal<br>Teléfono | Email
-        </p>
+    <div class="doc-header">
+      <div class="emisor-info">
+        <div id="printLogoContainer"></div>
+        <h1 class="company-name" id="printCompName">TU VISIÓN ÓPTICA</h1>
+        <div class="company-details">
+          <p id="printCompAddress">Dirección: Av. Tissera 3510, Mendiolaza</p>
+          <p id="printCompPhone">Tel: 351 2465138</p>
+          <p id="printCompIva">Condición IVA: <strong>Responsable Monotributo</strong></p>
+        </div>
+      </div>
+
+      <div class="center-letter">
+        <div class="letter-box" id="docLetter">C</div>
+        <div class="doc-code" id="docCode">Cod. 011</div>
+      </div>
+
+      <div class="doc-info">
+        <h2 class="doc-title" id="docTitle">FACTURA</h2>
+        <p><strong>N° Comp:</strong> <span id="printDocNum">0001-00000000</span></p>
+        <p><strong>Fecha:</strong> <span id="printDate">--/--/----</span></p>
+        <div id="fiscalDataBox">
+          <p><strong>CUIT:</strong> <span id="printCompCuit">20-12345678-9</span></p>
+          <p><strong>Ingresos Brutos:</strong> <span id="printCompIibb">12345678</span></p>
+          <p><strong>Inicio Actividades:</strong> <span id="printCompInicio">01/01/2024</span></p>
+        </div>
       </div>
     </div>
 
-    <div class="doc-title">Comprobante de Venta</div>
-
-    <div class="sale-info">
-      <div class="info-block">
-        <div><strong>Cliente:</strong> <span id="printClient"></span></div>
-        <div><strong>Atendió:</strong> <span id="printSeller"></span></div>
+    <div class="client-box">
+      <div>
+        <p><strong>Cliente:</strong> <span id="printClient">Consumidor Final</span></p>
+        <p><strong>Domicilio:</strong> <span id="printClientAddr">-</span></p>
       </div>
-      <div class="info-block">
-        <div><strong>Ticket N°:</strong> <span id="printId"></span></div>
-        <div><strong>Fecha:</strong> <span id="printDate"></span></div>
-        <div><strong>Método:</strong> <span id="printMethod"></span> <span id="printCupon" style="font-size:8px; color:#64748b;"></span></div>
+      <div>
+        <p><strong>CUIT / DNI:</strong> <span id="printClientDoc">-</span></p>
+        <p><strong>Cond. IVA:</strong> <span id="printClientIva">Consumidor Final</span></p>
+        <p><strong>Cond. Venta:</strong> <span id="printMethod">Contado</span></p>
       </div>
     </div>
 
@@ -199,22 +273,22 @@
       <thead>
         <tr>
           <th style="width: 10%; text-align: center;">Cant</th>
-          <th style="width: 50%;">Producto</th>
+          <th style="width: 50%;">Descripción</th>
           <th style="width: 20%; text-align: right;">P. Unit</th>
-          <th style="width: 20%; text-align: right;">Subt.</th>
+          <th style="width: 20%; text-align: right;">Subtotal</th>
         </tr>
       </thead>
       <tbody id="printItems"></tbody>
     </table>
 
-    <div class="clearfix">
+    <div class="totals-wrapper">
       <div class="totals-box">
         <div class="total-row">
           <span>Subtotal:</span>
           <span id="printSubtotal">$0</span>
         </div>
         <div class="total-row" id="rowDiscount" style="display:none; color: #dc2626;">
-          <span>Desc:</span>
+          <span>Descuentos:</span>
           <span id="printDiscount">-$0</span>
         </div>
         <div class="total-row grand-total">
@@ -224,7 +298,11 @@
       </div>
     </div>
 
-    <div class="footer">
+    <div class="signature-box" id="signatureBox">
+      <div class="signature-line">Firma y Aclaración - Recibí Conforme</div>
+    </div>
+
+    <div class="footer" id="printFooterMsg">
       <strong>Documento no válido como factura.</strong><br>
       Trabajos personalizados no admiten devoluciones. Gracias por elegirnos.
     </div>
@@ -234,70 +312,104 @@
   <script>
     function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
 
+    // --- CONFIGURACIÓN FISCAL DE TU EMPRESA ---
+    // Idealmente esto debería venir del localStorage, pero te lo dejo acá para que lo completes fácil:
+    const MY_CUIT = localStorage.getItem('company_cuit') || "20-12345678-9"; 
+    const MY_IIBB = localStorage.getItem('company_iibb') || "12345678";
+    const MY_INICIO = localStorage.getItem('company_inicio') || "01/01/2024";
+    const MY_IVA = "Responsable Monotributo"; // Fijo para Factura C
+
+    // --- CARGAR DATOS DE EMPRESA ---
     const compName = localStorage.getItem('company_name') || 'OPTICA TU VISIÓN';
     let compAddress = localStorage.getItem('company_address');
     let compPhone = localStorage.getItem('company_phone');
-    let compEmail = localStorage.getItem('company_email');
     const compLogo = localStorage.getItem('company_logo');
 
-    // Si los datos están vacíos en la base de datos o dicen "undefined", usamos los datos fijos de la óptica
     if (!compAddress || compAddress === 'undefined') compAddress = 'Av. Tissera 3510 B° El Talar - Mendiolaza';
     if (!compPhone || compPhone === 'undefined') compPhone = '351 2465138';
-    if (!compEmail || compEmail === 'undefined') compEmail = '';
 
     document.getElementById('printCompName').textContent = compName;
+    document.getElementById('printCompAddress').textContent = 'Dirección: ' + compAddress;
+    document.getElementById('printCompPhone').textContent = 'Tel: ' + compPhone;
+    document.getElementById('printCompIva').innerHTML = `Condición IVA: <strong>${MY_IVA}</strong>`;
     
-    let infoHtml = '';
-    if (compAddress) infoHtml += compAddress + '<br>';
-    if (compPhone) infoHtml += 'Tel: ' + compPhone + ' ';
-    if (compEmail) infoHtml += '| ' + compEmail;
-    document.getElementById('printCompInfo').innerHTML = infoHtml;
+    document.getElementById('printCompCuit').textContent = MY_CUIT;
+    document.getElementById('printCompIibb').textContent = MY_IIBB;
+    document.getElementById('printCompInicio').textContent = MY_INICIO;
 
     if (compLogo && compLogo !== 'undefined') {
       document.getElementById('printLogoContainer').innerHTML = `<img src="${compLogo}" class="company-logo" alt="Logo">`;
     }
 
+    // --- LECTURA DE LOS DATOS DE LA VENTA / RECIBO ---
     const venta = JSON.parse(localStorage.getItem('last_sale_to_print'));
 
     if (!venta) {
       alert("No hay datos para mostrar.");
       window.close();
     } else {
-      document.getElementById('printId').textContent = venta.id.split('_')[1] || venta.id;
-      document.getElementById('printDate').textContent = new Date(venta.createdAt).toLocaleString('es-AR');
+      
+      // 1. DETERMINAR SI ES FACTURA O RECIBO
+      const isRecibo = venta.documentTitle && venta.documentTitle.includes("RECIBO");
+      
+      if (isRecibo) {
+        // MODO RECIBO DE PAGO
+        document.getElementById('docLetter').textContent = "X";
+        document.getElementById('docCode').textContent = "Doc. no válido";
+        document.getElementById('docTitle').textContent = "RECIBO";
+        document.getElementById('fiscalDataBox').style.display = "none"; // Ocultamos CUIT/IIBB en recibos
+        document.getElementById('signatureBox').style.display = "block"; // Mostramos firma
+        document.getElementById('printFooterMsg').innerHTML = "Recibo oficial de pago a cuenta corriente.";
+      } else {
+        // MODO FACTURA C LEGAL
+        document.getElementById('docLetter').textContent = "C";
+        document.getElementById('docCode').textContent = "Cod. 011";
+        document.getElementById('docTitle').textContent = "FACTURA";
+        document.getElementById('printFooterMsg').innerHTML = "Trabajos personalizados no admiten devoluciones. Gracias por elegirnos.";
+      }
+
+      // 2. LLENAR DATOS DEL COMPROBANTE
+      // Simulamos un número de factura si no lo tiene. Lo ideal es guardarlo en la DB
+      const numComp = venta.id.split('_')[1] || Date.now().toString().slice(-8); 
+      document.getElementById('printDocNum').textContent = "0001-" + String(numComp).padStart(8, '0');
+      document.getElementById('printDate').textContent = new Date(venta.createdAt).toLocaleDateString('es-AR');
+      
+      // 3. LLENAR DATOS DEL CLIENTE
       document.getElementById('printClient').textContent = venta.client || 'Consumidor Final';
-      document.getElementById('printSeller').textContent = venta.seller || '-';
-      document.getElementById('printMethod').textContent = venta.method;
+      document.getElementById('printMethod').textContent = venta.method || 'Contado';
+      
+      // Si le pasaste el CUIT del cliente desde la web, acá lo lee (se puede mejorar luego)
+      document.getElementById('printClientDoc').textContent = venta.clientDoc || '-';
+      document.getElementById('printClientIva').textContent = venta.clientIva || 'Consumidor Final';
       
       if (venta.cupon) {
-        document.getElementById('printCupon').textContent = `(Lote: ${venta.cupon})`;
+        document.getElementById('printMethod').textContent += ` (Lote: ${venta.cupon})`;
       }
-      
+
+      // 4. LLENAR TABLA DE ARTÍCULOS
       const itemsBody = document.getElementById('printItems');
       venta.items.forEach(i => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="text-align: center; font-weight: bold;">${i.qty}</td>
           <td>${i.name}</td>
-          <td style="text-align: right; color: #64748b;">${currency(i.price)}</td>
-          <td style="text-align: right; font-weight: bold;">${currency(i.subtotal)}</td>
+          <td style="text-align: right; color: #475569;">${currency(i.price)}</td>
+          <td style="text-align: right; font-weight: bold; color: #0f172a;">${currency(i.subtotal)}</td>
         `;
         itemsBody.appendChild(tr);
       });
 
+      // 5. TOTALES
       document.getElementById('printSubtotal').textContent = currency(venta.subtotal);
-      
       if (venta.promoDiscount > 0) {
         document.getElementById('rowDiscount').style.display = 'flex';
         document.getElementById('printDiscount').textContent = "-" + currency(venta.promoDiscount);
       }
-      
       document.getElementById('printTotal').textContent = currency(venta.total);
 
+      // Auto-imprimir
       window.onload = () => {
-        setTimeout(() => {
-          window.print();
-        }, 500); 
+        setTimeout(() => { window.print(); }, 500); 
       };
     }
   </script>
