@@ -65,6 +65,22 @@ export async function onRequestPost(context) {
 
     const data = await context.request.json();
 
+    // 🔥 NUEVO: VERIFICACIÓN DE ADMINISTRADOR PARA AJUSTES MANUALES
+    if (data.isAdjustment) {
+      if (!data.adminPass) {
+        return Response.json({ error: 'Autorización denegada: Falta contraseña de administrador.' }, { status: 401 });
+      }
+      
+      // Chequeamos que la clave coincida exactamente con la del dueño de la empresa
+      const adminCheck = await context.env.DB.prepare(`
+        SELECT id FROM clients WHERE id = ? AND adminPass = ?
+      `).bind(companyId, data.adminPass).first();
+
+      if (!adminCheck) {
+        return Response.json({ error: 'Autorización denegada: Contraseña de administrador incorrecta.' }, { status: 401 });
+      }
+    }
+
     const id = data.id || 'prod_' + Date.now();
     const name = safeString(data.name);
     const code = safeString(data.code);
