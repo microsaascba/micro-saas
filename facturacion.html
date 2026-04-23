@@ -164,7 +164,7 @@
   let isB2B = false;
   let filteredProducts = [];
 
-  const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+  const terminalActiva = localStorage.getItem('terminal_assigned_branch');
 
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -182,6 +182,21 @@
   }
 
   async function initPOS() {
+    // 🔥 NUEVO BLOQUEO DE SEGURIDAD
+    if (!terminalActiva || terminalActiva === 'null' || terminalActiva === '') {
+      document.querySelector('.pos-container').innerHTML = `
+        <div style="text-align:center; padding: 60px 20px; background: #fff; border-radius: 12px; border: 1px solid var(--line); margin-top: 20px;">
+          <div style="font-size: 50px; margin-bottom: 15px;">⚠️</div>
+          <h2 style="color: var(--danger); font-size: 24px; margin:0 0 10px 0;">Terminal No Vinculada</h2>
+          <p style="color: var(--muted); font-size: 15px; margin-bottom: 25px; max-width: 500px; margin-left: auto; margin-right: auto;">
+            Para poder facturar y descontar stock, esta computadora debe estar asignada a una sucursal física. Por favor, vinculá la terminal desde tu panel principal.
+          </p>
+          <button class="btn btn-primary" onclick="window.location.href='dashboard.html'">Ir al Dashboard a vincular</button>
+        </div>
+      `;
+      return; // Corta la ejecución, no carga los productos ni deja hacer nada
+    }
+
     mostrarCarga(true);
     try {
       const [resP, resC] = await Promise.all([
