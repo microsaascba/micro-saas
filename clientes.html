@@ -240,7 +240,7 @@
     mostrarCarga(true);
     try {
       const nocache = '?v=' + Date.now();
-      // Descargamos los clientes y el historial de órdenes al mismo tiempo
+      // Usamos apiFetch puro para que core.js inyecte el company_id
       const [resC, resO] = await Promise.all([
           apiFetch(`${API_URL}/business_clients` + nocache),
           apiFetch(`${API_URL}/orders` + nocache)
@@ -277,9 +277,9 @@
 
     mostrarCarga(true);
     try {
+      // Usamos apiFetch SIN el objeto headers, para no borrar el x-company-id
       const response = await apiFetch(`${API_URL}/business_clients`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(client)
       });
       
@@ -330,10 +330,7 @@
 
     document.getElementById('fichaClientName').textContent = `${c.name} ${c.cuil ? `(DNI: ${c.cuil})` : ''}`;
     
-    // Filtramos las órdenes de este cliente (por ID o por Nombre exacto para historial viejo)
     const historial = dbOrders.filter(o => o.clientId === c.id || o.clientName.toLowerCase() === c.name.toLowerCase());
-    
-    // Ordenamos de más reciente a más antigua
     historial.sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
 
     const fichaContent = document.getElementById('fichaContent');
@@ -351,7 +348,7 @@
               <div class="ficha-header">
                 <div>
                   <span style="font-weight:900; font-size:15px; color:var(--text);">📅 ${fechaStr}</span>
-                  <span style="margin-left:10px; color:var(--muted);">Orden: ${o.id}</span>
+                  <span style="margin-left:10px; color:var(--muted);">Orden: ${o.id.split('_')[1] || o.id}</span>
                 </div>
                 <div style="font-weight:bold; color:${colorEstado}; text-transform:uppercase;">${o.status}</div>
               </div>
@@ -411,9 +408,9 @@
 
     mostrarCarga(true);
     try {
+      // Usamos apiFetch SIN el objeto headers
       const response = await apiFetch(`${API_URL}/business_clients`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(c)
       });
       if (response.ok) renderTable();
