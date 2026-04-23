@@ -234,11 +234,16 @@
   <script>
     function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
 
-    const compName = localStorage.getItem('company_name') || 'Micro SaaS';
-    const compAddress = localStorage.getItem('company_address') || '';
-    const compPhone = localStorage.getItem('company_phone') || '';
-    const compEmail = localStorage.getItem('company_email') || '';
-    const compLogo = localStorage.getItem('company_logo') || '';
+    const compName = localStorage.getItem('company_name') || 'OPTICA TU VISIÓN';
+    let compAddress = localStorage.getItem('company_address');
+    let compPhone = localStorage.getItem('company_phone');
+    let compEmail = localStorage.getItem('company_email');
+    const compLogo = localStorage.getItem('company_logo');
+
+    // Si los datos están vacíos en la base de datos o dicen "undefined", usamos los datos fijos de la óptica
+    if (!compAddress || compAddress === 'undefined') compAddress = 'Av. Tissera 3510 B° El Talar - Mendiolaza';
+    if (!compPhone || compPhone === 'undefined') compPhone = '351 2465138';
+    if (!compEmail || compEmail === 'undefined') compEmail = '';
 
     document.getElementById('printCompName').textContent = compName;
     
