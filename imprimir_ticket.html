@@ -2,93 +2,313 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Ticket de Venta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comprobante de Venta</title>
   <style>
-    /* Estilos optimizados para impresora térmica 80mm */
-    body { 
-        font-family: 'Courier New', Courier, monospace; 
-        font-size: 12px; 
-        margin: 0 auto; 
-        padding: 10px; 
-        width: 80mm; 
-        color: #000; 
+    /* Estilos base y tipografía */
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 13px;
+      margin: 0;
+      padding: 20px;
+      background: #e2e8f0; /* Fondo grisecito para la web */
+      color: #1e293b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .center { text-align: center; }
-    .right { text-align: right; }
-    .bold { font-weight: bold; }
-    .separator { border-top: 1px dashed #000; margin: 8px 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-    th, td { padding: 4px 0; vertical-align: top; }
-    th { text-align: left; border-bottom: 1px dashed #000; }
-    .logo { max-width: 120px; margin-bottom: 10px; }
-    
+
+    /* Contenedor principal: Mitad de hoja A4 (Formato A5 Portrait) */
+    .invoice-box {
+      width: 148mm; /* Ancho exacto de A5 */
+      min-height: 210mm; /* Alto exacto de A5 */
+      background: #fff;
+      padding: 10mm;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    /* Cabecera: Logo y Datos de la Empresa */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #cbd5e1;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    .company-logo {
+      max-width: 150px;
+      max-height: 70px;
+      object-fit: contain;
+    }
+    .company-details {
+      text-align: right;
+    }
+    .company-name {
+      font-size: 20px;
+      font-weight: 900;
+      color: #0f172a;
+      margin: 0 0 5px 0;
+      text-transform: uppercase;
+    }
+    .company-info {
+      font-size: 11px;
+      color: #64748b;
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    /* Título del documento */
+    .doc-title {
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      background: #f8fafc;
+      padding: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    /* Datos de la Venta y Cliente */
+    .sale-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+    .info-block strong { color: #475569; display: inline-block; width: 65px; }
+
+    /* Tabla de artículos */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      background: #f1f5f9;
+      color: #475569;
+      padding: 8px;
+      border-bottom: 2px solid #cbd5e1;
+    }
+    td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: middle;
+    }
+
+    /* Totales */
+    .totals-box {
+      width: 50%;
+      float: right;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px;
+      background: #f8fafc;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+    .grand-total {
+      font-size: 18px;
+      font-weight: 900;
+      color: #0f172a;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 2px solid #cbd5e1;
+    }
+
+    /* Limpiar floats */
+    .clearfix::after { content: ""; clear: both; display: table; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 11px;
+      color: #64748b;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 15px;
+    }
+
+    /* Botones de control fuera de la impresión */
+    .no-print {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      display: flex;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .btn {
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: 0.2s;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn-back { background: #334155; color: white; }
+    .btn-print { background: #2563eb; color: white; }
+
+    /* Reglas específicas para la impresora */
     @media print {
-        @page { margin: 0; }
-        body { margin: 0; padding: 5mm; }
+      @page { size: A5 portrait; margin: 0; }
+      body { background: #fff; padding: 0; display: block; }
+      .no-print { display: none; }
+      .invoice-box { box-shadow: none; border: none; width: 100%; min-height: auto; padding: 10mm; }
     }
   </style>
 </head>
 <body>
-  <div id="ticket"></div>
+
+  <div class="no-print">
+    <button class="btn btn-back" onclick="window.close()">✕ Cerrar Pestaña</button>
+    <button class="btn btn-print" onclick="window.print()">🖨️ Imprimir</button>
+  </div>
+
+  <div class="invoice-box">
+    
+    <div class="header">
+      <div id="printLogoContainer">
+        </div>
+      <div class="company-details">
+        <h1 class="company-name" id="printCompName">EMPRESA</h1>
+        <p class="company-info" id="printCompInfo">
+          Dirección<br>Teléfono
+        </p>
+      </div>
+    </div>
+
+    <div class="doc-title">Comprobante de Venta</div>
+
+    <div class="sale-info">
+      <div class="info-block">
+        <div><strong>Cliente:</strong> <span id="printClient"></span></div>
+        <div><strong>Atendió:</strong> <span id="printSeller"></span></div>
+      </div>
+      <div class="info-block">
+        <div><strong>Ticket N°:</strong> <span id="printId"></span></div>
+        <div><strong>Fecha:</strong> <span id="printDate"></span></div>
+        <div><strong>Método:</strong> <span id="printMethod"></span> <span id="printCupon" style="font-size:10px; color:#666;"></span></div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 10%; text-align: center;">Cant</th>
+          <th style="width: 50%;">Detalle del Producto</th>
+          <th style="width: 20%; text-align: right;">Precio Un.</th>
+          <th style="width: 20%; text-align: right;">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody id="printItems"></tbody>
+    </table>
+
+    <div class="clearfix">
+      <div class="totals-box">
+        <div class="total-row">
+          <span>Subtotal:</span>
+          <span id="printSubtotal">$0</span>
+        </div>
+        <div class="total-row" id="rowDiscount" style="display:none; color: #dc2626;">
+          <span>Descuento:</span>
+          <span id="printDiscount">-$0</span>
+        </div>
+        <div class="total-row grand-total">
+          <span>TOTAL:</span>
+          <span id="printTotal">$0</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <strong>Documento no válido como factura.</strong><br>
+      Los trabajos a medida no tienen devolución. Conserve este comprobante.
+    </div>
+
+  </div>
 
   <script>
-    function currency(n) { 
-        return '$ ' + Number(n).toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 0}); 
-    }
+    function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
+
+    // Cargar datos de la empresa desde localStorage
+    const compName = localStorage.getItem('company_name') || 'Mi Empresa';
+    const compAddress = localStorage.getItem('company_address') || '';
+    const compPhone = localStorage.getItem('company_phone') || '';
+    const compLogo = localStorage.getItem('company_logo') || '';
+
+    // Inyectar datos de la empresa
+    document.getElementById('printCompName').textContent = compName;
     
-    // Leemos la última venta que facturacion.html guardó en la memoria
-    const sale = JSON.parse(localStorage.getItem('last_sale_to_print'));
+    let infoHtml = '';
+    if (compAddress) infoHtml += compAddress + '<br>';
+    if (compPhone) infoHtml += 'Tel: ' + compPhone;
+    document.getElementById('printCompInfo').innerHTML = infoHtml;
 
-    if (!sale) {
-      document.getElementById('ticket').innerHTML = '<div class="center bold">Error: No hay venta registrada para imprimir.</div>';
+    if (compLogo && compLogo !== 'undefined') {
+      document.getElementById('printLogoContainer').innerHTML = `<img src="${compLogo}" class="company-logo" alt="Logo">`;
+    }
+
+    // Cargar datos de la venta
+    const venta = JSON.parse(localStorage.getItem('last_sale_to_print'));
+
+    if (!venta) {
+      alert("No hay datos de venta para imprimir.");
+      window.close();
     } else {
-      // Leemos los datos de la empresa guardados en el login
-      const cName = localStorage.getItem('company_name') || 'Comercio';
-      const cAdd = localStorage.getItem('company_address') || '';
-      const cPhone = localStorage.getItem('company_phone') || '';
-      const logo = localStorage.getItem('company_logo') || '';
-
-      let html = '<div class="center">';
-      if (logo && logo !== 'undefined') html += `<img src="${logo}" class="logo"><br>`;
-      html += `<div class="bold" style="font-size:18px; margin-bottom: 5px;">${cName}</div>`;
-      if (cAdd) html += `<div>${cAdd}</div>`;
-      if (cPhone) html += `<div>Tel: ${cPhone}</div>`;
-      html += `</div><div class="separator"></div>`;
-
-      // Datos de la venta
-      html += `<div><span class="bold">Fecha:</span> ${new Date(sale.createdAt).toLocaleString('es-AR')}</div>`;
-      html += `<div><span class="bold">Ticket N°:</span> ${sale.id.split('_')[1]}</div>`;
-      html += `<div><span class="bold">Sucursal:</span> ${sale.branch || 'Central'}</div>`;
-      html += `<div><span class="bold">Cliente:</span> ${sale.client || 'Consumidor Final'}</div>`;
-      html += `<div><span class="bold">Pago:</span> ${sale.method} ${sale.cupon ? '(Lote: '+sale.cupon+')' : ''}</div>`;
-      html += `<div><span class="bold">Atendió:</span> ${sale.seller || ''}</div>`;
-      html += `<div class="separator"></div>`;
-
-      // Tabla de artículos
-      html += `<table><thead><tr><th>Cant</th><th>Detalle</th><th class="right">Subt</th></tr></thead><tbody>`;
-      sale.items.forEach(i => {
-        html += `<tr>
-          <td style="width: 15%;">${i.qty}</td>
-          <td style="width: 55%;">${i.name}</td>
-          <td class="right bold" style="width: 30%;">${currency(i.subtotal)}</td>
-        </tr>`;
+      document.getElementById('printId').textContent = venta.id.split('_')[1];
+      document.getElementById('printDate').textContent = new Date(venta.createdAt).toLocaleString('es-AR');
+      document.getElementById('printClient').textContent = venta.client || 'Consumidor Final';
+      document.getElementById('printSeller').textContent = venta.seller || '-';
+      document.getElementById('printMethod').textContent = venta.method;
+      
+      if (venta.cupon) {
+        document.getElementById('printCupon').textContent = `(Lote: ${venta.cupon})`;
+      }
+      
+      // Armar tabla de artículos
+      const itemsBody = document.getElementById('printItems');
+      venta.items.forEach(i => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="text-align: center; font-weight: bold;">${i.qty}</td>
+          <td>${i.name}</td>
+          <td style="text-align: right; color: #475569;">${currency(i.price)}</td>
+          <td style="text-align: right; font-weight: bold;">${currency(i.subtotal)}</td>
+        `;
+        itemsBody.appendChild(tr);
       });
-      html += `</tbody></table><div class="separator"></div>`;
 
       // Totales
-      html += `<div class="right bold" style="font-size:18px;">TOTAL: ${currency(sale.total)}</div>`;
-      html += `<div class="separator"></div>`;
-      html += `<div class="center" style="margin-top:15px; font-size:11px;">¡Gracias por su compra!</div>`;
-      html += `<div class="center" style="margin-top:5px; font-size:10px; color:#555;">Documento no válido como factura.</div>`;
+      document.getElementById('printSubtotal').textContent = currency(venta.subtotal);
+      
+      if (venta.promoDiscount > 0) {
+        document.getElementById('rowDiscount').style.display = 'flex';
+        document.getElementById('printDiscount').textContent = "-" + currency(venta.promoDiscount);
+      }
+      
+      document.getElementById('printTotal').textContent = currency(venta.total);
 
-      document.getElementById('ticket').innerHTML = html;
-
-      // Dispara la ventana de impresión medio segundo después de cargar y luego cierra la pestaña
-      setTimeout(() => {
-        window.print();
-        // Opcional: descomentá la siguiente línea si querés que la pestaña se cierre sola tras imprimir
-        // window.close(); 
-      }, 500);
+      // Auto-imprimir al cargar
+      window.onload = () => {
+        setTimeout(() => {
+          window.print();
+        }, 800); // Un pequeño retraso para asegurar que el logo cargue bien
+      };
     }
   </script>
 </body>
