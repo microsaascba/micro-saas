@@ -182,21 +182,28 @@
   }
 
   async function initPOS() {
-    // 🔥 NUEVO BLOQUEO DE SEGURIDAD
+    // 🔥 BLOQUEO DE SEGURIDAD: Verifica si la PC tiene una sucursal asignada
     if (!terminalActiva || terminalActiva === 'null' || terminalActiva === '') {
       document.querySelector('.pos-container').innerHTML = `
-        <div style="text-align:center; padding: 60px 20px; background: #fff; border-radius: 12px; border: 1px solid var(--line); margin-top: 20px;">
-          <div style="font-size: 50px; margin-bottom: 15px;">⚠️</div>
-          <h2 style="color: var(--danger); font-size: 24px; margin:0 0 10px 0;">Terminal No Vinculada</h2>
-          <p style="color: var(--muted); font-size: 15px; margin-bottom: 25px; max-width: 500px; margin-left: auto; margin-right: auto;">
-            Para poder facturar y descontar stock, esta computadora debe estar asignada a una sucursal física. Por favor, vinculá la terminal desde tu panel principal.
+        <div style="text-align:center; padding: 60px 20px; background: #fff; border-radius: 12px; border: 1px solid var(--line); margin-top: 20px; box-shadow: var(--shadow);">
+          <div style="font-size: 50px; margin-bottom: 15px;">🚫</div>
+          <h2 style="color: var(--danger); font-size: 22px; margin:0 0 10px 0;">Acceso Restringido</h2>
+          <p style="color: var(--text); font-size: 16px; font-weight: 500; margin-bottom: 10px;">
+            Esta terminal no se encuentra asignada a ninguna sucursal.
           </p>
-          <button class="btn btn-primary" onclick="window.location.href='dashboard.html'">Ir al Dashboard a vincular</button>
+          <p style="color: var(--muted); font-size: 14px; max-width: 450px; margin: 0 auto 25px auto; line-height: 1.5;">
+            Para poder realizar ventas y descontar stock, un <strong>Administrador</strong> debe iniciar sesión en esta PC y vincularla a un local desde el menú de Sucursales.
+          </p>
+          <div style="display: inline-block; padding: 10px 20px; background: var(--panel-2); border-radius: 8px; color: var(--muted); font-size: 12px; font-weight: bold; text-transform: uppercase;">
+            Contactar al soporte técnico o administrador
+          </div>
         </div>
       `;
-      return; // Corta la ejecución, no carga los productos ni deja hacer nada
+      // Detenemos la carga para que no se vea nada del sistema de ventas
+      return; 
     }
 
+    // Si la terminal está asignada, procedemos con la carga normal
     mostrarCarga(true);
     try {
       const [resP, resC] = await Promise.all([
@@ -204,19 +211,21 @@
         apiFetch(`${API_URL}/business_clients?withBalance=1`)
       ]);
 
-      if (!resP.ok) console.error("Error D1 Productos:", await resP.text());
-      if (!resC.ok) console.error("Error D1 Clientes:", await resC.text());
+      if (!resP.ok) console.error("Error Productos:", await resP.text());
+      if (!resC.ok) console.error("Error Clientes:", await resC.text());
 
       dbProducts = resP.ok ? await resP.json() : [];
       dbClients = resC.ok ? await resC.json() : [];
 
-      console.log(`✅ D1 Conectado: ${dbProducts.length} productos y ${dbClients.length} clientes encontrados.`);
+      console.log(`✅ Terminal vinculada a: ${terminalActiva}`);
       renderCart();
     } catch (e) {
       console.error("Error de conexión:", e);
     } finally {
       mostrarCarga(false);
-      document.getElementById('posSearch').focus();
+      // Solo intentamos dar foco si el buscador existe (no está bloqueado)
+      const searchInput = document.getElementById('posSearch');
+      if (searchInput) searchInput.focus();
     }
   }
 
