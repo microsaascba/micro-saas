@@ -574,11 +574,14 @@
       document.getElementById('expDesde').value = primerDiaMes;
       document.getElementById('expHasta').value = todayISO();
 
+      // TRUCO ROMPE-CACHÉ: Evita que Cloudflare devuelva HTML viejo
+      const nocache = '?v=' + Date.now();
+
       const [resO, resP, resC, resS] = await Promise.all([
-        apiFetch('/api/orders'), 
-        apiFetch('/api/products'), 
-        apiFetch('/api/clients'), 
-        apiFetch('/api/suppliers')
+        apiFetch('/api/orders' + nocache), 
+        apiFetch('/api/products' + nocache), 
+        apiFetch('/api/clients' + nocache), 
+        apiFetch('/api/suppliers' + nocache)
       ]);
       
       if(resO.ok) dbOrders = await resO.json();
@@ -593,7 +596,11 @@
 
       renderOrders();
       renderLenses();
-    } catch(e) { console.error(e); } finally { mostrarCarga(false); }
+    } catch(e) { 
+      console.error("Error cargando datos:", e); 
+    } finally { 
+      mostrarCarga(false); 
+    }
   }
 
   function renderLenses() {
