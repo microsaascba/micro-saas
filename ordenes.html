@@ -575,8 +575,12 @@
       document.getElementById('expHasta').value = todayISO();
 
       const [resO, resP, resC, resS] = await Promise.all([
-        fetch('/api/optical'), fetch('/api/products'), fetch('/api/clients'), fetch('/api/suppliers')
+        apiFetch('/api/orders'), 
+        apiFetch('/api/products'), 
+        apiFetch('/api/clients'), 
+        apiFetch('/api/suppliers')
       ]);
+      
       if(resO.ok) dbOrders = await resO.json();
       if(resP.ok) dbProducts = await resP.json();
       if(resC.ok) dbClients = await resC.json();
@@ -651,7 +655,7 @@
 
       mostrarCarga(true);
       try {
-          await fetch('/api/products', { method: 'POST', body: JSON.stringify(lens) });
+          await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(lens) });
           const idx = dbProducts.findIndex(p => p.id === id);
           if (idx >= 0) dbProducts[idx] = lens; else dbProducts.push(lens);
           document.getElementById('modalCristal').close();
@@ -817,7 +821,7 @@
           branches[terminalActiva] -= 1;
           let stockTotal = 0; for (let b in branches) stockTotal += branches[b];
           prod.stock_branches = JSON.stringify(branches); prod.stock = stockTotal;
-          await fetch('/api/products', { method: 'POST', body: JSON.stringify(prod) });
+          await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(prod) });
         }
       }
 
@@ -828,10 +832,10 @@
           clientId: ord.clientId, client: ord.clientName, method: method, cupon: '', subtotal: depositFloat, promoDiscount: 0, total: depositFloat, isB2B: false,
           items: [{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Abono inicial`, price: depositFloat, cost: 0, qty: 1}]
         };
-        await fetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSena) });
+        await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSena) });
       }
 
-      await fetch('/api/optical', { method: 'POST', body: JSON.stringify(ord) });
+      await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(ord) });
       if (isNew) dbOrders.unshift(ord); else { const idx = dbOrders.findIndex(x=>x.id===id); if(idx>=0) dbOrders[idx]=ord; }
       
       document.getElementById('modalOrden').close();
@@ -894,7 +898,7 @@
     if(!confirm("¿El pedido llegó del laboratorio y está listo?")) return;
     const o = dbOrders.find(x => x.id === id); o.status = 'Recibido - Listo';
     mostrarCarga(true);
-    await fetch('/api/optical', { method: 'POST', body: JSON.stringify(o) });
+    await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) });
     mostrarCarga(false); renderOrders();
   }
 
@@ -918,12 +922,12 @@
           clientId: o.clientId, client: o.clientName, method: method, cupon: '', subtotal: o.balance, promoDiscount: 0, total: o.balance, isB2B: false,
           items: [{id: 'saldo', code: 'SALDO', name: `Saldo Orden ${o.id} - Trabajo Terminado`, price: o.balance, cost: 0, qty: 1}]
         };
-        await fetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSaldo) });
+        await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSaldo) });
       }
 
       o.status = 'Entregado';
       o.balance = 0; 
-      await fetch('/api/optical', { method: 'POST', body: JSON.stringify(o) });
+      await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) });
       
       document.getElementById('modalCobroSaldo').close();
       renderOrders();
