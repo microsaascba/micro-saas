@@ -947,13 +947,18 @@
     const cant = parseInt(document.getElementById('ajusteCant').value);
     
     if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
-    const prod = dbProducts.find(p => p.id === prodId);
+    
+    // CORRECCIÓN: Usar == en lugar de === y validar que exista
+    const prod = dbProducts.find(p => p.id == prodId);
+    if (!prod) return alert("Error: Producto no encontrado en el sistema.");
+
     let branches = getBranches(prod);
     if (branches[branch] === undefined) branches[branch] = 0;
 
-    if (tipo === 'ingreso') branches[branch] = Number(branches[branch] || 0) + cant;
-    else {
-      if (Number(branches[branch] || 0) < cant) return alert("Stock insuficiente para restar.");
+    if (tipo === 'ingreso') {
+        branches[branch] = Number(branches[branch] || 0) + cant;
+    } else {
+      if (Number(branches[branch] || 0) < cant) return alert("Stock insuficiente en esta sucursal para restar.");
       branches[branch] = Number(branches[branch] || 0) - cant;
     }
 
@@ -967,10 +972,13 @@
     try {
       await saveProduct(prod);
       logMovement('Ajuste', branch, '', `${tipo === 'ingreso' ? '+' : '-'}${cant} un. - ${prod.name}`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}]);
+      
       document.getElementById('modalAjuste').close();
+      document.getElementById('ajusteCant').value = ''; // Limpiamos el campo
       await initStock();
+      alert("✅ Ajuste de stock aplicado correctamente."); // Feedback visual
     } catch(err) {
-      alert("Error.");
+      alert("Error al guardar en la base de datos.");
     } finally {
       mostrarCarga(false);
     }
@@ -983,11 +991,16 @@
     const destino = document.getElementById('transfDestino').value;
     const cant = parseInt(document.getElementById('transfCant').value);
 
-    if (origen === destino || isNaN(cant) || cant <= 0) return alert("Error en datos.");
-    const prod = dbProducts.find(p => p.id === prodId);
+    if (origen === destino) return alert("El origen y el destino no pueden ser iguales.");
+    if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
+    
+    // CORRECCIÓN: Usar ==
+    const prod = dbProducts.find(p => p.id == prodId);
+    if (!prod) return alert("Error: Producto no encontrado en el sistema.");
+
     let branches = getBranches(prod);
 
-    if ((branches[origen] === undefined ? 0 : Number(branches[origen])) < cant) return alert(`Sin stock en ${origen}.`);
+    if ((branches[origen] === undefined ? 0 : Number(branches[origen])) < cant) return alert(`Sin stock suficiente en ${origen}.`);
     if (branches[destino] === undefined) branches[destino] = 0;
 
     branches[origen] = Number(branches[origen] || 0) - cant;
@@ -1003,10 +1016,58 @@
     try {
       await saveProduct(prod);
       logMovement('Transferencia', origen, destino, `Traslado interno`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}]);
+      
       document.getElementById('modalTransferencia').close();
+      document.getElementById('transfCant').value = ''; // Limpiamos el campo
       await initStock();
+      alert("✅ Transferencia realizada con éxito.");
     } catch(err) {
-      alert("Error.");
+      alert("Error al procesar transferencia.");
+    } finally {
+      mostrarCarga(false);
+    }
+  }
+
+  async function procesarIngresoCompra(e) {
+    e.preventDefault();
+    const prodId = document.getElementById('ingresoProducto').value;
+    const destino = document.getElementById('ingresoDestino').value;
+    const cant = parseInt(document.getElementById('ingresoCant').value);
+    const provId = document.getElementById('ingresoProveedor').value;
+    const fac = document.getElementById('ingresoFactura').value;
+    
+    if (!provId || !fac) return alert("Seleccioná el proveedor y la factura cruzada.");
+    if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
+
+    // CORRECCIÓN: Usar ==
+    const provObj = dbSuppliers.find(s => s.id == provId);
+    const provName = provObj ? provObj.name : 'Proveedor';
+
+    // CORRECCIÓN: Usar ==
+    const prod = dbProducts.find(p => p.id == prodId);
+    if (!prod) return alert("Error: Producto no encontrado.");
+
+    let branches = getBranches(prod);
+    if (branches[destino] === undefined) branches[destino] = 0;
+    branches[destino] = Number(branches[destino] || 0) + cant;
+
+    let stockTotal = 0;
+    for (let b in branches) stockTotal += Number(branches[b] || 0);
+
+    prod.stock_branches = branches; 
+    prod.stock = stockTotal;
+
+    mostrarCarga(true);
+    try {
+      await saveProduct(prod);
+      logMovement('Ingreso Compra', `${provName}`, destino, `Factura cruzada: ${fac}`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}], true);
+      
+      document.getElementById('formIngresoCompra').reset();
+      document.getElementById('modalIngresoCompra').close();
+      await initStock();
+      alert("✅ Ingreso de mercadería registrado con éxito.");
+    } catch(err) {
+      alert("Error guardando el ingreso.");
     } finally {
       mostrarCarga(false);
     }
