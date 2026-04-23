@@ -43,6 +43,9 @@
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
     
+    #toggleArca:checked + span { background-color: var(--success); }
+    #toggleArca:checked + span span { transform: translateX(20px); }
+
     @media (max-width: 900px) {
       .app { display: flex !important; flex-direction: column !important; }
       .mobile-toggle { display: block; }
@@ -144,6 +147,18 @@
         </article>
 
         <article class="card card-pad">
+          <div id="arcaContainer" style="margin-bottom: 20px; padding: 15px; border-radius: 8px; border: 1px solid var(--line); background: #f8fafc; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <strong style="font-size: 14px; color: var(--primary);">Validar con ARCA (AFIP)</strong>
+              <p style="margin: 3px 0 0 0; font-size: 11px; color: var(--muted);">Emite Factura Electrónica legal.</p>
+            </div>
+            <label style="position: relative; display: inline-block; width: 44px; height: 24px;">
+              <input type="checkbox" id="toggleArca" style="opacity: 0; width: 0; height: 0;" onchange="verificarRequisitosArca()">
+              <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px;">
+                <span style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
+              </span>
+            </label>
+          </div>
           <div style="display:flex; justify-content: space-between; font-size: 24px; font-weight: 800;">
             <span>Total</span><span id="txtTotal" style="color: var(--primary);">$0</span>
           </div>
@@ -282,6 +297,7 @@
     document.getElementById('payMethodsB2B').style.display = 'none';
     document.getElementById('cuponContainer').style.display = 'none';
     document.getElementById('btnCobrar').textContent = "Confirmar e Imprimir (F12)";
+    document.getElementById('arcaContainer').style.display = 'flex'; // Mostrar ARCA
     setPayment('Efectivo', document.querySelector('#payMethodsB2C .pay-btn'), false);
   }
 
@@ -291,7 +307,9 @@
     document.getElementById('payMethodsB2C').style.display = 'none';
     document.getElementById('payMethodsB2B').style.display = 'flex';
     document.getElementById('cuponContainer').style.display = 'none';
+    document.getElementById('arcaContainer').style.display = 'none'; // Ocultar ARCA para CC
     document.getElementById('btnCobrar').textContent = "Confirmar en Cuenta Corriente (F12)";
+    document.getElementById('toggleArca').checked = false; // Resetear el switch si estaba activo
   }
 
   function setPayment(method, btn, focus = true) {
@@ -412,7 +430,10 @@
       </tr>`;
     }).join('');
     if (!cart.length) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted);">El comprobante está vacío.<br><small>Buscá un artículo para comenzar.</small></td></tr>';
+    
     document.getElementById('txtTotal').textContent = currency(total);
+    // Disparamos la verificación de ARCA al actualizar el total
+    verificarRequisitosArca();
   }
 
   window.updateQty = (id, v) => {
@@ -435,6 +456,20 @@
   window.quitar = (id) => { cart = cart.filter(x => x.id !== id); renderCart(); };
   window.cancelarVenta = () => { if (confirm("¿Vaciar?")) { cart = []; renderCart(); } };
 
+  // --- LOGICA ARCA ---
+  function verificarRequisitosArca() {
+    const isChecked = document.getElementById('toggleArca').checked;
+    const cid = document.getElementById('clientId').value;
+    const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+    
+    // AFIP requiere identificar para comprobantes mayores a un monto (ej: $344,000 en 2024, usando 300,000 preventivo)
+    if (isChecked && (!cid) && total > 300000) {
+      alert("⚠️ ARCA requiere identificar al cliente con CUIT/DNI para facturas superiores a $300.000. Seleccioná o creá el cliente primero.");
+      document.getElementById('toggleArca').checked = false;
+    }
+  }
+  // --- FIN LÓGICA ARCA ---
+
   window.procesarVenta = async function() {
     if (!cart.length) return;
     if (!confirm(isB2B ? "¿Confirmar y enviar deuda a la Cuenta Corriente?" : "¿Confirmar venta e imprimir ticket?")) return;
@@ -448,6 +483,8 @@
         return;
       }
     }
+
+    const usaArca = document.getElementById('toggleArca').checked && !isB2B;
 
     mostrarCarga(true);
     const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
@@ -482,6 +519,33 @@
     };
 
     try {
+      
+      // 1. PROCESO ARCA (Si está activo)
+      if (usaArca) {
+        document.getElementById('loadingOverlay').textContent = "Conectando con ARCA (AFIP)...";
+        const resArca = await apiFetch('/api/arca', {
+          method: 'POST',
+          body: JSON.stringify(venta)
+        });
+        
+        const arcaData = await resArca.json();
+        
+        if (resArca.ok && arcaData.success) {
+          // Asignamos los datos devueltos por AFIP a la venta
+          venta.cae = arcaData.cae;
+          venta.caeVto = arcaData.caeVto;
+          venta.factNum = arcaData.numeroComprobante;
+          venta.puntoVenta = arcaData.puntoVenta;
+          venta.documentTitle = "FACTURA"; 
+          
+          alert(`✅ Factura Electrónica autorizada.\nCAE: ${venta.cae}`);
+        } else {
+          throw new Error(arcaData.error || "La transacción fue rechazada por AFIP.");
+        }
+      }
+
+      // 2. GUARDADO DE VENTA NORMAL
+      document.getElementById('loadingOverlay').textContent = "Sincronizando con la nube...";
       const resV = await apiFetch(`${API_URL}/sales`, {
         method: 'POST',
         body: JSON.stringify(venta)
@@ -489,6 +553,7 @@
 
       if (!resV.ok) throw new Error(await resV.text());
       
+      // 3. CUENTA CORRIENTE (Si es B2B)
       if (isB2B && cid) {
         const mov = {
           id: 'cc_' + Date.now(),
@@ -511,6 +576,7 @@
         if (!resCC.ok) throw new Error("Cta Cte Error: " + await resCC.text());
       }
 
+      // 4. LIMPIEZA FINAL E IMPRESIÓN
       alert(isB2B ? "📓 Guardado en Cta. Cte." : "✅ Venta finalizada.");
       localStorage.setItem('last_sale_to_print', JSON.stringify(venta));
 
@@ -525,9 +591,10 @@
       if (!ventaFueB2B) window.open('imprimir_ticket.html', '_blank');
 
     } catch (e) {
-      alert("Error: " + e.message);
+      alert("❌ Error: " + e.message);
     } finally {
       mostrarCarga(false);
+      document.getElementById('loadingOverlay').textContent = "Sincronizando con la nube..."; // Reset label
     }
   };
 
