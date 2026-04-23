@@ -16,7 +16,7 @@ export async function onRequestGet(context) {
 
     let query = `
       SELECT 
-        c.*,
+        bc.*,
         COALESCE(SUM(
           CASE
             WHEN LOWER(COALESCE(cc.type, '')) IN ('debit', 'debe', 'cargo') THEN COALESCE(cc.amount, 0)
@@ -24,31 +24,31 @@ export async function onRequestGet(context) {
             ELSE 0
           END
         ), 0) AS balance
-      FROM clients c
+      FROM business_clients bc
       LEFT JOIN cc_movements cc
-        ON cc.clientId = c.id
-       AND cc.company_id = c.company_id
-      WHERE c.company_id = ?
+        ON cc.clientId = bc.id
+       AND cc.company_id = bc.company_id
+      WHERE bc.company_id = ?
     `;
 
     const binds = [companyId];
 
     if (status !== 'Todos') {
-      query += ` AND c.status = ?`;
+      query += ` AND bc.status = ?`;
       binds.push(status);
     }
 
     query += `
-      GROUP BY c.id
-      ORDER BY c.name ASC
+      GROUP BY bc.id
+      ORDER BY bc.name ASC
     `;
 
     const { results } = await context.env.DB.prepare(query).bind(...binds).all();
 
-    // Mapeamos los datos de la base de datos al formato que espera el frontend
+    // Mapeamos los datos para que el HTML los entienda perfecto
     const clientesMapeados = results.map(row => ({
       ...row,
-      type: row.contact || 'B2C', // Usamos la columna contact para guardar si es B2B o B2C
+      type: row.contact || 'B2C', 
       ivaCondition: row.iva_condition || 'Consumidor Final',
       createdAt: row.created_at || '',
       balance: Number(row.balance || 0)
@@ -77,9 +77,9 @@ export async function onRequestPost(context) {
     const id = data.id || 'cli_' + Date.now();
     const name = data.name || 'Sin Nombre';
 
-    // Guardamos en la tabla correcta: 'clients'
+    // Volvemos a la tabla correcta (business_clients) con sus columnas originales
     await context.env.DB.prepare(`
-      INSERT INTO clients (
+      INSERT INTO business_clients (
         id, company_id, name, contact, phone, email, cuil, address, iva_condition, status, created_at
       )
       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)
@@ -96,7 +96,7 @@ export async function onRequestPost(context) {
       id,
       companyId,
       name,
-      data.type || 'B2C', // Guardamos el tipo (B2B/B2C) en 'contact'
+      data.type || 'B2C', 
       data.phone || '',
       data.email || '',
       data.cuil || '',
@@ -128,7 +128,7 @@ export async function onRequestDelete(context) {
     }
 
     await context.env.DB.prepare(
-      "UPDATE clients SET status = 'Inactivo' WHERE id = ?1 AND company_id = ?2"
+      "UPDATE business_clients SET status = 'Inactivo' WHERE id = ?1 AND company_id = ?2"
     ).bind(id, companyId).run();
 
     return Response.json({ success: true, message: 'Cliente desactivado correctamente.' });
