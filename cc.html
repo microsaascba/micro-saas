@@ -38,32 +38,6 @@
     
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
 
-    #printSection { display: none; }
-    @media print {
-      @page { margin: 15mm; size: A4 portrait; }
-      body { margin: 0; background: #fff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #000; }
-      .app, dialog { display: none !important; }
-      #printSection { display: block !important; width: 100%; }
-      .print-header-grid { display: grid; grid-template-columns: 1fr 60px 1fr; border: 1px solid #000; border-radius: 8px; margin-bottom: 20px; position: relative; }
-      .print-company { padding: 15px; border-right: 1px solid #000; }
-      .print-company h1 { margin: 0; font-size: 22px; font-weight: 900; }
-      .print-company p { margin: 2px 0; font-size: 11px; }
-      .print-letter-box { display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; margin-top: -1px; margin-bottom: -1px;}
-      .print-letter { font-size: 40px; font-weight: 900; border: 1px solid #000; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background: #fff; margin-top: 10px;}
-      .print-cod { font-size: 9px; margin-top: 2px; font-weight: bold;}
-      .print-doc-details { padding: 15px; border-left: 1px solid #000; text-align: left; }
-      .print-doc-type { font-size: 24px; font-weight: 900; margin: 0 0 5px 0; letter-spacing: 2px; }
-      .print-doc-details p { margin: 3px 0; font-size: 12px; }
-      .print-client-box { border: 1px solid #000; padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; font-size: 12px; gap: 5px;}
-      .print-client-box p { margin: 3px 0; }
-      .print-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; border: 1px solid #000;}
-      .print-table th, .print-table td { border: 1px solid #000; padding: 6px 10px; text-align: left; }
-      .print-table th { background: #e5e7eb; font-weight: bold; text-align: center; }
-      .print-totals-box { width: 40%; margin-left: auto; border: 1px solid #000; border-radius: 8px; padding: 10px; font-size: 13px; }
-      .print-total-line { display: flex; justify-content: space-between; margin-bottom: 5px; }
-      .print-total-final { display: flex; justify-content: space-between; font-size: 18px; font-weight: 900; margin-top: 10px; border-top: 2px solid #000; padding-top: 5px; }
-    }
-    
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
     
@@ -90,18 +64,18 @@
       <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
     </div>
     <nav class="nav">
-  <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-  <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
-  <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
-  <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
-  <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-  <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
-  <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
-  <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
-  <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
-  <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
-  <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
-</nav>
+      <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
+      <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
+      <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
+    </nav>
   </aside>
 
   <main class="content">
@@ -192,55 +166,10 @@
     </div>
 
     <div style="display: flex; justify-content: flex-end;">
-      <button type="button" class="btn btn-primary" id="btnImprimirDesdeModal">📄 Descargar PDF</button>
+      <button type="button" class="btn btn-primary" id="btnImprimirDesdeModal">📄 Imprimir Comprobante</button>
     </div>
   </div>
 </dialog>
-
-<div id="printSection">
-  <div class="print-header-grid">
-    <div class="print-company">
-      <h1 id="printDocCompName">MICRO SAAS SOLUCIONES</h1>
-      <p><strong>Dirección:</strong> <span id="printDocCompAddr">Av. Siempre Viva 123</span></p>
-      <p><strong>Teléfono:</strong> <span id="printDocCompPhone">123456789</span></p>
-    </div>
-    
-    <div class="print-letter-box">
-      <div class="print-letter" id="printDocLetter">X</div>
-      <div class="print-cod" id="printDocCod">Doc. no válido</div>
-    </div>
-    
-    <div class="print-doc-details">
-      <h2 class="print-doc-type" id="printDocTitle">RECIBO</h2>
-      <p><strong>N° Comprobante:</strong> <span id="printDocNum">0001-00000000</span></p>
-      <p><strong>Fecha de Emisión:</strong> <span id="printDate">--/--/----</span></p>
-    </div>
-  </div>
-
-  <div class="print-client-box">
-    <div>
-      <p><strong>Cliente:</strong> <span id="printCliName">Nombre Cliente</span></p>
-      <p><strong>Domicilio:</strong> <span id="printCliAddr">-</span></p>
-    </div>
-    <div>
-      <p><strong>CUIT/DNI:</strong> <span id="printCliDoc">---</span></p>
-      <p><strong>Condición frente al IVA:</strong> <span id="printCliIva">Consumidor Final</span></p>
-      <p><strong>Condición:</strong> <span id="printSaleCond">Cuenta Corriente</span></p>
-    </div>
-  </div>
-
-  <table class="print-table">
-    <thead id="printTableHeader"></thead>
-    <tbody id="printTableBody"></tbody>
-  </table>
-
-  <div class="print-totals-box" id="printTotalsBox"></div>
-  
-  <div id="printSignatureArea" style="display:none; text-align:center; margin-top:60px;">
-    <p>___________________________________</p>
-    <p style="font-size: 12px; color: #555;">Firma y Aclaración - Recibí Conforme</p>
-  </div>
-</div>
 
 <dialog id="modalMov" style="width: 100%; max-width: 400px;">
   <div class="modal-content">
@@ -414,7 +343,7 @@
         <td style="text-align:right; font-weight:800;">${currency(Number(m.balance || 0))}</td>
         <td style="text-align:center;">
           <button class="btn-outline" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="prepararImpresion('${m.id}')">
-              📄 PDF
+              🖨️ Imprimir
           </button>
         </td>
       </tr>`;
@@ -426,7 +355,6 @@
 
     const cli = dbClients.find(c => c.id === selectedClientId);
     if (cli) {
-      // Recalculamos el saldo final para asegurar precisión
       let saldoCte = 0;
       movs.slice().reverse().forEach(mov => {
          saldoCte += mov.type === 'debit' ? Number(mov.amount) : -Number(mov.amount);
@@ -468,119 +396,52 @@
     }
   }
 
+  // --- NUEVA FUNCIÓN DE IMPRESIÓN (RECICLA EL TICKET A5) ---
   function prepararImpresion(movId) {
     const mov = dbCcMovements.find(m => m.id === movId);
     const cli = dbClients.find(c => c.id === selectedClientId);
     if (!mov || !cli) return;
 
     const isPago = mov.type === 'credit';
-    const isFacturaA = !isPago && cli.ivaCondition === 'Responsable Inscripto';
-    
-    let numeroComprobante = "0001-" + String(Math.floor(Math.random() * 900000) + 100000).padStart(8, '0');
-    let saleObj = null;
+    let ventaParaImprimir = null;
 
-    // Configurar datos de la empresa
-    document.getElementById('printDocCompName').textContent = localStorage.getItem('company_name') || 'Mi Empresa';
-    document.getElementById('printDocCompAddr').textContent = localStorage.getItem('company_address') || 'Av. Principal';
-    document.getElementById('printDocCompPhone').textContent = localStorage.getItem('company_phone') || '123456789';
-
-    if (isPago) {
-      document.getElementById('printDocTitle').textContent = 'RECIBO OFICIAL';
-      document.getElementById('printDocLetter').textContent = 'X';
-      document.getElementById('printDocCod').textContent = 'Cod. 000';
-      document.getElementById('printSaleCond').textContent = 'Cobranza de Cta. Cte.';
-    } else {
-      document.getElementById('printDocTitle').textContent = 'COMPROBANTE';
-      document.getElementById('printDocLetter').textContent = isFacturaA ? 'A' : 'B';
-      document.getElementById('printDocCod').textContent = isFacturaA ? 'Cod. 001' : 'Cod. 006';
-      document.getElementById('printSaleCond').textContent = 'Cuenta Corriente';
-      
-      saleObj = dbSales.find(s => s.id === mov.reference_id);
+    // Si el movimiento proviene de una venta real, usamos esa venta
+    if (!isPago && String(mov.reference_type || '').toLowerCase() === 'sale' && mov.reference_id) {
+      const saleObj = dbSales.find(s => s.id === mov.reference_id);
       if (saleObj) {
-        numeroComprobante = "0001-" + String(saleObj.factNum).padStart(8, '0');
-      }
-    }
-    
-    document.getElementById('printDocNum').textContent = numeroComprobante;
-    document.getElementById('printDate').textContent = (mov.date || '').split('-').reverse().join('/');
-    
-    document.getElementById('printCliName').textContent = cli.name;
-    document.getElementById('printCliDoc').textContent = cli.cuil || '---';
-    document.getElementById('printCliAddr').textContent = cli.address || '---';
-    document.getElementById('printCliIva').textContent = cli.ivaCondition || 'Consumidor Final';
-
-    const tableBody = document.getElementById('printTableBody');
-    const tableHeader = document.getElementById('printTableHeader');
-    const totalsBox = document.getElementById('printTotalsBox');
-    
-    let htmlItems = '';
-    let htmlTotals = '';
-
-    if (!isPago && saleObj && saleObj.items) {
-      const itemsList = typeof saleObj.items === 'string' ? JSON.parse(saleObj.items) : saleObj.items;
-      
-      if (isFacturaA) {
-        tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 50%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO NETO</th><th style="width: 10%; text-align: right;">% IVA</th><th style="width: 15%; text-align: right;">SUBTOTAL NETO</th></tr>`;
-        
-        let totalNeto = 0;
-        htmlItems = itemsList.map(i => {
-          const precioNeto = i.price / 1.21;
-          const subNeto = (i.price / 1.21) * i.qty;
-          totalNeto += subNeto;
-          return `<tr>
-            <td style="text-align:center;">${i.qty}</td>
-            <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
-            <td style="text-align:right;">${currency(precioNeto)}</td>
-            <td style="text-align:right;">21%</td>
-            <td style="text-align:right;">${currency(subNeto)}</td>
-          </tr>`;
-        }).join('');
-
-        const totalIva = totalNeto * 0.21;
-        htmlTotals = `
-          <div class="print-total-line"><span>Subtotal:</span><span>${currency(totalNeto)}</span></div>
-          <div class="print-total-line"><span>IVA 21%:</span><span>${currency(totalIva)}</span></div>
-          <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
-        `;
-      } else {
-        tableHeader.innerHTML = `<tr><th style="width: 10%;">CANT</th><th style="width: 60%;">CÓDIGO / DESCRIPCIÓN</th><th style="width: 15%; text-align: right;">PRECIO UNIT.</th><th style="width: 15%; text-align: right;">SUBTOTAL</th></tr>`;
-        
-        let totalSubtotal = 0;
-        htmlItems = itemsList.map(i => {
-          const sub = i.qty * i.price;
-          totalSubtotal += sub;
-          return `<tr>
-            <td style="text-align:center;">${i.qty}</td>
-            <td>${escapeHtml(i.code || '-')} - ${escapeHtml(i.name)}</td>
-            <td style="text-align:right;">${currency(i.price)}</td>
-            <td style="text-align:right;">${currency(sub)}</td>
-          </tr>`;
-        }).join('');
-
-        htmlTotals = `
-          <div class="print-total-line"><span>Subtotal:</span><span>${currency(totalSubtotal)}</span></div>
-          <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
-        `;
+        ventaParaImprimir = {
+          ...saleObj,
+          client: cli.name, // Aseguramos que el nombre en el ticket sea el del cliente de CC
+          cupon: 'Cta. Cte.' // Agregamos una nota de que fue a cuenta corriente
+        };
       }
     }
 
-    if (!htmlItems) {
-      tableHeader.innerHTML = `<tr><th style="width: 80%;">CONCEPTO DE LA OPERACIÓN</th><th style="width: 20%; text-align: right;">IMPORTE</th></tr>`;
-      htmlItems = `<tr>
-        <td style="padding: 20px 10px;"><strong style="font-size:14px;">${escapeHtml(mov.concept)}</strong></td>
-        <td style="text-align:right; font-weight:bold; font-size:16px;">${currency(mov.amount)}</td>
-      </tr>`;
-      htmlTotals = `
-        <div class="print-total-line"><span>Subtotal:</span><span>${currency(mov.amount)}</span></div>
-        <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
-      `;
+    // Si es un pago (cobranza) o un cargo manual, armamos un ticket "virtual"
+    if (!ventaParaImprimir) {
+      let docTitle = isPago ? "RECIBO DE COBRANZA" : "CARGO EN CTA. CTE.";
+      ventaParaImprimir = {
+        id: mov.id,
+        createdAt: mov.date || new Date().toISOString(),
+        client: cli.name,
+        seller: localStorage.getItem('activeUser') || 'Admin',
+        method: isPago ? 'Cobranza' : 'Cargo Manual',
+        cupon: docTitle, // Lo usamos como nota visible en el ticket
+        items: [{
+          qty: 1,
+          name: mov.concept || docTitle,
+          price: mov.amount,
+          subtotal: mov.amount
+        }],
+        subtotal: mov.amount,
+        promoDiscount: 0,
+        total: mov.amount
+      };
     }
 
-    tableBody.innerHTML = htmlItems;
-    totalsBox.innerHTML = htmlTotals;
-    document.getElementById('printSignatureArea').style.display = isPago ? 'block' : 'none';
-    
-    window.print();
+    // Guardamos los datos y abrimos la misma pestaña de impresión de siempre
+    localStorage.setItem('last_sale_to_print', JSON.stringify(ventaParaImprimir));
+    window.open('imprimir_ticket.html', '_blank');
   }
 
   function abrirModalMovimiento(tipo) {
@@ -588,7 +449,6 @@
     document.getElementById('movType').value = tipo;
     document.getElementById('movAmount').value = '';
     
-    // Mostrar u ocultar el selector de método de pago según el tipo
     if (tipo === 'credit') {
       document.getElementById('movMethodContainer').style.display = 'block';
       document.getElementById('movMethod').value = 'Efectivo';
@@ -603,8 +463,8 @@
     document.getElementById('modalMov').showModal();
   }
 
-  // Actualizar el concepto automáticamente cuando cambian el método de pago
   document.getElementById('movMethod').addEventListener('change', function(e) {
+    document.getElementById('movMethodContainer').style.display = 'block';
     document.getElementById('movConcept').value = `Pago recibido en ${e.target.value} a cuenta`;
   });
 
@@ -632,7 +492,6 @@
     
     mostrarCarga(true);
     try {
-      // 1. Guardamos el movimiento en la cuenta corriente
       const resCC = await apiFetch(`${API_URL}/cc_movements`, {
         method: 'POST',
         body: JSON.stringify(mov)
@@ -640,7 +499,6 @@
 
       if (!resCC.ok) throw new Error("Error en D1 al guardar Cta. Cte.");
 
-      // 2. SI ES UNA COBRANZA (credit), impactamos en la Caja Central (Ventas)
       if (tipo === 'credit') {
         const clientObj = dbClients.find(c => c.id === selectedClientId);
         const ventaCobranza = {
@@ -651,12 +509,12 @@
           seller: localStorage.getItem('activeUser') || 'Admin',
           clientId: selectedClientId,
           client: clientObj ? clientObj.name : 'Cliente en Cta. Cte.',
-          method: method, // Efectivo, Transferencia, etc.
+          method: method, 
           cupon: '',
           subtotal: amount,
           promoDiscount: 0,
           total: amount,
-          isB2B: false, // Ingresa como una venta normal cobrada (B2C behavior para caja)
+          isB2B: false, 
           items: [{id: 'cc_pay', code: 'COBRANZA', name: concept, price: amount, cost: 0, qty: 1}],
           status: 'Activa'
         };
@@ -670,7 +528,7 @@
       }
 
       cerrarModalMov();
-      await initCC(); // Recarga toda la info
+      await initCC(); 
       if (selectedClientId) await seleccionarCliente(selectedClientId);
       
       alert(tipo === 'credit' ? "✅ Cobranza exitosa. El dinero ya ingresó a la Caja." : "✅ Deuda cargada exitosamente.");
