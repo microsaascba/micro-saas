@@ -140,37 +140,6 @@
   </main>
 </div>
 
-<dialog id="modalDetalleFac" style="width: 100%; max-width: 650px;">
-  <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;" id="detalleFacTitle">Detalle de Factura</h2>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalDetalleFac').close()">✕</button>
-    </div>
-    
-    <div style="overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 15px;">
-      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
-        <thead style="background: var(--panel-2);">
-          <tr>
-            <th style="padding: 10px; border-bottom: 1px solid var(--line); text-align:center;">Cant.</th>
-            <th style="padding: 10px; border-bottom: 1px solid var(--line);">Producto</th>
-            <th style="padding: 10px; border-bottom: 1px solid var(--line); text-align: right;">P. Unitario</th>
-            <th style="padding: 10px; border-bottom: 1px solid var(--line); text-align: right;">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody id="detalleFacBody"></tbody>
-      </table>
-    </div>
-    
-    <div style="text-align: right; font-size: 18px; margin-bottom: 20px;">
-      Total Facturado: <strong style="color: var(--primary);" id="detalleFacTotal">$0.00</strong>
-    </div>
-
-    <div style="display: flex; justify-content: flex-end;">
-      <button type="button" class="btn btn-primary" id="btnImprimirDesdeModal">📄 Imprimir Comprobante</button>
-    </div>
-  </div>
-</dialog>
-
 <dialog id="modalMov" style="width: 100%; max-width: 400px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
@@ -178,6 +147,7 @@
       <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarModalMov()">✕</button>
     </div>
     <form onsubmit="guardarMovimiento(event)">
+      <input type="hidden" id="movId">
       <input type="hidden" id="movType">
       <div style="margin-bottom: 15px;">
         <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Monto ($) *</label>
@@ -192,12 +162,11 @@
           <option value="Débito">💳 Tarjeta de Débito</option>
           <option value="Crédito">💳 Tarjeta de Crédito</option>
         </select>
-        <small style="color:var(--primary); font-size:10px; display:block; margin-top:4px;">Este dinero ingresará directamente a la caja del día.</small>
       </div>
 
       <div style="margin-bottom: 20px;">
         <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Concepto / Referencia *</label>
-        <input type="text" id="movConcept" required class="input-box" placeholder="Ej: Pago de saldo pendiente">
+        <input type="text" id="movConcept" required class="input-box">
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
         <button type="button" class="btn btn-light" onclick="cerrarModalMov()">Cancelar</button>
@@ -205,6 +174,21 @@
       </div>
     </form>
   </div>
+</dialog>
+
+<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: var(--panel);">
+  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
+    <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
+  </div>
+  <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
+    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">PIN de administrador para <strong id="authActionText"></strong>.</p>
+    <input type="password" id="adminAuthPin" required placeholder="PIN" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
+      <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold;">Autorizar</button>
+    </div>
+  </form>
 </dialog>
 
 <script src="core.js"></script>
@@ -230,314 +214,152 @@
         apiFetch(`${API_URL}/cc_movements?withBalance=1` + nocache),
         apiFetch(`${API_URL}/sales` + nocache)
       ]);
-      
       if (resCli.ok) dbClients = await resCli.json();
       if (resCc.ok) dbCcMovements = await resCc.json();
-      
-      if (resSales.ok) {
-        dbSales = await resSales.json();
-        dbSales.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-        dbSales.forEach((s, index) => {
-          s.factNum = 1000 + index;
-        });
-      }
-      
-    } catch (error) {
-      console.error("Error de conexión:", error);
-    } finally {
-      mostrarCarga(false);
-      renderClientList();
-      if (selectedClientId) await renderLedger();
-    }
+      if (resSales.ok) dbSales = await resSales.json();
+    } catch (e) { console.error(e); } finally { mostrarCarga(false); renderClientList(); }
   }
 
   function renderClientList() {
     const term = document.getElementById('searchCli').value.toLowerCase();
     const filtrados = dbClients.filter(c => (c.name || '').toLowerCase().includes(term));
     const listDiv = document.getElementById('clientList');
-    
     listDiv.innerHTML = filtrados.map(c => {
       const saldo = Number(c.balance || 0);
       const isSelected = selectedClientId === c.id ? 'selected' : '';
-      const colorSaldo = saldo > 0 ? 'var(--danger)' : (saldo < 0 ? 'var(--success)' : 'var(--muted)');
-      
-      return `
-      <div class="client-list-item ${isSelected}" onclick="seleccionarCliente('${c.id}')">
-        <div>
-          <strong style="display:block; font-size:14px; color:var(--text);">${escapeHtml(c.name)}</strong>
-          <span style="font-size:11px; color:var(--muted);">${c.cuil || 'Sin CUIT'}</span>
-        </div>
-        <div style="text-align:right;">
-          <strong style="color:${colorSaldo}; font-size:15px;">${currency(saldo)}</strong>
-        </div>
+      return `<div class="client-list-item ${isSelected}" onclick="seleccionarCliente('${c.id}')">
+        <div><strong>${escapeHtml(c.name)}</strong><br><span style="font-size:11px;color:var(--muted);">${c.cuil||''}</span></div>
+        <div style="text-align:right;"><strong style="color:${saldo>0?'var(--danger)':'var(--success)'}">${currency(saldo)}</strong></div>
       </div>`;
     }).join('');
-    
-    if (filtrados.length === 0) listDiv.innerHTML = '<div style="padding:20px; text-align:center; color:var(--muted); font-size:13px;">No hay clientes.</div>';
   }
 
   async function seleccionarCliente(id) {
     selectedClientId = id;
-    renderClientList(); 
-    
+    renderClientList();
     const c = dbClients.find(x => x.id === id);
-    if (!c) return;
-
     document.getElementById('emptyPanel').style.display = 'none';
     document.getElementById('ledgerPanel').style.display = 'block';
-    
     document.getElementById('lblCliName').textContent = c.name;
-    document.getElementById('lblCliInfo').textContent = `${c.cuil ? 'CUIT: ' + c.cuil : 'Sin CUIT'} - ${c.ivaCondition || 'Consumidor Final'}`;
     document.getElementById('lblCliBalance').textContent = currency(Number(c.balance || 0));
-    document.getElementById('lblCliBalance').style.color = Number(c.balance || 0) > 0 ? 'var(--danger)' : (Number(c.balance || 0) < 0 ? 'var(--success)' : 'var(--text)');
-    
     await renderLedger();
   }
 
   async function renderLedger() {
-    if (!selectedClientId) return;
-    
     try {
       const res = await apiFetch(`${API_URL}/cc_movements?clientId=${encodeURIComponent(selectedClientId)}&withBalance=1&v=${Date.now()}`);
-      if (res.ok) {
-        dbCcMovements = await res.json();
-      }
-    } catch (error) {
-      console.error(error);
-    }
-
+      if (res.ok) dbCcMovements = await res.json();
+    } catch (e) {}
     const tbody = document.getElementById('ledgerBody');
-    const movs = [...dbCcMovements].sort((a, b) => {
-      const da = `${a.date || ''} ${a.createdAt || ''}`;
-      const db = `${b.date || ''} ${b.createdAt || ''}`;
-      return db.localeCompare(da);
-    });
-    
-    let html = '';
-    movs.forEach(m => {
+    const movs = [...dbCcMovements].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    tbody.innerHTML = movs.map(m => {
       const isDebe = m.type === 'debit';
       const isHaber = m.type === 'credit';
-      const formatDate = (m.date || '').split('-').reverse().join('/') || '-';
-      
-      let displayConcept = escapeHtml(m.concept);
-      let isFacturaClickable = false;
-
-      if (!isHaber && String(m.reference_type || '').toLowerCase() === 'sale' && m.reference_id) {
-        const saleObj = dbSales.find(s => s.id === m.reference_id);
-        if (saleObj) {
-          displayConcept = `Fact. ${saleObj.factNum}`;
-          isFacturaClickable = true;
-        }
-      }
-
-      const conceptHtml = isFacturaClickable
-        ? `<a href="#" onclick="verDetalleFactura('${m.id}'); return false;" style="color:var(--primary); font-weight:800; text-decoration:none; border-bottom:1px dashed var(--primary);">📄 ${displayConcept}</a>`
-        : `<strong>${displayConcept}</strong>`;
-
-      html += `
-      <tr>
-        <td style="color:var(--muted); font-size:12px;">${formatDate}</td>
-        <td>${conceptHtml}</td>
-        <td style="text-align:right;" class="${isDebe ? 'ledger-debe' : ''}">${isDebe ? currency(m.amount) : '-'}</td>
-        <td style="text-align:right;" class="${isHaber ? 'ledger-haber' : ''}">${isHaber ? currency(m.amount) : '-'}</td>
-        <td style="text-align:right; font-weight:800;">${currency(Number(m.balance || 0))}</td>
+      const isAnulado = m.status === 'Anulado';
+      return `<tr style="${isAnulado?'opacity:0.4;text-decoration:line-through;':''}">
+        <td>${(m.date||'').split('-').reverse().join('/')}</td>
+        <td><strong>${escapeHtml(m.concept)}</strong></td>
+        <td style="text-align:right;" class="ledger-debe">${isDebe?currency(m.amount):'-'}</td>
+        <td style="text-align:right;" class="ledger-haber">${isHaber?currency(m.amount):'-'}</td>
+        <td style="text-align:right; font-weight:800;">${currency(Number(m.balance||0))}</td>
         <td style="text-align:center;">
-          <button class="btn-outline" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="prepararImpresion('${m.id}')">
-              🖨️ Imprimir
-          </button>
+          <button onclick="prepararImpresion('${m.id}')" title="Imprimir">🖨️</button>
+          <button onclick="abrirEditar('${m.id}')" ${isAnulado?'disabled':''} title="Editar">✏️</button>
+          <button onclick="pedirAnular('${m.id}')" ${isAnulado?'disabled':''} title="Anular">🗑️</button>
         </td>
       </tr>`;
-    });
-    
-    if (movs.length === 0) html = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted);">Sin movimientos en la cuenta.</td></tr>';
-    
-    tbody.innerHTML = html;
-
-    const cli = dbClients.find(c => c.id === selectedClientId);
-    if (cli) {
-      let saldoCte = 0;
-      movs.slice().reverse().forEach(mov => {
-         saldoCte += mov.type === 'debit' ? Number(mov.amount) : -Number(mov.amount);
-      });
-
-      const boxSaldo = document.getElementById('lblCliBalance');
-      boxSaldo.textContent = currency(saldoCte);
-      boxSaldo.style.color = saldoCte > 0 ? 'var(--danger)' : (saldoCte < 0 ? 'var(--success)' : 'var(--text)');
-    }
+    }).join('');
   }
 
-  function verDetalleFactura(movId) {
-    const mov = dbCcMovements.find(m => m.id === movId);
-    if (!mov) return;
-
-    const saleObj = dbSales.find(s => s.id === mov.reference_id);
-    if (saleObj && saleObj.items) {
-      const itemsList = typeof saleObj.items === 'string' ? JSON.parse(saleObj.items) : saleObj.items;
-      
-      document.getElementById('detalleFacTitle').textContent = `Detalle Factura N° ${saleObj.factNum}`;
-      
-      document.getElementById('detalleFacBody').innerHTML = itemsList.map(i => `
-        <tr>
-          <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:center; font-weight:bold;">${i.qty}</td>
-          <td style="padding: 10px; border-bottom: 1px solid var(--line);">${escapeHtml(i.name)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:right;">${currency(i.price)}</td>
-          <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:right; font-weight:bold;">${currency(i.price * i.qty)}</td>
-        </tr>
-      `).join('');
-
-      document.getElementById('detalleFacTotal').textContent = currency(mov.amount);
-      
-      document.getElementById('btnImprimirDesdeModal').onclick = () => {
-        document.getElementById('modalDetalleFac').close();
-        prepararImpresion(movId);
-      };
-
-      document.getElementById('modalDetalleFac').showModal();
-    }
-  }
-
-  // --- NUEVA FUNCIÓN DE IMPRESIÓN (RECICLA EL TICKET A5) ---
   function prepararImpresion(movId) {
     const mov = dbCcMovements.find(m => m.id === movId);
     const cli = dbClients.find(c => c.id === selectedClientId);
-    if (!mov || !cli) return;
-
     const isPago = mov.type === 'credit';
-    let ventaParaImprimir = null;
-
-    // Si el movimiento proviene de una venta real, usamos esa venta
-    if (!isPago && String(mov.reference_type || '').toLowerCase() === 'sale' && mov.reference_id) {
-      const saleObj = dbSales.find(s => s.id === mov.reference_id);
-      if (saleObj) {
-        ventaParaImprimir = {
-          ...saleObj,
-          client: cli.name, // Aseguramos que el nombre en el ticket sea el del cliente de CC
-          cupon: 'Cta. Cte.' // Agregamos una nota de que fue a cuenta corriente
-        };
-      }
-    }
-
-    // Si es un pago (cobranza) o un cargo manual, armamos un ticket "virtual"
-    if (!ventaParaImprimir) {
-      let docTitle = isPago ? "RECIBO DE COBRANZA" : "CARGO EN CTA. CTE.";
-      ventaParaImprimir = {
-        id: mov.id,
-        createdAt: mov.date || new Date().toISOString(),
-        client: cli.name,
-        seller: localStorage.getItem('activeUser') || 'Admin',
-        method: isPago ? 'Cobranza' : 'Cargo Manual',
-        cupon: docTitle, // Lo usamos como nota visible en el ticket
-        items: [{
-          qty: 1,
-          name: mov.concept || docTitle,
-          price: mov.amount,
-          subtotal: mov.amount
-        }],
-        subtotal: mov.amount,
-        promoDiscount: 0,
-        total: mov.amount
-      };
-    }
-
-    // Guardamos los datos y abrimos la misma pestaña de impresión de siempre
-    localStorage.setItem('last_sale_to_print', JSON.stringify(ventaParaImprimir));
+    
+    const ticketData = {
+      id: mov.id,
+      createdAt: mov.createdAt,
+      client: cli.name,
+      seller: localStorage.getItem('activeUser') || 'Admin',
+      method: isPago ? 'Cobranza CC' : 'Cargo CC',
+      cupon: isPago ? 'RECIBO DE COBRANZA' : 'COMPROBANTE',
+      items: [{ qty: 1, name: mov.concept, price: mov.amount, subtotal: mov.amount }],
+      subtotal: mov.amount, promoDiscount: 0, total: mov.amount
+    };
+    localStorage.setItem('last_sale_to_print', JSON.stringify(ticketData));
     window.open('imprimir_ticket.html', '_blank');
   }
 
   function abrirModalMovimiento(tipo) {
-    if (!selectedClientId) return;
+    document.getElementById('movId').value = '';
     document.getElementById('movType').value = tipo;
     document.getElementById('movAmount').value = '';
-    
-    if (tipo === 'credit') {
-      document.getElementById('movMethodContainer').style.display = 'block';
-      document.getElementById('movMethod').value = 'Efectivo';
-      document.getElementById('movConcept').value = 'Pago recibido en Efectivo a cuenta';
-    } else {
-      document.getElementById('movMethodContainer').style.display = 'none';
-      document.getElementById('movConcept').value = 'Cargo manual / Ajuste';
-    }
-
-    document.getElementById('modalTitle').textContent = tipo === 'credit' ? 'Ingresar Cobranza' : 'Cargar Deuda';
-    document.getElementById('btnSaveMov').style.background = tipo === 'credit' ? 'var(--success)' : 'var(--danger)';
+    document.getElementById('movMethodContainer').style.display = tipo==='credit'?'block':'none';
+    document.getElementById('movConcept').value = tipo==='credit'?'Cobranza en Efectivo':'Ajuste / Cargo Manual';
     document.getElementById('modalMov').showModal();
   }
 
-  document.getElementById('movMethod').addEventListener('change', function(e) {
-    document.getElementById('movMethodContainer').style.display = 'block';
-    document.getElementById('movConcept').value = `Pago recibido en ${e.target.value} a cuenta`;
-  });
-
-  function cerrarModalMov() { document.getElementById('modalMov').close(); }
+  function abrirEditar(id) {
+    const m = dbCcMovements.find(x => x.id === id);
+    document.getElementById('movId').value = m.id;
+    document.getElementById('movType').value = m.type;
+    document.getElementById('movAmount').value = m.amount;
+    document.getElementById('movConcept').value = m.concept;
+    document.getElementById('movMethodContainer').style.display = 'none';
+    document.getElementById('modalMov').showModal();
+  }
 
   async function guardarMovimiento(e) {
     e.preventDefault();
-    if (!selectedClientId) return;
-    
-    const tipo = document.getElementById('movType').value;
-    const amount = parseFloat(document.getElementById('movAmount').value);
-    const concept = document.getElementById('movConcept').value.trim();
-    const method = document.getElementById('movMethod').value;
-    
+    const id = document.getElementById('movId').value || 'cc_' + Date.now();
     const mov = {
-      id: 'cc_' + Date.now(),
-      clientId: selectedClientId,
-      date: todayISO(),
-      type: tipo === 'credit' ? 'credit' : 'debit',
-      amount: amount,
-      concept: concept,
-      reference_type: 'manual',
-      reference_id: ''
+      id, clientId: selectedClientId, date: todayISO(),
+      type: document.getElementById('movType').value,
+      amount: parseFloat(document.getElementById('movAmount').value),
+      concept: document.getElementById('movConcept').value.trim(),
+      createdAt: new Date().toISOString(), status: 'Activo'
     };
-    
     mostrarCarga(true);
     try {
-      const resCC = await apiFetch(`${API_URL}/cc_movements`, {
-        method: 'POST',
-        body: JSON.stringify(mov)
-      });
-
-      if (!resCC.ok) throw new Error("Error en D1 al guardar Cta. Cte.");
-
-      if (tipo === 'credit') {
-        const clientObj = dbClients.find(c => c.id === selectedClientId);
-        const ventaCobranza = {
-          id: 'vta_' + Date.now(),
-          createdAt: new Date().toISOString(),
-          date: todayISO(),
-          branch: terminalActiva,
-          seller: localStorage.getItem('activeUser') || 'Admin',
-          clientId: selectedClientId,
-          client: clientObj ? clientObj.name : 'Cliente en Cta. Cte.',
-          method: method, 
-          cupon: '',
-          subtotal: amount,
-          promoDiscount: 0,
-          total: amount,
-          isB2B: false, 
-          items: [{id: 'cc_pay', code: 'COBRANZA', name: concept, price: amount, cost: 0, qty: 1}],
-          status: 'Activa'
-        };
-
-        const resCaja = await apiFetch(`${API_URL}/sales`, {
-          method: 'POST',
-          body: JSON.stringify(ventaCobranza)
-        });
-
-        if (!resCaja.ok) throw new Error("Cobranza registrada en Cta. Cte., pero falló el ingreso a la Caja.");
+      const res = await apiFetch(`${API_URL}/cc_movements`, { method:'POST', body:JSON.stringify(mov) });
+      if (res.ok && mov.type === 'credit' && !document.getElementById('movId').value) {
+        // Registrar en Caja (Sales) si es nuevo pago
+        await apiFetch(`${API_URL}/sales`, { method:'POST', body:JSON.stringify({
+          id:'vta_'+id, createdAt:mov.createdAt, branch:terminalActiva, method:document.getElementById('movMethod').value,
+          total:mov.amount, items:[{name:'Cobranza: '+mov.concept, qty:1, price:mov.amount}], status:'Activa'
+        })});
       }
+      cerrarModalMov(); await initCC(); seleccionarCliente(selectedClientId);
+    } catch(e) { alert("Error"); } finally { mostrarCarga(false); }
+  }
 
-      cerrarModalMov();
-      await initCC(); 
-      if (selectedClientId) await seleccionarCliente(selectedClientId);
-      
-      alert(tipo === 'credit' ? "✅ Cobranza exitosa. El dinero ya ingresó a la Caja." : "✅ Deuda cargada exitosamente.");
+  function cerrarModalMov() { document.getElementById('modalMov').close(); }
 
-    } catch (err) {
-      alert("❌ " + err.message);
-    } finally {
-      mostrarCarga(false);
-    }
+  // --- ANULACIÓN CON PIN ---
+  let pendingAnularId = null;
+  function pedirAnular(id) {
+    pendingAnularId = id;
+    document.getElementById('authActionText').textContent = "ANULAR este movimiento";
+    document.getElementById('adminAuthPin').value = '';
+    document.getElementById('adminAuthDialog').showModal();
+  }
+  function cerrarAdminAuth() { document.getElementById('adminAuthDialog').close(); }
+  
+  async function validarAdminAuth(e) {
+    e.preventDefault();
+    if (document.getElementById('adminAuthPin').value !== "1234") return alert("PIN Incorrecto");
+    cerrarAdminAuth();
+    mostrarCarga(true);
+    try {
+      const m = dbCcMovements.find(x => x.id === pendingAnularId);
+      m.status = 'Anulado';
+      await apiFetch(`${API_URL}/cc_movements`, { method:'POST', body:JSON.stringify(m) });
+      // Si era pago, anular también la venta de caja
+      if (m.type === 'credit') {
+        await apiFetch(`${API_URL}/sales`, { method:'POST', body:JSON.stringify({id:'vta_'+m.id, status:'Anulada', adminPass:'1234'}) });
+      }
+      await initCC(); seleccionarCliente(selectedClientId);
+    } catch(e) { alert("Error"); } finally { mostrarCarga(false); }
   }
 
   initCC();
