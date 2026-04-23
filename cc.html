@@ -216,7 +216,11 @@
       ]);
       if (resCli.ok) dbClients = await resCli.json();
       if (resCc.ok) dbCcMovements = await resCc.json();
-      if (resSales.ok) dbSales = await resSales.json();
+      if (resSales.ok) {
+        dbSales = await resSales.json();
+        dbSales.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        dbSales.forEach((s, index) => { s.factNum = 1000 + index; });
+      }
     } catch (e) { console.error(e); } finally { mostrarCarga(false); renderClientList(); }
   }
 
@@ -252,41 +256,109 @@
     } catch (e) {}
     const tbody = document.getElementById('ledgerBody');
     const movs = [...dbCcMovements].sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    
     tbody.innerHTML = movs.map(m => {
       const isDebe = m.type === 'debit';
       const isHaber = m.type === 'credit';
       const isAnulado = m.status === 'Anulado';
+      
+      // 🔥 VERIFICACIÓN ESTRICTA: ¿Viene de una venta real?
+      const isVenta = String(m.reference_type || '').toLowerCase() === 'sale' && m.reference_id;
+      let displayConcept = escapeHtml(m.concept);
+
+      if (isVenta) {
+        const saleObj = dbSales.find(s => s.id === m.reference_id);
+        if (saleObj) displayConcept = `<a href="#" onclick="verDetalleFactura('${m.id}'); return false;" style="color:var(--primary); font-weight:800; text-decoration:none; border-bottom:1px dashed var(--primary);">📄 Fact. ${saleObj.factNum}</a>`;
+      } else {
+        displayConcept = `<strong>${displayConcept}</strong>`;
+      }
+
+      // Bloqueamos los botones de Editar y Anular si el movimiento es una Venta
+      const btnEdit = isVenta 
+        ? `<button disabled title="Se modifica desde la Caja" style="opacity:0.2; cursor:not-allowed;">✏️</button>` 
+        : `<button onclick="abrirEditar('${m.id}')" ${isAnulado?'disabled':''} title="Editar Pago">✏️</button>`;
+        
+      const btnAnular = isVenta 
+        ? `<button disabled title="Se anula desde la Caja" style="opacity:0.2; cursor:not-allowed;">🗑️</button>` 
+        : `<button onclick="pedirAnular('${m.id}')" ${isAnulado?'disabled':''} title="Anular Pago">🗑️</button>`;
+
       return `<tr style="${isAnulado?'opacity:0.4;text-decoration:line-through;':''}">
         <td>${(m.date||'').split('-').reverse().join('/')}</td>
-        <td><strong>${escapeHtml(m.concept)}</strong></td>
+        <td>${displayConcept}</td>
         <td style="text-align:right;" class="ledger-debe">${isDebe?currency(m.amount):'-'}</td>
         <td style="text-align:right;" class="ledger-haber">${isHaber?currency(m.amount):'-'}</td>
         <td style="text-align:right; font-weight:800;">${currency(Number(m.balance||0))}</td>
         <td style="text-align:center;">
           <button onclick="prepararImpresion('${m.id}')" title="Imprimir">🖨️</button>
-          <button onclick="abrirEditar('${m.id}')" ${isAnulado?'disabled':''} title="Editar">✏️</button>
-          <button onclick="pedirAnular('${m.id}')" ${isAnulado?'disabled':''} title="Anular">🗑️</button>
+          ${btnEdit}
+          ${btnAnular}
         </td>
       </tr>`;
     }).join('');
   }
 
+  function verDetalleFactura(movId) {
+    const mov = dbCcMovements.find(m => m.id === movId);
+    if (!mov) return;
+    const saleObj = dbSales.find(s => s.id === mov.reference_id);
+    if (saleObj && saleObj.items) {
+      const itemsList = typeof saleObj.items === 'string' ? JSON.parse(saleObj.items) : saleObj.items;
+      document.getElementById('detalleFacTitle').textContent = `Detalle Factura N° ${saleObj.factNum}`;
+      document.getElementById('detalleFacBody').innerHTML = itemsList.map(i => `
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:center; font-weight:bold;">${i.qty}</td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--line);">${escapeHtml(i.name)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:right;">${currency(i.price)}</td>
+          <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:right; font-weight:bold;">${currency(i.price * i.qty)}</td>
+        </tr>
+      `).join('');
+      document.getElementById('detalleFacTotal').textContent = currency(mov.amount);
+      document.getElementById('btnImprimirDesdeModal').onclick = () => {
+        document.getElementById('modalDetalleFac').close();
+        prepararImpresion(movId);
+      };
+      document.getElementById('modalDetalleFac').showModal();
+    }
+  }
+
+  // --- LÓGICA INTELIGENTE DE IMPRESIÓN ---
   function prepararImpresion(movId) {
     const mov = dbCcMovements.find(m => m.id === movId);
     const cli = dbClients.find(c => c.id === selectedClientId);
+    if (!mov || !cli) return;
+
     const isPago = mov.type === 'credit';
-    
-    const ticketData = {
-      id: mov.id,
-      createdAt: mov.createdAt,
-      client: cli.name,
-      seller: localStorage.getItem('activeUser') || 'Admin',
-      method: isPago ? 'Cobranza CC' : 'Cargo CC',
-      cupon: isPago ? 'RECIBO DE COBRANZA' : 'COMPROBANTE',
-      items: [{ qty: 1, name: mov.concept, price: mov.amount, subtotal: mov.amount }],
-      subtotal: mov.amount, promoDiscount: 0, total: mov.amount
-    };
-    localStorage.setItem('last_sale_to_print', JSON.stringify(ticketData));
+    const isVenta = String(mov.reference_type || '').toLowerCase() === 'sale' && mov.reference_id;
+    let ventaParaImprimir = null;
+
+    // Si es Factura, pasamos la venta original pero forzamos el título
+    if (isVenta) {
+      const saleObj = dbSales.find(s => s.id === mov.reference_id);
+      if (saleObj) {
+        ventaParaImprimir = {
+          ...saleObj,
+          client: cli.name,
+          documentTitle: "COMPROBANTE DE VENTA"
+        };
+      }
+    }
+
+    // Si es un Pago o ajuste, armamos el Recibo
+    if (!ventaParaImprimir) {
+      ventaParaImprimir = {
+        id: mov.id,
+        createdAt: mov.createdAt || new Date().toISOString(),
+        client: cli.name,
+        seller: localStorage.getItem('activeUser') || 'Admin',
+        method: isPago ? 'Cobranza CC' : 'Cargo Manual',
+        cupon: '',
+        items: [{ qty: 1, name: mov.concept, price: mov.amount, subtotal: mov.amount }],
+        subtotal: mov.amount, promoDiscount: 0, total: mov.amount,
+        documentTitle: isPago ? "RECIBO DE PAGO" : "CARGO EN CTA. CTE." // Aquí viaja el título
+      };
+    }
+
+    localStorage.setItem('last_sale_to_print', JSON.stringify(ventaParaImprimir));
     window.open('imprimir_ticket.html', '_blank');
   }
 
@@ -294,8 +366,8 @@
     document.getElementById('movId').value = '';
     document.getElementById('movType').value = tipo;
     document.getElementById('movAmount').value = '';
-    document.getElementById('movMethodContainer').style.display = tipo==='credit'?'block':'none';
-    document.getElementById('movConcept').value = tipo==='credit'?'Cobranza en Efectivo':'Ajuste / Cargo Manual';
+    document.getElementById('movMethodContainer').style.display = tipo === 'credit' ? 'block' : 'none';
+    document.getElementById('movConcept').value = tipo === 'credit' ? 'Pago recibido en Efectivo' : 'Ajuste / Cargo Manual';
     document.getElementById('modalMov').showModal();
   }
 
@@ -305,29 +377,45 @@
     document.getElementById('movType').value = m.type;
     document.getElementById('movAmount').value = m.amount;
     document.getElementById('movConcept').value = m.concept;
-    document.getElementById('movMethodContainer').style.display = 'none';
+    document.getElementById('movMethodContainer').style.display = m.type === 'credit' ? 'block' : 'none';
     document.getElementById('modalMov').showModal();
   }
+
+  document.getElementById('movMethod').addEventListener('change', function(e) {
+    document.getElementById('movConcept').value = `Pago recibido en ${e.target.value}`;
+  });
 
   async function guardarMovimiento(e) {
     e.preventDefault();
     const id = document.getElementById('movId').value || 'cc_' + Date.now();
+    const isNew = !document.getElementById('movId').value;
     const mov = {
       id, clientId: selectedClientId, date: todayISO(),
       type: document.getElementById('movType').value,
       amount: parseFloat(document.getElementById('movAmount').value),
       concept: document.getElementById('movConcept').value.trim(),
-      createdAt: new Date().toISOString(), status: 'Activo'
+      createdAt: new Date().toISOString(), status: 'Activo',
+      reference_type: 'manual', reference_id: ''
     };
     mostrarCarga(true);
     try {
       const res = await apiFetch(`${API_URL}/cc_movements`, { method:'POST', body:JSON.stringify(mov) });
-      if (res.ok && mov.type === 'credit' && !document.getElementById('movId').value) {
-        // Registrar en Caja (Sales) si es nuevo pago
-        await apiFetch(`${API_URL}/sales`, { method:'POST', body:JSON.stringify({
-          id:'vta_'+id, createdAt:mov.createdAt, branch:terminalActiva, method:document.getElementById('movMethod').value,
-          total:mov.amount, items:[{name:'Cobranza: '+mov.concept, qty:1, price:mov.amount}], status:'Activa'
-        })});
+      
+      // Si el movimiento es un PAGO (credit), actualizamos también la Caja
+      if (res.ok && mov.type === 'credit') {
+        const vtaPayload = {
+          id: 'vta_' + id, // Vinculamos el mismo ID para poder editarlo/anularlo
+          createdAt: mov.createdAt,
+          date: todayISO(),
+          branch: terminalActiva,
+          method: document.getElementById('movMethod').value || 'Efectivo',
+          total: mov.amount,
+          subtotal: mov.amount,
+          promoDiscount: 0,
+          items: [{id: 'cc_pay', code: 'COBRO', name: mov.concept, qty: 1, price: mov.amount, subtotal: mov.amount}],
+          status: 'Activa'
+        };
+        await apiFetch(`${API_URL}/sales`, { method:'POST', body:JSON.stringify(vtaPayload) });
       }
       cerrarModalMov(); await initCC(); seleccionarCliente(selectedClientId);
     } catch(e) { alert("Error"); } finally { mostrarCarga(false); }
@@ -339,7 +427,7 @@
   let pendingAnularId = null;
   function pedirAnular(id) {
     pendingAnularId = id;
-    document.getElementById('authActionText').textContent = "ANULAR este movimiento";
+    document.getElementById('authActionText').textContent = "ANULAR este pago/cargo";
     document.getElementById('adminAuthPin').value = '';
     document.getElementById('adminAuthDialog').showModal();
   }
@@ -354,8 +442,9 @@
       const m = dbCcMovements.find(x => x.id === pendingAnularId);
       m.status = 'Anulado';
       await apiFetch(`${API_URL}/cc_movements`, { method:'POST', body:JSON.stringify(m) });
-      // Si era pago, anular también la venta de caja
+      
       if (m.type === 'credit') {
+        // Anulamos también el ticket fantasma en la Caja con el PIN
         await apiFetch(`${API_URL}/sales`, { method:'POST', body:JSON.stringify({id:'vta_'+m.id, status:'Anulada', adminPass:'1234'}) });
       }
       await initCC(); seleccionarCliente(selectedClientId);
