@@ -8,10 +8,10 @@
     /* Estilos base y tipografía */
     body {
       font-family: 'Inter', system-ui, sans-serif;
-      font-size: 13px;
+      font-size: 11px; /* Reducido de 13px */
       margin: 0;
       padding: 20px;
-      background: #e2e8f0; /* Fondo grisecito para la web */
+      background: #e2e8f0; 
       color: #1e293b;
       display: flex;
       flex-direction: column;
@@ -20,10 +20,10 @@
 
     /* Contenedor principal: Mitad de hoja A4 (Formato A5 Portrait) */
     .invoice-box {
-      width: 148mm; /* Ancho exacto de A5 */
-      min-height: 210mm; /* Alto exacto de A5 */
+      width: 148mm; 
+      min-height: 210mm; 
       background: #fff;
-      padding: 10mm;
+      padding: 8mm; /* Reducido para dar más espacio interno */
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       box-sizing: border-box;
       position: relative;
@@ -35,41 +35,41 @@
       justify-content: space-between;
       align-items: flex-start;
       border-bottom: 2px solid #cbd5e1;
-      padding-bottom: 15px;
-      margin-bottom: 20px;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
     }
     .company-logo {
-      max-width: 150px;
-      max-height: 70px;
+      max-width: 120px; /* Logo más chico */
+      max-height: 55px;
       object-fit: contain;
     }
     .company-details {
       text-align: right;
     }
     .company-name {
-      font-size: 20px;
+      font-size: 16px; /* Reducido de 20px */
       font-weight: 900;
       color: #0f172a;
-      margin: 0 0 5px 0;
+      margin: 0 0 3px 0;
       text-transform: uppercase;
     }
     .company-info {
-      font-size: 11px;
+      font-size: 10px; /* Reducido */
       color: #64748b;
       margin: 0;
-      line-height: 1.4;
+      line-height: 1.3;
     }
 
     /* Título del documento */
     .doc-title {
       text-align: center;
-      font-size: 18px;
+      font-size: 14px; /* Reducido de 18px */
       font-weight: bold;
       letter-spacing: 1px;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       text-transform: uppercase;
       background: #f8fafc;
-      padding: 8px;
+      padding: 6px;
       border: 1px solid #e2e8f0;
     }
 
@@ -77,54 +77,55 @@
     .sale-info {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      margin-bottom: 20px;
-      font-size: 12px;
+      gap: 10px;
+      margin-bottom: 15px;
+      font-size: 11px; /* Reducido */
     }
-    .info-block strong { color: #475569; display: inline-block; width: 65px; }
+    .info-block strong { color: #475569; display: inline-block; width: 60px; }
 
     /* Tabla de artículos */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     th {
       text-align: left;
-      font-size: 11px;
+      font-size: 10px; /* Reducido */
       text-transform: uppercase;
       background: #f1f5f9;
       color: #475569;
-      padding: 8px;
+      padding: 6px;
       border-bottom: 2px solid #cbd5e1;
     }
     td {
-      padding: 10px 8px;
+      padding: 6px; /* Reducido de 10px */
       border-bottom: 1px solid #e2e8f0;
       vertical-align: middle;
+      font-size: 11px;
     }
 
-    /* Totales */
+    /* Totales - MUCHO MÁS COMPACTO */
     .totals-box {
-      width: 50%;
+      width: 45%; /* Más angosto */
       float: right;
       border: 1px solid #e2e8f0;
       border-radius: 6px;
-      padding: 10px;
+      padding: 8px; /* Reducido */
       background: #f8fafc;
     }
     .total-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 6px;
-      font-size: 13px;
+      margin-bottom: 4px;
+      font-size: 11px; /* Reducido de 13px */
     }
     .grand-total {
-      font-size: 18px;
+      font-size: 14px; /* Súper reducido de 18px */
       font-weight: 900;
       color: #0f172a;
-      margin-top: 10px;
-      padding-top: 10px;
+      margin-top: 6px;
+      padding-top: 6px;
       border-top: 2px solid #cbd5e1;
     }
 
@@ -134,11 +135,11 @@
     /* Footer */
     .footer {
       text-align: center;
-      margin-top: 40px;
-      font-size: 11px;
+      margin-top: 25px; /* Reducido */
+      font-size: 9px; /* Reducido */
       color: #64748b;
       border-top: 1px dashed #cbd5e1;
-      padding-top: 15px;
+      padding-top: 10px;
     }
 
     /* Botones de control fuera de la impresión */
@@ -158,6 +159,7 @@
       font-weight: bold;
       box-shadow: 0 4px 6px rgba(0,0,0,0.1);
       transition: 0.2s;
+      font-size: 12px;
     }
     .btn:hover { transform: translateY(-2px); }
     .btn-back { background: #334155; color: white; }
@@ -168,7 +170,7 @@
       @page { size: A5 portrait; margin: 0; }
       body { background: #fff; padding: 0; display: block; }
       .no-print { display: none; }
-      .invoice-box { box-shadow: none; border: none; width: 100%; min-height: auto; padding: 10mm; }
+      .invoice-box { box-shadow: none; border: none; width: 100%; min-height: auto; padding: 8mm; }
     }
   </style>
 </head>
@@ -202,7 +204,7 @@
       <div class="info-block">
         <div><strong>Ticket N°:</strong> <span id="printId"></span></div>
         <div><strong>Fecha:</strong> <span id="printDate"></span></div>
-        <div><strong>Método:</strong> <span id="printMethod"></span> <span id="printCupon" style="font-size:10px; color:#666;"></span></div>
+        <div><strong>Método:</strong> <span id="printMethod"></span> <span id="printCupon" style="font-size:9px; color:#666;"></span></div>
       </div>
     </div>
 
@@ -245,13 +247,11 @@
   <script>
     function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
 
-    // Cargar datos de la empresa desde localStorage
     const compName = localStorage.getItem('company_name') || 'Mi Empresa';
     const compAddress = localStorage.getItem('company_address') || '';
     const compPhone = localStorage.getItem('company_phone') || '';
     const compLogo = localStorage.getItem('company_logo') || '';
 
-    // Inyectar datos de la empresa
     document.getElementById('printCompName').textContent = compName;
     
     let infoHtml = '';
@@ -263,7 +263,6 @@
       document.getElementById('printLogoContainer').innerHTML = `<img src="${compLogo}" class="company-logo" alt="Logo">`;
     }
 
-    // Cargar datos de la venta
     const venta = JSON.parse(localStorage.getItem('last_sale_to_print'));
 
     if (!venta) {
@@ -280,7 +279,6 @@
         document.getElementById('printCupon').textContent = `(Lote: ${venta.cupon})`;
       }
       
-      // Armar tabla de artículos
       const itemsBody = document.getElementById('printItems');
       venta.items.forEach(i => {
         const tr = document.createElement('tr');
@@ -293,7 +291,6 @@
         itemsBody.appendChild(tr);
       });
 
-      // Totales
       document.getElementById('printSubtotal').textContent = currency(venta.subtotal);
       
       if (venta.promoDiscount > 0) {
@@ -303,11 +300,10 @@
       
       document.getElementById('printTotal').textContent = currency(venta.total);
 
-      // Auto-imprimir al cargar
       window.onload = () => {
         setTimeout(() => {
           window.print();
-        }, 800); // Un pequeño retraso para asegurar que el logo cargue bien
+        }, 500); 
       };
     }
   </script>
