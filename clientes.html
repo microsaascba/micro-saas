@@ -277,9 +277,10 @@
 
     mostrarCarga(true);
     try {
-      // Usamos apiFetch SIN el objeto headers, para no borrar el x-company-id
+      // Le devolvemos el Content-Type para que el backend no explote
       const response = await apiFetch(`${API_URL}/business_clients`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(client)
       });
       
@@ -289,7 +290,8 @@
         limpiarFormulario();
         renderTable();
       } else {
-        alert("Error al guardar en la base de datos.");
+        const errData = await response.json();
+        alert("Error del servidor: " + (errData.error || "No se pudo guardar"));
       }
     } catch(error) {
       console.error("Error guardando:", error);
@@ -401,6 +403,7 @@
     pedirAuthAdmin(`${accion} a este cliente`, ejecutarToggleEstadoCliente, id);
   }
 
+  // --- CAMBIAR ESTADO (ACTIVAR / INACTIVAR) ---
   async function ejecutarToggleEstadoCliente(id) {
     const c = dbClients.find(x => x.id === id);
     if (!c) return;
@@ -408,15 +411,17 @@
 
     mostrarCarga(true);
     try {
-      // Usamos apiFetch SIN el objeto headers
       const response = await apiFetch(`${API_URL}/business_clients`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(c)
       });
-      if (response.ok) renderTable();
-      else {
+      if (response.ok) {
+        renderTable();
+      } else {
         c.status = c.status === 'Inactivo' ? 'Activo' : 'Inactivo';
-        alert("Error al actualizar el estado en la base de datos.");
+        const errData = await response.json();
+        alert("Error al actualizar el estado: " + (errData.error || "Falla en DB"));
       }
     } catch(error) {
       c.status = c.status === 'Inactivo' ? 'Activo' : 'Inactivo';
