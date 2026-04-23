@@ -985,6 +985,7 @@
 
     const currentClient = tempId ? dbClientes.find(x => x.id === tempId) : null;
 
+    // EL OBJETO DATA CORREGIDO: Leemos los valores directamente de los inputs
     const data = {
       id: tempId || editingClientId || ('cli_' + Math.random().toString(36).slice(2, 9)),
       name: document.getElementById('cName').value.trim(),
