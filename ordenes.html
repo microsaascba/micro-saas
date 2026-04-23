@@ -574,25 +574,19 @@
       document.getElementById('expDesde').value = primerDiaMes;
       document.getElementById('expHasta').value = todayISO();
 
-      // TRUCO ROMPE-CACHÉ
       const nocache = '?v=' + Date.now();
 
-      // FUNCIÓN BLINDADA: Evita que el HTML de Cloudflare rompa la pantalla
       async function fetchSeguro(url) {
           try {
               const res = await apiFetch(url);
-              if (!res.ok) {
-                  console.warn(`Endpoint falló: ${url} (Status: ${res.status})`);
-                  return [];
-              }
+              if (!res.ok) return [];
               const contentType = res.headers.get("content-type") || "";
               if (contentType.includes("text/html")) {
-                  console.error(`❌ ERROR DEL SERVIDOR: La ruta ${url} devolvió HTML. Verificá que el archivo exista en la carpeta /functions/api/ de tu GitHub.`);
+                  console.error(`❌ ERROR: La ruta ${url} devolvió HTML. Verificá el nombre del archivo en /functions/api/`);
                   return [];
               }
               return await res.json();
           } catch(e) {
-              console.error(`Error de red en ${url}:`, e);
               return [];
           }
       }
@@ -600,11 +594,10 @@
       const [resO, resP, resC, resS] = await Promise.all([
         fetchSeguro('/api/orders' + nocache), 
         fetchSeguro('/api/products' + nocache), 
-        fetchSeguro('/api/clients' + nocache), 
+        fetchSeguro('/api/business_clients' + nocache), // URL ACTUALIZADA AQUÍ
         fetchSeguro('/api/suppliers' + nocache)
       ]);
       
-      // Asignamos asegurándonos de que sean Arrays
       dbOrders = Array.isArray(resO) ? resO : [];
       dbProducts = Array.isArray(resP) ? resP : [];
       dbClients = Array.isArray(resC) ? resC : [];
@@ -618,7 +611,7 @@
       renderOrders();
       renderLenses();
     } catch(e) { 
-      console.error("Error cargando datos:", e); 
+      console.error("Error crítico en initOrdenes:", e); 
     } finally { 
       mostrarCarga(false); 
     }
