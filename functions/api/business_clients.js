@@ -2,6 +2,25 @@ function getCompanyIdFromRequest(request) {
   return request.headers.get('x-company-id') || '';
 }
 
+// Función auxiliar para inicializar la tabla si no existe
+async function ensureTableExists(db) {
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS business_clients (
+      id TEXT PRIMARY KEY,
+      company_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      contact TEXT,
+      phone TEXT,
+      email TEXT,
+      cuil TEXT,
+      address TEXT,
+      iva_condition TEXT,
+      status TEXT,
+      created_at TEXT
+    )
+  `).run();
+}
+
 export async function onRequestGet(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
@@ -9,6 +28,9 @@ export async function onRequestGet(context) {
     if (!companyId) {
       return Response.json({ error: 'Falta company_id.' }, { status: 400 });
     }
+
+    // Aseguramos que la tabla exista antes de consultar
+    await ensureTableExists(context.env.DB);
 
     const url = new URL(context.request.url);
     const status = url.searchParams.get('status') || 'Activo';
@@ -77,6 +99,9 @@ export async function onRequestPost(context) {
     const id = data.id || 'cli_' + Date.now();
     const name = data.name || 'Sin Nombre';
 
+    // Aseguramos que la tabla exista antes de insertar
+    await ensureTableExists(context.env.DB);
+
     // Volvemos a la tabla correcta (business_clients) con sus columnas originales
     await context.env.DB.prepare(`
       INSERT INTO business_clients (
@@ -126,6 +151,9 @@ export async function onRequestDelete(context) {
     if (!id) {
       return Response.json({ error: 'Falta id.' }, { status: 400 });
     }
+
+    // Aseguramos que la tabla exista antes de actualizar
+    await ensureTableExists(context.env.DB);
 
     await context.env.DB.prepare(
       "UPDATE business_clients SET status = 'Inactivo' WHERE id = ?1 AND company_id = ?2"
