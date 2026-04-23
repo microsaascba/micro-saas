@@ -290,25 +290,29 @@
     <form id="clienteForm" onsubmit="guardarCliente(event)">
       <div class="modal-body form-grid">
         <input type="hidden" id="cTempId">
-        <div class="field full"><label>Nombre del Comercio *</label><input type="text" id="cName" required /></div>
+        <div class="field full"><label>Razón Social / Nombre Comercial *</label><input type="text" id="cName" required /></div>
         <div class="field"><label>Titular / Contacto</label><input type="text" id="cContact" /></div>
-        
-        <div class="field"><label>CUIL / CUIT</label><input type="text" id="cCuil" placeholder="Ej: 30112233445" /></div>
         <div class="field"><label>WhatsApp *</label><input type="text" id="cPhone" required /></div>
         
-        <div class="field full"><label>Dirección</label><input type="text" id="cAddress" /></div>
-        
-        <div class="field"><label>País</label>
-          <select id="cCountry">
-            <option value="Argentina">Argentina</option>
-            <option value="Uruguay">Uruguay</option>
-            <option value="Chile">Chile</option>
-            <option value="Paraguay">Paraguay</option>
-            <option value="Brasil">Brasil</option>
-            <option value="España">España</option>
+        <div class="field full" style="border-top:1px solid var(--line); margin-top:5px; padding-top:15px;"><label style="color:var(--primary);"><strong>Datos Fiscales (Para Facturación C)</strong></label></div>
+        <div class="field"><label>CUIT (Con guiones)</label><input type="text" id="cCuil" placeholder="Ej: 20-12345678-9" /></div>
+        <div class="field"><label>Ingresos Brutos (IIBB)</label><input type="text" id="cIibb" placeholder="Ej: 12345678" /></div>
+        <div class="field"><label>Inicio de Actividades</label><input type="date" id="cInicioActividades" /></div>
+        <div class="field"><label>Condición IVA</label>
+          <select id="cIvaCondition">
+            <option value="Responsable Monotributo">Responsable Monotributo (Factura C)</option>
+            <option value="Responsable Inscripto">Responsable Inscripto (Factura A/B)</option>
+            <option value="Exento">Exento</option>
           </select>
         </div>
-        <div class="field"><label>Ciudad</label><input type="text" id="cCity" placeholder="Ej: Ciudad Autónoma de Buenos Aires" /></div>
+        
+        <div class="field full"><label>Domicilio Fiscal</label><input type="text" id="cAddress" placeholder="Av. Siempre Viva 123" /></div>
+        <div class="field"><label>País</label>
+          <select id="cCountry"><option value="Argentina">Argentina</option></select>
+        </div>
+        <div class="field"><label>Ciudad</label><input type="text" id="cCity" placeholder="Ej: Mendiolaza, Córdoba" /></div>
+        
+        <div class="field full" style="border-top:1px solid var(--line); margin-top:5px; padding-top:15px;"><label style="color:var(--primary);"><strong>Condiciones de Contratación</strong></label></div>
         <div class="field"><label>Email *</label><input type="email" id="cEmail" required /></div>
         <div class="field"><label>Valor Abono ($) *</label><input type="number" id="cFee" required /></div>
         <div class="field"><label>Primer Vencimiento *</label><input type="date" id="cDueDate" required /></div>
@@ -349,29 +353,13 @@
 
         <div class="field full admin-box" style="margin-top:15px;">
           <p><strong>Configuración de Límites del Plan:</strong></p>
-
           <div class="form-grid">
-            <div class="field">
-              <label>Cantidad máxima de usuarios</label>
-              <input type="number" id="cMaxUsers" value="1" min="1" />
-            </div>
-
-            <div class="field">
-              <label>Cantidad máxima de sucursales</label>
-              <input type="number" id="cMaxBranches" value="1" min="1" />
-            </div>
+            <div class="field"><label>Cantidad máxima de usuarios</label><input type="number" id="cMaxUsers" value="1" min="1" /></div>
+            <div class="field"><label>Cantidad máxima de sucursales</label><input type="number" id="cMaxBranches" value="1" min="1" /></div>
           </div>
-
           <div style="margin-top:10px; display:flex; gap:20px;">
-            <label style="display:flex; gap:5px;">
-              <input type="checkbox" id="cAllowUsers">
-              Permitir que el cliente cree usuarios
-            </label>
-
-            <label style="display:flex; gap:5px;">
-              <input type="checkbox" id="cAllowBranches">
-              Permitir que el cliente cree sucursales
-            </label>
+            <label style="display:flex; gap:5px;"><input type="checkbox" id="cAllowUsers"> Permitir que el cliente cree usuarios</label>
+            <label style="display:flex; gap:5px;"><input type="checkbox" id="cAllowBranches"> Permitir que el cliente cree sucursales</label>
           </div>
         </div>
 
@@ -382,75 +370,6 @@
       </div>
     </form>
   </dialog>
-
-  <dialog id="pagoDialog">
-    <div class="modal-head">
-      <h3 id="pagoModalTitle">Registrar Pago</h3>
-      <button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('pagoDialog')">✕</button>
-    </div>
-    <form id="pagoForm" onsubmit="guardarPago(event)">
-      <div class="modal-body form-grid">
-        <div class="field full">
-          <label>Seleccionar Cliente *</label>
-          <select id="pClient" required onchange="autocompletarMontoPago()"></select>
-        </div>
-        <div class="field"><label>Fecha *</label><input type="date" id="pDate" required /></div>
-        <div class="field"><label>Período *</label><input type="month" id="pPeriod" required /></div>
-        <div class="field"><label>Monto ($) *</label><input type="number" id="pAmount" required /></div>
-        <div class="field full"><label>Método *</label>
-          <select id="pMethod" required>
-            <option value="Transferencia Bancaria">Transferencia Bancaria</option>
-            <option value="Efectivo">Efectivo</option>
-            <option value="Tarjeta / Link de Pago">Tarjeta / Link de Pago</option>
-          </select>
-        </div>
-        <div class="field full"><label>Notas</label><textarea id="pNotes" rows="2"></textarea></div>
-      </div>
-      <div class="modal-foot">
-        <button type="button" class="btn btn-outline" onclick="cerrarModal('pagoDialog')">Cancelar</button>
-        <button type="submit" class="btn btn-success" id="btnGuardarPago">Acreditar Pago</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="gastoDialog">
-    <div class="modal-head"><h3>Registrar Gasto</h3><button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('gastoDialog')">✕</button></div>
-    <form onsubmit="guardarGasto(event)" class="modal-body form-grid">
-      <div class="field"><label>Fecha *</label><input type="date" id="gDate" required /></div>
-      <div class="field"><label>Monto ($) *</label><input type="number" id="gAmount" required /></div>
-      <div class="field full"><label>Concepto / Detalle *</label><input type="text" id="gConcept" required /></div>
-      <div class="field full"><label>Categoría *</label>
-        <select id="gCat"><option>Infraestructura IT</option><option>Marketing y Publicidad</option><option>Sueldos / Retiros</option><option>Herramientas</option><option>Otros</option></select>
-      </div>
-      <div class="modal-foot" style="grid-column:1/-1">
-        <button type="button" class="btn btn-outline" onclick="cerrarModal('gastoDialog')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Guardar Gasto</button>
-      </div>
-    </form>
-  </dialog>
-
-  <dialog id="presupuestoDialog" style="max-width: 750px;">
-    <div class="modal-head"><h3>Nuevo Presupuesto</h3><button class="btn btn-outline" style="padding: 5px 10px;" onclick="cerrarModal('presupuestoDialog')">✕</button></div>
-    <form onsubmit="guardarPresupuesto(event)" class="modal-body">
-      <div class="form-grid">
-        <div class="field"><label>Cliente / Empresa *</label><input type="text" id="preName" required /></div>
-        <div class="field"><label>Email de Contacto *</label><input type="email" id="preEmail" required /></div>
-      </div>
-      <div style="margin-top:20px;">
-        <label style="font-size:12px; color:var(--muted); font-weight: bold;">ÍTEMS A COTIZAR:</label>
-        <table class="budget-items-table">
-          <thead><tr><th style="text-align:left;">Descripción</th><th width="80">Cant</th><th width="120">Precio</th><th width="40"></th></tr></thead>
-          <tbody id="budgetItemsBody"></tbody>
-        </table>
-        <button type="button" class="btn btn-outline" onclick="addBudgetItem()" style="margin-top:10px;">+ Agregar Ítem</button>
-      </div>
-      <div class="modal-foot" style="margin-top: 20px;">
-        <button type="button" class="btn btn-outline" onclick="cerrarModal('presupuestoDialog')">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Generar y Guardar</button>
-      </div>
-    </form>
-  </dialog>
-
 <script>
   function cerrarModal(id) {
     const modal = document.getElementById(id);
