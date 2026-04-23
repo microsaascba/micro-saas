@@ -241,7 +241,7 @@
     try {
       // Descargamos los clientes y el historial de órdenes al mismo tiempo
       const [resC, resO] = await Promise.all([
-          fetch(`${API_URL}/clients`),
+          fetch(`${API_URL}/business_clients`),
           fetch(`${API_URL}/optical`)
       ]);
       
@@ -276,7 +276,7 @@
 
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/clients`, {
+      const response = await fetch(`${API_URL}/business_clients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(client)
@@ -410,7 +410,7 @@
 
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/clients`, {
+      const response = await fetch(`${API_URL}/business_clients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(c)
