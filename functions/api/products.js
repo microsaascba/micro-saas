@@ -104,11 +104,10 @@ export async function onRequestPost(context) {
         `).bind(newBranchId, companyId).run();
       }
     } catch (e) {
-      // Si la tabla no existe o hay error, asume 'Central'
       console.warn("Error verificando sucursales, usando 'Central' por defecto.");
     }
 
-    // 🔥 CONSTRUCCIÓN PERFECTA DEL STOCK
+    // 🔥 CONSTRUCCIÓN DEL STOCK (CORREGIDA)
     const existingProd = await context.env.DB.prepare(`
       SELECT stock, stock_branches 
       FROM products 
@@ -119,16 +118,25 @@ export async function onRequestPost(context) {
     let finalStockTotal = 0;
 
     if (existingProd) {
-      // ES EDICIÓN: Protegemos el stock existente, NO lo sobrescribimos con data del frontend.
-      try { finalStockBranches = JSON.parse(existingProd.stock_branches); } catch { finalStockBranches = {}; }
-      
-      // Si estaba corrupto o vacío, lo arreglamos enviando el stock total a la sucursal por defecto
-      if (!finalStockBranches || Object.keys(finalStockBranches).length === 0) {
-        finalStockBranches = { [defaultBranchName]: safeNumber(existingProd.stock) };
+      // ES EDICIÓN: 
+      // Si el frontend (ej: stock.html) nos manda stock actualizado, CONFIAMOS EN EL FRONTEND.
+      // Si no manda nada, mantenemos el que ya estaba en la DB.
+      if (data.stock_branches !== undefined) {
+        try {
+          finalStockBranches = typeof data.stock_branches === 'string' ? JSON.parse(data.stock_branches) : data.stock_branches;
+        } catch {
+          finalStockBranches = {};
+        }
+        finalStockTotal = safeNumber(data.stock);
+      } else {
+        try { finalStockBranches = JSON.parse(existingProd.stock_branches); } catch { finalStockBranches = {}; }
+        if (!finalStockBranches || Object.keys(finalStockBranches).length === 0) {
+          finalStockBranches = { [defaultBranchName]: safeNumber(existingProd.stock) };
+        }
+        finalStockTotal = Object.values(finalStockBranches).reduce((a, b) => a + safeNumber(b), 0);
       }
-      finalStockTotal = Object.values(finalStockBranches).reduce((a, b) => a + safeNumber(b), 0);
     } else {
-      // ES ALTA NUEVA: Asignamos sucursal y stock inicial
+      // ES ALTA NUEVA
       const branchToUse = safeString(data.initialBranch) || defaultBranchName;
       const initialStock = safeNumber(data.initialStock);
       
@@ -175,13 +183,13 @@ export async function onRequestPost(context) {
       safeString(data.category),
       safeNumber(data.cost),
       safeNumber(data.price),
-      finalStockTotal, // Insertamos el stock total calculado
+      finalStockTotal,
       data.status || 'Activo',
       safeString(data.promoType),
       safeNumber(data.promoValue),
       safeString(data.promoLinked),
       data.createdAt || new Date().toISOString(),
-      safeJSON(finalStockBranches) // Insertamos el JSON perfecto
+      safeJSON(finalStockBranches)
     ).run();
 
     return Response.json({ success: true });
