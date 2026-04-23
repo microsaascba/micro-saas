@@ -414,25 +414,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Función para filtrar el menú según el plan contratado
 function filtrarMenuPorModulos() {
-  // 1. Obtenemos los datos del usuario logueado (guardados al hacer login)
-  const userData = JSON.parse(localStorage.getItem('user') || '{}');
-  const allowedModules = userData.allowedModules || [];
+  try {
+    let allowedModules = [];
 
-  // 2. Si no hay módulos (error o admin total), no hacemos nada
-  if (allowedModules.length === 0) return;
-
-  // 3. Buscamos todos los enlaces con el atributo data-module
-  document.querySelectorAll('.nav a[data-module]').forEach(link => {
-    const moduleName = link.getAttribute('data-module');
-    
-    // 4. Si el módulo no está en la lista de permitidos, lo eliminamos del DOM
-    if (!allowedModules.includes(moduleName)) {
-      link.remove(); 
+    // INTENTO 1: Buscar si existe la variable directa 'allowedModules'
+    let modulosDirectos = localStorage.getItem('allowedModules');
+    if (modulosDirectos) {
+        allowedModules = JSON.parse(modulosDirectos);
+    } 
+    // INTENTO 2: Buscar si están dentro del objeto 'user' (la forma más común de guardar el login)
+    else {
+        let userDataStr = localStorage.getItem('user');
+        if (userDataStr) {
+            let userData = JSON.parse(userDataStr);
+            allowedModules = userData.allowedModules || [];
+        }
     }
-  });
+
+    // Para diagnóstico: Esto imprimirá en la consola de F12 los módulos que el sistema detecta
+    console.log("Módulos permitidos detectados por core.js:", allowedModules);
+
+    // Si sigue vacío, abortamos para no borrar todo el menú
+    if (!Array.isArray(allowedModules) || allowedModules.length === 0) {
+        console.warn("No se encontraron restricciones de módulos. Se mostrará el menú completo.");
+        return;
+    }
+
+    // Ahora sí, recorremos el menú y eliminamos lo que no está en la lista
+    document.querySelectorAll('.nav a[data-module]').forEach(link => {
+      const moduleName = link.getAttribute('data-module');
+      if (!allowedModules.includes(moduleName)) {
+        link.remove(); // Borra el botón del menú
+      }
+    });
+
+  } catch (error) {
+    console.error("Error al filtrar el menú:", error);
+  }
 }
 
-// Ejecutar automáticamente al cargar cualquier página
+// Ejecutar automáticamente al cargar
 document.addEventListener('DOMContentLoaded', filtrarMenuPorModulos);
 
 // Agrega esto dentro de tu función de inicialización en core.js
