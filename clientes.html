@@ -239,10 +239,11 @@
   async function initClients() {
     mostrarCarga(true);
     try {
+      const nocache = '?v=' + Date.now();
       // Descargamos los clientes y el historial de órdenes al mismo tiempo
       const [resC, resO] = await Promise.all([
-          fetch(`${API_URL}/business_clients`),
-          fetch(`${API_URL}/optical`)
+          apiFetch(`${API_URL}/business_clients` + nocache),
+          apiFetch(`${API_URL}/orders` + nocache)
       ]);
       
       if (resC.ok) dbClients = await resC.json();
@@ -276,7 +277,7 @@
 
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/business_clients`, {
+      const response = await apiFetch(`${API_URL}/business_clients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(client)
@@ -410,7 +411,7 @@
 
     mostrarCarga(true);
     try {
-      const response = await fetch(`${API_URL}/business_clients`, {
+      const response = await apiFetch(`${API_URL}/business_clients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(c)
