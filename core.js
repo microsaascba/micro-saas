@@ -434,3 +434,15 @@ function filtrarMenuPorModulos() {
 
 // Ejecutar automáticamente al cargar cualquier página
 document.addEventListener('DOMContentLoaded', filtrarMenuPorModulos);
+
+// Agrega esto dentro de tu función de inicialización en core.js
+const currentPage = window.location.pathname.split('/').pop().replace('.html', '');
+const modulosOmitidos = ['dashboard', 'login', 'index']; // Páginas que siempre se ven
+
+if (!modulosOmitidos.includes(currentPage)) {
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    const allowed = userData.allowedModules || [];
+    if (allowed.length > 0 && !allowed.includes(currentPage)) {
+        window.location.href = 'dashboard.html';
+    }
+}
