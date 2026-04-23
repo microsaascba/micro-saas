@@ -331,22 +331,18 @@ function mostrarCarga(s) { document.getElementById('loadingOverlay').style.displ
 let dbSales = [];
 let dbClients = [];
 
-const PIN_ADMIN = "1234";
-let pendingAdminAction = null;
-let pendingAdminParam = null;
-
 async function initVentas() {
   mostrarCarga(true);
-
   try {
     const hoy = todayISO();
     document.getElementById('filterDesde').value = hoy;
     document.getElementById('filterHasta').value = hoy;
 
+    const nocache = '?v=' + Date.now();
     const [resS, resB, resC] = await Promise.all([
-      apiFetch('/api/sales'),
-      apiFetch('/api/branches'),
-      apiFetch('/api/business_clients?withBalance=1')
+      apiFetch('/api/sales' + nocache),
+      apiFetch('/api/branches' + nocache),
+      apiFetch('/api/business_clients?withBalance=1' + nocache)
     ]);
 
     if (resS.ok) dbSales = await resS.json();
@@ -371,7 +367,6 @@ async function initVentas() {
     }
 
     renderVentas();
-
   } catch (e) {
     console.error(e);
   } finally {
@@ -380,7 +375,7 @@ async function initVentas() {
 }
 
 function getClientName(clientId) {
-  if (!clientId) return 'Consumidor Final';
+  if (!clientId || clientId === 'Consumidor Final') return 'Consumidor Final';
   const c = dbClients.find(x => x.id === clientId);
   return c ? c.name : 'Consumidor Final';
 }
@@ -392,7 +387,6 @@ function renderVentas() {
   const search = document.getElementById('searchVenta').value.toLowerCase();
 
   const tbody = document.getElementById('tbodyVentas');
-
   let total = 0, efectivo = 0, transf = 0, tarjetas = 0, ctaCte = 0, count = 0;
 
   const filtradas = dbSales.filter(s => {
@@ -400,14 +394,9 @@ function renderVentas() {
     const cliente = getClientName(s.clientId).toLowerCase();
 
     return (
-      d >= desde &&
-      d <= hasta &&
+      d >= desde && d <= hasta &&
       (sucursal === 'ALL' || s.branch === sucursal) &&
-      (
-        search === '' ||
-        s.id.toLowerCase().includes(search) ||
-        cliente.includes(search)
-      )
+      (search === '' || s.id.toLowerCase().includes(search) || cliente.includes(search))
     );
   });
 
@@ -418,26 +407,28 @@ function renderVentas() {
     if (!isAnulada) {
       total += s.total;
       count++;
-
       if (s.method === 'Efectivo') efectivo += s.total;
       else if (s.method === 'Transferencia') transf += s.total;
       else if (s.method === 'A Cuenta Corriente') ctaCte += s.total;
       else tarjetas += s.total;
     }
 
+    // Botón seguro sin inyectar objetos pesados en el HTML
+    const btnVer = `<button style="background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:6px 12px; cursor:pointer; font-weight:bold; font-size:12px;" onclick="verDetalle('${s.id}')">👁️ Ver</button>`;
+
     return `
-    <tr style="${isAnulada ? 'opacity:0.5;text-decoration:line-through;' : ''}">
+    <tr style="${isAnulada ? 'opacity:0.5; text-decoration:line-through; background:#f1f5f9;' : ''}">
       <td>${s.date}</td>
       <td>${s.seller || 'Admin'}</td>
-      <td>${s.id}</td>
-      <td>${cliente}</td>
+      <td>${s.id.split('_')[1] || s.id}</td>
+      <td><strong>${escapeHtml(cliente)}</strong></td>
       <td>${s.method}</td>
-      <td style="text-align:right;">${currency(s.total)}</td>
-      <td style="text-align:center;">
-        <button onclick='verDetalle(${JSON.stringify(s)})'>Ver</button>
-      </td>
+      <td style="text-align:right; font-weight:bold; color: ${isAnulada ? 'inherit' : 'var(--primary)'}">${currency(s.total)}</td>
+      <td style="text-align:center;">${btnVer}</td>
     </tr>`;
   }).join('');
+
+  if (filtradas.length === 0) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted);">No hay ventas en este período.</td></tr>';
 
   document.getElementById('kpiTotal').textContent = currency(total);
   document.getElementById('kpiEfectivo').textContent = currency(efectivo);
@@ -447,29 +438,108 @@ function renderVentas() {
   window.dataZ = { total, efectivo, transf, tarjetas, ctaCte, count };
 }
 
-async function ejecutarAnulacion(id) {
-  mostrarCarga(true);
+// ==========================================
+// FUNCIONES DEL MODAL DE DETALLE Y REIMPRESIÓN
+// ==========================================
+window.verDetalle = function(idVenta) {
+  const venta = dbSales.find(s => s.id === idVenta);
+  if (!venta) return;
 
+  const isAnulada = venta.status === 'Anulada';
+  
+  document.getElementById('detalleTitle').textContent = `Detalle del Ticket #${venta.id.split('_')[1] || venta.id}`;
+  document.getElementById('detalleCliente').textContent = getClientName(venta.clientId);
+  document.getElementById('detalleVendedor').textContent = `${venta.seller || 'Admin'} / ${venta.branch || 'Central'}`;
+  document.getElementById('detallePago').innerHTML = `${venta.method || '-'} ${isAnulada ? '<span style="color:var(--danger);">(ANULADA)</span>' : ''}`;
+  document.getElementById('detalleCupon').textContent = venta.cupon || '-';
+  
+  const tbody = document.getElementById('detalleItemsBody');
+  tbody.innerHTML = (venta.items || []).map(i => `
+    <tr>
+      <td style="padding: 8px; border-bottom: 1px solid var(--line); font-size:12px;">${i.code || '-'}</td>
+      <td style="padding: 8px; border-bottom: 1px solid var(--line); font-size:12px;"><strong>${escapeHtml(i.name)}</strong></td>
+      <td style="padding: 8px; border-bottom: 1px solid var(--line); text-align:center; font-weight:bold;">${i.qty}</td>
+      <td style="padding: 8px; border-bottom: 1px solid var(--line); text-align:right; font-weight:bold; color:var(--primary);">${currency(i.subtotal)}</td>
+    </tr>
+  `).join('');
+
+  document.getElementById('detalleTotal').textContent = currency(venta.total);
+  document.getElementById('detalleIdVenta').value = venta.id;
+  
+  document.getElementById('modalDetalleVenta').showModal();
+};
+
+window.imprimirTicketDesdeModal = function() {
+  const id = document.getElementById('detalleIdVenta').value;
+  const venta = dbSales.find(s => s.id === id);
+  if (venta) {
+      const ventaParaImprimir = {...venta, client: getClientName(venta.clientId)};
+      localStorage.setItem('last_sale_to_print', JSON.stringify(ventaParaImprimir));
+      window.open('imprimir_ticket.html', '_blank');
+  }
+};
+
+// ==========================================
+// FUNCIONES DE ANULACIÓN (CON CONTRASEÑA)
+// ==========================================
+window.anularVentaPrompt = function() {
+  const id = document.getElementById('detalleIdVenta').value;
+  const venta = dbSales.find(s => s.id === id);
+  if (venta && venta.status === 'Anulada') {
+    alert("Esta venta ya se encuentra anulada.");
+    return;
+  }
+  document.getElementById('authActionText').textContent = 'anular esta venta (devolver stock)';
+  document.getElementById('adminAuthPin').value = '';
+  document.getElementById('adminAuthDialog').showModal();
+};
+
+window.cerrarAdminAuth = function() {
+  document.getElementById('adminAuthDialog').close();
+};
+
+window.validarAdminAuth = async function(event) {
+  event.preventDefault();
+  const pin = document.getElementById('adminAuthPin').value.trim();
+  const id = document.getElementById('detalleIdVenta').value;
+  cerrarAdminAuth();
+  
+  if (!pin) return alert("Debes ingresar el PIN.");
+  await ejecutarAnulacion(id, pin);
+};
+
+window.ejecutarAnulacion = async function(id, pin) {
+  mostrarCarga(true);
   try {
     const vta = dbSales.find(s => s.id === id);
     if (!vta) return;
 
-    vta.status = 'Anulada';
+    // Payload especial para el backend
+    const payload = {...vta, status: 'Anulada', adminPass: pin};
 
-    await apiFetch('/api/sales', {
+    const res = await apiFetch('/api/sales', {
       method: 'POST',
-      body: JSON.stringify(vta)
+      body: JSON.stringify(payload)
     });
 
+    if (!res.ok) {
+      let errMsg = "Error al anular";
+      try { const err = await res.json(); errMsg = err.error || errMsg; } catch(e){}
+      throw new Error(errMsg);
+    }
+
+    // Actualizamos localmente para no tener que recargar toda la BD
+    vta.status = 'Anulada';
     renderVentas();
-    alert("Venta anulada");
+    document.getElementById('modalDetalleVenta').close();
+    alert("✅ Venta anulada exitosamente. El stock ha sido restituido.");
 
   } catch (e) {
-    alert("Error");
+    alert("❌ " + e.message);
   } finally {
     mostrarCarga(false);
   }
-}
+};
 
 initVentas();
 </script>
