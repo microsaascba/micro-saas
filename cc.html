@@ -200,23 +200,20 @@
 <div id="printSection">
   <div class="print-header-grid">
     <div class="print-company">
-      <h1>MICRO SAAS SOLUCIONES</h1>
-      <p><strong>Razón Social:</strong> Tu Empresa S.R.L.</p>
-      <p><strong>Domicilio Comercial:</strong> Av. Siempre Viva 123, Ciudad</p>
-      <p><strong>Condición frente al IVA:</strong> Responsable Inscripto</p>
+      <h1 id="printDocCompName">MICRO SAAS SOLUCIONES</h1>
+      <p><strong>Dirección:</strong> <span id="printDocCompAddr">Av. Siempre Viva 123</span></p>
+      <p><strong>Teléfono:</strong> <span id="printDocCompPhone">123456789</span></p>
     </div>
     
     <div class="print-letter-box">
-      <div class="print-letter" id="printDocLetter">B</div>
-      <div class="print-cod" id="printDocCod">Cod. 006</div>
+      <div class="print-letter" id="printDocLetter">X</div>
+      <div class="print-cod" id="printDocCod">Doc. no válido</div>
     </div>
     
     <div class="print-doc-details">
-      <h2 class="print-doc-type" id="printDocTitle">FACTURA</h2>
+      <h2 class="print-doc-type" id="printDocTitle">RECIBO</h2>
       <p><strong>N° Comprobante:</strong> <span id="printDocNum">0001-00000000</span></p>
       <p><strong>Fecha de Emisión:</strong> <span id="printDate">--/--/----</span></p>
-      <p><strong>CUIT:</strong> 30-12345678-9</p>
-      <p><strong>Ingresos Brutos:</strong> 12345678</p>
     </div>
   </div>
 
@@ -228,7 +225,7 @@
     <div>
       <p><strong>CUIT/DNI:</strong> <span id="printCliDoc">---</span></p>
       <p><strong>Condición frente al IVA:</strong> <span id="printCliIva">Consumidor Final</span></p>
-      <p><strong>Condición de Venta:</strong> <span id="printSaleCond">Cuenta Corriente</span></p>
+      <p><strong>Condición:</strong> <span id="printSaleCond">Cuenta Corriente</span></p>
     </div>
   </div>
 
@@ -257,9 +254,21 @@
         <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Monto ($) *</label>
         <input type="number" id="movAmount" required min="1" step="0.01" class="input-box" autofocus>
       </div>
+      
+      <div id="movMethodContainer" style="margin-bottom: 15px; display: none;">
+        <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Método de Pago *</label>
+        <select id="movMethod" class="input-box">
+          <option value="Efectivo">💵 Efectivo</option>
+          <option value="Transferencia">📱 Transferencia / Billetera Virtual</option>
+          <option value="Débito">💳 Tarjeta de Débito</option>
+          <option value="Crédito">💳 Tarjeta de Crédito</option>
+        </select>
+        <small style="color:var(--primary); font-size:10px; display:block; margin-top:4px;">Este dinero ingresará directamente a la caja del día.</small>
+      </div>
+
       <div style="margin-bottom: 20px;">
         <label style="font-size: 12px; font-weight: bold; color: var(--muted);">Concepto / Referencia *</label>
-        <input type="text" id="movConcept" required class="input-box" placeholder="Ej: Pago en efectivo / Ajuste saldo">
+        <input type="text" id="movConcept" required class="input-box" placeholder="Ej: Pago de saldo pendiente">
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
         <button type="button" class="btn btn-light" onclick="cerrarModalMov()">Cancelar</button>
@@ -276,6 +285,7 @@
   let dbCcMovements = [];
   let dbSales = [];
   let selectedClientId = null;
+  const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
 
   function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -285,10 +295,11 @@
   async function initCC() {
     mostrarCarga(true);
     try {
+      const nocache = '?v=' + Date.now();
       const [resCli, resCc, resSales] = await Promise.all([
-        apiFetch(`${API_URL}/business_clients?withBalance=1`),
-        apiFetch(`${API_URL}/cc_movements?withBalance=1`),
-        apiFetch(`${API_URL}/sales`)
+        apiFetch(`${API_URL}/business_clients?withBalance=1` + nocache),
+        apiFetch(`${API_URL}/cc_movements?withBalance=1` + nocache),
+        apiFetch(`${API_URL}/sales` + nocache)
       ]);
       
       if (resCli.ok) dbClients = await resCli.json();
@@ -347,7 +358,7 @@
     document.getElementById('ledgerPanel').style.display = 'block';
     
     document.getElementById('lblCliName').textContent = c.name;
-    document.getElementById('lblCliInfo').textContent = `${c.cuil ? 'CUIT: ' + c.cuil : 'Sin CUIT'} - ${c.iva_condition || 'Consumidor Final'}`;
+    document.getElementById('lblCliInfo').textContent = `${c.cuil ? 'CUIT: ' + c.cuil : 'Sin CUIT'} - ${c.ivaCondition || 'Consumidor Final'}`;
     document.getElementById('lblCliBalance').textContent = currency(Number(c.balance || 0));
     document.getElementById('lblCliBalance').style.color = Number(c.balance || 0) > 0 ? 'var(--danger)' : (Number(c.balance || 0) < 0 ? 'var(--success)' : 'var(--text)');
     
@@ -358,7 +369,7 @@
     if (!selectedClientId) return;
     
     try {
-      const res = await apiFetch(`${API_URL}/cc_movements?clientId=${encodeURIComponent(selectedClientId)}&withBalance=1`);
+      const res = await apiFetch(`${API_URL}/cc_movements?clientId=${encodeURIComponent(selectedClientId)}&withBalance=1&v=${Date.now()}`);
       if (res.ok) {
         dbCcMovements = await res.json();
       }
@@ -415,10 +426,15 @@
 
     const cli = dbClients.find(c => c.id === selectedClientId);
     if (cli) {
-      const saldoFinal = Number(cli.balance || 0);
+      // Recalculamos el saldo final para asegurar precisión
+      let saldoCte = 0;
+      movs.slice().reverse().forEach(mov => {
+         saldoCte += mov.type === 'debit' ? Number(mov.amount) : -Number(mov.amount);
+      });
+
       const boxSaldo = document.getElementById('lblCliBalance');
-      boxSaldo.textContent = currency(saldoFinal);
-      boxSaldo.style.color = saldoFinal > 0 ? 'var(--danger)' : (saldoFinal < 0 ? 'var(--success)' : 'var(--text)');
+      boxSaldo.textContent = currency(saldoCte);
+      boxSaldo.style.color = saldoCte > 0 ? 'var(--danger)' : (saldoCte < 0 ? 'var(--success)' : 'var(--text)');
     }
   }
 
@@ -458,18 +474,23 @@
     if (!mov || !cli) return;
 
     const isPago = mov.type === 'credit';
-    const isFacturaA = !isPago && cli.iva_condition === 'Responsable Inscripto';
+    const isFacturaA = !isPago && cli.ivaCondition === 'Responsable Inscripto';
     
     let numeroComprobante = "0001-" + String(Math.floor(Math.random() * 900000) + 100000).padStart(8, '0');
     let saleObj = null;
 
+    // Configurar datos de la empresa
+    document.getElementById('printDocCompName').textContent = localStorage.getItem('company_name') || 'Mi Empresa';
+    document.getElementById('printDocCompAddr').textContent = localStorage.getItem('company_address') || 'Av. Principal';
+    document.getElementById('printDocCompPhone').textContent = localStorage.getItem('company_phone') || '123456789';
+
     if (isPago) {
       document.getElementById('printDocTitle').textContent = 'RECIBO OFICIAL';
       document.getElementById('printDocLetter').textContent = 'X';
-      document.getElementById('printDocCod').textContent = 'Doc. no válido como factura';
+      document.getElementById('printDocCod').textContent = 'Cod. 000';
       document.getElementById('printSaleCond').textContent = 'Cobranza de Cta. Cte.';
     } else {
-      document.getElementById('printDocTitle').textContent = 'FACTURA';
+      document.getElementById('printDocTitle').textContent = 'COMPROBANTE';
       document.getElementById('printDocLetter').textContent = isFacturaA ? 'A' : 'B';
       document.getElementById('printDocCod').textContent = isFacturaA ? 'Cod. 001' : 'Cod. 006';
       document.getElementById('printSaleCond').textContent = 'Cuenta Corriente';
@@ -485,8 +506,8 @@
     
     document.getElementById('printCliName').textContent = cli.name;
     document.getElementById('printCliDoc').textContent = cli.cuil || '---';
-    document.getElementById('printCliAddr').textContent = cli.address || 'Consumidor Final';
-    document.getElementById('printCliIva').textContent = cli.iva_condition || 'Consumidor Final';
+    document.getElementById('printCliAddr').textContent = cli.address || '---';
+    document.getElementById('printCliIva').textContent = cli.ivaCondition || 'Consumidor Final';
 
     const tableBody = document.getElementById('printTableBody');
     const tableHeader = document.getElementById('printTableHeader');
@@ -538,7 +559,6 @@
 
         htmlTotals = `
           <div class="print-total-line"><span>Subtotal:</span><span>${currency(totalSubtotal)}</span></div>
-          <div class="print-total-line"><span>IVA:</span><span>${currency(0)}</span></div>
           <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
         `;
       }
@@ -552,7 +572,6 @@
       </tr>`;
       htmlTotals = `
         <div class="print-total-line"><span>Subtotal:</span><span>${currency(mov.amount)}</span></div>
-        <div class="print-total-line"><span>IVA:</span><span>${currency(0)}</span></div>
         <div class="print-total-final"><span>TOTAL:</span><span>${currency(mov.amount)}</span></div>
       `;
     }
@@ -568,11 +587,26 @@
     if (!selectedClientId) return;
     document.getElementById('movType').value = tipo;
     document.getElementById('movAmount').value = '';
-    document.getElementById('movConcept').value = tipo === 'credit' ? 'Pago recibido a cuenta' : 'Cargo manual / Ajuste';
+    
+    // Mostrar u ocultar el selector de método de pago según el tipo
+    if (tipo === 'credit') {
+      document.getElementById('movMethodContainer').style.display = 'block';
+      document.getElementById('movMethod').value = 'Efectivo';
+      document.getElementById('movConcept').value = 'Pago recibido en Efectivo a cuenta';
+    } else {
+      document.getElementById('movMethodContainer').style.display = 'none';
+      document.getElementById('movConcept').value = 'Cargo manual / Ajuste';
+    }
+
     document.getElementById('modalTitle').textContent = tipo === 'credit' ? 'Ingresar Cobranza' : 'Cargar Deuda';
     document.getElementById('btnSaveMov').style.background = tipo === 'credit' ? 'var(--success)' : 'var(--danger)';
     document.getElementById('modalMov').showModal();
   }
+
+  // Actualizar el concepto automáticamente cuando cambian el método de pago
+  document.getElementById('movMethod').addEventListener('change', function(e) {
+    document.getElementById('movConcept').value = `Pago recibido en ${e.target.value} a cuenta`;
+  });
 
   function cerrarModalMov() { document.getElementById('modalMov').close(); }
 
@@ -580,33 +614,69 @@
     e.preventDefault();
     if (!selectedClientId) return;
     
+    const tipo = document.getElementById('movType').value;
+    const amount = parseFloat(document.getElementById('movAmount').value);
+    const concept = document.getElementById('movConcept').value.trim();
+    const method = document.getElementById('movMethod').value;
+    
     const mov = {
       id: 'cc_' + Date.now(),
       clientId: selectedClientId,
       date: todayISO(),
-      type: document.getElementById('movType').value === 'credit' ? 'credit' : 'debit',
-      amount: parseFloat(document.getElementById('movAmount').value),
-      concept: document.getElementById('movConcept').value.trim(),
+      type: tipo === 'credit' ? 'credit' : 'debit',
+      amount: amount,
+      concept: concept,
       reference_type: 'manual',
       reference_id: ''
     };
     
     mostrarCarga(true);
     try {
-      const response = await apiFetch(`${API_URL}/cc_movements`, {
+      // 1. Guardamos el movimiento en la cuenta corriente
+      const resCC = await apiFetch(`${API_URL}/cc_movements`, {
         method: 'POST',
         body: JSON.stringify(mov)
       });
 
-      if (response.ok) {
-        cerrarModalMov();
-        await initCC();
-        if (selectedClientId) await seleccionarCliente(selectedClientId);
-      } else {
-        alert("Error al procesar en D1.");
+      if (!resCC.ok) throw new Error("Error en D1 al guardar Cta. Cte.");
+
+      // 2. SI ES UNA COBRANZA (credit), impactamos en la Caja Central (Ventas)
+      if (tipo === 'credit') {
+        const clientObj = dbClients.find(c => c.id === selectedClientId);
+        const ventaCobranza = {
+          id: 'vta_' + Date.now(),
+          createdAt: new Date().toISOString(),
+          date: todayISO(),
+          branch: terminalActiva,
+          seller: localStorage.getItem('activeUser') || 'Admin',
+          clientId: selectedClientId,
+          client: clientObj ? clientObj.name : 'Cliente en Cta. Cte.',
+          method: method, // Efectivo, Transferencia, etc.
+          cupon: '',
+          subtotal: amount,
+          promoDiscount: 0,
+          total: amount,
+          isB2B: false, // Ingresa como una venta normal cobrada (B2C behavior para caja)
+          items: [{id: 'cc_pay', code: 'COBRANZA', name: concept, price: amount, cost: 0, qty: 1}],
+          status: 'Activa'
+        };
+
+        const resCaja = await apiFetch(`${API_URL}/sales`, {
+          method: 'POST',
+          body: JSON.stringify(ventaCobranza)
+        });
+
+        if (!resCaja.ok) throw new Error("Cobranza registrada en Cta. Cte., pero falló el ingreso a la Caja.");
       }
+
+      cerrarModalMov();
+      await initCC(); // Recarga toda la info
+      if (selectedClientId) await seleccionarCliente(selectedClientId);
+      
+      alert(tipo === 'credit' ? "✅ Cobranza exitosa. El dinero ya ingresó a la Caja." : "✅ Deuda cargada exitosamente.");
+
     } catch (err) {
-      alert("Error de conexión.");
+      alert("❌ " + err.message);
     } finally {
       mostrarCarga(false);
     }
