@@ -411,3 +411,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// Función para filtrar el menú según el plan contratado
+function filtrarMenuPorModulos() {
+  // 1. Obtenemos los datos del usuario logueado (guardados al hacer login)
+  const userData = JSON.parse(localStorage.getItem('user') || '{}');
+  const allowedModules = userData.allowedModules || [];
+
+  // 2. Si no hay módulos (error o admin total), no hacemos nada
+  if (allowedModules.length === 0) return;
+
+  // 3. Buscamos todos los enlaces con el atributo data-module
+  document.querySelectorAll('.nav a[data-module]').forEach(link => {
+    const moduleName = link.getAttribute('data-module');
+    
+    // 4. Si el módulo no está en la lista de permitidos, lo eliminamos del DOM
+    if (!allowedModules.includes(moduleName)) {
+      link.remove(); 
+    }
+  });
+}
+
+// Ejecutar automáticamente al cargar cualquier página
+document.addEventListener('DOMContentLoaded', filtrarMenuPorModulos);
