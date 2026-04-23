@@ -574,20 +574,41 @@
       document.getElementById('expDesde').value = primerDiaMes;
       document.getElementById('expHasta').value = todayISO();
 
-      // TRUCO ROMPE-CACHÉ: Evita que Cloudflare devuelva HTML viejo
+      // TRUCO ROMPE-CACHÉ
       const nocache = '?v=' + Date.now();
 
+      // FUNCIÓN BLINDADA: Evita que el HTML de Cloudflare rompa la pantalla
+      async function fetchSeguro(url) {
+          try {
+              const res = await apiFetch(url);
+              if (!res.ok) {
+                  console.warn(`Endpoint falló: ${url} (Status: ${res.status})`);
+                  return [];
+              }
+              const contentType = res.headers.get("content-type") || "";
+              if (contentType.includes("text/html")) {
+                  console.error(`❌ ERROR DEL SERVIDOR: La ruta ${url} devolvió HTML. Verificá que el archivo exista en la carpeta /functions/api/ de tu GitHub.`);
+                  return [];
+              }
+              return await res.json();
+          } catch(e) {
+              console.error(`Error de red en ${url}:`, e);
+              return [];
+          }
+      }
+
       const [resO, resP, resC, resS] = await Promise.all([
-        apiFetch('/api/orders' + nocache), 
-        apiFetch('/api/products' + nocache), 
-        apiFetch('/api/clients' + nocache), 
-        apiFetch('/api/suppliers' + nocache)
+        fetchSeguro('/api/orders' + nocache), 
+        fetchSeguro('/api/products' + nocache), 
+        fetchSeguro('/api/clients' + nocache), 
+        fetchSeguro('/api/suppliers' + nocache)
       ]);
       
-      if(resO.ok) dbOrders = await resO.json();
-      if(resP.ok) dbProducts = await resP.json();
-      if(resC.ok) dbClients = await resC.json();
-      if(resS.ok) dbSuppliers = await resS.json();
+      // Asignamos asegurándonos de que sean Arrays
+      dbOrders = Array.isArray(resO) ? resO : [];
+      dbProducts = Array.isArray(resP) ? resP : [];
+      dbClients = Array.isArray(resC) ? resC : [];
+      dbSuppliers = Array.isArray(resS) ? resS : [];
       
       const suppOptions = '<option value="">Seleccione Laboratorio...</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
       document.getElementById('lensSupplier').innerHTML = suppOptions;
