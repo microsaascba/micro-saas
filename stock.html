@@ -491,11 +491,15 @@
   async function initStock() {
     mostrarCarga(true);
     try {
+      // TRUCO ROMPE-CACHÉ
+      const nocache = '&v=' + Date.now();
+      const nocacheSimple = '?v=' + Date.now();
+
       const [resP, resB, resS, resE] = await Promise.all([
-        apiFetch(`${API_URL}/products?status=Todos`),
-        apiFetch(`${API_URL}/branches`),
-        apiFetch(`${API_URL}/suppliers`),
-        apiFetch(`${API_URL}/expenses`)
+        apiFetch(`${API_URL}/products?status=Todos` + nocache),
+        apiFetch(`${API_URL}/branches` + nocacheSimple),
+        apiFetch(`${API_URL}/suppliers` + nocacheSimple),
+        apiFetch(`${API_URL}/expenses` + nocacheSimple)
       ]);
 
       if (resP.ok) dbProducts = await resP.json();
@@ -504,7 +508,7 @@
       if (resE.ok) dbExpenses = await resE.json();
 
     } catch (error) {
-      console.error(error);
+      console.error("Error cargando stock:", error);
     } finally {
       const branchOptions = dbBranches.map(b => `<option value="${b.name}">${escapeHtml(b.name)}</option>`).join('');
       const filter = document.getElementById('branchFilter');
