@@ -332,9 +332,15 @@
           <select id="ajusteTipo" class="input-box"><option value="ingreso">Ingreso (+)</option><option value="egreso">Egreso (-)</option></select>
         </div>
       </div>
-      <div style="margin-bottom: 15px;">
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Cantidad *</label>
-        <input type="number" id="ajusteCant" class="input-box" required>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Cantidad *</label>
+          <input type="number" id="ajusteCant" class="input-box" required>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--danger);">Clave Administrador *</label>
+          <input type="password" id="ajusteAdminPass" class="input-box" style="border-color: var(--danger);" required placeholder="••••••••">
+        </div>
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 10px;">
         <button type="button" class="btn btn-light" onclick="document.getElementById('modalAjuste').close()">Cancelar</button>
@@ -467,7 +473,14 @@
     });
 
     if (!res.ok) {
-      throw new Error(await res.text());
+      let errMsg = "Error del servidor";
+      try {
+         const errData = await res.json();
+         errMsg = errData.error || errMsg;
+      } catch(e) {
+         errMsg = await res.text();
+      }
+      throw new Error(errMsg);
     }
   }
 
@@ -949,10 +962,11 @@
     const branch = document.getElementById('ajusteSucursal').value;
     const tipo = document.getElementById('ajusteTipo').value;
     const cant = parseInt(document.getElementById('ajusteCant').value);
+    const adminPass = document.getElementById('ajusteAdminPass').value.trim(); // NUEVO: Capturamos clave
     
     if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
-    
-    // CORRECCIÓN: Usar == en lugar de === y validar que exista
+    if (!adminPass) return alert("La contraseña de administrador es obligatoria.");
+
     const prod = dbProducts.find(p => p.id == prodId);
     if (!prod) return alert("Error: Producto no encontrado en el sistema.");
 
@@ -971,6 +985,10 @@
 
     prod.stock_branches = branches; 
     prod.stock = stockTotal;
+    
+    // NUEVO: Le avisamos al backend que es un ajuste y le mandamos la clave
+    prod.isAdjustment = true;
+    prod.adminPass = adminPass; 
 
     mostrarCarga(true);
     try {
@@ -978,11 +996,12 @@
       logMovement('Ajuste', branch, '', `${tipo === 'ingreso' ? '+' : '-'}${cant} un. - ${prod.name}`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}]);
       
       document.getElementById('modalAjuste').close();
-      document.getElementById('ajusteCant').value = ''; // Limpiamos el campo
+      document.getElementById('ajusteCant').value = ''; 
+      document.getElementById('ajusteAdminPass').value = ''; // Limpiamos clave
       await initStock();
-      alert("✅ Ajuste de stock aplicado correctamente."); // Feedback visual
+      alert("✅ Ajuste de stock aplicado correctamente."); 
     } catch(err) {
-      alert("Error al guardar en la base de datos.");
+      alert("❌ " + err.message); // Acá va a salir el error de clave incorrecta
     } finally {
       mostrarCarga(false);
     }
