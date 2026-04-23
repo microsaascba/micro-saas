@@ -97,19 +97,12 @@ async function moveStock(context, companyId, items, branch, direction) {
 export async function onRequestGet(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
-
-    if (!companyId) {
-      return Response.json({ error: 'Falta company_id.' }, { status: 400 });
-    }
+    if (!companyId) return Response.json({ error: 'Falta company_id.' }, { status: 400 });
 
     const url = new URL(context.request.url);
     const status = url.searchParams.get('status') || 'Todos';
 
-    let query = `
-      SELECT *
-      FROM sales
-      WHERE company_id = ?1
-    `;
+    let query = `SELECT * FROM sales WHERE company_id = ?1`;
     const binds = [companyId];
 
     if (status !== 'Todos') {
@@ -118,7 +111,6 @@ export async function onRequestGet(context) {
     }
 
     query += ` ORDER BY createdAt DESC`;
-
     const { results } = await context.env.DB.prepare(query).bind(...binds).all();
 
     const ventasFormateadas = results.map(venta => ({
@@ -141,10 +133,7 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
-
-    if (!companyId) {
-      return Response.json({ error: 'Falta company_id.' }, { status: 400 });
-    }
+    if (!companyId) return Response.json({ error: 'Falta company_id.' }, { status: 400 });
 
     const data = await context.request.json();
     const saleId = data.id || `vta_${Date.now()}`;
@@ -156,10 +145,7 @@ export async function onRequestPost(context) {
     const status = data.status || 'Activa';
 
     const existingSale = await context.env.DB.prepare(`
-      SELECT *
-      FROM sales
-      WHERE id = ?1 AND company_id = ?2
-      LIMIT 1
+      SELECT * FROM sales WHERE id = ?1 AND company_id = ?2 LIMIT 1
     `).bind(saleId, companyId).first();
 
     // Caso 1: alta nueva
@@ -175,21 +161,10 @@ export async function onRequestPost(context) {
         )
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)
       `).bind(
-        saleId,
-        companyId,
-        data.date || new Date().toISOString().split('T')[0],
-        clientId,
-        data.method || '',
-        data.cupon || '',
-        safeNumber(data.subtotal),
-        safeNumber(data.promoDiscount),
-        safeNumber(data.total),
-        isB2BNum,
-        JSON.stringify(items),
-        data.createdAt || new Date().toISOString(),
-        seller,
-        branch,
-        status
+        saleId, companyId, data.date || new Date().toISOString().split('T')[0], clientId,
+        data.method || '', data.cupon || '', safeNumber(data.subtotal), safeNumber(data.promoDiscount),
+        safeNumber(data.total), isB2BNum, JSON.stringify(items), data.createdAt || new Date().toISOString(),
+        seller, branch, status
       ).run();
 
       return Response.json({ success: true, mode: 'inserted' });
@@ -200,96 +175,36 @@ export async function onRequestPost(context) {
     const existingItems = parseItems(existingSale.itemsJSON).map(normalizeItem);
     const existingBranch = existingSale.branch || 'Central';
 
-    // Si pasa de activa a anulada => repone stock
+    // 🔥 SEGURIDAD: Si pasa de activa a anulada => exige PIN y repone stock
     if (existingStatus !== 'Anulada' && status === 'Anulada') {
+      if (!data.adminPass) {
+        return Response.json({ error: 'Falta contraseña de administrador.' }, { status: 401 });
+      }
+      const adminCheck = await context.env.DB.prepare(`
+        SELECT id FROM clients WHERE id = ? AND adminPass = ?
+      `).bind(companyId, data.adminPass).first();
+
+      if (!adminCheck) {
+        return Response.json({ error: 'Autorización denegada: PIN de administrador incorrecto.' }, { status: 401 });
+      }
+
+      // Si el PIN es correcto, devolvemos el stock
       await moveStock(context, companyId, existingItems, existingBranch, 'add');
     }
 
-    // Si pasa de anulada a activa => vuelve a descontar
-    if (existingStatus === 'Anulada' && status !== 'Anulada') {
-      await moveStock(context, companyId, items, branch, 'subtract');
-    }
-
-    // Si sigue activa y regraban una venta, NO tocar stock para no duplicar descuento
+    // Actualizamos la venta en la DB
     await context.env.DB.prepare(`
       UPDATE sales
-      SET
-        date = ?1,
-        clientId = ?2,
-        method = ?3,
-        cupon = ?4,
-        subtotal = ?5,
-        promoDiscount = ?6,
-        total = ?7,
-        isB2B = ?8,
-        itemsJSON = ?9,
-        seller = ?10,
-        branch = ?11,
-        status = ?12
+      SET date = ?1, clientId = ?2, method = ?3, cupon = ?4, subtotal = ?5, promoDiscount = ?6,
+          total = ?7, isB2B = ?8, itemsJSON = ?9, seller = ?10, branch = ?11, status = ?12
       WHERE id = ?13 AND company_id = ?14
     `).bind(
-      data.date || existingSale.date || new Date().toISOString().split('T')[0],
-      clientId,
-      data.method || '',
-      data.cupon || '',
-      safeNumber(data.subtotal),
-      safeNumber(data.promoDiscount),
-      safeNumber(data.total),
-      isB2BNum,
-      JSON.stringify(items),
-      seller,
-      branch,
-      status,
-      saleId,
-      companyId
+      data.date || existingSale.date || new Date().toISOString().split('T')[0], clientId, data.method || '',
+      data.cupon || '', safeNumber(data.subtotal), safeNumber(data.promoDiscount), safeNumber(data.total),
+      isB2BNum, JSON.stringify(items), seller, branch, status, saleId, companyId
     ).run();
 
     return Response.json({ success: true, mode: 'updated' });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  }
-}
-
-export async function onRequestDelete(context) {
-  try {
-    const companyId = getCompanyIdFromRequest(context.request);
-
-    if (!companyId) {
-      return Response.json({ error: 'Falta company_id.' }, { status: 400 });
-    }
-
-    const url = new URL(context.request.url);
-    const id = url.searchParams.get('id');
-
-    if (!id) {
-      return Response.json({ error: 'Falta id.' }, { status: 400 });
-    }
-
-    const sale = await context.env.DB.prepare(`
-      SELECT *
-      FROM sales
-      WHERE id = ?1 AND company_id = ?2
-      LIMIT 1
-    `).bind(id, companyId).first();
-
-    if (!sale) {
-      return Response.json({ error: 'Venta no encontrada.' }, { status: 404 });
-    }
-
-    const currentStatus = sale.status || 'Activa';
-
-    if (currentStatus !== 'Anulada') {
-      const items = parseItems(sale.itemsJSON).map(normalizeItem);
-      await moveStock(context, companyId, items, sale.branch || 'Central', 'add');
-    }
-
-    await context.env.DB.prepare(`
-      UPDATE sales
-      SET status = 'Anulada'
-      WHERE id = ?1 AND company_id = ?2
-    `).bind(id, companyId).run();
-
-    return Response.json({ success: true, message: 'Venta anulada correctamente.' });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
