@@ -290,86 +290,97 @@
     <form id="clienteForm" onsubmit="guardarCliente(event)">
       <div class="modal-body form-grid">
         <input type="hidden" id="cTempId">
+        
         <div class="field full"><label>Razón Social / Nombre Comercial *</label><input type="text" id="cName" required /></div>
         <div class="field"><label>Titular / Contacto</label><input type="text" id="cContact" /></div>
-        <div class="field"><label>WhatsApp *</label><input type="text" id="cPhone" required /></div>
+        <div class="field"><label>WhatsApp de Contacto *</label><input type="text" id="cPhone" required /></div>
+        <div class="field"><label>Email de la Cuenta *</label><input type="email" id="cEmail" required /></div>
+        <div class="field"><label>Valor Abono Mensual ($) *</label><input type="number" id="cFee" required /></div>
+        <div class="field"><label>Primer Vencimiento *</label><input type="date" id="cDueDate" required /></div>
         
-        <div class="field full" style="border-top:1px solid var(--line); margin-top:5px; padding-top:15px;"><label style="color:var(--primary);"><strong>Datos Fiscales (Para Facturación C)</strong></label></div>
-        <div class="field"><label>CUIT (Con guiones)</label><input type="text" id="cCuil" placeholder="Ej: 20-12345678-9" /></div>
-        <div class="field"><label>Ingresos Brutos (IIBB)</label><input type="text" id="cIibb" placeholder="Ej: 12345678" /></div>
+        <div class="field full" style="border-top:1px solid var(--line); margin-top:10px; padding-top:15px;">
+          <label style="color:var(--primary);"><strong>Datos Fiscales del Cliente</strong></label>
+        </div>
+        <div class="field"><label>CUIT (Con guiones)</label><input type="text" id="cCuil" placeholder="20-XXXXXXXX-X" /></div>
+        <div class="field"><label>Ingresos Brutos (IIBB)</label><input type="text" id="cIibb" /></div>
         <div class="field"><label>Inicio de Actividades</label><input type="date" id="cInicioActividades" /></div>
         <div class="field"><label>Condición IVA</label>
           <select id="cIvaCondition">
-            <option value="Responsable Monotributo">Responsable Monotributo (Factura C)</option>
-            <option value="Responsable Inscripto">Responsable Inscripto (Factura A/B)</option>
+            <option value="Responsable Monotributo">Responsable Monotributo</option>
+            <option value="Responsable Inscripto">Responsable Inscripto</option>
             <option value="Exento">Exento</option>
           </select>
         </div>
-        
-        <div class="field full"><label>Domicilio Fiscal</label><input type="text" id="cAddress" placeholder="Av. Siempre Viva 123" /></div>
-        <div class="field"><label>País</label>
-          <select id="cCountry"><option value="Argentina">Argentina</option></select>
+        <div class="field full"><label>Domicilio Fiscal</label><input type="text" id="cAddress" /></div>
+        <div class="field"><label>Ciudad</label><input type="text" id="cCity" /></div>
+        <div class="field"><label>País</label><input type="text" id="cCountry" value="Argentina" /></div>
+
+        <div class="field full" style="border-top:1px dashed var(--line); margin-top:10px; padding-top:15px;">
+          <label style="color:var(--danger);"><strong>Configuración Avanzada ARCA (Facturación Electrónica)</strong></label>
         </div>
-        <div class="field"><label>Ciudad</label><input type="text" id="cCity" placeholder="Ej: Mendiolaza, Córdoba" /></div>
-        
-        <div class="field full" style="border-top:1px solid var(--line); margin-top:5px; padding-top:15px;"><label style="color:var(--primary);"><strong>Condiciones de Contratación</strong></label></div>
-        <div class="field"><label>Email *</label><input type="email" id="cEmail" required /></div>
-        <div class="field"><label>Valor Abono ($) *</label><input type="number" id="cFee" required /></div>
-        <div class="field"><label>Primer Vencimiento *</label><input type="date" id="cDueDate" required /></div>
-        
-        <div id="adminConfigBox" class="field full admin-box">
-          <p><strong>Usuario del Sistema Único del Cliente:</strong></p>
+        <div class="field">
+          <label>Punto de Venta (N° en AFIP)</label>
+          <input type="number" id="cAfipPtoVta" placeholder="Ej: 2" />
+        </div>
+        <div class="field full">
+          <label>Certificado Digital (.crt / .pem)</label>
+          <textarea id="cAfipCrt" rows="3" style="font-family: monospace; font-size: 11px;" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+        </div>
+        <div class="field full">
+          <label>Llave Privada (.key)</label>
+          <textarea id="cAfipKey" rows="3" style="font-family: monospace; font-size: 11px;" placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+        </div>
+
+        <div id="adminConfigBox" class="field full admin-box" style="background: #f8fafc; border: 1px solid var(--line); margin-top: 15px;">
+          <p><strong>Credenciales de acceso para el Cliente:</strong></p>
           <div class="form-grid">
             <div class="field"><label>Usuario Admin *</label><input type="text" id="cAdminUser" required /></div>
-            <div class="field"><label>Contraseña *</label><input type="text" id="cAdminPass" required /></div>
+            <div class="field"><label>Contraseña Admin *</label><input type="text" id="cAdminPass" required /></div>
           </div>
         </div>
 
-        <div class="field full" style="margin-top: 10px; margin-bottom: 10px; padding: 10px; border: 1px dashed var(--muted); border-radius: 8px; background: #f8fafc;">
-          <label style="color: var(--primary);">Logo de la Empresa (Para facturas y remitos)</label>
+        <div class="field full" style="margin-top: 10px; padding: 10px; border: 1px dashed var(--muted); border-radius: 8px;">
+          <label>Logo del Comercio (Para el Ticket A5)</label>
           <div style="display: flex; gap: 15px; align-items: center; margin-top: 5px;">
-            <img id="cLogoPreview" src="" alt="Sin logo" style="width: 50px; height: 50px; object-fit: contain; border-radius: 8px; background: #fff; border: 1px solid var(--line); display: none;">
-            <input type="file" id="cLogoInput" accept="image/png, image/jpeg, image/jpg" onchange="convertirLogoBase64(event)" style="border: none; background: transparent; padding: 0;">
+            <img id="cLogoPreview" src="" alt="Logo" style="width: 50px; height: 50px; object-fit: contain; display: none; background: #fff; border: 1px solid var(--line);">
+            <input type="file" id="cLogoInput" accept="image/*" onchange="convertirLogoBase64(event)">
             <input type="hidden" id="cLogoBase64">
           </div>
         </div>
 
-        <div class="field full admin-box" style="background: rgba(16, 185, 129, 0.05); border-color: var(--success); margin-top: 15px;">
-          <p style="color: var(--success);"><strong>Módulos Contratados (Plan del Cliente):</strong></p>
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;">
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="dashboard" checked> Dashboard</label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="producto" checked> Productos</label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="clientes" checked> Clientes</label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="facturacion" checked> Facturación</label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="ventas" checked> Ventas/Caja</label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="cc" checked> Cta. Corriente</label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="contable" checked> Contable</label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="stock" checked> Stock</label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="ordenes" checked> Órdenes</label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="sucursales" checked> Sucursales</label>
-            <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;"><input type="checkbox" name="cliModules" value="usuarios" checked> Usuarios</label>
+        <div class="field full admin-box" style="margin-top:15px; border-color: var(--success);">
+          <p style="color: var(--success);"><strong>Módulos y Límites del Plan:</strong></p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 15px;">
+            <label><input type="checkbox" name="cliModules" value="dashboard" checked> Dashboard</label>
+            <label><input type="checkbox" name="cliModules" value="producto" checked> Productos</label>
+            <label><input type="checkbox" name="cliModules" value="clientes" checked> Clientes</label>
+            <label><input type="checkbox" name="cliModules" value="facturacion" checked> Facturación</label>
+            <label><input type="checkbox" name="cliModules" value="ventas" checked> Ventas/Caja</label>
+            <label><input type="checkbox" name="cliModules" value="cc" checked> Cta. Corriente</label>
+            <label><input type="checkbox" name="cliModules" value="contable" checked> Contable</label>
+            <label><input type="checkbox" name="cliModules" value="stock" checked> Stock</label>
+            <label><input type="checkbox" name="cliModules" value="ordenes" checked> Órdenes</label>
+            <label><input type="checkbox" name="cliModules" value="sucursales" checked> Sucursales</label>
+            <label><input type="checkbox" name="cliModules" value="usuarios" checked> Usuarios</label>
           </div>
-        </div>
-
-        <div class="field full admin-box" style="margin-top:15px;">
-          <p><strong>Configuración de Límites del Plan:</strong></p>
           <div class="form-grid">
-            <div class="field"><label>Cantidad máxima de usuarios</label><input type="number" id="cMaxUsers" value="1" min="1" /></div>
-            <div class="field"><label>Cantidad máxima de sucursales</label><input type="number" id="cMaxBranches" value="1" min="1" /></div>
+            <div class="field"><label>Máx. Usuarios</label><input type="number" id="cMaxUsers" value="1" /></div>
+            <div class="field"><label>Máx. Sucursales</label><input type="number" id="cMaxBranches" value="1" /></div>
           </div>
-          <div style="margin-top:10px; display:flex; gap:20px;">
-            <label style="display:flex; gap:5px;"><input type="checkbox" id="cAllowUsers"> Permitir que el cliente cree usuarios</label>
-            <label style="display:flex; gap:5px;"><input type="checkbox" id="cAllowBranches"> Permitir que el cliente cree sucursales</label>
+          <div style="margin-top:10px; display:flex; gap:20px; font-size: 12px;">
+            <label><input type="checkbox" id="cAllowUsers"> Permitir gestión de usuarios</label>
+            <label><input type="checkbox" id="cAllowBranches"> Permitir gestión de sucursales</label>
           </div>
         </div>
-
       </div>
+
       <div class="modal-foot">
         <button type="button" class="btn btn-outline" onclick="cerrarModal('clienteDialog')">Cancelar</button>
-        <button type="submit" class="btn btn-primary" id="btnGuardarCli">Guardar Cliente Oficial</button>
+        <button type="submit" class="btn btn-primary" id="btnGuardarCli">Guardar Cliente y Credenciales</button>
       </div>
     </form>
   </dialog>
+  
 <script>
   function cerrarModal(id) {
     const modal = document.getElementById(id);
@@ -810,6 +821,13 @@
     document.getElementById('cAdminPass').value = '';
     document.getElementById('cAdminUser').dataset.oldUser = '';
     
+    // Limpiamos datos de AFIP
+    if(document.getElementById('cIibb')) document.getElementById('cIibb').value = '';
+    if(document.getElementById('cInicioActividades')) document.getElementById('cInicioActividades').value = '';
+    if(document.getElementById('cAfipPtoVta')) document.getElementById('cAfipPtoVta').value = '';
+    if(document.getElementById('cAfipCrt')) document.getElementById('cAfipCrt').value = '';
+    if(document.getElementById('cAfipKey')) document.getElementById('cAfipKey').value = '';
+
     document.getElementById('cMaxUsers').value = 1;
     document.getElementById('cMaxBranches').value = 1;
     document.getElementById('cAllowUsers').checked = false;
@@ -819,6 +837,7 @@
     document.getElementById('clienteDialog').showModal();
   }
 
+  // 🔥 ESTA ES LA FUNCIÓN PARA ABRIR EL MODAL DE UN CLIENTE NUEVO DESDE CERO
   function abrirModalCliente() {
     editingClientId = null;
     document.getElementById('cTempId').value = '';
@@ -831,6 +850,14 @@
     document.getElementById('cLogoBase64').value = '';
     document.getElementById('cLogoPreview').style.display = 'none';
     
+    // Limpiamos los nuevos campos fiscales y de AFIP
+    if(document.getElementById('cIibb')) document.getElementById('cIibb').value = '';
+    if(document.getElementById('cInicioActividades')) document.getElementById('cInicioActividades').value = '';
+    if(document.getElementById('cAfipPtoVta')) document.getElementById('cAfipPtoVta').value = '';
+    if(document.getElementById('cAfipCrt')) document.getElementById('cAfipCrt').value = '';
+    if(document.getElementById('cAfipKey')) document.getElementById('cAfipKey').value = '';
+    if(document.getElementById('cIvaCondition')) document.getElementById('cIvaCondition').value = 'Responsable Monotributo';
+    
     document.getElementById('cMaxUsers').value = 1;
     document.getElementById('cMaxBranches').value = 1;
     document.getElementById('cAllowUsers').checked = false;
@@ -840,6 +867,7 @@
     document.getElementById('clienteDialog').showModal();
   }
   
+  // 🔥 ESTA ES LA FUNCIÓN PARA CARGAR LOS DATOS DEL CLIENTE AL EDITAR
   function editarCliente(id) {
     const c = dbClientes.find(x => x.id === id);
     if (!c) return;
@@ -860,6 +888,14 @@
     document.getElementById('cAdminUser').dataset.oldUser = c.adminUser || '';
     document.getElementById('cCountry').value = c.country || 'Argentina';
     document.getElementById('cCity').value = c.city || '';
+
+    // Cargamos los nuevos datos fiscales y de AFIP
+    if(document.getElementById('cIibb')) document.getElementById('cIibb').value = c.iibb || '';
+    if(document.getElementById('cInicioActividades')) document.getElementById('cInicioActividades').value = c.inicio_actividades || '';
+    if(document.getElementById('cIvaCondition')) document.getElementById('cIvaCondition').value = c.ivaCondition || 'Responsable Monotributo';
+    if(document.getElementById('cAfipPtoVta')) document.getElementById('cAfipPtoVta').value = c.afip_pto_vta || '';
+    if(document.getElementById('cAfipCrt')) document.getElementById('cAfipCrt').value = c.afip_crt || '';
+    if(document.getElementById('cAfipKey')) document.getElementById('cAfipKey').value = c.afip_key || '';
 
     document.getElementById('cMaxUsers').value = c.maxUsers || 1;
     document.getElementById('cMaxBranches').value = c.maxBranches || 1;
@@ -892,6 +928,7 @@
     document.getElementById('clienteDialog').showModal();
   }
   
+  // 🔥 ESTA ES LA FUNCIÓN QUE GUARDA AL CLIENTE, AHORA CON AFIP INCLUIDO
   async function guardarCliente(e) {
     e.preventDefault();
 
@@ -904,7 +941,6 @@
 
     const currentClient = tempId ? dbClientes.find(x => x.id === tempId) : null;
 
-    // EL OBJETO DATA CORREGIDO: Leemos los valores directamente de los inputs
     const data = {
       id: tempId || editingClientId || ('cli_' + Math.random().toString(36).slice(2, 9)),
       name: document.getElementById('cName').value.trim(),
@@ -928,6 +964,15 @@
       maxBranches: Number(document.getElementById('cMaxBranches').value || 1),
       allowUsers: document.getElementById('cAllowUsers').checked ? 1 : 0,
       allowBranches: document.getElementById('cAllowBranches').checked ? 1 : 0,
+      
+      // EXTRACCIÓN DE DATOS DE AFIP
+      iibb: document.getElementById('cIibb') ? document.getElementById('cIibb').value.trim() : '',
+      inicio_actividades: document.getElementById('cInicioActividades') ? document.getElementById('cInicioActividades').value : '',
+      ivaCondition: document.getElementById('cIvaCondition') ? document.getElementById('cIvaCondition').value : '',
+      afip_pto_vta: document.getElementById('cAfipPtoVta') ? document.getElementById('cAfipPtoVta').value.trim() : '',
+      afip_crt: document.getElementById('cAfipCrt') ? document.getElementById('cAfipCrt').value.trim() : '',
+      afip_key: document.getElementById('cAfipKey') ? document.getElementById('cAfipKey').value.trim() : '',
+
       createdAt: currentClient?.createdAt || new Date().toISOString()
     };
 
