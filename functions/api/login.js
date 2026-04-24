@@ -115,24 +115,30 @@ export async function onRequestPost(context) {
       finalModules = [];
     }
 
-    return Response.json({
+   return Response.json({
       success: true,
       user: {
         id: user.id,
         username: user.username,
         role: user.role,
-        allowedModules: finalModules, // ¡Acá viaja el JSON al frontend!
+        allowedModules: finalModules,
         company_id: user.company_id
       },
       company: {
         id: company.id,
         name: company.name,
         logo: company.logo || '',
-        active: Number(company.active) === 1
+        active: Number(company.active) === 1,
+        // 👇 AGREGAMOS TODOS LOS DATOS QUE FALTABAN QUE VIAJEN AL FRONTEND 👇
+        phone: company.phone || '',
+        address: company.address || '',
+        city: company.city || '',
+        country: company.country || '',
+        ivaCondition: company.ivaCondition || '',
+        cuil: company.cuil || '',
+        cuit: company.cuil || '', // Lo mandamos duplicado por si el front usa cuit o cuil
+        iibb: company.iibb || '',
+        inicio_actividades: company.inicio_actividades || ''
       },
       warning: loginWarning
     });
-  } catch (error) {
-    return Response.json({ success: false, error: "Error interno: " + error.message }, { status: 500 });
-  }
-}
