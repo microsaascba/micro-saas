@@ -16,7 +16,7 @@ export async function onRequestPost(context) {
     
     // 1. BUSCAMOS LAS CREDENCIALES DEL CLIENTE EN D1
     const clientData = await context.env.DB.prepare(`
-        SELECT cuil, afip_crt, afip_key, afip_pto_vta,
+        SELECT cuil, afip_crt, afip_key, afip_pto_vta
         FROM clients 
         WHERE id = ?
     `).bind(companyId).first();
