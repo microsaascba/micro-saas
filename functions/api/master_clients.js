@@ -1,14 +1,19 @@
-// Función para asegurar que las columnas nuevas existan en la tabla
-async function ensureFiscalColumns(db) {
+// Función para asegurar que las columnas fiscales existan en la tabla clients
+async function ensureColumns(db) {
   const { results } = await db.prepare("PRAGMA table_info(clients)").all();
   const cols = results.map(c => c.name);
-  if (!cols.includes('iibb')) await db.prepare("ALTER TABLE clients ADD COLUMN iibb TEXT").run();
-  if (!cols.includes('inicio_actividades')) await db.prepare("ALTER TABLE clients ADD COLUMN inicio_actividades TEXT").run();
+  const colsToAdd = ['iibb', 'inicio_actividades', 'afip_pto_vta', 'afip_crt', 'afip_key'];
+  
+  for (let col of colsToAdd) {
+    if (!cols.includes(col)) {
+      await db.prepare(`ALTER TABLE clients ADD COLUMN ${col} TEXT`).run();
+    }
+  }
 }
 
 export async function onRequestGet(context) {
   try {
-    await ensureFiscalColumns(context.env.DB);
+    await ensureColumns(context.env.DB);
     const url = new URL(context.request.url);
     const id = url.searchParams.get('id');
 
@@ -20,7 +25,6 @@ export async function onRequestGet(context) {
         ...row,
         active: Number(row.active) === 1,
         fee: Number(row.fee || 0),
-        inicioActividades: row.inicio_actividades || '',
         maxUsers: Number(row.max_users || 1),
         allowUsers: Number(row.allow_user_management || 0),
         maxBranches: Number(row.max_branches || 1),
@@ -35,7 +39,6 @@ export async function onRequestGet(context) {
       ...c,
       active: Number(c.active) === 1,
       fee: Number(c.fee || 0),
-      inicioActividades: c.inicio_actividades || '',
       maxUsers: Number(c.max_users || 1),
       allowUsers: Number(c.allow_user_management || 0),
       maxBranches: Number(c.max_branches || 1),
@@ -52,17 +55,18 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   try {
     const data = await context.request.json();
-    await ensureFiscalColumns(context.env.DB);
+    await ensureColumns(context.env.DB);
 
     await context.env.DB.prepare(`
       INSERT INTO clients (
         id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, type, 
         createdAt, ivaCondition, status, allowedModules, city, province, country, logo, 
-        max_users, allow_user_management, max_branches, allow_branch_management, iibb, inicio_actividades
+        max_users, allow_user_management, max_branches, allow_branch_management,
+        iibb, inicio_actividades, afip_pto_vta, afip_crt, afip_key
       )
       VALUES (
         ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20,
-        ?21, ?22, ?23, ?24, ?25, ?26, ?27
+        ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30
       )
       ON CONFLICT(id) DO UPDATE SET
         name = excluded.name, contact = excluded.contact, phone = excluded.phone, email = excluded.email,
@@ -72,14 +76,15 @@ export async function onRequestPost(context) {
         city = excluded.city, province = excluded.province, country = excluded.country, logo = excluded.logo,
         max_users = excluded.max_users, allow_user_management = excluded.allow_user_management,
         max_branches = excluded.max_branches, allow_branch_management = excluded.allow_branch_management,
-        iibb = excluded.iibb, inicio_actividades = excluded.inicio_actividades
+        iibb = excluded.iibb, inicio_actividades = excluded.inicio_actividades,
+        afip_pto_vta = excluded.afip_pto_vta, afip_crt = excluded.afip_crt, afip_key = excluded.afip_key
     `).bind(
       data.id, data.name || '', data.contact || '', data.phone || '', data.email || '', data.cuil || '', data.address || '',
       Number(data.fee || 0), data.dueDate || '', data.active ? 1 : 0, data.adminUser || '', data.adminPass || '',
       data.type || 'client', data.createdAt || new Date().toISOString(), data.ivaCondition || '', data.status || 'Activo',
       JSON.stringify(data.allowedModules || []), data.city || '', data.province || '', data.country || 'Argentina', data.logo || '',
       Number(data.maxUsers || 1), data.allowUsers ? 1 : 0, Number(data.maxBranches || 1), data.allowBranches ? 1 : 0,
-      data.iibb || '', data.inicioActividades || ''
+      data.iibb || '', data.inicioActividades || '', data.afip_pto_vta || '', data.afip_crt || '', data.afip_key || ''
     ).run();
 
     return Response.json({ success: true });
