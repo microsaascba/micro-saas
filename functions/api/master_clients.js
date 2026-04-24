@@ -57,23 +57,27 @@ export async function onRequestPost(context) {
     const data = await context.request.json();
     await ensureColumns(context.env.DB);
 
+    // INSERT o UPDATE dinámico (UPSERT)
     await context.env.DB.prepare(`
       INSERT INTO clients (
-        id, name, contact, phone, email, cuil, address, fee, dueDate, active, adminUser, adminPass, type, 
-        createdAt, ivaCondition, status, allowedModules, city, province, country, logo, 
-        max_users, allow_user_management, max_branches, allow_branch_management,
+        id, name, contact, phone, email, cuil, address, fee, due_date, active, 
+        admin_user, admin_pass, type, created_at, iva_condition, status, 
+        allowed_modules, city, province, country, logo, max_users, 
+        allow_user_management, max_branches, allow_branch_management,
         iibb, inicio_actividades, afip_pto_vta, afip_crt, afip_key
-      )
-      VALUES (
-        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20,
-        ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30
+      ) VALUES (
+        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 
+        ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25,
+        ?26, ?27, ?28, ?29, ?30
       )
       ON CONFLICT(id) DO UPDATE SET
-        name = excluded.name, contact = excluded.contact, phone = excluded.phone, email = excluded.email,
-        cuil = excluded.cuil, address = excluded.address, fee = excluded.fee, dueDate = excluded.dueDate,
-        active = excluded.active, adminUser = excluded.adminUser, adminPass = excluded.adminPass, type = excluded.type,
-        ivaCondition = excluded.ivaCondition, status = excluded.status, allowedModules = excluded.allowedModules,
-        city = excluded.city, province = excluded.province, country = excluded.country, logo = excluded.logo,
+        name = excluded.name, contact = excluded.contact, phone = excluded.phone, 
+        email = excluded.email, cuil = excluded.cuil, address = excluded.address, 
+        fee = excluded.fee, due_date = excluded.due_date, active = excluded.active, 
+        admin_user = excluded.admin_user, admin_pass = excluded.admin_pass, 
+        iva_condition = excluded.iva_condition, status = excluded.status,
+        allowed_modules = excluded.allowed_modules, city = excluded.city, 
+        province = excluded.province, country = excluded.country, logo = excluded.logo,
         max_users = excluded.max_users, allow_user_management = excluded.allow_user_management,
         max_branches = excluded.max_branches, allow_branch_management = excluded.allow_branch_management,
         iibb = excluded.iibb, inicio_actividades = excluded.inicio_actividades,
@@ -84,7 +88,13 @@ export async function onRequestPost(context) {
       data.type || 'client', data.createdAt || new Date().toISOString(), data.ivaCondition || '', data.status || 'Activo',
       JSON.stringify(data.allowedModules || []), data.city || '', data.province || '', data.country || 'Argentina', data.logo || '',
       Number(data.maxUsers || 1), data.allowUsers ? 1 : 0, Number(data.maxBranches || 1), data.allowBranches ? 1 : 0,
-      data.iibb || '', data.inicioActividades || '', data.afip_pto_vta || '', data.afip_crt || '', data.afip_key || ''
+      
+      // VALORES FISCALES MAPEADOS CORRECTAMENTE
+      data.iibb || '', 
+      data.inicio_actividades || '', 
+      data.afip_pto_vta || '', 
+      data.afip_crt || '', 
+      data.afip_key || ''
     ).run();
 
     return Response.json({ success: true });
