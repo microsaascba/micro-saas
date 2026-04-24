@@ -3,14 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ingreso | Micro SaaS</title>
+  
+  <title>Sistema de Gestión a tu medida</title>
+  <meta property="og:title" content="Sistema de Gestión a tu medida">
+  <meta property="og:description" content="Acceso seguro a tu panel de control.">
+  <meta property="og:image" content="img/img30.jpg">
+
   <link rel="stylesheet" href="styles.css" />
   <style>
     html, body {
       height: 100%;
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      /* Fondo con imagen y filtro oscuro superpuesto para no perder legibilidad */
+      background: linear-gradient(rgba(15, 23, 42, 0.65), rgba(30, 58, 138, 0.75)), url('img/img30.jpg') no-repeat center center fixed;
+      background-size: cover;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -21,7 +28,7 @@
       background: #ffffff;
       padding: 40px;
       border-radius: 20px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
       width: 100%;
       max-width: 360px;
       text-align: center;
@@ -137,30 +144,13 @@
   <script>
     function clearSession() {
       const keys = [
-        'activeUser',
-        'userRole',
-        'allowedModules',
-        'company_id',
-        'company_name',
-        'company_logo',
-        'company_cuil',
-        'company_email',
-        'company_phone',
-        'company_address',
-        'company_city',
-        'company_country',
-        'company_iva_condition',
-        'company_max_users',
-        'company_allow_user_management',
-        'company_max_branches',
-        'company_allow_branch_management',
-        'license_due_date',
-        'license_days_to_due',
-        'license_days_past_due',
-        'license_warning',
-        'saas_logged_in',
-        'saas_username',
-        'saas_role'
+        'activeUser', 'userRole', 'allowedModules', 'company_id',
+        'company_name', 'company_logo', 'company_cuil', 'company_email',
+        'company_phone', 'company_address', 'company_city', 'company_country',
+        'company_iva_condition', 'company_max_users', 'company_allow_user_management',
+        'company_max_branches', 'company_allow_branch_management', 'license_due_date',
+        'license_days_to_due', 'license_days_past_due', 'license_warning',
+        'saas_logged_in', 'saas_username', 'saas_role'
       ];
       keys.forEach(k => localStorage.removeItem(k));
     }
