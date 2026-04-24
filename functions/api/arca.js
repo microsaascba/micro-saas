@@ -65,10 +65,19 @@ export async function onRequestPost(context) {
         body: JSON.stringify(payload)
     });
 
-    const result = await response.json();
+    const textResult = await response.text(); // Leemos todo crudo primero
+    
+    let result;
+    try {
+        result = JSON.parse(textResult);
+    } catch (e) {
+        throw new Error("Respuesta rota del servidor: " + textResult);
+    }
 
-    if (!response.ok || result.error) {
-        throw new Error(result.error || "Error desconocido al contactar con la API de facturación.");
+    // Si la respuesta no es OK o trae un mensaje de error, lo mostramos EXPLÍCITAMENTE
+    if (!response.ok || result.error || result.message || result.errors) {
+        const errorReal = result.message || result.error || JSON.stringify(result.errors || result);
+        throw new Error("AFIP SDK dice: " + errorReal);
     }
 
     // 4. RESPONDEMOS AL FRONTEND CON EL CAE
