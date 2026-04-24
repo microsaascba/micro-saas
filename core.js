@@ -288,9 +288,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (nav) {
       const branchIndicator = document.createElement('div');
-      branchIndicator.style = "padding: 12px; margin-bottom: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 12px; color: #94a3b8; border-left: 4px solid " + (terminalBranch ? "#10b981" : "#ef4444");
-      branchIndicator.innerHTML = terminalBranch
-        ? `📍 PC Asignada:<br><strong style="color:white; font-size:13px;">${escapeHtml(terminalBranch)}</strong>`
+      branchIndicator.style = "padding: 12px; margin-bottom: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 12px; color: #475569; border-left: 4px solid " + (terminalBranch ? "#10b981" : "#ef4444");
+      branchIndicator.innerHTML = terminalBranch 
+        ? `📍 PC Asignada:<br><strong style="color:#0f172a; font-size:13px;">${escapeHtml(terminalBranch)}</strong>` 
         : `⚠️ Terminal Libre<br><small>No vinculada a sucursal</small>`;
       nav.prepend(branchIndicator);
 
