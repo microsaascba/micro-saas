@@ -837,27 +837,28 @@
     document.getElementById('clienteDialog').showModal();
   }
 
-  // 🔥 ESTA ES LA FUNCIÓN PARA ABRIR EL MODAL DE UN CLIENTE NUEVO DESDE CERO
+  /// 1. LIMPIAR EL MODAL PARA UN NUEVO CLIENTE
   function abrirModalCliente() {
     editingClientId = null;
     document.getElementById('cTempId').value = '';
     document.getElementById('clienteForm').reset();
     document.getElementById('clienteModalTitle').textContent = 'Nuevo Cliente Oficial';
+    
+    // Reseteo de estados y archivos
     document.getElementById('cAdminUser').dataset.oldUser = '';
-    document.getElementById('cCountry').value = 'Argentina';
-    document.getElementById('cCity').value = '';
-    document.getElementById('cLogoInput').value = '';
     document.getElementById('cLogoBase64').value = '';
     document.getElementById('cLogoPreview').style.display = 'none';
+    document.getElementById('cCountry').value = 'Argentina';
     
-    // Limpiamos los nuevos campos fiscales y de AFIP
-    if(document.getElementById('cIibb')) document.getElementById('cIibb').value = '';
-    if(document.getElementById('cInicioActividades')) document.getElementById('cInicioActividades').value = '';
-    if(document.getElementById('cAfipPtoVta')) document.getElementById('cAfipPtoVta').value = '';
-    if(document.getElementById('cAfipCrt')) document.getElementById('cAfipCrt').value = '';
-    if(document.getElementById('cAfipKey')) document.getElementById('cAfipKey').value = '';
-    if(document.getElementById('cIvaCondition')) document.getElementById('cIvaCondition').value = 'Responsable Monotributo';
+    // Limpieza explícita de campos fiscales y AFIP
+    document.getElementById('cIibb').value = '';
+    document.getElementById('cInicioActividades').value = '';
+    document.getElementById('cIvaCondition').value = 'Responsable Monotributo';
+    document.getElementById('cAfipPtoVta').value = '';
+    document.getElementById('cAfipCrt').value = '';
+    document.getElementById('cAfipKey').value = '';
     
+    // Valores por defecto para límites
     document.getElementById('cMaxUsers').value = 1;
     document.getElementById('cMaxBranches').value = 1;
     document.getElementById('cAllowUsers').checked = false;
@@ -867,7 +868,7 @@
     document.getElementById('clienteDialog').showModal();
   }
   
-  // 🔥 ESTA ES LA FUNCIÓN PARA CARGAR LOS DATOS DEL CLIENTE AL EDITAR
+  // 2. CARGAR LOS DATOS EN EL MODAL PARA EDITAR
   function editarCliente(id) {
     const c = dbClientes.find(x => x.id === id);
     if (!c) return;
@@ -875,6 +876,8 @@
     editingClientId = id;
     document.getElementById('clienteModalTitle').textContent = 'Editar Cliente';
     document.getElementById('cTempId').value = id;
+    
+    // Datos Básicos
     document.getElementById('cName').value = c.name || '';
     document.getElementById('cContact').value = c.contact || '';
     document.getElementById('cCuil').value = c.cuil || '';
@@ -889,56 +892,53 @@
     document.getElementById('cCountry').value = c.country || 'Argentina';
     document.getElementById('cCity').value = c.city || '';
 
-    // Cargamos los nuevos datos fiscales y de AFIP
-    if(document.getElementById('cIibb')) document.getElementById('cIibb').value = c.iibb || '';
-    if(document.getElementById('cInicioActividades')) document.getElementById('cInicioActividades').value = c.inicio_actividades || '';
-    if(document.getElementById('cIvaCondition')) document.getElementById('cIvaCondition').value = c.ivaCondition || 'Responsable Monotributo';
-    if(document.getElementById('cAfipPtoVta')) document.getElementById('cAfipPtoVta').value = c.afip_pto_vta || '';
-    if(document.getElementById('cAfipCrt')) document.getElementById('cAfipCrt').value = c.afip_crt || '';
-    if(document.getElementById('cAfipKey')) document.getElementById('cAfipKey').value = c.afip_key || '';
+    // CARGA DE DATOS FISCALES (Unificado con la DB)
+    document.getElementById('cIibb').value = c.iibb || '';
+    document.getElementById('cInicioActividades').value = c.inicio_actividades || '';
+    document.getElementById('cIvaCondition').value = c.ivaCondition || 'Responsable Monotributo';
+    document.getElementById('cAfipPtoVta').value = c.afip_pto_vta || '';
+    document.getElementById('cAfipCrt').value = c.afip_crt || '';
+    document.getElementById('cAfipKey').value = c.afip_key || '';
 
+    // Límites y Logo
     document.getElementById('cMaxUsers').value = c.maxUsers || 1;
     document.getElementById('cMaxBranches').value = c.maxBranches || 1;
     document.getElementById('cAllowUsers').checked = Number(c.allowUsers) === 1;
     document.getElementById('cAllowBranches').checked = Number(c.allowBranches) === 1;
-
     document.getElementById('cLogoBase64').value = c.logo || '';
+    
     if (c.logo) {
       document.getElementById('cLogoPreview').src = c.logo;
       document.getElementById('cLogoPreview').style.display = 'block';
     } else {
       document.getElementById('cLogoPreview').style.display = 'none';
     }
-    document.getElementById('cLogoInput').value = '';
 
+    // Módulos
     document.querySelectorAll('input[name="cliModules"]').forEach(cb => cb.checked = false);
     let modulos = [];
-    try {
-      modulos = typeof c.allowedModules === 'string' ? JSON.parse(c.allowedModules) : (c.allowedModules || []);
-    } catch(e) {}
-    if (modulos.length > 0) {
-      modulos.forEach(m => {
-        const cb = document.querySelector(`input[name="cliModules"][value="${m}"]`);
-        if (cb) cb.checked = true;
-      });
-    } else {
-      document.querySelectorAll('input[name="cliModules"]').forEach(cb => cb.checked = true);
-    }
+    try { 
+      modulos = typeof c.allowedModules === 'string' ? JSON.parse(c.allowedModules) : (c.allowedModules || []); 
+    } catch(e) { modulos = []; }
+    
+    modulos.forEach(m => { 
+      const cb = document.querySelector(`input[name="cliModules"][value="${m}"]`); 
+      if (cb) cb.checked = true; 
+    });
 
     document.getElementById('clienteDialog').showModal();
   }
+
   
-  // 🔥 ESTA ES LA FUNCIÓN QUE GUARDA AL CLIENTE, AHORA CON AFIP INCLUIDO
+  // 3. GUARDAR HACIA LA API (Alta o Edición)
   async function guardarCliente(e) {
     e.preventDefault();
-
     const btn = document.getElementById('btnGuardarCli');
-    btn.textContent = 'Guardando...';
-    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = 'Guardando...'; btn.disabled = true;
 
     const tempId = document.getElementById('cTempId').value;
-    const modulosSeleccionados = Array.from(document.querySelectorAll('input[name="cliModules"]:checked')).map(cb => cb.value);
-
+    const selectedModules = Array.from(document.querySelectorAll('input[name="cliModules"]:checked')).map(cb => cb.value);
     const currentClient = tempId ? dbClientes.find(x => x.id === tempId) : null;
 
     const data = {
@@ -958,21 +958,21 @@
       oldAdminUser: document.getElementById('cAdminUser').dataset.oldUser || '',
       city: document.getElementById('cCity').value.trim(),
       country: document.getElementById('cCountry').value,
-      allowedModules: modulosSeleccionados,
+      allowedModules: selectedModules,
       logo: document.getElementById('cLogoBase64').value,
       maxUsers: Number(document.getElementById('cMaxUsers').value || 1),
       maxBranches: Number(document.getElementById('cMaxBranches').value || 1),
       allowUsers: document.getElementById('cAllowUsers').checked ? 1 : 0,
       allowBranches: document.getElementById('cAllowBranches').checked ? 1 : 0,
       
-      // EXTRACCIÓN DE DATOS DE AFIP
-      iibb: document.getElementById('cIibb') ? document.getElementById('cIibb').value.trim() : '',
-      inicio_actividades: document.getElementById('cInicioActividades') ? document.getElementById('cInicioActividades').value : '',
-      ivaCondition: document.getElementById('cIvaCondition') ? document.getElementById('cIvaCondition').value : '',
-      afip_pto_vta: document.getElementById('cAfipPtoVta') ? document.getElementById('cAfipPtoVta').value.trim() : '',
-      afip_crt: document.getElementById('cAfipCrt') ? document.getElementById('cAfipCrt').value.trim() : '',
-      afip_key: document.getElementById('cAfipKey') ? document.getElementById('cAfipKey').value.trim() : '',
-
+      // MAPEO EXACTO PARA EL BACKEND
+      iibb: document.getElementById('cIibb').value.trim(),
+      inicio_actividades: document.getElementById('cInicioActividades').value,
+      ivaCondition: document.getElementById('cIvaCondition').value,
+      afip_pto_vta: document.getElementById('cAfipPtoVta').value.trim(),
+      afip_crt: document.getElementById('cAfipCrt').value.trim(),
+      afip_key: document.getElementById('cAfipKey').value.trim(),
+      
       createdAt: currentClient?.createdAt || new Date().toISOString()
     };
 
@@ -982,34 +982,20 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-
       cerrarModal('clienteDialog');
       await loadDataFromCloud();
     } catch(err) {
+      console.error("Error al guardar:", err);
+      // Fallback local
       const idx = dbClientes.findIndex(x => x.id === data.id);
-      if (idx >= 0) dbClientes[idx] = data;
-      else dbClientes.push(data);
-
+      if (idx >= 0) dbClientes[idx] = data; else dbClientes.push(data);
       localStorage.setItem('saas_db_clientes', JSON.stringify(dbClientes));
       cerrarModal('clienteDialog');
-
-      const select = document.getElementById('filtroClientePagos');
-      const currentVal = select.value;
-      if (select) {
-        select.innerHTML =
-          '<option value="ALL">Mostrar Todos los Clientes</option>' +
-          dbClientes
-            .filter(c => c.type !== 'lead')
-            .map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`)
-            .join('');
-        select.value = currentVal || 'ALL';
-      }
-
       renderAll();
+    } finally {
+      btn.textContent = originalText;
+      btn.disabled = false;
     }
-
-    btn.textContent = 'Guardar Cliente Oficial';
-    btn.disabled = false;
   }
 
   async function toggleAcceso(id) {
