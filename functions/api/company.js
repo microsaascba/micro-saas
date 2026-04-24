@@ -7,7 +7,8 @@ async function ensureFiscalColumns(db) {
   const { results } = await db.prepare("PRAGMA table_info(companies)").all();
   const existingCols = results.map(c => c.name);
   
-  const colsToAdd = ['cuit', 'iibb', 'inicio_actividades', 'iva_condition', 'address', 'phone'];
+  // Agregamos las columnas para los certificados de AFIP
+  const colsToAdd = ['cuit', 'iibb', 'inicio_actividades', 'iva_condition', 'address', 'phone', 'afip_crt', 'afip_key', 'afip_pto_vta'];
 
   for (let col of colsToAdd) {
     if (!existingCols.includes(col)) {
@@ -45,10 +46,14 @@ export async function onRequestPost(context) {
         iibb = COALESCE(?, iibb),
         inicio_actividades = COALESCE(?, inicio_actividades),
         address = COALESCE(?, address),
-        phone = COALESCE(?, phone)
+        phone = COALESCE(?, phone),
+        afip_crt = COALESCE(?, afip_crt),
+        afip_key = COALESCE(?, afip_key),
+        afip_pto_vta = COALESCE(?, afip_pto_vta)
       WHERE id = ?
     `).bind(
-      data.name, data.cuit, data.iibb, data.inicio_actividades, data.address, data.phone, companyId
+      data.name, data.cuit, data.iibb, data.inicio_actividades, data.address, data.phone,
+      data.afip_crt, data.afip_key, data.afip_pto_vta, companyId
     ).run();
 
     return Response.json({ success: true });
