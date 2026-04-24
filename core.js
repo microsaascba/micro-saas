@@ -317,9 +317,9 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutBtn.id = 'btnLogout';
         logoutBtn.href = '#';
         logoutBtn.innerHTML = '<span class="nav-icon">🚪</span> Cerrar sesión';
-        logoutBtn.style.color = '#fca5a5';
+        logoutBtn.style.color = '#ef4444';
         logoutBtn.style.marginTop = '15px';
-        logoutBtn.style.borderTop = '1px solid rgba(255,255,255,0.1)';
+        logoutBtn.style.borderTop = '1px solid #e2e8f0';
         logoutBtn.style.paddingTop = '15px';
         logoutBtn.onclick = (e) => {
           e.preventDefault();
@@ -426,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     .sidebar::-webkit-scrollbar { width: 5px; }
-    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
     .sidebar::-webkit-scrollbar-track { background: transparent; }
   `;
   document.head.appendChild(globalCss);
