@@ -1,5 +1,5 @@
 // arca.js - Conector Directo Multi-Tenant
-const AFIP_SDK_TOKEN = "ukb9HbmorVpzrE0eF3QTe4pKEOqyp8uuQSbZ50Bkq8xUf2YR7uMqphOf3r3HWjmP"; // 👈 Pegá acá el Token que te da Afip SDK
+const AFIP_SDK_TOKEN = "ukb9HbmorVpzrE0eF3QTe4pKEOqyp8uuQSbZ50Bkq8xUf2YR7uMqphOf3r3HWjmP"; 
 
 function getCompanyIdFromRequest(request) {
   return request.headers.get('x-company-id') || '';
@@ -26,20 +26,28 @@ export async function onRequestPost(context) {
     }
 
     // 2. PREPARAMOS EL PAYLOAD PARA AFIP SDK
-    // Limpiamos el CUIT por seguridad
     const cuitLimpio = clientData.cuil.replace(/[^0-9]/g, '');
+    
+    // Lógica inteligente para Consumidor Final vs Cliente Identificado
+    const hasDoc = ventaData.cliente_doc && ventaData.cliente_doc.toString().trim() !== '';
+    const docTipo = hasDoc ? (ventaData.cliente_doc.toString().length > 8 ? 80 : 96) : 99; // 80=CUIT, 96=DNI, 99=Sin Identificar
+    const docNro = hasDoc ? parseInt(ventaData.cliente_doc) : 0;
+
+    // Corrección de Zona Horaria a Argentina (UTC-3)
+    const fechaAr = new Date(Date.now() - 3 * 3600 * 1000);
+    const cbteFch = fechaAr.toISOString().slice(0, 10).replace(/-/g, '');
     
     const payload = {
         "cert": clientData.afip_crt,
         "key": clientData.afip_key,
         "cuit": cuitLimpio,
-        "production": true, // 👈 Forzamos producción ya que tus certs son reales
+        "production": true, 
         "cbte_tipo": 11,     // 11 = Factura C
         "pto_vta": parseInt(clientData.afip_pto_vta || 1),
-        "concepto": 1,      // 1 = Productos (Cambiá a 2 si es Servicios)
-        "doc_tipo": ventaData.cliente_doc && ventaData.cliente_doc.length > 8 ? 80 : 96, // 80=CUIT, 96=DNI
-        "doc_nro": ventaData.cliente_doc ? parseInt(ventaData.cliente_doc) : 0,
-        "cbte_fch": new Date().toISOString().slice(0,10).replace(/-/g, ''),
+        "concepto": 1,      // 1 = Productos
+        "doc_tipo": docTipo,
+        "doc_nro": docNro,
+        "cbte_fch": cbteFch,
         "imp_total": parseFloat(ventaData.total),
         "imp_neto": parseFloat(ventaData.total),
         "imp_iva": 0,
