@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Comprobante | Micro SaaS</title>
+  <title>Comprobante de Pago | Micro SaaS</title>
   <style>
     body {
       font-family: 'Inter', system-ui, sans-serif;
@@ -35,7 +35,7 @@
     .doc-code { font-size: 8px; font-weight: bold; margin-top: 3px; color: #475569; }
 
     .doc-info { text-align: right; }
-    .doc-title { font-size: 20px; font-weight: 900; margin: 0 0 5px 0; letter-spacing: 1px; color: #0f172a; }
+    .doc-title { font-size: 18px; font-weight: 900; margin: 0 0 5px 0; letter-spacing: 1px; color: #0f172a; }
     .doc-info p { margin: 2px 0; font-size: 10px; color: #334155; }
     .doc-info strong { color: #0f172a; }
 
@@ -54,7 +54,7 @@
 
     .signature-box { display: none; margin-top: 30px; text-align: center; width: 40%; margin-left: auto; margin-right: auto; }
     .signature-line { border-top: 1px solid #0f172a; padding-top: 5px; font-size: 9px; color: #475569; }
-    .footer { text-align: center; margin-top: 20px; font-size: 8px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 10px; }
+    .footer { text-align: center; margin-top: 20px; font-size: 8px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 10px; font-weight: bold; }
 
     .no-print { position: fixed; top: 15px; right: 15px; display: flex; gap: 10px; z-index: 1000; }
     .btn { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 11px; transition: 0.2s; }
@@ -89,12 +89,12 @@
       </div>
 
       <div class="center-letter">
-        <div class="letter-box" id="docLetter">C</div>
-        <div class="doc-code" id="docCode">Cod. 011</div>
+        <div class="letter-box" id="docLetter">X</div>
+        <div class="doc-code" id="docCode">Doc. Interno</div>
       </div>
 
       <div class="doc-info">
-        <h2 class="doc-title" id="docTitle">FACTURA</h2>
+        <h2 class="doc-title" id="docTitle">COMPROBANTE DE PAGO</h2>
         <p><strong>N° Comp:</strong> <span id="printDocNum">0001-00000000</span></p>
         <p><strong>Fecha:</strong> <span id="printDate">--/--/----</span></p>
         <div id="fiscalDataBox">
@@ -138,28 +138,39 @@
     </div>
 
     <div class="signature-box" id="signatureBox"><div class="signature-line">Firma y Aclaración - Recibí Conforme</div></div>
-    <div class="footer" id="printFooterMsg">Trabajos personalizados no admiten devoluciones. Gracias por elegirnos.</div>
+    <div class="footer" id="printFooterMsg">DOCUMENTO NO VÁLIDO COMO FACTURA. COMPROBANTE DE USO INTERNO.</div>
   </div>
 
   <script>
     function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
 
-    // Obtenemos los datos dinámicos guardados en el login de cada inquilino
-    const compName = localStorage.getItem('company_name') || 'EMPRESA';
-    const compAddress = localStorage.getItem('company_address') || '-';
-    const compPhone = localStorage.getItem('company_phone') || '-';
+    // Función blindada para obtener datos del localStorage sin que tire undefined
+    const safeGet = (key) => {
+        const val = localStorage.getItem(key);
+        return (val && val !== 'undefined' && val !== 'null' && val.trim() !== '') ? val : '-';
+    };
+
+    // Obtenemos los datos dinámicos guardados del inquilino
+    const compName = safeGet('company_name') !== '-' ? safeGet('company_name') : 'EMPRESA';
+    const compAddress = safeGet('company_address');
+    const compPhone = safeGet('company_phone');
     const compLogo = localStorage.getItem('company_logo');
-    const compCuit = localStorage.getItem('company_cuit') || '-';
-    const compIibb = localStorage.getItem('company_iibb') || '-';
-    const compIva = localStorage.getItem('company_ivaCondition') || 'Responsable Monotributo'; // Valor por defecto
     
-    // Formatear la fecha de inicio a DD/MM/YYYY
-    let compInicio = localStorage.getItem('company_inicioActividades') || '-';
-    if (compInicio && compInicio.includes('-')) {
-        const [y, m, d] = compInicio.split('-');
-        compInicio = `${d}/${m}/${y}`;
+    // Buscamos el CUIT o CUIL
+    const compCuit = safeGet('company_cuit') !== '-' ? safeGet('company_cuit') : safeGet('company_cuil');
+    const compIibb = safeGet('company_iibb');
+    const compIva = safeGet('company_ivaCondition') !== '-' ? safeGet('company_ivaCondition') : 'Responsable Monotributo'; 
+    
+    // Formateo súper seguro para la fecha de inicio a DD/MM/YYYY
+    let compInicio = safeGet('company_inicioActividades');
+    if (compInicio !== '-' && compInicio.includes('-')) {
+        const parts = compInicio.split('-');
+        if (parts.length === 3) {
+            compInicio = `${parts[2]}/${parts[1]}/${parts[0]}`; // Invierte a DD/MM/YYYY
+        }
     }
 
+    // Inyectamos los datos en el HTML
     document.getElementById('printCompName').textContent = compName;
     document.getElementById('printCompAddress').textContent = 'Dirección: ' + compAddress;
     document.getElementById('printCompPhone').textContent = 'Tel: ' + compPhone;
@@ -168,7 +179,7 @@
     document.getElementById('printCompIibb').textContent = compIibb;
     document.getElementById('printCompInicio').textContent = compInicio;
 
-    if (compLogo && compLogo !== 'undefined') {
+    if (compLogo && compLogo !== 'undefined' && compLogo !== 'null') {
       document.getElementById('printLogoContainer').innerHTML = `<img src="${compLogo}" class="company-logo" alt="Logo">`;
     }
 
@@ -178,48 +189,35 @@
       alert("No hay datos para mostrar.");
       window.close();
     } else {
-      const isRecibo = venta.documentTitle && venta.documentTitle.includes("RECIBO");
       
-      if (isRecibo) {
-        document.getElementById('docLetter').textContent = "X";
-        document.getElementById('docCode').textContent = "Doc. no válido";
-        document.getElementById('docTitle').textContent = "RECIBO";
-        document.getElementById('fiscalDataBox').style.display = "none"; 
-        document.getElementById('signatureBox').style.display = "block"; 
-        document.getElementById('printFooterMsg').innerHTML = "Recibo oficial de pago a cuenta corriente.";
-      } else {
-        // Detecta automáticamente si es A, B o C basándose en la condición de IVA del emisor
-        let letter = "C"; let code = "Cod. 011";
-        if (compIva === 'Responsable Inscripto') { letter = "B"; code = "Cod. 006"; } // Por defecto B a Consumidor Final
-        
-        document.getElementById('docLetter').textContent = letter;
-        document.getElementById('docCode').textContent = code;
-        document.getElementById('docTitle').textContent = "FACTURA";
-        document.getElementById('printFooterMsg').innerHTML = "Documento no válido como factura. Comprobante de uso interno.";
-      }
-
-      const numComp = venta.id.split('_')[1] || Date.now().toString().slice(-8); 
+      // Armamos el número de comprobante y fecha
+      const numComp = venta.id ? venta.id.split('_')[1] || Date.now().toString().slice(-8) : Date.now().toString().slice(-8); 
       document.getElementById('printDocNum').textContent = "0001-" + String(numComp).padStart(8, '0');
-      document.getElementById('printDate').textContent = new Date(venta.createdAt).toLocaleDateString('es-AR');
+      document.getElementById('printDate').textContent = new Date(venta.createdAt || Date.now()).toLocaleDateString('es-AR');
       
+      // Datos del cliente
       document.getElementById('printClient').textContent = venta.client || 'Consumidor Final';
       document.getElementById('printMethod').textContent = venta.method || 'Contado';
       document.getElementById('printClientDoc').textContent = venta.clientDoc || '-';
       document.getElementById('printClientIva').textContent = venta.clientIva || 'Consumidor Final';
       if (venta.cupon) document.getElementById('printMethod').textContent += ` (Lote: ${venta.cupon})`;
 
+      // Dibujamos los items
       const itemsBody = document.getElementById('printItems');
-      venta.items.forEach(i => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="text-align: center; font-weight: bold;">${i.qty}</td>
-          <td>${i.name}</td>
-          <td style="text-align: right; color: #475569;">${currency(i.price)}</td>
-          <td style="text-align: right; font-weight: bold; color: #0f172a;">${currency(i.subtotal)}</td>
-        `;
-        itemsBody.appendChild(tr);
-      });
+      if (venta.items && venta.items.length > 0) {
+          venta.items.forEach(i => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="text-align: center; font-weight: bold;">${i.qty}</td>
+              <td>${i.name}</td>
+              <td style="text-align: right; color: #475569;">${currency(i.price)}</td>
+              <td style="text-align: right; font-weight: bold; color: #0f172a;">${currency(i.subtotal)}</td>
+            `;
+            itemsBody.appendChild(tr);
+          });
+      }
 
+      // Totales
       document.getElementById('printSubtotal').textContent = currency(venta.subtotal);
       if (venta.promoDiscount > 0) {
         document.getElementById('rowDiscount').style.display = 'flex';
@@ -227,6 +225,7 @@
       }
       document.getElementById('printTotal').textContent = currency(venta.total);
 
+      // Lanzar impresión automática
       window.onload = () => { setTimeout(() => { window.print(); }, 500); };
     }
   </script>
