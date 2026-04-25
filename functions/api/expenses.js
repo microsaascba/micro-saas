@@ -56,6 +56,7 @@ export async function onRequestGet(context) {
       amount: safeNumber(row.amount),
       ivaAmount: safeNumber(row.ivaAmount),
       nonTaxedAmount: safeNumber(row.nonTaxedAmount),
+      dueDate: row.dueDate || '',
       branch: row.branch || 'Global',
       status: row.status || 'Pagado'
     }));
@@ -81,62 +82,26 @@ export async function onRequestPost(context) {
 
     const stmt = context.env.DB.prepare(`
       INSERT INTO expenses (
-        id,
-        company_id,
-        date,
-        amount,
-        concept,
-        category,
-        status,
-        method,
-        createdAt,
-        supplierId,
-        invoiceType,
-        invoiceNum,
-        ivaAmount,
-        nonTaxedAmount,
-        branch,
-        loadedBy,
-        canceledBy
+        id, company_id, date, amount, concept, category, status, method, createdAt,
+        supplierId, invoiceType, invoiceNum, ivaAmount, nonTaxedAmount, dueDate, branch, loadedBy, canceledBy
       ) VALUES (
-        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9,
-        ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17
+        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18
       )
       ON CONFLICT(id) DO UPDATE SET
-        date = excluded.date,
-        amount = excluded.amount,
-        concept = excluded.concept,
-        category = excluded.category,
-        status = excluded.status,
-        method = excluded.method,
-        supplierId = excluded.supplierId,
-        invoiceType = excluded.invoiceType,
-        invoiceNum = excluded.invoiceNum,
-        ivaAmount = excluded.ivaAmount,
-        nonTaxedAmount = excluded.nonTaxedAmount,
-        branch = excluded.branch,
-        loadedBy = excluded.loadedBy,
-        canceledBy = excluded.canceledBy
+        date = excluded.date, amount = excluded.amount, concept = excluded.concept,
+        category = excluded.category, status = excluded.status, method = excluded.method,
+        supplierId = excluded.supplierId, invoiceType = excluded.invoiceType, invoiceNum = excluded.invoiceNum,
+        ivaAmount = excluded.ivaAmount, nonTaxedAmount = excluded.nonTaxedAmount, dueDate = excluded.dueDate,
+        branch = excluded.branch, loadedBy = excluded.loadedBy, canceledBy = excluded.canceledBy
     `);
 
     await stmt.bind(
-      id,
-      companyId,
-      data.date || new Date().toISOString().split('T')[0],
-      safeNumber(data.amount),
-      safeString(data.concept),
-      safeString(data.category),
-      safeString(data.status || 'Pagado'),
-      safeString(data.method || 'Efectivo'),
-      createdAt,
-      safeString(data.supplierId),
-      safeString(data.invoiceType),
-      safeString(data.invoiceNum),
-      safeNumber(data.ivaAmount),
-      safeNumber(data.nonTaxedAmount),
-      safeString(data.branch || 'Global'),
-      safeString(data.loadedBy || 'Admin'),
-      safeString(data.canceledBy || '')
+      id, companyId, data.date || new Date().toISOString().split('T')[0],
+      safeNumber(data.amount), safeString(data.concept), safeString(data.category),
+      safeString(data.status || 'Pagado'), safeString(data.method || 'Efectivo'), createdAt,
+      safeString(data.supplierId), safeString(data.invoiceType), safeString(data.invoiceNum),
+      safeNumber(data.ivaAmount), safeNumber(data.nonTaxedAmount), safeString(data.dueDate),
+      safeString(data.branch || 'Global'), safeString(data.loadedBy || 'Admin'), safeString(data.canceledBy || '')
     ).run();
 
     return Response.json({ success: true, id });
@@ -148,30 +113,17 @@ export async function onRequestPost(context) {
 export async function onRequestDelete(context) {
   try {
     const companyId = getCompanyIdFromRequest(context.request);
-
-    if (!companyId) {
-      return Response.json({ error: 'Falta company_id.' }, { status: 400 });
-    }
+    if (!companyId) return Response.json({ error: 'Falta company_id.' }, { status: 400 });
 
     const url = new URL(context.request.url);
     const id = url.searchParams.get('id');
     const canceledBy = url.searchParams.get('canceledBy') || 'Admin';
 
-    if (!id) {
-      return Response.json({ error: 'Falta id.' }, { status: 400 });
-    }
+    if (!id) return Response.json({ error: 'Falta id.' }, { status: 400 });
 
     await context.env.DB.prepare(`
-      UPDATE expenses
-      SET
-        status = 'Anulado',
-        canceledBy = ?1
-      WHERE id = ?2 AND company_id = ?3
-    `).bind(
-      canceledBy,
-      id,
-      companyId
-    ).run();
+      UPDATE expenses SET status = 'Anulado', canceledBy = ?1 WHERE id = ?2 AND company_id = ?3
+    `).bind(canceledBy, id, companyId).run();
 
     return Response.json({ success: true, message: 'Gasto anulado correctamente.' });
   } catch (error) {
