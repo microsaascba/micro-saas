@@ -618,90 +618,7 @@
 
   let selectedFramePrice = 0;
   let selectedLensPrice = 0;
-
-
-  function editarOrden(id) {
-    const o = dbOrders.find(x => x.id === id);
-    if (!o) return;
-
-    // 1. Resetear el modal y clavar el ID para que la DB sepa que es una actualización
-    document.getElementById('formOrden').reset();
-    document.getElementById('ordId').value = o.id;
-
-    // 2. Datos del paciente y médico
-    document.getElementById('ordClientId').value = o.clientId || '';
-    document.getElementById('ordClientName').value = o.clientName || '';
-    document.getElementById('ordDoctor').value = o.doctor || '';
-    
-    // Desarmar las notas para sacar la Obra Social si estaba junta
-    let obraSocialLimpia = "";
-    let notasLimpias = o.notes || "";
-    if (o.notes && o.notes.includes("Obra Social:")) {
-        const partes = o.notes.split(" | Obs: ");
-        obraSocialLimpia = partes[0].replace("Obra Social: ", "").trim();
-        notasLimpias = partes.length > 1 ? partes[1].trim() : "";
-    }
-    document.getElementById('ordObraSocial').value = obraSocialLimpia;
-    document.getElementById('ordNotas').value = notasLimpias;
-    document.getElementById('ordDelivery').value = o.deliveryDate || todayISO();
-
-    // 3. Rellenar Ficha Clínica - Ojo Derecho
-    document.getElementById('od_diam').value = o.od_diam || '';
-    document.getElementById('od_esf').value = o.od_esf || '';
-    document.getElementById('od_cil').value = o.od_cil || '';
-    document.getElementById('od_eje').value = o.od_eje || '';
-    document.getElementById('od_base').value = o.od_base || '';
-    document.getElementById('od_add').value = o.od_add || '';
-    document.getElementById('od_di').value = o.od_di || '';
-    document.getElementById('od_alt').value = o.od_alt || '';
-
-    // Rellenar Ficha Clínica - Ojo Izquierdo
-    document.getElementById('oi_diam').value = o.oi_diam || '';
-    document.getElementById('oi_esf').value = o.oi_esf || '';
-    document.getElementById('oi_cil').value = o.oi_cil || '';
-    document.getElementById('oi_eje').value = o.oi_eje || '';
-    document.getElementById('oi_base').value = o.oi_base || '';
-    document.getElementById('oi_add').value = o.oi_add || '';
-    document.getElementById('oi_di').value = o.oi_di || '';
-    document.getElementById('oi_alt').value = o.oi_alt || '';
-
-    // 4. Parámetros del Servicio
-    document.getElementById('ordDp').value = o.dp || 'Monofocal';
-    document.getElementById('ordDiseno').value = o.diseno || '';
-    document.getElementById('ordCalibrado').value = o.calibrado || 'Aro completo';
-    document.getElementById('ordMaterial').value = o.material || 'Orgánico';
-    document.getElementById('ordColor').value = o.color_lente || 'Blanco';
-    document.getElementById('ordAntirreflex').value = o.antirreflex || 'Sin Antirreflex';
-    document.getElementById('ordTinte').value = o.tinte || '';
-
-    // Marcar Tratamientos
-    document.querySelectorAll('input[name="ordTrat"]').forEach(cb => cb.checked = false);
-    if (o.tratamientos && o.tratamientos !== 'Sin tratamientos extra') {
-        const tratArray = o.tratamientos.split(' + ');
-        document.querySelectorAll('input[name="ordTrat"]').forEach(cb => {
-            if (tratArray.includes(cb.value)) cb.checked = true;
-        });
-    }
-
-    // 5. Armazón y Finanzas
-    document.getElementById('ordFrameCode').value = o.frameCode || '';
-    document.getElementById('ordFrameName').value = o.frameName || '';
-    document.getElementById('ordTotal').value = currency(o.total);
-    document.getElementById('ordDeposit').value = currency(o.deposit);
-    document.getElementById('ordBalance').value = currency(o.balance);
-    
-    if (o.cupon) {
-        document.getElementById('ordPaymentMethod').value = 'Crédito';
-        document.getElementById('divCuponOrden').style.display = 'block';
-        document.getElementById('ordCupon').value = o.cupon;
-    }
-
-    // 6. Cambiar Títulos y Abrir
-    document.getElementById('modalOrdenTitle').textContent = `✏️ Editando Orden N° ${o.id}`;
-    document.getElementById('btnGuardarOrden').textContent = "Actualizar Orden";
-    document.getElementById('modalOrden').showModal();
-  }
-  
+  let ordToAnular = null;
 
   async function initOrdenes() {
     mostrarCarga(true);
@@ -718,9 +635,7 @@
               const res = await apiFetch(url);
               if (!res.ok) return [];
               const contentType = res.headers.get("content-type") || "";
-              if (contentType.includes("text/html")) {
-                  return [];
-              }
+              if (contentType.includes("text/html")) return [];
               return await res.json();
           } catch(e) {
               return [];
@@ -746,11 +661,7 @@
 
       renderOrders();
       renderLenses();
-    } catch(e) { 
-      console.error("Error crítico en initOrdenes:", e); 
-    } finally { 
-      mostrarCarga(false); 
-    }
+    } catch(e) { console.error("Error crítico:", e); } finally { mostrarCarga(false); }
   }
 
   function renderLenses() {
@@ -772,64 +683,26 @@
             <td style="text-align:center;"><button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="editarCristal('${c.id}')">Editar</button></td>
           </tr>`;
       }).join('');
-      
-      if(cristales.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:var(--muted);">No hay cristales cargados en este laboratorio.</td></tr>';
+      if(cristales.length === 0) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:var(--muted);">No hay cristales cargados.</td></tr>';
   }
 
-  function abrirModalCristal() {
-      document.getElementById('formCristal').reset();
-      document.getElementById('lensId').value = '';
-      document.getElementById('modalCristalTitle').textContent = "Alta de Cristal";
-      document.getElementById('modalCristal').showModal();
-  }
-
-  function editarCristal(id) {
-      const c = dbProducts.find(p => p.id === id);
-      if(!c) return;
-      document.getElementById('lensId').value = c.id;
-      document.getElementById('lensSupplier').value = c.promoLinked || '';
-      document.getElementById('lensName').value = c.name;
-      document.getElementById('lensCost').value = c.cost || 0;
-      document.getElementById('lensPrice').value = c.price || 0;
-      document.getElementById('modalCristalTitle').textContent = "Editar Cristal";
-      document.getElementById('modalCristal').showModal();
-  }
+  function abrirModalCristal() { document.getElementById('formCristal').reset(); document.getElementById('lensId').value = ''; document.getElementById('modalCristalTitle').textContent = "Alta de Cristal"; document.getElementById('modalCristal').showModal(); }
+  function editarCristal(id) { const c = dbProducts.find(p => p.id === id); if(!c) return; document.getElementById('lensId').value = c.id; document.getElementById('lensSupplier').value = c.promoLinked || ''; document.getElementById('lensName').value = c.name; document.getElementById('lensCost').value = c.cost || 0; document.getElementById('lensPrice').value = c.price || 0; document.getElementById('modalCristalTitle').textContent = "Editar Cristal"; document.getElementById('modalCristal').showModal(); }
 
   async function guardarCristal(e) {
       e.preventDefault();
       const id = document.getElementById('lensId').value || 'prod_' + Date.now();
-      
-      const lens = {
-          id: id,
-          name: document.getElementById('lensName').value.trim(),
-          category: 'Cristal',
-          promoLinked: document.getElementById('lensSupplier').value,
-          cost: parseFloat(document.getElementById('lensCost').value) || 0,
-          price: parseFloat(document.getElementById('lensPrice').value) || 0,
-          stock: 9999,
-          status: 'Activo'
-      };
-
+      const lens = { id: id, name: document.getElementById('lensName').value.trim(), category: 'Cristal', promoLinked: document.getElementById('lensSupplier').value, cost: parseFloat(document.getElementById('lensCost').value) || 0, price: parseFloat(document.getElementById('lensPrice').value) || 0, stock: 9999, status: 'Activo' };
       mostrarCarga(true);
-      try {
-          await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(lens) });
-          const idx = dbProducts.findIndex(p => p.id === id);
-          if (idx >= 0) dbProducts[idx] = lens; else dbProducts.push(lens);
-          document.getElementById('modalCristal').close();
-          renderLenses();
-      } catch(err) { alert("Error guardando cristal."); } finally { mostrarCarga(false); }
+      try { await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(lens) }); const idx = dbProducts.findIndex(p => p.id === id); if (idx >= 0) dbProducts[idx] = lens; else dbProducts.push(lens); document.getElementById('modalCristal').close(); renderLenses(); } catch(err) { alert("Error guardando cristal."); } finally { mostrarCarga(false); }
   }
 
   function buscarClienteOrd() {
     const term = document.getElementById('ordClientName').value.toLowerCase().trim();
     const list = document.getElementById('clientOrdResults');
     if (term.length < 1) { list.classList.remove('active'); document.getElementById('ordClientId').value = ''; return; }
-
     const filtrados = dbClients.filter(c => (c.name||'').toLowerCase().includes(term) || (c.cuil||'').includes(term)).slice(0, 5);
-    list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">Cliente no encontrado. Se creará como consumidor final.</div>' : filtrados.map(c => `
-      <div class="autocomplete-item" onclick="selCliOrd('${c.id}', '${escapeHtml(c.name)}')">
-        <strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT/DNI'}</small>
-      </div>`).join('');
+    list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">Cliente no encontrado. Se creará como consumidor final.</div>' : filtrados.map(c => `<div class="autocomplete-item" onclick="selCliOrd('${c.id}', '${escapeHtml(c.name)}')"><strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT/DNI'}</small></div>`).join('');
     list.classList.add('active');
   }
   function selCliOrd(id, name) { document.getElementById('ordClientId').value = id; document.getElementById('ordClientName').value = name; document.getElementById('clientOrdResults').classList.remove('active'); }
@@ -837,161 +710,69 @@
   function buscarArmazon() {
     const term = document.getElementById('ordFrameName').value.toLowerCase().trim();
     const list = document.getElementById('frameResults');
-    if (term.length < 1) { 
-        list.classList.remove('active'); 
-        document.getElementById('ordFrameCode').value = ''; 
-        selectedFramePrice = 0; 
-        document.getElementById('labelFramePrice').textContent = '$ 0,00';
-        recalcularTotalOrden();
-        return; 
-    }
-
+    if (term.length < 1) { list.classList.remove('active'); document.getElementById('ordFrameCode').value = ''; selectedFramePrice = 0; document.getElementById('labelFramePrice').textContent = '$ 0,00'; recalcularTotalOrden(); return; }
     const filtrados = dbProducts.filter(p => p.category !== 'Cristal' && ((p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term))).slice(0, 5);
-    list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">Armazón no encontrado en catálogo.</div>' : filtrados.map(p => {
+    list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">Armazón no encontrado.</div>' : filtrados.map(p => {
       let stock = 0; try { stock = JSON.parse(p.stock_branches)[terminalActiva] || 0; } catch(e) { stock = p.stock || 0; }
-      return `<div class="autocomplete-item" onclick="selFrame('${escapeHtml(p.code||'')}', '${escapeHtml(p.name)}', ${p.price||0})">
-        <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code||'S/N'} | <span style="color:${stock>0?'var(--success)':'var(--danger)'}">Stock: ${stock}</span></small></div>
-        <div style="font-weight:bold; color:var(--primary);">${currency(p.price)}</div>
-      </div>`;
+      return `<div class="autocomplete-item" onclick="selFrame('${escapeHtml(p.code||'')}', '${escapeHtml(p.name)}', ${p.price||0})"><div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code||'S/N'} | <span style="color:${stock>0?'var(--success)':'var(--danger)'}">Stock: ${stock}</span></small></div><div style="font-weight:bold; color:var(--primary);">${currency(p.price)}</div></div>`;
     }).join('');
     list.classList.add('active');
   }
-
-  function selFrame(code, name, price) { 
-      document.getElementById('ordFrameCode').value = code; 
-      document.getElementById('ordFrameName').value = name; 
-      document.getElementById('frameResults').classList.remove('active'); 
-      selectedFramePrice = price;
-      document.getElementById('labelFramePrice').textContent = currency(price);
-      recalcularTotalOrden();
-  }
+  function selFrame(code, name, price) { document.getElementById('ordFrameCode').value = code; document.getElementById('ordFrameName').value = name; document.getElementById('frameResults').classList.remove('active'); selectedFramePrice = price; document.getElementById('labelFramePrice').textContent = currency(price); recalcularTotalOrden(); }
 
   function cargarLentesPorLab() {
       const labId = document.getElementById('ordLensSupplier').value;
       const lensSelect = document.getElementById('ordLensId');
-      
-      if (!labId) {
-          lensSelect.innerHTML = '<option value="">Seleccione Cristal...</option>';
-          selectedLensPrice = 0;
-          document.getElementById('labelLensPrice').textContent = '$ 0,00';
-          recalcularTotalOrden();
-          return;
-      }
-      
+      if (!labId) { lensSelect.innerHTML = '<option value="">Seleccione Cristal...</option>'; selectedLensPrice = 0; document.getElementById('labelLensPrice').textContent = '$ 0,00'; recalcularTotalOrden(); return; }
       const cristalesDelLab = dbProducts.filter(p => p.category === 'Cristal' && p.promoLinked === labId);
       lensSelect.innerHTML = '<option value="">Seleccione Cristal...</option>' + cristalesDelLab.map(c => `<option value="${c.id}">${escapeHtml(c.name)} - ${currency(c.price)}</option>`).join('');
-      
-      selectedLensPrice = 0;
-      document.getElementById('labelLensPrice').textContent = '$ 0,00';
-      recalcularTotalOrden();
+      selectedLensPrice = 0; document.getElementById('labelLensPrice').textContent = '$ 0,00'; recalcularTotalOrden();
   }
 
   function recalcularTotalOrden() {
       const lensId = document.getElementById('ordLensId').value;
-      if (lensId) {
-          const c = dbProducts.find(p => p.id === lensId);
-          selectedLensPrice = c ? (c.price || 0) : 0;
-          document.getElementById('labelLensPrice').textContent = currency(selectedLensPrice);
-      } else {
-          selectedLensPrice = 0;
-          document.getElementById('labelLensPrice').textContent = '$ 0,00';
-      }
-      
+      if (lensId) { const c = dbProducts.find(p => p.id === lensId); selectedLensPrice = c ? (c.price || 0) : 0; document.getElementById('labelLensPrice').textContent = currency(selectedLensPrice); } else { selectedLensPrice = 0; document.getElementById('labelLensPrice').textContent = '$ 0,00'; }
       const total = selectedFramePrice + selectedLensPrice;
       const inputTotal = document.getElementById('ordTotal');
-      
-      inputTotal.value = total.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); 
-      formatCurrencyInput(inputTotal);
-      calcSaldo();
+      inputTotal.value = total.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); formatCurrencyInput(inputTotal); calcSaldo();
   }
 
   function abrirModalOrden() {
-    document.getElementById('formOrden').reset();
-    document.getElementById('ordId').value = '';
-    document.getElementById('ordDelivery').value = todayISO();
-    
-    ['od_diam','od_esf','od_cil','od_eje','od_base','od_add','od_di','od_alt',
-     'oi_diam','oi_esf','oi_cil','oi_eje','oi_base','oi_add','oi_di','oi_alt'].forEach(id => document.getElementById(id).value = '');
-     
+    document.getElementById('formOrden').reset(); document.getElementById('ordId').value = ''; document.getElementById('ordDelivery').value = todayISO();
+    ['od_diam','od_esf','od_cil','od_eje','od_base','od_add','od_di','od_alt','oi_diam','oi_esf','oi_cil','oi_eje','oi_base','oi_add','oi_di','oi_alt'].forEach(id => document.getElementById(id).value = '');
     document.querySelectorAll('input[name="ordTrat"]').forEach(cb => cb.checked = false);
-    
     ['ordDp','ordDiseno','ordCalibrado','ordMaterial','ordColor','ordAntirreflex','ordTinte'].forEach(id => document.getElementById(id).value = (document.getElementById(id).tagName === 'SELECT' ? document.getElementById(id).options[0].value : ''));
-
-    document.getElementById('ordCupon').value = '';
-    document.getElementById('divCuponOrden').style.display = 'none';
-    document.getElementById('ordPaymentMethod').value = 'Efectivo';
-    
-    document.getElementById('ordTotal').value = '';
-    document.getElementById('ordDeposit').value = '$ 0,00';
-    document.getElementById('ordBalance').value = '$ 0,00';
-    
-    document.getElementById('labelFramePrice').textContent = '$ 0,00';
-    document.getElementById('labelLensPrice').textContent = '$ 0,00';
-    document.getElementById('ordLensId').innerHTML = '<option value="">Seleccione Cristal...</option>';
-    selectedFramePrice = 0; selectedLensPrice = 0;
-    
-    document.getElementById('modalOrdenTitle').textContent = "Nueva Orden de Trabajo";
-    document.getElementById('btnGuardarOrden').style.display = 'block';
-    document.getElementById('btnGuardarOrden').textContent = "Crear Orden y Descontar Stock";
-    document.getElementById('modalOrden').showModal();
+    document.getElementById('ordCupon').value = ''; document.getElementById('divCuponOrden').style.display = 'none'; document.getElementById('ordPaymentMethod').value = 'Efectivo'; document.getElementById('ordTotal').value = ''; document.getElementById('ordDeposit').value = '$ 0,00'; document.getElementById('ordBalance').value = '$ 0,00';
+    document.getElementById('labelFramePrice').textContent = '$ 0,00'; document.getElementById('labelLensPrice').textContent = '$ 0,00'; document.getElementById('ordLensId').innerHTML = '<option value="">Seleccione Cristal...</option>';
+    selectedFramePrice = 0; selectedLensPrice = 0; document.getElementById('modalOrdenTitle').textContent = "Nueva Orden de Trabajo"; document.getElementById('btnGuardarOrden').textContent = "Crear Orden y Descontar Stock"; document.getElementById('modalOrden').showModal();
   }
 
-  function calcSaldo() {
-    const tot = parseCurrency(document.getElementById('ordTotal').value);
-    const dep = parseCurrency(document.getElementById('ordDeposit').value);
-    const balance = tot - dep;
-    
-    document.getElementById('ordBalance').value = currency(balance);
+  function editarOrden(id) {
+    const o = dbOrders.find(x => x.id === id); if (!o) return;
+    document.getElementById('formOrden').reset(); document.getElementById('ordId').value = o.id; document.getElementById('ordClientId').value = o.clientId || ''; document.getElementById('ordClientName').value = o.clientName || ''; document.getElementById('ordDoctor').value = o.doctor || '';
+    let obraSocialLimpia = ""; let notasLimpias = o.notes || "";
+    if (o.notes && o.notes.includes("Obra Social:")) { const partes = o.notes.split(" | Obs: "); obraSocialLimpia = partes[0].replace("Obra Social: ", "").trim(); notasLimpias = partes.length > 1 ? partes[1].trim() : ""; }
+    document.getElementById('ordObraSocial').value = obraSocialLimpia; document.getElementById('ordNotas').value = notasLimpias; document.getElementById('ordDelivery').value = o.deliveryDate || todayISO();
+    ['od_diam','od_esf','od_cil','od_eje','od_base','od_add','od_di','od_alt'].forEach(key => document.getElementById(key).value = o[key] || '');
+    ['oi_diam','oi_esf','oi_cil','oi_eje','oi_base','oi_add','oi_di','oi_alt'].forEach(key => document.getElementById(key).value = o[key] || '');
+    document.getElementById('ordDp').value = o.dp || 'Monofocal'; document.getElementById('ordDiseno').value = o.diseno || ''; document.getElementById('ordCalibrado').value = o.calibrado || 'Aro completo'; document.getElementById('ordMaterial').value = o.material || 'Orgánico'; document.getElementById('ordColor').value = o.color_lente || 'Blanco'; document.getElementById('ordAntirreflex').value = o.antirreflex || 'Sin Antirreflex'; document.getElementById('ordTinte').value = o.tinte || '';
+    document.querySelectorAll('input[name="ordTrat"]').forEach(cb => cb.checked = false); if (o.tratamientos && o.tratamientos !== 'Sin tratamientos extra') { const tratArray = o.tratamientos.split(' + '); document.querySelectorAll('input[name="ordTrat"]').forEach(cb => { if (tratArray.includes(cb.value)) cb.checked = true; }); }
+    document.getElementById('ordFrameCode').value = o.frameCode || ''; document.getElementById('ordFrameName').value = o.frameName || ''; document.getElementById('ordTotal').value = currency(o.total); document.getElementById('ordDeposit').value = currency(o.deposit); document.getElementById('ordBalance').value = currency(o.balance);
+    if (o.cupon) { document.getElementById('ordPaymentMethod').value = 'Crédito'; document.getElementById('divCuponOrden').style.display = 'block'; document.getElementById('ordCupon').value = o.cupon; } else { document.getElementById('ordPaymentMethod').value = 'Efectivo'; document.getElementById('divCuponOrden').style.display = 'none'; document.getElementById('ordCupon').value = ''; }
+    document.getElementById('modalOrdenTitle').textContent = `✏️ Editando Orden N° ${o.id}`; document.getElementById('btnGuardarOrden').textContent = "Actualizar Orden"; document.getElementById('modalOrden').showModal();
   }
+
+  function calcSaldo() { const tot = parseCurrency(document.getElementById('ordTotal').value); const dep = parseCurrency(document.getElementById('ordDeposit').value); const balance = tot - dep; document.getElementById('ordBalance').value = currency(balance); }
 
   async function guardarOrden(e) {
     e.preventDefault();
-    const isNew = !document.getElementById('ordId').value;
-    const id = document.getElementById('ordId').value || 'ORD-' + Math.floor(Math.random()*90000 + 10000);
-    
-    const totalFloat = parseCurrency(document.getElementById('ordTotal').value);
-    const depositFloat = parseCurrency(document.getElementById('ordDeposit').value);
-    const balanceFloat = parseCurrency(document.getElementById('ordBalance').value);
-    
-    const frameCode = document.getElementById('ordFrameCode').value;
-    const lensSelect = document.getElementById('ordLensId');
-    const glassTypeName = lensSelect.selectedIndex > 0 ? lensSelect.options[lensSelect.selectedIndex].text.split(' - ')[0] : '';
+    const isNew = !document.getElementById('ordId').value; const id = document.getElementById('ordId').value || 'ORD-' + Math.floor(Math.random()*90000 + 10000);
+    const totalFloat = parseCurrency(document.getElementById('ordTotal').value); const depositFloat = parseCurrency(document.getElementById('ordDeposit').value); const balanceFloat = parseCurrency(document.getElementById('ordBalance').value);
+    const frameCode = document.getElementById('ordFrameCode').value; const lensSelect = document.getElementById('ordLensId'); const glassTypeName = lensSelect.selectedIndex > 0 ? lensSelect.options[lensSelect.selectedIndex].text.split(' - ')[0] : '';
+    const tratamientosArr = Array.from(document.querySelectorAll('input[name="ordTrat"]:checked')).map(cb => cb.value); const tratStr = tratamientosArr.length > 0 ? tratamientosArr.join(' + ') : 'Sin tratamientos extra';
+    const obraSocialStr = document.getElementById('ordObraSocial').value.trim(); const notasStr = document.getElementById('ordNotas').value.trim(); const combinedNotes = `Obra Social: ${obraSocialStr || '-'} | Obs: ${notasStr || '-'}`;
 
-    const tratamientosArr = Array.from(document.querySelectorAll('input[name="ordTrat"]:checked')).map(cb => cb.value);
-    const tratStr = tratamientosArr.length > 0 ? tratamientosArr.join(' + ') : 'Sin tratamientos extra';
-
-    const obraSocialStr = document.getElementById('ordObraSocial').value.trim();
-    const notasStr = document.getElementById('ordNotas').value.trim();
-    const combinedNotes = `Obra Social: ${obraSocialStr || '-'} | Obs: ${notasStr || '-'}`;
-
-    const ord = {
-      id: id, date: todayISO(),
-      clientId: document.getElementById('ordClientId').value || 'Consumidor Final',
-      clientName: document.getElementById('ordClientName').value.trim() || 'Consumidor Final',
-      
-      od_esf: document.getElementById('od_esf').value, od_cil: document.getElementById('od_cil').value, od_eje: document.getElementById('od_eje').value, od_base: document.getElementById('od_base').value, od_add: document.getElementById('od_add').value, od_diam: document.getElementById('od_diam').value, od_di: document.getElementById('od_di').value, od_alt: document.getElementById('od_alt').value,
-      oi_esf: document.getElementById('oi_esf').value, oi_cil: document.getElementById('oi_cil').value, oi_eje: document.getElementById('oi_eje').value, oi_base: document.getElementById('oi_base').value, oi_add: document.getElementById('oi_add').value, oi_diam: document.getElementById('oi_diam').value, oi_di: document.getElementById('oi_di').value, oi_alt: document.getElementById('oi_alt').value,
-      
-      dp: document.getElementById('ordDp').value, 
-      diseno: document.getElementById('ordDiseno').value,
-      calibrado: document.getElementById('ordCalibrado').value,
-      material: document.getElementById('ordMaterial').value,
-      color_lente: document.getElementById('ordColor').value,
-      antirreflex: document.getElementById('ordAntirreflex').value,
-      tinte: document.getElementById('ordTinte').value,
-      tratamientos: tratStr,
-      
-      doctor: document.getElementById('ordDoctor').value,
-      frameCode: frameCode, frameName: document.getElementById('ordFrameName').value, 
-      glassType: glassTypeName,
-      deliveryDate: document.getElementById('ordDelivery').value,
-      total: totalFloat,
-      deposit: depositFloat, balance: balanceFloat,
-      status: 'Pendiente', seller: localStorage.getItem('activeUser') || 'Admin', 
-      notes: combinedNotes,
-      cupon: document.getElementById('ordCupon').value.trim(),
-      createdAt: new Date().toISOString()
-    };
+    const ord = { id: id, date: todayISO(), clientId: document.getElementById('ordClientId').value || 'Consumidor Final', clientName: document.getElementById('ordClientName').value.trim() || 'Consumidor Final', od_esf: document.getElementById('od_esf').value, od_cil: document.getElementById('od_cil').value, od_eje: document.getElementById('od_eje').value, od_base: document.getElementById('od_base').value, od_add: document.getElementById('od_add').value, od_diam: document.getElementById('od_diam').value, od_di: document.getElementById('od_di').value, od_alt: document.getElementById('od_alt').value, oi_esf: document.getElementById('oi_esf').value, oi_cil: document.getElementById('oi_cil').value, oi_eje: document.getElementById('oi_eje').value, oi_base: document.getElementById('oi_base').value, oi_add: document.getElementById('oi_add').value, oi_diam: document.getElementById('oi_diam').value, oi_di: document.getElementById('oi_di').value, oi_alt: document.getElementById('oi_alt').value, dp: document.getElementById('ordDp').value, diseno: document.getElementById('ordDiseno').value, calibrado: document.getElementById('ordCalibrado').value, material: document.getElementById('ordMaterial').value, color_lente: document.getElementById('ordColor').value, antirreflex: document.getElementById('ordAntirreflex').value, tinte: document.getElementById('ordTinte').value, tratamientos: tratStr, doctor: document.getElementById('ordDoctor').value, frameCode: frameCode, frameName: document.getElementById('ordFrameName').value, glassType: glassTypeName, deliveryDate: document.getElementById('ordDelivery').value, total: totalFloat, deposit: depositFloat, balance: balanceFloat, status: 'Pendiente', seller: localStorage.getItem('activeUser') || 'Admin', notes: combinedNotes, cupon: document.getElementById('ordCupon').value.trim(), createdAt: new Date().toISOString() };
 
     mostrarCarga(true);
     try {
@@ -1000,226 +781,153 @@
         if (prod) {
           let branches = {}; try { branches = JSON.parse(prod.stock_branches); } catch(e) { branches = {"Central":prod.stock}; }
           if ((branches[terminalActiva]||0) < 1) { alert("Stock insuficiente del armazón en esta sucursal."); mostrarCarga(false); return; }
-          branches[terminalActiva] -= 1;
-          let stockTotal = 0; for (let b in branches) stockTotal += branches[b];
+          branches[terminalActiva] -= 1; let stockTotal = 0; for (let b in branches) stockTotal += branches[b];
           prod.stock_branches = JSON.stringify(branches); prod.stock = stockTotal;
           await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(prod) });
         }
       }
-
       if (isNew && depositFloat > 0) {
-        const method = document.getElementById('ordPaymentMethod').value;
-        const cuponVal = document.getElementById('ordCupon').value.trim();
-        const ventaSena = {
-          id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
-          clientId: ord.clientId, client: ord.clientName, method: method, cupon: cuponVal, subtotal: depositFloat, promoDiscount: 0, total: depositFloat, isB2B: false,
-          items: [{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Abono inicial`, price: depositFloat, cost: 0, qty: 1}]
-        };
+        const ventaSena = { id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller, clientId: ord.clientId, client: ord.clientName, method: document.getElementById('ordPaymentMethod').value, cupon: document.getElementById('ordCupon').value.trim(), subtotal: depositFloat, promoDiscount: 0, total: depositFloat, isB2B: false, itemsJSON: JSON.stringify([{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Abono inicial`, price: depositFloat, cost: 0, qty: 1}]) };
         await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSena) });
       }
-
       await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(ord) });
       if (isNew) dbOrders.unshift(ord); else { const idx = dbOrders.findIndex(x=>x.id===id); if(idx>=0) dbOrders[idx]=ord; }
-      
-      document.getElementById('modalOrden').close();
-      renderOrders();
-      if(isNew) imprimirComprobantes(ord);
+      document.getElementById('modalOrden').close(); renderOrders(); if(isNew) imprimirComprobantes(ord);
     } catch(err) { alert("Error guardando orden."); } finally { mostrarCarga(false); }
   }
 
   function renderOrders() {
-    const termPend = document.getElementById('searchOrder').value.toLowerCase();
-    const termHist = document.getElementById('searchHistorial').value.toLowerCase();
-    const tPend = document.getElementById('tbodyPendientes');
-    const tHist = document.getElementById('tbodyHistorial');
-    
-    let kPend = 0, kListos = 0, kSaldo = 0;
-    let htmlPend = '', htmlHist = '';
+    const termPend = document.getElementById('searchOrder').value.toLowerCase(); const termHist = document.getElementById('searchHistorial').value.toLowerCase();
+    const tPend = document.getElementById('tbodyPendientes'); const tHist = document.getElementById('tbodyHistorial');
+    let kPend = 0, kListos = 0, kSaldo = 0; let htmlPend = '', htmlHist = '';
 
     dbOrders.forEach(o => {
-      const isPend = o.status === 'Pendiente';
-      const isListo = o.status === 'Recibido - Listo';
-      
-      if (isPend) kPend++;
-      if (isListo) kListos++;
-      if (isPend || isListo) kSaldo += o.balance;
-
-      const badge = isPend ? `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">En Laboratorio</span>` : 
-                    isListo ? `<span style="background:#dcfce7; color:#16a34a; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Listo para Entregar</span>` : 
-                    `<span style="background:var(--line); color:var(--muted); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Entregado</span>`;
+      const isPend = o.status === 'Pendiente'; const isListo = o.status === 'Recibido - Listo'; const isAnulado = o.status === 'Anulado';
+      if (isPend) kPend++; if (isListo) kListos++; if (isPend || isListo) kSaldo += o.balance;
+      const badge = isAnulado ? `<span style="background:var(--line); color:var(--muted); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Anulado</span>` : isPend ? `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">En Laboratorio</span>` : isListo ? `<span style="background:#dcfce7; color:#16a34a; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Listo para Entregar</span>` : `<span style="background:#e0e7ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Entregado</span>`;
 
       const tr = `
-        <tr>
+        <tr style="${isAnulado ? 'opacity:0.6;' : ''}">
           <td><strong>${o.id}</strong></td>
           <td>${isPend || isListo ? o.deliveryDate : (o.date || '-')}</td>
-          <td><strong>${escapeHtml(o.clientName)}</strong></td>
+          <td style="${isAnulado ? 'text-decoration:line-through;' : ''}"><strong>${escapeHtml(o.clientName)}</strong></td>
           <td>${escapeHtml(o.frameName || o.frameCode)}<br><small style="color:var(--muted)">${escapeHtml(o.glassType)}</small></td>
-          ${isPend || isListo ? `<td>${badge}</td><td style="color:var(--danger); font-weight:bold;">${currency(o.balance)}</td>` : `<td>${currency(o.total)}</td>`}
-          <td style="text-align:center;">
-            ${isPend ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; margin-right:5px; border-color:var(--primary); color:var(--primary);" onclick="editarOrden('${o.id}')">✏️ Editar</button>             <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="marcarListo('${o.id}')">Marcar Recibido</button>` : ''}
+          ${isPend || isListo ? `<td>${badge}</td><td style="color:var(--danger); font-weight:bold;">${currency(o.balance)}</td>` : `<td>${badge}</td><td>${currency(o.total)}</td>`}
+          <td style="text-align:center; min-width:180px;">
+            ${isPend ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; margin-right:5px; border-color:var(--primary); color:var(--primary);" onclick="editarOrden('${o.id}')">✏️ Editar</button><button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="marcarListo('${o.id}')">Recibido</button>` : ''}
             ${isListo ? `<button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>` : ''}
-            <button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️ Imprimir</button>
+            ${(isPend || isListo) && localStorage.getItem('userRole') === 'admin' ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#ef4444; border-color:#ef4444; margin-top:4px;" onclick="promptAnularOrden('${o.id}')">Anular</button>` : ''}
+            ${!isAnulado ? `<button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️</button>` : ''}
           </td>
         </tr>`;
         
-      if (o.status === 'Entregado') {
-          if (o.id.toLowerCase().includes(termHist) || o.clientName.toLowerCase().includes(termHist)) htmlHist += tr;
-      } else {
-          if (o.id.toLowerCase().includes(termPend) || o.clientName.toLowerCase().includes(termPend)) htmlPend += tr;
-      }
+      if (o.status === 'Entregado' || isAnulado) { if (o.id.toLowerCase().includes(termHist) || o.clientName.toLowerCase().includes(termHist)) htmlHist += tr; } else { if (o.id.toLowerCase().includes(termPend) || o.clientName.toLowerCase().includes(termPend)) htmlPend += tr; }
     });
 
-    tPend.innerHTML = htmlPend || '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted);">Sin órdenes en curso.</td></tr>';
-    tHist.innerHTML = htmlHist || '<tr><td colspan="6" style="text-align:center; padding:20px; color:var(--muted);">Sin historial.</td></tr>';
-    
-    document.getElementById('kpiPendientes').textContent = kPend;
-    document.getElementById('kpiListos').textContent = kListos;
-    document.getElementById('kpiSaldos').textContent = currency(kSaldo);
+    tPend.innerHTML = htmlPend || '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted);">Sin órdenes en curso.</td></tr>'; tHist.innerHTML = htmlHist || '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted);">Sin historial.</td></tr>';
+    document.getElementById('kpiPendientes').textContent = kPend; document.getElementById('kpiListos').textContent = kListos; document.getElementById('kpiSaldos').textContent = currency(kSaldo);
   }
 
-  async function marcarListo(id) {
-    if(!confirm("¿El pedido llegó del laboratorio y está listo?")) return;
-    const o = dbOrders.find(x => x.id === id); o.status = 'Recibido - Listo';
-    mostrarCarga(true);
-    await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) });
-    mostrarCarga(false); renderOrders();
-  }
-
-  function prepararEntrega(id) {
-    const o = dbOrders.find(x => x.id === id);
-    document.getElementById('cobroOrdId').value = o.id;
-    document.getElementById('cobroMonto').value = currency(o.balance); 
-    document.getElementById('modalCobroSaldo').showModal();
-  }
+  async function marcarListo(id) { if(!confirm("¿El pedido llegó del laboratorio y está listo?")) return; const o = dbOrders.find(x => x.id === id); o.status = 'Recibido - Listo'; mostrarCarga(true); await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) }); mostrarCarga(false); renderOrders(); }
+  function prepararEntrega(id) { const o = dbOrders.find(x => x.id === id); document.getElementById('cobroOrdId').value = o.id; document.getElementById('cobroMonto').value = currency(o.balance); document.getElementById('modalCobroSaldo').showModal(); }
 
   async function ejecutarCobroYEntrega() {
-    const id = document.getElementById('cobroOrdId').value;
-    const method = document.getElementById('cobroMethod').value;
-    const o = dbOrders.find(x => x.id === id);
-    
+    const id = document.getElementById('cobroOrdId').value; const method = document.getElementById('cobroMethod').value; const o = dbOrders.find(x => x.id === id);
     mostrarCarga(true);
     try {
-      if (o.balance > 0) {
-        const ventaSaldo = {
-          id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
-          clientId: o.clientId, client: o.clientName, method: method, cupon: '', subtotal: o.balance, promoDiscount: 0, total: o.balance, isB2B: false,
-          items: [{id: 'saldo', code: 'SALDO', name: `Saldo Orden ${o.id} - Trabajo Terminado`, price: o.balance, cost: 0, qty: 1}]
-        };
-        await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSaldo) });
-      }
-
-      o.status = 'Entregado';
-      o.balance = 0; 
-      await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) });
-      
-      document.getElementById('modalCobroSaldo').close();
-      renderOrders();
-      alert("✅ Orden entregada y cobro registrado en caja.");
+      if (o.balance > 0) { const ventaSaldo = { id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin', clientId: o.clientId, client: o.clientName, method: method, cupon: '', subtotal: o.balance, promoDiscount: 0, total: o.balance, isB2B: false, itemsJSON: JSON.stringify([{id: 'saldo', code: 'SALDO', name: `Saldo Orden ${o.id} - Terminado`, price: o.balance, cost: 0, qty: 1}]) }; await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSaldo) }); }
+      o.status = 'Entregado'; o.balance = 0; await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) }); document.getElementById('modalCobroSaldo').close(); renderOrders(); alert("✅ Orden entregada y cobro registrado en caja.");
     } catch(err) { alert("Error cerrando orden."); } finally { mostrarCarga(false); }
   }
 
-  function ejecutarExportacionExcel(e) {
+  // --- LÓGICA DE ANULACIÓN CON PIN ---
+  function promptAnularOrden(id) {
+      ordToAnular = id;
+      const o = dbOrders.find(x => x.id === id);
+      document.getElementById('authActionText').textContent = `anular la Orden N° ${o.id} (Devuelve stock y seña)`;
+      document.getElementById('adminAuthPin').value = '';
+      document.getElementById('adminAuthDialog').showModal();
+      setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
+  }
+
+  function cerrarAdminAuth() {
+      document.getElementById('adminAuthDialog').close();
+      ordToAnular = null;
+  }
+
+  async function validarAdminAuth(e) {
       e.preventDefault();
-      
-      if (dbOrders.length === 0) return alert("No hay órdenes registradas en el sistema para exportar.");
-      
-      const desde = document.getElementById('expDesde').value;
-      const hasta = document.getElementById('expHasta').value;
-      const estado = document.getElementById('expEstado').value;
+      if (document.getElementById('adminAuthPin').value === '1234') { // PIN FIJO para la demostración / SaaS base
+          cerrarAdminAuth();
+          if (ordToAnular) await ejecutarAnulacion(ordToAnular);
+      } else {
+          alert("❌ PIN de administrador incorrecto.");
+          document.getElementById('adminAuthPin').value = '';
+          document.getElementById('adminAuthPin').focus();
+      }
+  }
 
-      const filtradas = dbOrders.filter(o => {
-          const fechaObj = o.createdAt ? o.createdAt.split('T')[0] : o.date;
-          const matchFechas = fechaObj >= desde && fechaObj <= hasta;
-          const matchEstado = estado === 'ALL' || o.status === estado;
-          return matchFechas && matchEstado;
-      });
-
-      if(filtradas.length === 0) return alert("No se encontraron órdenes que coincidan con esas fechas y estado.");
-
-      const csvData = filtradas.map(o => {
-          let obsLimpia = o.notes;
-          let obraSocialLimpia = "-";
-          if (o.notes && o.notes.includes("Obra Social:")) {
-              const partes = o.notes.split(" | Obs: ");
-              obraSocialLimpia = partes[0].replace("Obra Social: ", "").trim();
-              obsLimpia = partes.length > 1 ? partes[1].trim() : "";
+  async function ejecutarAnulacion(id) {
+      const o = dbOrders.find(x => x.id === id);
+      if (!o) return;
+      mostrarCarga(true);
+      try {
+          // 1. Devolver Stock Físico si había armazón
+          if (o.frameCode) {
+              const prod = dbProducts.find(p => p.code === o.frameCode && p.category !== 'Cristal');
+              if (prod) {
+                  let branches = {}; try { branches = JSON.parse(prod.stock_branches); } catch(e) { branches = {"Central":prod.stock}; }
+                  branches[terminalActiva] = (branches[terminalActiva] || 0) + 1;
+                  let stockTotal = 0; for (let b in branches) stockTotal += branches[b];
+                  prod.stock_branches = JSON.stringify(branches); prod.stock = stockTotal;
+                  await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(prod) });
+              }
           }
 
-          return {
-              "Fecha Orden": o.createdAt ? o.createdAt.split('T')[0] : o.date,
-              "Fecha Entrega": o.deliveryDate,
-              "Orden Nro": o.id,
-              "Estado": o.status,
-              "Paciente / Cliente": o.clientName,
-              "Médico": o.doctor || '-',
-              "Obra Social": obraSocialLimpia,
-              "Armazón": o.frameName || o.frameCode,
-              "Cristal": o.glassType,
-              "Tipo Cristal": o.dp,
-              "Valor Total": o.total,
-              "Seña": o.deposit,
-              "Saldo": o.balance,
-              "OD Diam": o.od_diam, "OD Esf": o.od_esf, "OD Cil": o.od_cil, "OD Eje": o.od_eje, "OD Base": o.od_base, "OD Add": o.od_add, "OD DI": o.od_di, "OD Alt": o.od_alt,
-              "OI Diam": o.oi_diam, "OI Esf": o.oi_esf, "OI Cil": o.oi_cil, "OI Eje": o.oi_eje, "OI Base": o.oi_base, "OI Add": o.oi_add, "OI DI": o.oi_di, "OI Alt": o.oi_alt,
-              "Diseño": o.diseno, "Calibrado": o.calibrado, "Material": o.material, "Color": o.color_lente, "Antirreflex": o.antirreflex, "Tinte": o.tinte,
-              "Tratamientos": o.tratamientos,
-              "Observaciones": obsLimpia
-          };
-      });
+          // 2. Devolver la plata de la Seña si existía (Genera nota de crédito interna)
+          if (o.deposit > 0) {
+              const devSena = {
+                  id: 'vta_dev_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
+                  clientId: o.clientId, client: o.clientName, method: 'Efectivo', cupon: '', subtotal: -Math.abs(o.deposit), promoDiscount: 0, total: -Math.abs(o.deposit), isB2B: false,
+                  itemsJSON: JSON.stringify([{id: 'dev_sena', code: 'DEV-SENA', name: `Devolución Seña Orden Anulada ${o.id}`, price: -Math.abs(o.deposit), cost: 0, qty: 1}])
+              };
+              await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(devSena) });
+              alert(`⚠️ Se generó un egreso de caja por ${currency(o.deposit)} para devolver la seña.`);
+          }
 
-      const ws = XLSX.utils.json_to_sheet(csvData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Ordenes_Optica");
-      XLSX.writeFile(wb, `Reporte_Ordenes_${desde}_al_${hasta}.xlsx`);
-      
-      document.getElementById('modalExportar').close();
+          // 3. Marcar la Orden como Anulada en D1
+          o.status = 'Anulado';
+          o.balance = 0;
+          await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) });
+          renderOrders();
+      } catch (error) {
+          alert("Error al anular orden.");
+      } finally {
+          mostrarCarga(false);
+          ordToAnular = null;
+      }
+  }
+
+  function ejecutarExportacionExcel(e) {
+      e.preventDefault(); if (dbOrders.length === 0) return alert("No hay órdenes registradas.");
+      const desde = document.getElementById('expDesde').value; const hasta = document.getElementById('expHasta').value; const estado = document.getElementById('expEstado').value;
+      const filtradas = dbOrders.filter(o => { const f = o.createdAt ? o.createdAt.split('T')[0] : o.date; return f >= desde && f <= hasta && (estado === 'ALL' || o.status === estado); });
+      if(filtradas.length === 0) return alert("Sin coincidencias.");
+      const csvData = filtradas.map(o => {
+          let obs = o.notes; let os = "-"; if (o.notes && o.notes.includes("Obra Social:")) { const pts = o.notes.split(" | Obs: "); os = pts[0].replace("Obra Social: ", "").trim(); obs = pts.length > 1 ? pts[1].trim() : ""; }
+          return { "Fecha": o.createdAt ? o.createdAt.split('T')[0] : o.date, "Nro": o.id, "Estado": o.status, "Paciente": o.clientName, "Obra Social": os, "Armazón": o.frameName || o.frameCode, "Cristal": o.glassType, "Tipo": o.dp, "Total": o.total, "Seña": o.deposit, "Saldo": o.balance };
+      });
+      const ws = XLSX.utils.json_to_sheet(csvData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Ordenes"); XLSX.writeFile(wb, `Reporte_Ordenes.xlsx`); document.getElementById('modalExportar').close();
   }
 
   function imprimirComprobantes(o) {
-    document.getElementById('pcDate').textContent = new Date().toLocaleDateString('es-AR');
-    document.getElementById('pcId').textContent = 'N° ' + o.id;
-    document.getElementById('pcName').textContent = o.clientName;
-    document.getElementById('pcDelivery').textContent = o.deliveryDate;
-    document.getElementById('pcFrame').textContent = o.frameName || o.frameCode;
-    document.getElementById('pcGlass').textContent = o.glassType;
-    
-    document.getElementById('pcTotal').textContent = currency(o.total);
-    document.getElementById('pcDeposit').textContent = currency(o.deposit);
-    document.getElementById('pcBalance').textContent = currency(o.balance);
-
-    document.getElementById('plDate').textContent = new Date().toLocaleDateString('es-AR');
-    document.getElementById('plId').textContent = 'ORDEN LAB N° ' + o.id;
-    document.getElementById('plName').textContent = o.clientName;
-    document.getElementById('plDoc').textContent = o.doctor || '-';
-    
-    let obsLimpia = o.notes;
-    let obraSocialLimpia = "-";
-    if (o.notes && o.notes.includes("Obra Social:")) {
-        const partes = o.notes.split(" | Obs: ");
-        obraSocialLimpia = partes[0].replace("Obra Social: ", "").trim();
-        obsLimpia = partes.length > 1 ? partes[1].trim() : "";
-    }
-
-    document.getElementById('plOS').textContent = obraSocialLimpia;
-    document.getElementById('plDelivery').textContent = o.deliveryDate;
-    
+    document.getElementById('pcDate').textContent = new Date().toLocaleDateString('es-AR'); document.getElementById('pcId').textContent = 'N° ' + o.id; document.getElementById('pcName').textContent = o.clientName; document.getElementById('pcDelivery').textContent = o.deliveryDate; document.getElementById('pcFrame').textContent = o.frameName || o.frameCode; document.getElementById('pcGlass').textContent = o.glassType; document.getElementById('pcTotal').textContent = currency(o.total); document.getElementById('pcDeposit').textContent = currency(o.deposit); document.getElementById('pcBalance').textContent = currency(o.balance);
+    document.getElementById('plDate').textContent = new Date().toLocaleDateString('es-AR'); document.getElementById('plId').textContent = 'ORDEN LAB N° ' + o.id; document.getElementById('plName').textContent = o.clientName; document.getElementById('plDoc').textContent = o.doctor || '-';
+    let obs = o.notes; let os = "-"; if (o.notes && o.notes.includes("Obra Social:")) { const pts = o.notes.split(" | Obs: "); os = pts[0].replace("Obra Social: ", "").trim(); obs = pts.length > 1 ? pts[1].trim() : ""; }
+    document.getElementById('plOS').textContent = os; document.getElementById('plDelivery').textContent = o.deliveryDate;
     document.getElementById('plOdDiam').textContent = o.od_diam || '-'; document.getElementById('plOdEsf').textContent = o.od_esf; document.getElementById('plOdCil').textContent = o.od_cil; document.getElementById('plOdEje').textContent = o.od_eje; document.getElementById('plOdBase').textContent = o.od_base || '-'; document.getElementById('plOdAdd').textContent = o.od_add; document.getElementById('plOdDi').textContent = o.od_di || '-'; document.getElementById('plOdAlt').textContent = o.od_alt || '-';
     document.getElementById('plOiDiam').textContent = o.oi_diam || '-'; document.getElementById('plOiEsf').textContent = o.oi_esf; document.getElementById('plOiCil').textContent = o.oi_cil; document.getElementById('plOiEje').textContent = o.oi_eje; document.getElementById('plOiBase').textContent = o.oi_base || '-'; document.getElementById('plOiAdd').textContent = o.oi_add; document.getElementById('plOiDi').textContent = o.oi_di || '-'; document.getElementById('plOiAlt').textContent = o.oi_alt || '-';
-    
-    document.getElementById('plUso').textContent = o.dp || '-'; 
-    document.getElementById('plDiseno').textContent = o.diseno || '-';
-    document.getElementById('plMaterial').textContent = o.material || '-';
-    document.getElementById('plColor').textContent = o.color_lente || '-';
-    document.getElementById('plAntirreflex').textContent = o.antirreflex || '-';
-    document.getElementById('plCalibrado').textContent = o.calibrado || '-';
-    
-    document.getElementById('plAlt').textContent = o.tratamientos || '-';
-    document.getElementById('plTinte').textContent = o.tinte || '-';
-    document.getElementById('plObs').textContent = obsLimpia || 'Sin observaciones.';
-    
-    document.getElementById('plFrame').textContent = o.frameCode + ' - ' + o.frameName;
-    document.getElementById('plGlass').textContent = o.glassType;
-
+    document.getElementById('plUso').textContent = o.dp || '-'; document.getElementById('plDiseno').textContent = o.diseno || '-'; document.getElementById('plMaterial').textContent = o.material || '-'; document.getElementById('plColor').textContent = o.color_lente || '-'; document.getElementById('plAntirreflex').textContent = o.antirreflex || '-'; document.getElementById('plCalibrado').textContent = o.calibrado || '-'; document.getElementById('plAlt').textContent = o.tratamientos || '-'; document.getElementById('plTinte').textContent = o.tinte || '-'; document.getElementById('plObs').textContent = obs || 'Sin observaciones.'; document.getElementById('plFrame').textContent = o.frameCode + ' - ' + o.frameName; document.getElementById('plGlass').textContent = o.glassType;
     window.print();
   }
 
