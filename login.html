@@ -15,22 +15,45 @@
       margin: 0;
       padding: 0;
       font-family: 'Inter', system-ui, sans-serif;
-      background: #f0f2f7;
-      scroll-behavior: smooth;
+      background: #f8fafc;
+      height: 100vh;
+      overflow: hidden; /* Bloqueamos el scroll en PC */
     }
 
-    /* Contenedor principal del Login que ocupa la primera pantalla */
-    .login-hero {
-      min-height: 100vh;
-      background: linear-gradient(rgba(15, 23, 42, 0.65), rgba(30, 58, 138, 0.75)), url('img/img30.jpg') no-repeat center center fixed;
-      background-size: cover;
+    /* ==========================================================================
+       LAYOUT SPLIT SCREEN (Pantalla Dividida 50/50)
+       ========================================================================== */
+    .split-layout {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* Mitad Izquierda: Fondo con Imagen y Tarjeta de Login */
+    .split-left {
+      flex: 1;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 58, 138, 0.9)), url('img/img30.jpg') center/cover no-repeat;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 20px;
       box-sizing: border-box;
+      position: relative;
     }
 
+    /* Mitad Derecha: Info Micro SaaS y Contacto */
+    .split-right {
+      flex: 1;
+      background: #f8fafc;
+      padding: 60px 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-sizing: border-box;
+      overflow-y: auto; /* Por si en pantallas bajas el contenido es largo */
+    }
+
+    /* --- ESTILOS LOGIN CARD --- */
     .login-card {
       background: #ffffff;
       padding: 40px;
@@ -123,77 +146,33 @@
       text-align: left;
     }
 
-    /* ==========================================================================
-       SECCIÓN SPLIT: QUIÉNES SOMOS Y CONTACTO (Sutil en la parte inferior)
-       ========================================================================== */
-    .about-split {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      max-width: 1200px;
-      margin: 80px auto;
-      border-radius: 20px;
-      overflow: hidden;
-      box-shadow: 0 15px 30px rgba(0,0,0,0.08);
-      border: 1px solid var(--line, #e2e8f0);
-      background: #fff;
-    }
-    
-    .about-left {
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 58, 138, 0.9)), url('img/img30.jpg') center/cover no-repeat;
-      color: #fff;
-      padding: 60px 50px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    
+    /* --- ESTILOS INFO MICRO SAAS --- */
     .about-logo {
-      max-width: 160px;
-      margin-bottom: 25px;
-      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+      max-width: 180px;
+      margin-bottom: 30px;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
     }
     
-    .about-left h3 {
+    .split-right h3 {
       font-size: 26px;
       margin-bottom: 15px;
+      margin-top: 0;
       font-weight: 800;
-      color: #fff;
+      color: #0f172a;
     }
     
-    .about-left p {
-      font-size: 15px;
-      color: rgba(255,255,255,0.85);
+    .split-right p {
+      font-size: 16px;
+      color: #475569;
       line-height: 1.7;
       margin: 0;
-    }
-    
-    .about-right {
-      background: #f8fafc;
-      padding: 60px 50px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    
-    .about-right h3 {
-      font-size: 26px;
-      color: #0f172a;
-      margin-top: 0;
-      margin-bottom: 15px;
-      font-weight: 800;
-    }
-    
-    .about-right p {
-      font-size: 15px;
-      color: #475569;
-      margin-bottom: 30px;
-      line-height: 1.7;
     }
     
     .about-buttons {
       display: flex;
       gap: 15px;
       flex-wrap: wrap;
+      margin-top: 15px;
     }
 
     .btn-whatsapp {
@@ -226,58 +205,68 @@
     }
     .btn-outline:hover { background: #f1f5f9; border-color: #94a3b8; }
 
+    /* --- RESPONSIVE: En celulares se apila y permite scroll --- */
     @media (max-width: 900px) {
-      .about-split {
-        grid-template-columns: 1fr;
-        margin: 40px 20px;
+      html, body {
+        height: auto;
+        overflow: auto; /* Devolvemos el scroll al celular */
       }
-      .about-left, .about-right {
-        padding: 40px 30px;
+      .split-layout {
+        flex-direction: column;
+        height: auto;
+      }
+      .split-left {
+        min-height: 100vh; /* Login ocupa toda la primera pantalla */
+      }
+      .split-right {
+        padding: 60px 30px;
+        text-align: center;
+        align-items: center;
+      }
+      .about-buttons {
+        justify-content: center;
       }
     }
   </style>
 </head>
 <body>
 
-  <div class="login-hero">
-    <div class="login-card">
-      <div class="brand-logo-large" id="brandBox">M</div>
-      <h1 class="login-title">Bienvenido</h1>
-      <p class="login-sub">Ingresá tus credenciales para continuar</p>
+  <div class="split-layout">
+    
+    <div class="split-left">
+      <div class="login-card">
+        <div class="brand-logo-large" id="brandBox">M</div>
+        <h1 class="login-title">Bienvenido</h1>
+        <p class="login-sub">Ingresá tus credenciales para continuar</p>
 
-      <div id="errorMsg"></div>
+        <div id="errorMsg"></div>
 
-      <form id="loginForm" onsubmit="procesarLogin(event)">
-        <div class="input-group">
-          <label>Usuario</label>
-          <input type="text" id="username" class="input-box" required placeholder="Ej: admin" autofocus>
-        </div>
+        <form id="loginForm" onsubmit="procesarLogin(event)">
+          <div class="input-group">
+            <label>Usuario</label>
+            <input type="text" id="username" class="input-box" required placeholder="Ej: admin" autofocus>
+          </div>
 
-        <div class="input-group">
-          <label>Contraseña</label>
-          <input type="password" id="password" class="input-box" required placeholder="••••••••">
-        </div>
+          <div class="input-group">
+            <label>Contraseña</label>
+            <input type="password" id="password" class="input-box" required placeholder="••••••••">
+          </div>
 
-        <button type="submit" class="btn-login" id="btnSubmit">Ingresar al sistema</button>
-      </form>
+          <button type="submit" class="btn-login" id="btnSubmit">Ingresar al sistema</button>
+        </form>
+      </div>
     </div>
-  </div>
 
-  <section class="about-split" id="quienes-somos">
-    <div class="about-left">
+    <div class="split-right">
       <img src="img/logomicrosaas.png" alt="Micro SaaS Soluciones" class="about-logo" onerror="this.style.display='none'">
+      
       <h3>Nuestra Filosofía</h3>
       <p>
         En Micro SaaS Soluciones no somos solo desarrolladores. Somos un equipo que vivió el día a día de las PyMEs, el desorden de los papeles y la falta de control.<br><br>
         Por eso creamos sistemas a medida, pensados <strong>desde adentro del comercio hacia afuera</strong>. Nuestro objetivo es que dejes de improvisar y tengas el control total de tu negocio, sin pagar las fortunas que cobran las grandes corporaciones.
       </p>
-    </div>
-    
-    <div class="about-right">
-      <h3>¿Hablamos de tu negocio?</h3>
-      <p>
-        Si llegaste hasta acá, es porque sabés que tu empresa necesita dar el salto. Ya sea que busques una solución personalizada o tengas dudas técnicas sobre nuestra plataforma, estamos a un mensaje de distancia.
-      </p>
+
+      <h3 style="margin-top: 40px; margin-bottom: 10px;">¿Hablamos de tu negocio?</h3>
       <div class="about-buttons">
         <a href="https://wa.me/5493516506955?text=Hola,%20llegué%20a%20la%20página%20y%20quiero%20más%20información%20sobre%20Micro%20SaaS" target="_blank" class="btn-whatsapp">
           💬 Escribir por WhatsApp
@@ -287,7 +276,8 @@
         </a>
       </div>
     </div>
-  </section>
+
+  </div>
 
   <script>
     function clearSession() {
