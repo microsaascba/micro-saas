@@ -27,13 +27,13 @@ export async function onRequestPost(context) {
         await context.env.DB.prepare(`
             INSERT INTO optical_orders (
                 id, company_id, date, clientId, clientName, 
-                od_esf, od_cil, od_eje, od_add, od_diam, od_di, od_alt,
-                oi_esf, oi_cil, oi_eje, oi_add, oi_diam, oi_di, oi_alt,
-                dp, tratamientos, doctor, 
+                od_esf, od_cil, od_eje, od_base, od_add, od_diam, od_di, od_alt,
+                oi_esf, oi_cil, oi_eje, oi_base, oi_add, oi_diam, oi_di, oi_alt,
+                dp, diseno, calibrado, material, color_lente, antirreflex, tinte, tratamientos, doctor, 
                 frameCode, frameName, glassType, 
                 deliveryDate, total, deposit, balance, 
                 status, seller, notes, cupon, createdAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET 
                 status = excluded.status,
                 balance = excluded.balance,
@@ -41,19 +41,17 @@ export async function onRequestPost(context) {
                 deliveryDate = excluded.deliveryDate,
                 notes = excluded.notes,
                 cupon = excluded.cupon,
-                od_diam = excluded.od_diam,
-                od_di = excluded.od_di,
-                od_alt = excluded.od_alt,
-                oi_diam = excluded.oi_diam,
-                oi_di = excluded.oi_di,
-                oi_alt = excluded.oi_alt,
+                od_diam = excluded.od_diam, od_di = excluded.od_di, od_alt = excluded.od_alt, od_base = excluded.od_base,
+                oi_diam = excluded.oi_diam, oi_di = excluded.oi_di, oi_alt = excluded.oi_alt, oi_base = excluded.oi_base,
                 tratamientos = excluded.tratamientos,
-                dp = excluded.dp
+                dp = excluded.dp,
+                diseno = excluded.diseno, calibrado = excluded.calibrado, material = excluded.material,
+                color_lente = excluded.color_lente, antirreflex = excluded.antirreflex, tinte = excluded.tinte
         `).bind(
             data.id, companyId, data.date, data.clientId, data.clientName,
-            data.od_esf || '', data.od_cil || '', data.od_eje || '', data.od_add || '', data.od_diam || '', data.od_di || '', data.od_alt || '',
-            data.oi_esf || '', data.oi_cil || '', data.oi_eje || '', data.oi_add || '', data.oi_diam || '', data.oi_di || '', data.oi_alt || '',
-            data.dp || '', data.tratamientos || '', data.doctor || '',
+            data.od_esf || '', data.od_cil || '', data.od_eje || '', data.od_base || '', data.od_add || '', data.od_diam || '', data.od_di || '', data.od_alt || '',
+            data.oi_esf || '', data.oi_cil || '', data.oi_eje || '', data.oi_base || '', data.oi_add || '', data.oi_diam || '', data.oi_di || '', data.oi_alt || '',
+            data.dp || '', data.diseno || '', data.calibrado || '', data.material || '', data.color_lente || '', data.antirreflex || '', data.tinte || '', data.tratamientos || '', data.doctor || '',
             data.frameCode || '', data.frameName || '', data.glassType || '',
             data.deliveryDate || '', data.total || 0, data.deposit || 0, data.balance || 0,
             data.status || 'Pendiente', data.seller || 'Admin', data.notes || '', data.cupon || '', data.createdAt
