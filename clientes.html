@@ -357,24 +357,25 @@
               
               <div class="form-grid" style="margin-bottom: 15px; font-size: 13px;">
                 <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid var(--line);">
-                  <strong style="color:var(--primary); display:block; margin-bottom:4px;">Armazón:</strong> 
-                  ${escapeHtml(o.frameName || o.frameCode || '-')}
+                  <strong style="color:var(--primary); display:block; margin-bottom:4px;">Armazón y Calibrado:</strong> 
+                  ${escapeHtml(o.frameName || o.frameCode || '-')} <br><small style="color:var(--muted)">Calibrado: ${escapeHtml(o.calibrado || '-')}</small>
                 </div>
                 <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid var(--line);">
                   <strong style="color:var(--primary); display:block; margin-bottom:4px;">Cristales:</strong> 
-                  ${escapeHtml(o.glassType || '-')}
+                  ${escapeHtml(o.glassType || '-')} <br><small style="color:var(--muted)">Material: ${escapeHtml(o.material || '-')}</small>
                 </div>
               </div>
 
-              <div style="overflow-x: auto;">
+              <div style="overflow-x: auto; margin-bottom: 15px;">
                 <table class="ficha-receta">
-                  <tr><th>Ojo</th><th>Diámetro</th><th>Esférico</th><th>Cilíndrico</th><th>Eje</th><th>Adición</th><th>D.I.</th><th>Altura</th></tr>
+                  <tr><th>Ojo</th><th>Diám</th><th>Esf</th><th>Cil</th><th>Eje</th><th>Base</th><th>Add</th><th>DNP</th><th>Alt</th></tr>
                   <tr>
                     <td style="color:var(--muted);">O.D. (Der)</td>
                     <td>${escapeHtml(o.od_diam || '-')}</td>
                     <td>${escapeHtml(o.od_esf || '-')}</td>
                     <td>${escapeHtml(o.od_cil || '-')}</td>
                     <td>${escapeHtml(o.od_eje || '-')}</td>
+                    <td>${escapeHtml(o.od_base || '-')}</td>
                     <td>${escapeHtml(o.od_add || '-')}</td>
                     <td>${escapeHtml(o.od_di || '-')}</td>
                     <td>${escapeHtml(o.od_alt || '-')}</td>
@@ -385,17 +386,21 @@
                     <td>${escapeHtml(o.oi_esf || '-')}</td>
                     <td>${escapeHtml(o.oi_cil || '-')}</td>
                     <td>${escapeHtml(o.oi_eje || '-')}</td>
+                    <td>${escapeHtml(o.oi_base || '-')}</td>
                     <td>${escapeHtml(o.oi_add || '-')}</td>
                     <td>${escapeHtml(o.oi_di || '-')}</td>
                     <td>${escapeHtml(o.oi_alt || '-')}</td>
                   </tr>
                 </table>
               </div>
-              <div style="margin-top: 10px; font-size: 12px; color: var(--muted); text-align: center;">
-                <strong>Tipo de cristal:</strong> ${escapeHtml(o.dp || '-')} | <strong>Tratamientos:</strong> ${escapeHtml(o.tratamientos || 'Sin tratamientos')} | <strong>Médico:</strong> ${escapeHtml(o.doctor || '-')}
+              
+              <div style="background: #fff8f1; border: 1px solid #fed7aa; padding: 10px; border-radius: 6px; font-size: 12px; color: var(--text); margin-bottom: 10px;">
+                <div style="margin-bottom: 6px;"><strong>Lente:</strong> ${escapeHtml(o.dp || '-')} | <strong>Diseño/Deg:</strong> ${escapeHtml(o.diseno || '-')} | <strong>Color/Filtro:</strong> ${escapeHtml(o.color_lente || '-')} | <strong>AR:</strong> ${escapeHtml(o.antirreflex || '-')}</div>
+                <div><strong>Tratamientos Extra:</strong> ${escapeHtml(o.tratamientos || '-')} ${o.tinte ? `| <strong>Tinte:</strong> ${escapeHtml(o.tinte)}` : ''}</div>
               </div>
-              <div style="margin-top: 10px; font-size: 12px; color: var(--muted); text-align: center;">
-                <strong>DP:</strong> ${escapeHtml(o.dp || '-')} | <strong>Altura:</strong> ${escapeHtml(o.altura || '-')} | <strong>Médico:</strong> ${escapeHtml(o.doctor || '-')}
+
+              <div style="font-size: 11px; color: var(--muted); text-align: center;">
+                <strong>Médico:</strong> ${escapeHtml(o.doctor || '-')} | <strong>Obs / O.S.:</strong> ${escapeHtml(o.notes || '-')}
               </div>
             </div>`;
         }).join('');
