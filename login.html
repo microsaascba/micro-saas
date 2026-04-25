@@ -12,16 +12,23 @@
   <link rel="stylesheet" href="styles.css" />
   <style>
     html, body {
-      height: 100%;
       margin: 0;
       padding: 0;
-      /* Fondo con imagen y filtro oscuro superpuesto para no perder legibilidad */
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f0f2f7;
+      scroll-behavior: smooth;
+    }
+
+    /* Contenedor principal del Login que ocupa la primera pantalla */
+    .login-hero {
+      min-height: 100vh;
       background: linear-gradient(rgba(15, 23, 42, 0.65), rgba(30, 58, 138, 0.75)), url('img/img30.jpg') no-repeat center center fixed;
       background-size: cover;
       display: flex;
       justify-content: center;
       align-items: center;
-      font-family: 'Inter', system-ui, sans-serif;
+      padding: 20px;
+      box-sizing: border-box;
     }
 
     .login-card {
@@ -115,31 +122,172 @@
       display: none;
       text-align: left;
     }
+
+    /* ==========================================================================
+       SECCIÓN SPLIT: QUIÉNES SOMOS Y CONTACTO (Sutil en la parte inferior)
+       ========================================================================== */
+    .about-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 1200px;
+      margin: 80px auto;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+      border: 1px solid var(--line, #e2e8f0);
+      background: #fff;
+    }
+    
+    .about-left {
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 58, 138, 0.9)), url('img/img30.jpg') center/cover no-repeat;
+      color: #fff;
+      padding: 60px 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .about-logo {
+      max-width: 160px;
+      margin-bottom: 25px;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+    }
+    
+    .about-left h3 {
+      font-size: 26px;
+      margin-bottom: 15px;
+      font-weight: 800;
+      color: #fff;
+    }
+    
+    .about-left p {
+      font-size: 15px;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.7;
+      margin: 0;
+    }
+    
+    .about-right {
+      background: #f8fafc;
+      padding: 60px 50px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .about-right h3 {
+      font-size: 26px;
+      color: #0f172a;
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-weight: 800;
+    }
+    
+    .about-right p {
+      font-size: 15px;
+      color: #475569;
+      margin-bottom: 30px;
+      line-height: 1.7;
+    }
+    
+    .about-buttons {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .btn-whatsapp {
+      background: #25D366;
+      color: #fff;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: 0.2s;
+      border: none;
+    }
+    .btn-whatsapp:hover { background: #20ba59; }
+
+    .btn-outline {
+      border: 2px solid #cbd5e1;
+      color: #334155;
+      padding: 14px 24px;
+      border-radius: 8px;
+      font-weight: bold;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: 0.2s;
+      background: transparent;
+    }
+    .btn-outline:hover { background: #f1f5f9; border-color: #94a3b8; }
+
+    @media (max-width: 900px) {
+      .about-split {
+        grid-template-columns: 1fr;
+        margin: 40px 20px;
+      }
+      .about-left, .about-right {
+        padding: 40px 30px;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <div class="login-card">
-    <div class="brand-logo-large" id="brandBox">M</div>
-    <h1 class="login-title">Bienvenido</h1>
-    <p class="login-sub">Ingresá tus credenciales para continuar</p>
+  <div class="login-hero">
+    <div class="login-card">
+      <div class="brand-logo-large" id="brandBox">M</div>
+      <h1 class="login-title">Bienvenido</h1>
+      <p class="login-sub">Ingresá tus credenciales para continuar</p>
 
-    <div id="errorMsg"></div>
+      <div id="errorMsg"></div>
 
-    <form id="loginForm" onsubmit="procesarLogin(event)">
-      <div class="input-group">
-        <label>Usuario</label>
-        <input type="text" id="username" class="input-box" required placeholder="Ej: admin" autofocus>
-      </div>
+      <form id="loginForm" onsubmit="procesarLogin(event)">
+        <div class="input-group">
+          <label>Usuario</label>
+          <input type="text" id="username" class="input-box" required placeholder="Ej: admin" autofocus>
+        </div>
 
-      <div class="input-group">
-        <label>Contraseña</label>
-        <input type="password" id="password" class="input-box" required placeholder="••••••••">
-      </div>
+        <div class="input-group">
+          <label>Contraseña</label>
+          <input type="password" id="password" class="input-box" required placeholder="••••••••">
+        </div>
 
-      <button type="submit" class="btn-login" id="btnSubmit">Ingresar al sistema</button>
-    </form>
+        <button type="submit" class="btn-login" id="btnSubmit">Ingresar al sistema</button>
+      </form>
+    </div>
   </div>
+
+  <section class="about-split" id="quienes-somos">
+    <div class="about-left">
+      <img src="img/logomicrosaas.png" alt="Micro SaaS Soluciones" class="about-logo" onerror="this.style.display='none'">
+      <h3>Nuestra Filosofía</h3>
+      <p>
+        En Micro SaaS Soluciones no somos solo desarrolladores. Somos un equipo que vivió el día a día de las PyMEs, el desorden de los papeles y la falta de control.<br><br>
+        Por eso creamos sistemas a medida, pensados <strong>desde adentro del comercio hacia afuera</strong>. Nuestro objetivo es que dejes de improvisar y tengas el control total de tu negocio, sin pagar las fortunas que cobran las grandes corporaciones.
+      </p>
+    </div>
+    
+    <div class="about-right">
+      <h3>¿Hablamos de tu negocio?</h3>
+      <p>
+        Si llegaste hasta acá, es porque sabés que tu empresa necesita dar el salto. Ya sea que busques una solución personalizada o tengas dudas técnicas sobre nuestra plataforma, estamos a un mensaje de distancia.
+      </p>
+      <div class="about-buttons">
+        <a href="https://wa.me/5493516506955?text=Hola,%20llegué%20a%20la%20página%20y%20quiero%20más%20información%20sobre%20Micro%20SaaS" target="_blank" class="btn-whatsapp">
+          💬 Escribir por WhatsApp
+        </a>
+        <a href="mailto:contacto@microsaas.com.ar" class="btn-outline">
+          ✉️ Enviar un correo
+        </a>
+      </div>
+    </div>
+  </section>
 
   <script>
     function clearSession() {
