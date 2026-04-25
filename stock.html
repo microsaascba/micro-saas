@@ -89,18 +89,18 @@
       <div class="brand-text"><strong id="sidebarUserName">Usuario: Admin</strong><small>Control del negocio</small></div>
     </div>
      <nav class="nav">
-  <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-  <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
-  <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
-  <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
-  <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-  <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
-  <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
-  <a href="stock.html" data-module="stock"><span class="active">📚</span> Stock</a>
-  <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
-  <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
-  <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
-</nav>
+      <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html" data-module="stock"><span class="active">📚</span> Stock</a>
+      <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
+      <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
+    </nav>
   </aside>
 
   <main class="content">
@@ -190,7 +190,7 @@
   </main>
 </div>
 
-<dialog id="modalIngresoCompra" style="width: 100%; max-width: 600px;">
+<dialog id="modalIngresoCompra" style="width: 100%; max-width: 700px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
       <h2 style="margin: 0; font-size:20px;">Carga de Factura de Compra (Stock)</h2>
@@ -210,18 +210,22 @@
         </div>
       </div>
       
-      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; margin-bottom: 25px; padding: 15px; background: #f8fafc; border: 1px solid var(--line); border-radius: 8px;">
+      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; padding: 15px; background: #f8fafc; border: 1px solid var(--line); border-radius: 8px;">
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Producto a Ingresar *</label>
           <select id="ingresoProducto" class="input-box" required></select>
         </div>
         <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Depósito de Destino *</label>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Destino *</label>
           <select id="ingresoDestino" class="input-box" required></select>
         </div>
         <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Cant. Ingresada *</label>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Cant. *</label>
           <input type="number" id="ingresoCant" class="input-box" min="1" required placeholder="Ej: 50">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--primary);">Costo Unit. Compra *</label>
+          <input type="number" step="0.01" id="ingresoCostoUnitario" class="input-box" min="0" required placeholder="$ 0.00">
         </div>
       </div>
 
@@ -245,6 +249,7 @@
       La primera fila debe tener obligatoriamente estas columnas:<br><br>
       <span style="background: #fef3c7; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; margin-right: 10px;">SKU</span>  
       <span style="background: #fef3c7; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold;">CANTIDAD</span>
+      <span style="background: #fef3c7; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold;">COSTO</span>
     </div>
 
     <form id="formIngresoMasivo">
@@ -504,7 +509,6 @@
   async function initStock() {
     mostrarCarga(true);
     try {
-      // TRUCO ROMPE-CACHÉ
       const nocache = '&v=' + Date.now();
       const nocacheSimple = '?v=' + Date.now();
 
@@ -571,7 +575,7 @@
 
     facSelect.innerHTML = '<option value="">Seleccioná la factura cruzada...</option>' + facturasDelProveedor.map(f => {
       const nombreFac = `${f.invoiceType || 'Comprobante'} ${f.invoiceNum || 'S/N'}`;
-      return `<option value="${nombreFac}">${nombreFac} - (Valor factura: ${currency(f.amount)})</option>`;
+      return `<option value="${f.id}">${nombreFac} - (Valor factura: ${currency(f.amount)})</option>`;
     }).join('');
     facSelect.disabled = false;
   }
@@ -845,36 +849,59 @@
     const prodId = document.getElementById('ingresoProducto').value;
     const destino = document.getElementById('ingresoDestino').value;
     const cant = parseInt(document.getElementById('ingresoCant').value);
+    const costoUnitarioCompra = parseFloat(document.getElementById('ingresoCostoUnitario').value) || 0;
     const provId = document.getElementById('ingresoProveedor').value;
-    const fac = document.getElementById('ingresoFactura').value;
+    const facId = document.getElementById('ingresoFactura').value;
     
-    if (!provId || !fac) return alert("Seleccioná el proveedor y la factura cruzada.");
+    if (!provId || !facId) return alert("Seleccioná el proveedor y la factura cruzada.");
     if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
 
-    const provObj = dbSuppliers.find(s => s.id === provId);
+    const provObj = dbSuppliers.find(s => s.id == provId);
     const provName = provObj ? provObj.name : 'Proveedor';
 
-    const prod = dbProducts.find(p => p.id === prodId);
+    const prod = dbProducts.find(p => p.id == prodId);
+    if (!prod) return alert("Error: Producto no encontrado.");
+
+    // --- ALERTA DE DESCUADRE CONTABLE ---
+    const factura = dbExpenses.find(ex => ex.id === facId);
+    const valorIngresoActual = cant * costoUnitarioCompra;
+    if (factura && valorIngresoActual > factura.amount) {
+        if(!confirm(`⚠️ ALERTA DE DESCUADRE FISCAL:\nEl valor de esta mercadería ingresada ($ ${valorIngresoActual}) supera el total declarado en la factura contable ($ ${factura.amount}).\n\n¿Estás seguro de continuar con el ingreso?`)) return;
+    }
+
     let branches = getBranches(prod);
+    let oldStockGlobal = 0;
+    for (let b in branches) oldStockGlobal += Number(branches[b] || 0);
+
     if (branches[destino] === undefined) branches[destino] = 0;
     branches[destino] = Number(branches[destino] || 0) + cant;
 
-    let stockTotal = 0;
-    for (let b in branches) stockTotal += Number(branches[b] || 0);
+    let newStockTotal = 0;
+    for (let b in branches) newStockTotal += Number(branches[b] || 0);
+
+    // --- MAGIA CFO: COSTO PROMEDIO PONDERADO (CPP) ---
+    const oldCost = Number(prod.cost || 0);
+    let nuevoCostoPromedio = oldCost;
+    if (newStockTotal > 0) {
+        nuevoCostoPromedio = ((oldStockGlobal * oldCost) + (cant * costoUnitarioCompra)) / newStockTotal;
+    }
 
     prod.stock_branches = branches; 
-    prod.stock = stockTotal;
+    prod.stock = newStockTotal;
+    prod.cost = nuevoCostoPromedio; // Actualiza costo real
 
     mostrarCarga(true);
     try {
       await saveProduct(prod);
-      logMovement('Ingreso Compra', `${provName}`, destino, `Factura cruzada: ${fac}`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}], true);
+      const facName = `${factura?.invoiceType||'Factura'} ${factura?.invoiceNum||'S/N'}`;
+      logMovement('Ingreso Compra', `${provName}`, destino, `Cruce Factura: ${facName}`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}], true);
+      
       document.getElementById('formIngresoCompra').reset();
       document.getElementById('modalIngresoCompra').close();
       await initStock();
-      alert("Ingreso de mercadería registrado con éxito.");
+      alert("✅ Ingreso registrado. Costo Promedio Ponderado (CPP) actualizado.");
     } catch(err) {
-      alert("Error.");
+      alert("Error guardando el ingreso.");
     } finally {
       mostrarCarga(false);
     }
@@ -884,13 +911,13 @@
     e.preventDefault();
     const destino = document.getElementById('masivaDestino').value;
     const provId = document.getElementById('masivaProv').value;
-    const fac = document.getElementById('masivaFactura').value;
+    const facId = document.getElementById('masivaFactura').value;
     const fileInput = document.getElementById('masivaFile');
 
-    if (!provId || !fac) return alert("Seleccioná el proveedor y la factura cruzada.");
+    if (!provId || !facId) return alert("Seleccioná el proveedor y la factura cruzada.");
     if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
 
-    const provObj = dbSuppliers.find(s => s.id === provId);
+    const provObj = dbSuppliers.find(s => s.id == provId);
     const provName = provObj ? provObj.name : 'Proveedor';
 
     const file = fileInput.files[0];
@@ -907,6 +934,7 @@
       let prodUpdates = [];
       let errores = [];
       let itemsParaRemito = [];
+      let totalValorMasivo = 0;
 
       rows.forEach((row, index) => {
         const findVal = (names) => {
@@ -916,6 +944,7 @@
 
         const sku = String(findVal(['sku', 'codigo', 'código']) || '').trim();
         const cant = parseInt(findVal(['cantidad', 'cant', 'stock', 'qty']));
+        const costoUnitario = parseFloat(findVal(['costo', 'precio costo', 'precio de costo']));
 
         if (!sku || isNaN(cant) || cant <= 0) return;
 
@@ -923,29 +952,51 @@
         if (!prod) { errores.push(`Fila ${index + 2}: SKU ${sku} no existe en catálogo.`); return; }
 
         let branches = getBranches(prod);
+        let oldStockGlobal = 0;
+        for (let b in branches) oldStockGlobal += Number(branches[b] || 0);
+
         if (branches[destino] === undefined) branches[destino] = 0;
         branches[destino] = Number(branches[destino] || 0) + cant;
               
         let stockTotal = 0;
         for (let b in branches) stockTotal += Number(branches[b] || 0);
+        
+        // CÁLCULO CPP MASIVO
+        let nuevoCostoPromedio = Number(prod.cost || 0);
+        if (!isNaN(costoUnitario) && costoUnitario >= 0) {
+            totalValorMasivo += (cant * costoUnitario);
+            nuevoCostoPromedio = ((oldStockGlobal * Number(prod.cost || 0)) + (cant * costoUnitario)) / stockTotal;
+        } else {
+            // Si el Excel no trae costo, usa el viejo y asume costo 0 para esta tanda
+            totalValorMasivo += (cant * Number(prod.cost || 0));
+        }
               
-        prodUpdates.push({ ...prod, stock_branches: branches, stock: stockTotal });
+        prodUpdates.push({ ...prod, stock_branches: branches, stock: stockTotal, cost: nuevoCostoPromedio });
         itemsParaRemito.push({ code: prod.code, name: prod.name, qty: cant });
       });
 
       if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron productos válidos.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
 
-      let msj = `Vas a ingresar ${itemsParaRemito.length} referencias a ${destino}.\nCruzado con: ${fac}\n`;
-      if (errores.length > 0) msj += `⚠️ Hubo ${errores.length} filas ignoradas por errores:\n` + errores.slice(0,3).join('\n') + `\n`;
-      if (!confirm(msj + `\n¿Confirmás el ingreso de mercadería?`)) return;
+      const factura = dbExpenses.find(ex => ex.id === facId);
+      const facName = `${factura?.invoiceType||'Factura'} ${factura?.invoiceNum||'S/N'}`;
+
+      let msj = `Vas a ingresar ${itemsParaRemito.length} referencias a ${destino}.\nCruzado con: ${facName}\n`;
+      
+      // ALERTA DE DESCUADRE MASIVA
+      if (factura && Math.abs(totalValorMasivo - factura.amount) > 1) { // Margen de error de $1 por decimales
+          msj += `\n⚠️ ATENCIÓN: El costo total del Excel ($ ${totalValorMasivo.toFixed(2)}) difiere del total de la factura en contabilidad ($ ${factura.amount}).\n`;
+      }
+
+      if (errores.length > 0) msj += `\n⚠️ Hubo ${errores.length} filas ignoradas por errores:\n` + errores.slice(0,3).join('\n') + `\n`;
+      if (!confirm(msj + `\n¿Confirmás el ingreso y la actualización de costos por promedio ponderado?`)) return;
 
       mostrarCarga(true);
       try {
         await Promise.all(prodUpdates.map(saveProduct));
-        logMovement('Ingreso Compra', `${provName}`, destino, `Carga masiva vinculada a: ${fac}`, itemsParaRemito, true);
+        logMovement('Ingreso Compra', `${provName}`, destino, `Carga masiva vinculada a: ${facName}`, itemsParaRemito, true);
         document.getElementById('modalIngresoMasivo').close();
         await initStock();
-        alert("✅ Ingreso Masivo completado. Remito interno generado.");
+        alert("✅ Ingreso Masivo completado. Costos (CPP) actualizados.");
       } catch(err) {
         alert("Error de conexión durante el ingreso.");
       } finally {
@@ -962,7 +1013,7 @@
     const branch = document.getElementById('ajusteSucursal').value;
     const tipo = document.getElementById('ajusteTipo').value;
     const cant = parseInt(document.getElementById('ajusteCant').value);
-    const adminPass = document.getElementById('ajusteAdminPass').value.trim(); // NUEVO: Capturamos clave
+    const adminPass = document.getElementById('ajusteAdminPass').value.trim(); 
     
     if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
     if (!adminPass) return alert("La contraseña de administrador es obligatoria.");
@@ -986,7 +1037,6 @@
     prod.stock_branches = branches; 
     prod.stock = stockTotal;
     
-    // NUEVO: Le avisamos al backend que es un ajuste y le mandamos la clave
     prod.isAdjustment = true;
     prod.adminPass = adminPass; 
 
@@ -997,11 +1047,11 @@
       
       document.getElementById('modalAjuste').close();
       document.getElementById('ajusteCant').value = ''; 
-      document.getElementById('ajusteAdminPass').value = ''; // Limpiamos clave
+      document.getElementById('ajusteAdminPass').value = ''; 
       await initStock();
       alert("✅ Ajuste de stock aplicado correctamente."); 
     } catch(err) {
-      alert("❌ " + err.message); // Acá va a salir el error de clave incorrecta
+      alert("❌ " + err.message); 
     } finally {
       mostrarCarga(false);
     }
@@ -1017,7 +1067,6 @@
     if (origen === destino) return alert("El origen y el destino no pueden ser iguales.");
     if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
     
-    // CORRECCIÓN: Usar ==
     const prod = dbProducts.find(p => p.id == prodId);
     if (!prod) return alert("Error: Producto no encontrado en el sistema.");
 
@@ -1041,56 +1090,11 @@
       logMovement('Transferencia', origen, destino, `Traslado interno`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}]);
       
       document.getElementById('modalTransferencia').close();
-      document.getElementById('transfCant').value = ''; // Limpiamos el campo
+      document.getElementById('transfCant').value = ''; 
       await initStock();
       alert("✅ Transferencia realizada con éxito.");
     } catch(err) {
       alert("Error al procesar transferencia.");
-    } finally {
-      mostrarCarga(false);
-    }
-  }
-
-  async function procesarIngresoCompra(e) {
-    e.preventDefault();
-    const prodId = document.getElementById('ingresoProducto').value;
-    const destino = document.getElementById('ingresoDestino').value;
-    const cant = parseInt(document.getElementById('ingresoCant').value);
-    const provId = document.getElementById('ingresoProveedor').value;
-    const fac = document.getElementById('ingresoFactura').value;
-    
-    if (!provId || !fac) return alert("Seleccioná el proveedor y la factura cruzada.");
-    if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
-
-    // CORRECCIÓN: Usar ==
-    const provObj = dbSuppliers.find(s => s.id == provId);
-    const provName = provObj ? provObj.name : 'Proveedor';
-
-    // CORRECCIÓN: Usar ==
-    const prod = dbProducts.find(p => p.id == prodId);
-    if (!prod) return alert("Error: Producto no encontrado.");
-
-    let branches = getBranches(prod);
-    if (branches[destino] === undefined) branches[destino] = 0;
-    branches[destino] = Number(branches[destino] || 0) + cant;
-
-    let stockTotal = 0;
-    for (let b in branches) stockTotal += Number(branches[b] || 0);
-
-    prod.stock_branches = branches; 
-    prod.stock = stockTotal;
-
-    mostrarCarga(true);
-    try {
-      await saveProduct(prod);
-      logMovement('Ingreso Compra', `${provName}`, destino, `Factura cruzada: ${fac}`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}], true);
-      
-      document.getElementById('formIngresoCompra').reset();
-      document.getElementById('modalIngresoCompra').close();
-      await initStock();
-      alert("✅ Ingreso de mercadería registrado con éxito.");
-    } catch(err) {
-      alert("Error guardando el ingreso.");
     } finally {
       mostrarCarga(false);
     }
