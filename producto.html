@@ -709,6 +709,11 @@
     document.getElementById('formTitle').textContent = "Alta de producto";
     document.getElementById('productForm').reset();
     document.getElementById('prodId').value = '';
+    
+    // DESBLOQUEO DE COSTO PARA CARGA INICIAL
+    document.getElementById('prodCost').disabled = false;
+    document.getElementById('prodCost').title = "";
+    
     document.getElementById('prodProfit').value = '$0.00';
     document.getElementById('prodProfit').style.color = "var(--success)";
     document.getElementById('prodMargin').value = '0.0%';
