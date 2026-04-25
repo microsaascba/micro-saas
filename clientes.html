@@ -17,7 +17,7 @@
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
-    .layout-2col { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
+    .layout-2col { display: grid; grid-template-columns: 450px 1fr; gap: 20px; align-items: start; }
     
     /* Clase para grillas de 2 columnas que se apilan en móvil */
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -35,7 +35,7 @@
     
     #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
 
-    /* Estilos para la Ficha Clínica */
+    /* Estilos para la Ficha Clínica y Formulario Receta */
     .ficha-card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
     .ficha-header { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--line); padding-bottom: 10px; margin-bottom: 15px; font-size: 13px; align-items: center;}
     .ficha-receta { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: center; font-size: 12px; }
@@ -43,6 +43,10 @@
     .ficha-receta td { padding: 6px; border: 1px solid var(--line); font-weight: bold; color: var(--text); }
     .btn-ficha { background: #f3e8ff; color: #4338ca; border: 1px solid #c7d2fe; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: bold; transition: 0.2s;}
     .btn-ficha:hover { background: #e0e7ff; }
+
+    .receta-grid { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 10px; align-items: center; text-align: center; margin-bottom: 15px; overflow-x: auto; }
+    .receta-header { font-size: 11px; font-weight: bold; color: var(--muted); }
+    .receta-row-label { font-weight: 800; color: var(--text); }
 
     /* REGLAS OBLIGATORIAS PARA CELULARES */
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
@@ -72,6 +76,11 @@
       /* Ajustes para la tabla y ficha clínica en celulares */
       .table-responsive-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
       .ficha-receta { display: block; overflow-x: auto; white-space: nowrap; }
+      
+      .receta-grid { display: block; }
+      .receta-header { display: none; }
+      .receta-grid input { margin-bottom: 5px; width: 100%; }
+      .receta-row-label { margin-top: 10px; margin-bottom: 5px; border-bottom: 1px solid var(--line); padding-bottom: 5px; display: block; }
     }
   </style>
 </head>
@@ -116,7 +125,7 @@
     <div class="layout-2col">
       <article class="card card-pad">
         <h2 style="margin: 0 0 5px 0; font-size: 18px;" id="formTitle">Alta de Cliente / Paciente</h2>
-        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Datos fiscales y de contacto.</p>
+        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Datos fiscales, contacto y última receta.</p>
         
         <form id="clientForm" onsubmit="guardarCliente(event)">
           <input type="hidden" id="cliId">
@@ -159,6 +168,57 @@
                 <option value="B2C">Minorista / Paciente</option>
                 <option value="B2B">Mayorista (Cta. Cte.)</option>
               </select>
+            </div>
+          </div>
+
+          <div style="background: #fff8f1; padding: 15px; border-radius: 8px; border: 1px solid #fed7aa; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 15px 0; font-size: 14px; color: #c2410c;">👁️ Datos Clínicos (Última Receta)</h3>
+            
+            <div class="receta-grid">
+              <div class="receta-header"></div>
+              <div class="receta-header">DIÁM</div><div class="receta-header">ESFÉRICO</div><div class="receta-header">CILÍNDRICO</div><div class="receta-header">EJE</div><div class="receta-header">ADICIÓN</div><div class="receta-header">D.I.</div><div class="receta-header">ALTURA</div>
+
+              <div class="receta-row-label">O.D.</div>
+              <input type="text" id="cliOdDiam" class="input-box" style="text-align:center;" placeholder="DIÁM">
+              <input type="text" id="cliOdEsf" class="input-box" style="text-align:center;" placeholder="ESF">
+              <input type="text" id="cliOdCil" class="input-box" style="text-align:center;" placeholder="CIL">
+              <input type="text" id="cliOdEje" class="input-box" style="text-align:center;" placeholder="EJE">
+              <input type="text" id="cliOdAdd" class="input-box" style="text-align:center;" placeholder="ADD">
+              <input type="text" id="cliOdDi" class="input-box" style="text-align:center;" placeholder="D.I.">
+              <input type="text" id="cliOdAlt" class="input-box" style="text-align:center;" placeholder="ALT">
+
+              <div class="receta-row-label">O.I.</div>
+              <input type="text" id="cliOiDiam" class="input-box" style="text-align:center;" placeholder="DIÁM">
+              <input type="text" id="cliOiEsf" class="input-box" style="text-align:center;" placeholder="ESF">
+              <input type="text" id="cliOiCil" class="input-box" style="text-align:center;" placeholder="CIL">
+              <input type="text" id="cliOiEje" class="input-box" style="text-align:center;" placeholder="EJE">
+              <input type="text" id="cliOiAdd" class="input-box" style="text-align:center;" placeholder="ADD">
+              <input type="text" id="cliOiDi" class="input-box" style="text-align:center;" placeholder="D.I.">
+              <input type="text" id="cliOiAlt" class="input-box" style="text-align:center;" placeholder="ALT">
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 5px;">
+              <div>
+                <label style="font-size: 11px; font-weight: bold; color: var(--muted); display: block; margin-bottom: 4px;">Tipo de cristal</label>
+                <select id="cliDp" class="input-box">
+                  <option value="">Seleccionar...</option>
+                  <option value="Lejos">Lejos</option>
+                  <option value="Cerca">Cerca</option>
+                  <option value="Bifocal">Bifocal</option>
+                  <option value="Ocupacional">Ocupacional</option>
+                  <option value="Multifocal">Multifocal</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size: 11px; font-weight: bold; color: var(--muted); display: block; margin-bottom: 4px;">Tratamientos</label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; background: #fff; padding: 10px; border: 1px solid var(--line); border-radius: 8px;">
+                   <label><input type="checkbox" name="cliTrat" value="Coloración compacta"> Coloración compacta</label>
+                   <label><input type="checkbox" name="cliTrat" value="Coloración degradee"> Coloración degradee</label>
+                   <label><input type="checkbox" name="cliTrat" value="Coloración igual muestra"> Coloración igual muestra</label>
+                   <label><input type="checkbox" name="cliTrat" value="Anti reflejo básico"> Anti reflejo básico</label>
+                   <label><input type="checkbox" name="cliTrat" value="Anti reflejo premium"> Anti reflejo premium</label>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -240,7 +300,6 @@
     mostrarCarga(true);
     try {
       const nocache = '?v=' + Date.now();
-      // Usamos apiFetch puro para que core.js inyecte el company_id
       const [resC, resO] = await Promise.all([
           apiFetch(`${API_URL}/business_clients` + nocache),
           apiFetch(`${API_URL}/orders` + nocache)
@@ -272,12 +331,29 @@
       type: document.getElementById('cliType').value,
       ivaCondition: document.getElementById('cliIvaCondition').value,
       status: document.getElementById('cliStatus').value || 'Activo',
+      
+      od_diam: document.getElementById('cliOdDiam').value,
+      od_esf: document.getElementById('cliOdEsf').value,
+      od_cil: document.getElementById('cliOdCil').value,
+      od_eje: document.getElementById('cliOdEje').value,
+      od_add: document.getElementById('cliOdAdd').value,
+      od_di: document.getElementById('cliOdDi').value,
+      od_alt: document.getElementById('cliOdAlt').value,
+      oi_diam: document.getElementById('cliOiDiam').value,
+      oi_esf: document.getElementById('cliOiEsf').value,
+      oi_cil: document.getElementById('cliOiCil').value,
+      oi_eje: document.getElementById('cliOiEje').value,
+      oi_add: document.getElementById('cliOiAdd').value,
+      oi_di: document.getElementById('cliOiDi').value,
+      oi_alt: document.getElementById('cliOiAlt').value,
+      dp: document.getElementById('cliDp').value,
+      tratamientos: Array.from(document.querySelectorAll('input[name="cliTrat"]:checked')).map(cb => cb.value).join(' + '),
+
       createdAt: new Date().toISOString()
     };
 
     mostrarCarga(true);
     try {
-      // Le devolvemos el Content-Type para que el backend no explote
       const response = await apiFetch(`${API_URL}/business_clients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -313,6 +389,33 @@
     document.getElementById('cliType').value = c.type || 'B2C';
     document.getElementById('cliIvaCondition').value = c.ivaCondition || 'Consumidor Final';
     document.getElementById('cliStatus').value = c.status || 'Activo';
+    
+    // Cargar datos clínicos
+    document.getElementById('cliOdDiam').value = c.od_diam || '';
+    document.getElementById('cliOdEsf').value = c.od_esf || '';
+    document.getElementById('cliOdCil').value = c.od_cil || '';
+    document.getElementById('cliOdEje').value = c.od_eje || '';
+    document.getElementById('cliOdAdd').value = c.od_add || '';
+    document.getElementById('cliOdDi').value = c.od_di || '';
+    document.getElementById('cliOdAlt').value = c.od_alt || '';
+    document.getElementById('cliOiDiam').value = c.oi_diam || '';
+    document.getElementById('cliOiEsf').value = c.oi_esf || '';
+    document.getElementById('cliOiCil').value = c.oi_cil || '';
+    document.getElementById('cliOiEje').value = c.oi_eje || '';
+    document.getElementById('cliOiAdd').value = c.oi_add || '';
+    document.getElementById('cliOiDi').value = c.oi_di || '';
+    document.getElementById('cliOiAlt').value = c.oi_alt || '';
+    document.getElementById('cliDp').value = c.dp || '';
+    
+    document.querySelectorAll('input[name="cliTrat"]').forEach(cb => cb.checked = false);
+    if (c.tratamientos) {
+        const trats = c.tratamientos.split(' + ');
+        trats.forEach(t => {
+            const cb = document.querySelector(`input[name="cliTrat"][value="${t}"]`);
+            if (cb) cb.checked = true;
+        });
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -323,6 +426,14 @@
     document.getElementById('cliStatus').value = 'Activo';
     document.getElementById('cliType').value = 'B2C';
     document.getElementById('cliIvaCondition').value = 'Consumidor Final';
+
+    ['cliOdDiam','cliOdEsf','cliOdCil','cliOdEje','cliOdAdd','cliOdDi','cliOdAlt',
+     'cliOiDiam','cliOiEsf','cliOiCil','cliOiEje','cliOiAdd','cliOiDi','cliOiAlt'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.value = '';
+    });
+    document.getElementById('cliDp').value = '';
+    document.querySelectorAll('input[name="cliTrat"]').forEach(cb => cb.checked = false);
   }
 
   // --- LÓGICA DE LA FICHA CLÍNICA ---
@@ -393,9 +504,6 @@
               </div>
               <div style="margin-top: 10px; font-size: 12px; color: var(--muted); text-align: center;">
                 <strong>Tipo de cristal:</strong> ${escapeHtml(o.dp || '-')} | <strong>Tratamientos:</strong> ${escapeHtml(o.tratamientos || 'Sin tratamientos')} | <strong>Médico:</strong> ${escapeHtml(o.doctor || '-')}
-              </div>
-              <div style="margin-top: 10px; font-size: 12px; color: var(--muted); text-align: center;">
-                <strong>DP:</strong> ${escapeHtml(o.dp || '-')} | <strong>Altura:</strong> ${escapeHtml(o.altura || '-')} | <strong>Médico:</strong> ${escapeHtml(o.doctor || '-')}
               </div>
             </div>`;
         }).join('');
