@@ -65,18 +65,18 @@
       <div class="brand-text"><strong id="companyBrandText">Empresa</strong><small>Control del negocio</small></div>
     </div>
      <nav class="nav">
-  <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-  <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
-  <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
-  <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
-  <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-  <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
-  <a href="contable.html" data-module="contable"><span class="active">💸</span> Contable</a>
-  <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
-  <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
-  <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
-  <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
-</nav>
+      <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html" data-module="cc"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html" data-module="contable"><span class="active">💸</span> Contable</a>
+      <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
+      <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
+      <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
+    </nav>
   </aside>
 
   <main class="content">
@@ -253,45 +253,48 @@
       <div style="background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px dashed var(--line); margin-bottom: 15px;">
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
           <div>
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Neto Gravado ($)</label>
-            <input type="number" id="expNeto" step="0.01" class="input-box" oninput="sumarTotalGasto()">
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Neto Gravado</label>
+            <input type="text" id="expNeto" class="input-box" placeholder="$ 0,00" oninput="formatCurrencyInput(this); sumarTotalGasto()" autocomplete="off">
           </div>
           <div>
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">IVA Discriminado ($)</label>
-            <input type="number" id="expIva" step="0.01" class="input-box" oninput="sumarTotalGasto()">
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">IVA Discriminado</label>
+            <input type="text" id="expIva" class="input-box" placeholder="$ 0,00" oninput="formatCurrencyInput(this); sumarTotalGasto()" autocomplete="off">
           </div>
           <div>
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Otros / Percep. ($)</label>
-            <input type="number" id="expOtros" step="0.01" class="input-box" oninput="sumarTotalGasto()">
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Otros / Percep.</label>
+            <input type="text" id="expOtros" class="input-box" placeholder="$ 0,00" oninput="formatCurrencyInput(this); sumarTotalGasto()" autocomplete="off">
           </div>
         </div>
         <div style="margin-top:15px; padding-top:10px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
           <span style="font-weight:bold; font-size:12px;">TOTAL COMPROBANTE:</span>
-          <input type="number" id="expAmount" readonly class="input-box" style="width:150px; font-weight:bold; color:var(--primary); background:transparent; border:none; text-align:right; font-size:18px;">
+          <input type="text" id="expAmount" readonly class="input-box" placeholder="$ 0,00" style="width:180px; font-weight:bold; color:var(--primary); background:transparent; border:none; text-align:right; font-size:22px;">
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px;">
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Estado de Pago</label>
-          <select id="expStatus" class="input-box" style="font-weight: bold;">
+          <select id="expStatus" class="input-box" style="font-weight: bold;" onchange="toggleMetodoPagoGasto()">
             <option value="Pagado">Cancelado / Pagado</option>
-            <option value="Pendiente">Cta Cte / A Pagar</option>
+            <option value="Pendiente">Cta Cte / A Pagar (Deuda)</option>
           </select>
         </div>
-        <div>
+        <div id="divExpMethod">
           <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de pago</label>
           <select id="expMethod" class="input-box">
             <option value="Transferencia">Transferencia / Banco</option>
             <option value="Efectivo">Efectivo / Caja Fija</option>
             <option value="Tarjeta">Tarjeta Corporativa</option>
-            <option value="A Convenir">Cuenta Corriente</option>
           </select>
+        </div>
+        <div id="divExpDueDate" style="display: none;">
+          <label style="font-size: 11px; font-weight: bold; color: var(--danger); text-transform: uppercase;">Fecha de Vencimiento *</label>
+          <input type="date" id="expDueDate" class="input-box" style="border-color: var(--danger);">
         </div>
       </div>
 
       <div style="display: flex; align-items: center; margin-top: 25px;">
-        <button type="button" id="btnDeleteExpense" class="btn" style="background: #fee2e2; color: var(--danger); border: none; display: none; font-weight:bold; padding: 12px 20px;" onclick="anularGastoPrompt()">🚫 Anular Comprobante</button>
+        <button type="button" id="btnDeleteExpense" class="btn" style="background: #fee2e2; color: var(--danger); border: none; display: none; font-weight:bold; padding: 12px 20px;" onclick="eliminarGastoPrompt(document.getElementById('expId').value)">🚫 Anular Comprobante</button>
         
         <div style="margin-left: auto; display: flex; gap: 10px;">
           <button type="button" class="btn btn-light" onclick="cerrarModalGasto()">Cancelar</button>
@@ -485,11 +488,45 @@
       dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
   }
 
+  // --- FORMATEO DE MONEDA ARGENTINA ---
+  function formatCurrencyInput(input) {
+    let val = input.value.replace(/[^\d,]/g, '');
+    const parts = val.split(',');
+    if (parts.length > 2) val = parts[0] + ',' + parts.slice(1).join('');
+    if (val === '') { input.value = ''; return; }
+    let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    let decPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : '';
+    input.value = '$ ' + intPart + decPart;
+  }
+
+  function parseCurrency(val) {
+    if (!val) return 0;
+    let str = String(val).replace(/[\$\s\.]/g, '').replace(',', '.');
+    return parseFloat(str) || 0;
+  }
+
   function sumarTotalGasto() {
-    const n = parseFloat(document.getElementById('expNeto').value) || 0;
-    const i = parseFloat(document.getElementById('expIva').value) || 0;
-    const o = parseFloat(document.getElementById('expOtros').value) || 0;
-    document.getElementById('expAmount').value = (n + i + o).toFixed(2);
+    const n = parseCurrency(document.getElementById('expNeto').value);
+    const i = parseCurrency(document.getElementById('expIva').value);
+    const o = parseCurrency(document.getElementById('expOtros').value);
+    document.getElementById('expAmount').value = currency(n + i + o);
+  }
+
+  function toggleMetodoPagoGasto() {
+    const status = document.getElementById('expStatus').value;
+    const divMethod = document.getElementById('divExpMethod');
+    const divDueDate = document.getElementById('divExpDueDate');
+    
+    if (status === 'Pendiente') {
+        divMethod.style.display = 'none';
+        divDueDate.style.display = 'block';
+        document.getElementById('expDueDate').required = true;
+    } else {
+        divMethod.style.display = 'block';
+        divDueDate.style.display = 'none';
+        document.getElementById('expDueDate').required = false;
+        document.getElementById('expDueDate').value = '';
+    }
   }
 
   function abrirDirectorioProveedores() {
@@ -655,10 +692,10 @@
       const expBranchEl = document.getElementById('expBranch');
       if (expBranchEl) expBranchEl.value = exp.branch || 'Global';
 
-      document.getElementById('expIva').value = exp.ivaAmount || 0;
-      document.getElementById('expOtros').value = exp.nonTaxedAmount || 0;
-      document.getElementById('expNeto').value = (Number(exp.amount || 0) - Number(exp.ivaAmount || 0) - Number(exp.nonTaxedAmount || 0)).toFixed(2);
-      document.getElementById('expAmount').value = exp.amount;
+      document.getElementById('expIva').value = exp.ivaAmount ? currency(exp.ivaAmount) : '';
+      document.getElementById('expOtros').value = exp.nonTaxedAmount ? currency(exp.nonTaxedAmount) : '';
+      document.getElementById('expNeto').value = currency(Number(exp.amount || 0) - Number(exp.ivaAmount || 0) - Number(exp.nonTaxedAmount || 0));
+      document.getElementById('expAmount').value = currency(exp.amount);
       
       document.getElementById('expConcept').value = exp.concept;
       document.getElementById('expCategory').value = exp.category;
@@ -672,6 +709,9 @@
       
       document.getElementById('expStatus').value = exp.status;
       document.getElementById('expMethod').value = exp.method || 'Transferencia';
+      document.getElementById('expDueDate').value = exp.dueDate || '';
+      
+      toggleMetodoPagoGasto();
       
       if (exp.status === 'Anulado') {
         btnDel.style.display = 'none';
@@ -695,6 +735,8 @@
       const statusSelect = document.getElementById('expStatus');
       const anulOpt = Array.from(statusSelect.options).find(o => o.value === 'Anulado');
       if (anulOpt) anulOpt.remove();
+      
+      toggleMetodoPagoGasto();
     }
     
     document.getElementById('modalGasto').showModal();
@@ -719,9 +761,10 @@
       supplierId: document.getElementById('expSupplier').value,
       branch: expBranchEl ? expBranchEl.value : 'Global',
       loadedBy: existing?.loadedBy || localStorage.getItem('activeUser') || 'Admin',
-      amount: parseFloat(document.getElementById('expAmount').value) || 0,
-      ivaAmount: parseFloat(document.getElementById('expIva').value) || 0,
-      nonTaxedAmount: parseFloat(document.getElementById('expOtros').value) || 0,
+      amount: parseCurrency(document.getElementById('expAmount').value),
+      ivaAmount: parseCurrency(document.getElementById('expIva').value),
+      nonTaxedAmount: parseCurrency(document.getElementById('expOtros').value),
+      dueDate: document.getElementById('expDueDate').value || null,
       concept: document.getElementById('expConcept').value.trim(),
       category: document.getElementById('expCategory').value,
       status: document.getElementById('expStatus').value,
@@ -747,37 +790,7 @@
     }
   }
 
-  function anularGastoPrompt() {
-    const id = document.getElementById('expId').value;
-    if (!id) return;
-    
-    cerrarModalGasto();
-    pedirAuthAdmin('anular este comprobante de forma permanente', ejecutarAnulacionGasto, id);
-  }
-
-  async function ejecutarAnulacionGasto(id) {
-    mostrarCarga(true);
-    try {
-      const canceledBy = localStorage.getItem('activeUser') || 'Admin';
-      const res = await apiFetch(`${API_URL}/expenses?id=${id}&canceledBy=${encodeURIComponent(canceledBy)}`, {
-        method: 'DELETE'
-      });
-      if (!res.ok) throw new Error(await res.text());
-
-      const exp = dbExpenses.find(e => e.id === id);
-      if (exp) {
-        exp.status = 'Anulado';
-        exp.canceledBy = canceledBy;
-      }
-
-      renderContable();
-    } catch(err) {
-      alert("Error anulando el comprobante.");
-    } finally {
-      mostrarCarga(false);
-    }
-  }
-
+  // --- LÓGICA DE AUTORIZACIÓN CON PIN ---
   function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
     document.getElementById('authActionText').textContent = accionTexto;
     pendingAdminAction = funcionExito;
@@ -787,24 +800,69 @@
     setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
   }
 
-  function cerrarAdminAuth() { 
-    document.getElementById('adminAuthDialog').close(); 
-    pendingAdminAction = null;
-    pendingAdminParam = null; 
+  function cerrarAdminAuth() {
+    document.getElementById('adminAuthDialog').close();
+    setTimeout(() => {
+      pendingAdminAction = null;
+      pendingAdminParam = null;
+    }, 100);
   }
 
-  function validarAdminAuth(e) {
+  async function validarAdminAuth(e) {
     e.preventDefault();
-    if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
+    const pinInput = document.getElementById('adminAuthPin').value;
+    
+    if (pinInput === '1234') { // PIN de Administrador
       const accion = pendingAdminAction;
       const param = pendingAdminParam;
+      
       cerrarAdminAuth();
-      if (accion) accion(param);
+      
+      if (accion) {
+        await accion(param);
+      }
     } else {
-      alert("❌ PIN incorrecto.");
+      alert("❌ PIN de administrador incorrecto.");
       document.getElementById('adminAuthPin').value = '';
       document.getElementById('adminAuthPin').focus();
     }
+  }
+
+  // --- LÓGICA DE ANULACIÓN DE COMPROBANTES ---
+  async function ejecutarEliminacionGasto(id) {
+      const gasto = dbExpenses.find(x => x.id === id);
+      if (!gasto) return;
+
+      gasto.status = 'Anulado';
+      gasto.canceledBy = localStorage.getItem('activeUser') || 'Admin';
+
+      mostrarCarga(true);
+      try {
+          await apiFetch('/api/expenses?id=' + id + '&canceledBy=' + encodeURIComponent(gasto.canceledBy), { method: 'DELETE' });
+          
+          const modalGasto = document.getElementById('modalGasto');
+          if (modalGasto && modalGasto.open) {
+              modalGasto.close();
+          }
+          
+          renderContable(); 
+      } catch(err) {
+          alert("Error de conexión al intentar anular el comprobante.");
+      } finally {
+          mostrarCarga(false);
+      }
+  }
+
+  function eliminarGastoPrompt(id) {
+      const gasto = dbExpenses.find(x => x.id === id);
+      if (!gasto) return;
+      
+      if (gasto.status === 'Anulado') {
+          alert("Este comprobante ya se encuentra anulado.");
+          return;
+      }
+      
+      pedirAuthAdmin("anular este comprobante", ejecutarEliminacionGasto, id);
   }
 
   function renderContable() {
@@ -851,7 +909,7 @@
 
       let statusBadge = '';
       if (exp.status === 'Pagado') statusBadge = `<span style="color:#16a34a; font-weight:bold;">Pagado</span>`;
-      else if (exp.status === 'Pendiente') statusBadge = `<span style="color:#b45309; font-weight:bold;">A Pagar</span>`;
+      else if (exp.status === 'Pendiente') statusBadge = `<span style="color:#b45309; font-weight:bold;">A Pagar</span><br><small style="color:var(--danger); font-size:10px;">Vence: ${exp.dueDate ? new Date(exp.dueDate).toLocaleDateString('es-AR') : '-'}</small>`;
       else statusBadge = `<span style="color:var(--danger); font-weight:bold;">Anulado</span>`;
 
       const isAnul = exp.status === 'Anulado';
@@ -991,6 +1049,7 @@
       }
       return {
         "Fecha": e.date,
+        "Vencimiento": e.dueDate || '-',
         "Comprobante": e.invoiceType,
         "Numero": e.invoiceNum || '-',
         "Proveedor": supName,
