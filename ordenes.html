@@ -35,7 +35,7 @@
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
     
-    .receta-grid { display: grid; grid-template-columns: 40px repeat(4, 1fr); gap: 10px; align-items: center; text-align: center; margin-bottom: 15px; overflow-x: auto; }
+    .receta-grid { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 10px; align-items: center; text-align: center; margin-bottom: 15px; overflow-x: auto; }
     .receta-header { font-size: 11px; font-weight: bold; color: var(--muted); }
     .receta-row-label { font-weight: 800; color: var(--text); }
     
@@ -44,43 +44,17 @@
     .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
     .autocomplete-item:hover { background: var(--primary-soft); }
 
-    /* --- ESTILOS DE IMPRESIÓN (Dos tickets en 1 hoja) --- */
+    /* --- ESTILOS DE IMPRESIÓN --- */
     .print-wrapper { display: none; }
     
     @media print {
       @page { margin: 10mm; size: A4 portrait; }
-      
       body * { visibility: hidden !important; }
-      
       .print-wrapper, .print-wrapper * { visibility: visible !important; }
+      .print-wrapper { display: block !important; position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; background: white !important; }
       
-      .print-wrapper { 
-          display: block !important; 
-          position: absolute !important; 
-          left: 0 !important; 
-          top: 0 !important; 
-          width: 100% !important;
-          background: white !important;
-      }
-      
-      /* Línea de corte entre los dos tickets */
-      .cut-line {
-          border-top: 2px dashed #999;
-          margin: 30px 0;
-          position: relative;
-      }
-      .cut-line::after {
-          content: "✂ CORTE POR AQUÍ";
-          position: absolute;
-          top: -8px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: #fff;
-          padding: 0 10px;
-          font-size: 10px;
-          color: #666;
-          font-style: italic;
-      }
+      .cut-line { border-top: 2px dashed #999; margin: 30px 0; position: relative; }
+      .cut-line::after { content: "✂ CORTE POR AQUÍ"; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); background: #fff; padding: 0 10px; font-size: 10px; color: #666; font-style: italic; }
 
       body { margin: 0; padding: 0; background: #fff !important; font-family: sans-serif; color: #000; }
       
@@ -92,7 +66,6 @@
       .print-table th, .print-table td { border: 1px solid #000; padding: 6px; }
       .print-table th { background: #f0f0f0; }
     }
-    /* ----------------------------------- */
     
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
@@ -103,11 +76,9 @@
       .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
       .sidebar.open { left: 0 !important; }
       .sidebar-overlay.open { display: block; }
-      
       .topbar { padding: 15px; flex-direction: column; align-items: flex-start !important; gap: 15px; }
       .topbar-actions { width: 100%; display: flex; justify-content: space-between; }
       .topbar-actions button { flex: 1; }
-      
       .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
       
       #formOrden > div[style*="grid-template-columns: 1.5fr 1fr"] { grid-template-columns: 1fr !important; }
@@ -119,7 +90,6 @@
       .receta-header { display: none; }
       .receta-grid input { margin-bottom: 5px; width: 100%; }
       .receta-row-label { margin-top: 10px; margin-bottom: 5px; border-bottom: 1px solid var(--line); padding-bottom: 5px; display: block; }
-      .receta-grid input:nth-child(7)::before { content: "ESF: "; }
     }
   </style>
 </head>
@@ -136,18 +106,18 @@
       <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
     </div>
      <nav class="nav">
-  <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-  <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
-  <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
-  <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
-  <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-  <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
-  <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
-  <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
-  <a href="ordenes.html" data-module="ordenes"><span class="active">📋</span> Órdenes</a>
-  <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
-  <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
-</nav>
+      <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
+      <a href="ordenes.html" data-module="ordenes"><span class="active">📋</span> Órdenes</a>
+      <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
+      <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
+    </nav>
   </aside>
 
   <main class="content">
@@ -328,34 +298,51 @@
 
       <div style="background: #fff8f1; padding: 15px; border-radius: 8px; border: 1px solid #fed7aa; margin-bottom: 20px;">
         <h3 style="margin: 0 0 15px 0; font-size: 14px; color: #c2410c;">👁️ 3. Receta Oftalmológica</h3>
+        
         <div class="receta-grid">
           <div class="receta-header"></div>
-          <div class="receta-header">ESFÉRICO</div><div class="receta-header">CILÍNDRICO</div><div class="receta-header">EJE</div><div class="receta-header">ADICIÓN</div>
-          
+          <div class="receta-header">DIÁMETRO</div><div class="receta-header">ESFÉRICO</div><div class="receta-header">CILÍNDRICO</div><div class="receta-header">EJE</div><div class="receta-header">ADICIÓN</div><div class="receta-header">D.I.</div><div class="receta-header">ALTURA</div>
+
           <div class="receta-row-label">O.D.</div>
+          <input type="text" id="od_diam" class="input-box" style="text-align:center;" placeholder="DIÁM">
           <input type="text" id="od_esf" class="input-box" style="text-align:center;" placeholder="ESF">
           <input type="text" id="od_cil" class="input-box" style="text-align:center;" placeholder="CIL">
           <input type="text" id="od_eje" class="input-box" style="text-align:center;" placeholder="EJE">
           <input type="text" id="od_add" class="input-box" style="text-align:center;" placeholder="ADD">
-          
+          <input type="text" id="od_di" class="input-box" style="text-align:center;" placeholder="D.I.">
+          <input type="text" id="od_alt" class="input-box" style="text-align:center;" placeholder="ALT">
+
           <div class="receta-row-label">O.I.</div>
+          <input type="text" id="oi_diam" class="input-box" style="text-align:center;" placeholder="DIÁM">
           <input type="text" id="oi_esf" class="input-box" style="text-align:center;" placeholder="ESF">
           <input type="text" id="oi_cil" class="input-box" style="text-align:center;" placeholder="CIL">
           <input type="text" id="oi_eje" class="input-box" style="text-align:center;" placeholder="EJE">
           <input type="text" id="oi_add" class="input-box" style="text-align:center;" placeholder="ADD">
+          <input type="text" id="oi_di" class="input-box" style="text-align:center;" placeholder="D.I.">
+          <input type="text" id="oi_alt" class="input-box" style="text-align:center;" placeholder="ALT">
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px;">
           <div>
-            <label class="receta-header" style="display: block; margin-bottom: 4px;">Uso del Anteojo</label>
+            <label class="receta-header" style="display: block; margin-bottom: 4px;">Tipo de cristal</label>
             <select id="ordDp" class="input-box">
               <option value="Lejos">Lejos</option>
               <option value="Cerca">Cerca</option>
-              <option value="Multifocal">Multifocal</option>
               <option value="Bifocal">Bifocal</option>
+              <option value="Ocupacional">Ocupacional</option>
+              <option value="Multifocal">Multifocal</option>
             </select>
           </div>
-          <div><label class="receta-header" style="display: block; margin-bottom: 4px;">Altura (Opcional)</label><input type="text" id="ordAlt" class="input-box"></div>
+          <div>
+            <label class="receta-header" style="display: block; margin-bottom: 4px;">Tratamientos</label>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; background: #fff; padding: 10px; border: 1px solid var(--line); border-radius: 8px;">
+               <label><input type="checkbox" name="ordTrat" value="Coloración compacta"> Coloración compacta</label>
+               <label><input type="checkbox" name="ordTrat" value="Coloración degradee"> Coloración degradee</label>
+               <label><input type="checkbox" name="ordTrat" value="Coloración igual muestra"> Coloración igual muestra</label>
+               <label><input type="checkbox" name="ordTrat" value="Anti reflejo básico"> Anti reflejo básico</label>
+               <label><input type="checkbox" name="ordTrat" value="Anti reflejo premium"> Anti reflejo premium</label>
+            </div>
+          </div>
         </div>
 
         <div>
@@ -394,18 +381,26 @@
 
       <div style="background: var(--panel-2); padding: 20px; border-radius: 8px; border: 1px dashed var(--primary); margin-bottom: 20px;">
         <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--text);">💰 6. Liquidación</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: end;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: start;">
           <div>
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Valor Total (Armazón + Cristal) *</label>
-            <input type="text" id="ordTotal" class="input-box" style="font-size: 18px; font-weight: bold; color: var(--primary);" oninput="formatCurrencyInput(this); calcSaldo()" placeholder="$ 0,00" required autocomplete="off">
+            <input type="text" id="ordTotal" class="input-box" style="font-size: 15px; font-weight: bold; color: var(--primary); background: #f8fafc; cursor: not-allowed;" placeholder="$ 0,00" required readonly>
           </div>
           <div>
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seña Abonada Hoy</label>
-            <input type="text" id="ordDeposit" class="input-box" style="font-size: 16px; font-weight: bold; color: var(--success);" oninput="formatCurrencyInput(this); calcSaldo()" placeholder="$ 0,00" autocomplete="off">
+            <input type="text" id="ordDeposit" class="input-box" style="font-size: 15px; font-weight: bold; color: var(--success);" oninput="formatCurrencyInput(this); calcSaldo()" placeholder="$ 0,00" autocomplete="off">
           </div>
           <div>
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de Pago (Seña)</label>
-            <select id="ordPaymentMethod" class="input-box"><option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito">Crédito</option><option value="Transferencia">Transferencia</option></select>
+            <select id="ordPaymentMethod" class="input-box" onchange="toggleCuponOrden()">
+              <option value="Efectivo">Efectivo</option>
+              <option value="Débito">Débito</option>
+              <option value="Crédito">Crédito</option>
+              <option value="Transferencia">Transferencia</option>
+            </select>
+            <div id="divCuponOrden" style="display: none; margin-top: 8px;">
+               <input type="text" id="ordCupon" class="input-box" placeholder="N° de Cupón de Tarjeta" style="font-size: 13px; padding: 8px;">
+            </div>
           </div>
         </div>
         <div style="margin-top:15px; padding-top:15px; border-top:1px dashed var(--line); display:flex; justify-content:space-between; align-items:center;">
@@ -497,9 +492,9 @@
     </div>
 
     <table class="print-table">
-      <tr><th>OJO</th><th>ESFÉRICO</th><th>CILÍNDRICO</th><th>EJE</th><th>ADICIÓN</th></tr>
-      <tr><td><strong>D. (Der)</strong></td><td id="plOdEsf"></td><td id="plOdCil"></td><td id="plOdEje"></td><td id="plOdAdd"></td></tr>
-      <tr><td><strong>I. (Izq)</strong></td><td id="plOiEsf"></td><td id="plOiCil"></td><td id="plOiEje"></td><td id="plOiAdd"></td></tr>
+      <tr><th>OJO</th><th>DIÁMETRO</th><th>ESFÉRICO</th><th>CILÍNDRICO</th><th>EJE</th><th>ADICIÓN</th><th>D.I.</th><th>ALTURA</th></tr>
+      <tr><td><strong>D. (Der)</strong></td><td id="plOdDiam"></td><td id="plOdEsf"></td><td id="plOdCil"></td><td id="plOdEje"></td><td id="plOdAdd"></td><td id="plOdDi"></td><td id="plOdAlt"></td></tr>
+      <tr><td><strong>I. (Izq)</strong></td><td id="plOiDiam"></td><td id="plOiEsf"></td><td id="plOiCil"></td><td id="plOiEje"></td><td id="plOiAdd"></td><td id="plOiDi"></td><td id="plOiAlt"></td></tr>
     </table>
 
     <div style="margin-top:15px; padding: 10px; border: 1px solid #000; border-radius: 8px;">
@@ -508,8 +503,8 @@
 
     <div class="print-grid" style="margin-top:15px;">
       <div class="print-box">
-        <strong>USO:</strong> <span id="plUso"></span><br><br>
-        <strong>ALTURA:</strong> <span id="plAlt"></span>
+        <strong>TIPO DE CRISTAL:</strong> <span id="plUso"></span><br><br>
+        <strong>TRATAMIENTOS:</strong> <span id="plAlt"></span>
       </div>
       <div class="print-box" style="background:#f8fafc;">
         <strong>ARMAZÓN A CALIBRAR:</strong><br><span id="plFrame" style="font-size:14px; font-weight:bold;"></span><br><br>
@@ -538,6 +533,12 @@
   
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+
+  function toggleCuponOrden() {
+    const method = document.getElementById('ordPaymentMethod').value;
+    document.getElementById('divCuponOrden').style.display = method === 'Crédito' ? 'block' : 'none';
+    if (method !== 'Crédito') document.getElementById('ordCupon').value = '';
+  }
 
   function formatCurrencyInput(input) {
     let val = input.value.replace(/[^\d,]/g, '');
@@ -594,7 +595,7 @@
       const [resO, resP, resC, resS] = await Promise.all([
         fetchSeguro('/api/orders' + nocache), 
         fetchSeguro('/api/products' + nocache), 
-        fetchSeguro('/api/business_clients' + nocache), // URL ACTUALIZADA AQUÍ
+        fetchSeguro('/api/business_clients' + nocache),
         fetchSeguro('/api/suppliers' + nocache)
       ]);
       
@@ -774,6 +775,12 @@
     document.getElementById('ordId').value = '';
     document.getElementById('ordDelivery').value = todayISO();
     
+    ['od_diam','od_di','od_alt','oi_diam','oi_di','oi_alt'].forEach(id => document.getElementById(id).value = '');
+    document.querySelectorAll('input[name="ordTrat"]').forEach(cb => cb.checked = false);
+    document.getElementById('ordCupon').value = '';
+    document.getElementById('divCuponOrden').style.display = 'none';
+    document.getElementById('ordPaymentMethod').value = 'Efectivo';
+    
     document.getElementById('ordTotal').value = '';
     document.getElementById('ordDeposit').value = '$ 0,00';
     document.getElementById('ordBalance').value = '$ 0,00';
@@ -809,6 +816,9 @@
     const lensSelect = document.getElementById('ordLensId');
     const glassTypeName = lensSelect.selectedIndex > 0 ? lensSelect.options[lensSelect.selectedIndex].text.split(' - ')[0] : '';
 
+    const tratamientos = Array.from(document.querySelectorAll('input[name="ordTrat"]:checked')).map(cb => cb.value);
+    const tratStr = tratamientos.length > 0 ? tratamientos.join(' + ') : 'Sin tratamientos extra';
+
     const obraSocialStr = document.getElementById('ordObraSocial').value.trim();
     const notasStr = document.getElementById('ordNotas').value.trim();
     const combinedNotes = `Obra Social: ${obraSocialStr || '-'} | Obs: ${notasStr || '-'}`;
@@ -817,10 +827,10 @@
       id: id, date: todayISO(),
       clientId: document.getElementById('ordClientId').value || 'Consumidor Final',
       clientName: document.getElementById('ordClientName').value.trim() || 'Consumidor Final',
-      od_esf: document.getElementById('od_esf').value, od_cil: document.getElementById('od_cil').value, od_eje: document.getElementById('od_eje').value, od_add: document.getElementById('od_add').value,
-      oi_esf: document.getElementById('oi_esf').value, oi_cil: document.getElementById('oi_cil').value, oi_eje: document.getElementById('oi_eje').value, oi_add: document.getElementById('oi_add').value,
+      od_esf: document.getElementById('od_esf').value, od_cil: document.getElementById('od_cil').value, od_eje: document.getElementById('od_eje').value, od_add: document.getElementById('od_add').value, od_diam: document.getElementById('od_diam').value, od_di: document.getElementById('od_di').value, od_alt: document.getElementById('od_alt').value,
+      oi_esf: document.getElementById('oi_esf').value, oi_cil: document.getElementById('oi_cil').value, oi_eje: document.getElementById('oi_eje').value, oi_add: document.getElementById('oi_add').value, oi_diam: document.getElementById('oi_diam').value, oi_di: document.getElementById('oi_di').value, oi_alt: document.getElementById('oi_alt').value,
       dp: document.getElementById('ordDp').value, 
-      altura: document.getElementById('ordAlt').value, 
+      tratamientos: tratStr,
       doctor: document.getElementById('ordDoctor').value,
       frameCode: frameCode, frameName: document.getElementById('ordFrameName').value, 
       glassType: glassTypeName,
@@ -829,6 +839,7 @@
       deposit: depositFloat, balance: balanceFloat,
       status: 'Pendiente', seller: localStorage.getItem('activeUser') || 'Admin', 
       notes: combinedNotes,
+      cupon: document.getElementById('ordCupon').value.trim(),
       createdAt: new Date().toISOString()
     };
 
@@ -848,9 +859,10 @@
 
       if (isNew && depositFloat > 0) {
         const method = document.getElementById('ordPaymentMethod').value;
+        const cuponVal = document.getElementById('ordCupon').value.trim();
         const ventaSena = {
           id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
-          clientId: ord.clientId, client: ord.clientName, method: method, cupon: '', subtotal: depositFloat, promoDiscount: 0, total: depositFloat, isB2B: false,
+          clientId: ord.clientId, client: ord.clientName, method: method, cupon: cuponVal, subtotal: depositFloat, promoDiscount: 0, total: depositFloat, isB2B: false,
           items: [{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Abono inicial`, price: depositFloat, cost: 0, qty: 1}]
         };
         await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSena) });
@@ -994,13 +1006,13 @@
               "Obra Social": obraSocialLimpia,
               "Armazón": o.frameName || o.frameCode,
               "Cristal": o.glassType,
-              "Uso (Distancia)": o.dp,
+              "Tipo Cristal": o.dp,
               "Valor Total": o.total,
               "Seña": o.deposit,
               "Saldo": o.balance,
-              "OD Esf": o.od_esf, "OD Cil": o.od_cil, "OD Eje": o.od_eje, "OD Add": o.od_add,
-              "OI Esf": o.oi_esf, "OI Cil": o.oi_cil, "OI Eje": o.oi_eje, "OI Add": o.oi_add,
-              "Altura": o.altura,
+              "OD Diam": o.od_diam, "OD Esf": o.od_esf, "OD Cil": o.od_cil, "OD Eje": o.od_eje, "OD Add": o.od_add, "OD DI": o.od_di, "OD Alt": o.od_alt,
+              "OI Diam": o.oi_diam, "OI Esf": o.oi_esf, "OI Cil": o.oi_cil, "OI Eje": o.oi_eje, "OI Add": o.oi_add, "OI DI": o.oi_di, "OI Alt": o.oi_alt,
+              "Tratamientos": o.tratamientos,
               "Observaciones": obsLimpia
           };
       });
@@ -1041,11 +1053,11 @@
     document.getElementById('plOS').textContent = obraSocialLimpia;
     document.getElementById('plDelivery').textContent = o.deliveryDate;
     
-    document.getElementById('plOdEsf').textContent = o.od_esf; document.getElementById('plOdCil').textContent = o.od_cil; document.getElementById('plOdEje').textContent = o.od_eje; document.getElementById('plOdAdd').textContent = o.od_add;
-    document.getElementById('plOiEsf').textContent = o.oi_esf; document.getElementById('plOiCil').textContent = o.oi_cil; document.getElementById('plOiEje').textContent = o.oi_eje; document.getElementById('plOiAdd').textContent = o.oi_add;
+    document.getElementById('plOdDiam').textContent = o.od_diam || '-'; document.getElementById('plOdEsf').textContent = o.od_esf; document.getElementById('plOdCil').textContent = o.od_cil; document.getElementById('plOdEje').textContent = o.od_eje; document.getElementById('plOdAdd').textContent = o.od_add; document.getElementById('plOdDi').textContent = o.od_di || '-'; document.getElementById('plOdAlt').textContent = o.od_alt || '-';
+    document.getElementById('plOiDiam').textContent = o.oi_diam || '-'; document.getElementById('plOiEsf').textContent = o.oi_esf; document.getElementById('plOiCil').textContent = o.oi_cil; document.getElementById('plOiEje').textContent = o.oi_eje; document.getElementById('plOiAdd').textContent = o.oi_add; document.getElementById('plOiDi').textContent = o.oi_di || '-'; document.getElementById('plOiAlt').textContent = o.oi_alt || '-';
     
     document.getElementById('plUso').textContent = o.dp || '-'; 
-    document.getElementById('plAlt').textContent = o.altura || '-';
+    document.getElementById('plAlt').textContent = o.tratamientos || 'Sin tratamientos';
     document.getElementById('plObs').textContent = obsLimpia || 'Sin observaciones.';
     
     document.getElementById('plFrame').textContent = o.frameCode + ' - ' + o.frameName;
