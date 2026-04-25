@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prueba Gratis | MicroSaas</title>
+  <style>
+    body { 
+      margin: 0; 
+      font-family: system-ui, -apple-system, sans-serif; 
+      background-image: url('img/img4.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 100vh; 
+      color: #1e293b; 
+      padding: 20px; 
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.5); 
+      z-index: -1;
+    }
+
+    .box { 
+      background: #ffffff; 
+      padding: 40px; 
+      border-radius: 16px; 
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
+      max-width: 450px; 
+      width: 100%; 
+      text-align: center; 
+      position: relative; 
+      z-index: 1;
+    }
+
+    .logo { 
+      margin-bottom: 20px; 
+      max-height: 60px; 
+      width: auto;
+    }
+
+    h1 { margin: 0 0 10px; font-size: 24px; color: #0ea5e9; }
+    p { color: #64748b; font-size: 14px; margin-bottom: 30px; line-height: 1.5; }
+
+    .field { text-align: left; margin-bottom: 15px; }
+    .field label { display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .field input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1e293b; transition: 0.2s; }
+    .field input:focus { outline: none; border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,0.1); }
+
+    .input-row { display: flex; gap: 15px; }
+    .input-row .field { flex: 1; }
+
+    .btn { width: 100%; padding: 14px; background: #0ea5e9; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+    .btn:hover { background: #0284c7; }
+    .btn-success { background: #10b981; text-decoration: none; display: inline-block; box-sizing: border-box; margin-top: 20px; }
+    .btn-success:hover { background: #059669; }
+
+    /* ── CAJA DE ÉXITO (OCULTA POR DEFECTO) ── */
+    #successBox { display: none; }
+    .credentials-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 20px; border-radius: 12px; margin: 20px 0; text-align: center; }
+    .credentials-box h3 { margin: 0 0 15px 0; color: #1e293b; font-size: 16px; }
+    .cred-item { font-size: 15px; margin-bottom: 8px; color: #475569; }
+    .cred-item strong { color: #0ea5e9; font-size: 18px; user-select: all; }
+  </style>
+</head>
+<body>
+  
+  <div class="box">
+    <img src="img/logomicrosaas.png" alt="MicroSaas Soluciones" class="logo">
+    
+    <div id="formContainer">
+      <h1>Ingresá a la Demo</h1>
+      <p>Completá tus datos para acceder al sistema y probar todas sus funcionalidades ahora mismo.</p>
+      
+      <form id="regForm">
+        <div class="field">
+          <label>Nombre del Comercio</label>
+          <input type="text" id="rName" required placeholder="Ej: La Consultora">
+        </div>
+        
+        <div class="input-row">
+          <div class="field">
+            <label>WhatsApp</label>
+            <input type="text" id="rPhone" required placeholder="Cod. área + Num">
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="rEmail" required placeholder="tu@correo.com">
+          </div>
+        </div>
+        
+        <button type="submit" class="btn" id="btnSubmit">Comenzar Prueba Gratis</button>
+      </form>
+    </div>
+
+    <div id="successBox">
+      <div style="font-size: 40px; margin-bottom: 10px;">✅</div>
+      <h1 style="color: #10b981;">¡Todo listo!</h1>
+      <p style="margin-bottom: 10px;">Tus datos fueron registrados. Ingresá al sistema utilizando las siguientes credenciales de prueba:</p>
+      
+      <div class="credentials-box">
+        <div class="cred-item">Usuario:<br><strong>demo</strong></div>
+        <div style="height: 10px;"></div>
+        <div class="cred-item">Contraseña:<br><strong>demo123</strong></div>
+      </div>
+
+      <a href="https://micro-saas-6es.pages.dev/login" class="btn btn-success">Ir a la pantalla de Login</a>
+    </div>
+
+  </div>
+
+  <script>
+    document.getElementById('regForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btnSubmit');
+      btn.textContent = 'Generando acceso...'; 
+      btn.disabled = true;
+
+      const data = {
+        id: 'lead_' + Math.random().toString(36).substr(2, 9),
+        name: document.getElementById('rName').value.trim(),
+        contact: document.getElementById('rName').value.trim(),
+        phone: document.getElementById('rPhone').value.trim(),
+        email: document.getElementById('rEmail').value.trim(),
+        fee: 0,
+        dueDate: new Date().toISOString().split('T')[0],
+        active: true,
+        type: 'lead', 
+        adminUser: '', 
+        adminPass: '',
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        const res = await fetch('https://micro-saas-6es.pages.dev/api/clients', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify(data)
+        });
+        
+        if(res.ok) {
+          // ÉXITO: Mostramos las credenciales
+          document.getElementById('formContainer').style.display = 'none';
+          document.getElementById('successBox').style.display = 'block';
+        } else {
+          // 🚨 ALERTA ROJA: Nos va a gritar en la pantalla si falta algo en la DB de Cloudflare
+          const errorText = await res.text();
+          alert("ERROR EN LA NUBE:\n\n" + errorText);
+          
+          btn.textContent = 'Comenzar Prueba Gratis'; 
+          btn.disabled = false;
+        }
+      } catch(err) {
+        alert("ERROR DE RED:\nNo se pudo conectar al servidor de la base de datos cruzada. Verificá si Cloudflare bloquea CORS.");
+        btn.textContent = 'Comenzar Prueba Gratis'; 
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
