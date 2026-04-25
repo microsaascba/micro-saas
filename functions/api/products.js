@@ -125,13 +125,14 @@ export async function onRequestPost(context) {
 
     // 🔥 CONSTRUCCIÓN DEL STOCK (CORREGIDA)
     const existingProd = await context.env.DB.prepare(`
-      SELECT stock, stock_branches 
+      SELECT stock, stock_branches, cost
       FROM products 
       WHERE id = ? AND company_id = ?
     `).bind(id, companyId).first();
 
     let finalStockBranches = {};
     let finalStockTotal = 0;
+    let finalCost = safeNumber(data.cost); // Tomamos el cost que viene del frontend
 
     if (existingProd) {
       // ES EDICIÓN: 
@@ -151,6 +152,11 @@ export async function onRequestPost(context) {
         }
         finalStockTotal = Object.values(finalStockBranches).reduce((a, b) => a + safeNumber(b), 0);
       }
+      
+      // Si es una simple edición de producto, y NO manda cost, mantenemos el viejo
+       if(data.cost === undefined){
+          finalCost = safeNumber(existingProd.cost);
+       }
     } else {
       // ES ALTA NUEVA
       const branchToUse = safeString(data.initialBranch) || defaultBranchName;
@@ -197,7 +203,7 @@ export async function onRequestPost(context) {
       name,
       code,
       safeString(data.category),
-      safeNumber(data.cost),
+      finalCost,
       safeNumber(data.price),
       finalStockTotal,
       data.status || 'Activo',
