@@ -684,7 +684,12 @@
     document.getElementById('prodCategory').value = p.category || '';
     document.getElementById('prodStatus').value = p.status || 'Activo';
     document.getElementById('prodCode').value = p.code || '';
+    
+    // BLOQUEO DE COSTO PARA CPP
     document.getElementById('prodCost').value = safeNumber(p.cost);
+    document.getElementById('prodCost').disabled = true;
+    document.getElementById('prodCost').title = "El costo se actualiza automáticamente por Promedio Ponderado al ingresar compras en Stock.";
+    
     document.getElementById('prodExpenses').value = safeNumber(p.expenses);
     document.getElementById('prodPrice').value = safeNumber(p.price);
     document.getElementById('prodStock').value = safeNumber(p.stock);
