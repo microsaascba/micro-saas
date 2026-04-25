@@ -35,7 +35,7 @@
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
     
-    .receta-grid { display: grid; grid-template-columns: 40px repeat(7, 1fr); gap: 10px; align-items: center; text-align: center; margin-bottom: 15px; overflow-x: auto; }
+    .receta-grid { display: grid; grid-template-columns: 40px repeat(8, 1fr); gap: 10px; align-items: center; text-align: center; margin-bottom: 15px; overflow-x: auto; }
     .receta-header { font-size: 11px; font-weight: bold; color: var(--muted); }
     .receta-row-label { font-weight: 800; color: var(--text); }
     
@@ -265,7 +265,7 @@
   </div>
 </dialog>
 
-<dialog id="modalOrden" style="width: 100%; max-width: 800px;">
+<dialog id="modalOrden" style="width: 100%; max-width: 900px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
       <h2 style="margin: 0; font-size:20px;" id="modalOrdenTitle">Nueva Orden de Trabajo</h2>
@@ -297,57 +297,104 @@
       </div>
 
       <div style="background: #fff8f1; padding: 15px; border-radius: 8px; border: 1px solid #fed7aa; margin-bottom: 20px;">
-        <h3 style="margin: 0 0 15px 0; font-size: 14px; color: #c2410c;">👁️ 3. Receta Oftalmológica</h3>
+        <h3 style="margin: 0 0 15px 0; font-size: 14px; color: #c2410c;">👁️ 3. Receta Clínica y Especificaciones</h3>
         
         <div class="receta-grid">
           <div class="receta-header"></div>
-          <div class="receta-header">DIÁMETRO</div><div class="receta-header">ESFÉRICO</div><div class="receta-header">CILÍNDRICO</div><div class="receta-header">EJE</div><div class="receta-header">ADICIÓN</div><div class="receta-header">D.I.</div><div class="receta-header">ALTURA</div>
+          <div class="receta-header">DIÁM / LAB Ø</div><div class="receta-header">ESFÉRICO</div><div class="receta-header">CILÍNDRICO</div><div class="receta-header">EJE</div><div class="receta-header">BASE</div><div class="receta-header">ADICIÓN</div><div class="receta-header">D.N.P. / D.I.</div><div class="receta-header">ALTURA</div>
 
           <div class="receta-row-label">O.D.</div>
-          <input type="text" id="od_diam" class="input-box" style="text-align:center;" placeholder="DIÁM">
-          <input type="text" id="od_esf" class="input-box" style="text-align:center;" placeholder="ESF">
-          <input type="text" id="od_cil" class="input-box" style="text-align:center;" placeholder="CIL">
-          <input type="text" id="od_eje" class="input-box" style="text-align:center;" placeholder="EJE">
-          <input type="text" id="od_add" class="input-box" style="text-align:center;" placeholder="ADD">
-          <input type="text" id="od_di" class="input-box" style="text-align:center;" placeholder="D.I.">
-          <input type="text" id="od_alt" class="input-box" style="text-align:center;" placeholder="ALT">
+          <input type="text" id="od_diam" class="input-box" style="text-align:center; padding: 6px;" placeholder="DIÁM">
+          <input type="text" id="od_esf" class="input-box" style="text-align:center; padding: 6px;" placeholder="ESF">
+          <input type="text" id="od_cil" class="input-box" style="text-align:center; padding: 6px;" placeholder="CIL">
+          <input type="text" id="od_eje" class="input-box" style="text-align:center; padding: 6px;" placeholder="EJE">
+          <input type="text" id="od_base" class="input-box" style="text-align:center; padding: 6px;" placeholder="BASE">
+          <input type="text" id="od_add" class="input-box" style="text-align:center; padding: 6px;" placeholder="ADD">
+          <input type="text" id="od_di" class="input-box" style="text-align:center; padding: 6px;" placeholder="DNP">
+          <input type="text" id="od_alt" class="input-box" style="text-align:center; padding: 6px;" placeholder="ALT">
 
           <div class="receta-row-label">O.I.</div>
-          <input type="text" id="oi_diam" class="input-box" style="text-align:center;" placeholder="DIÁM">
-          <input type="text" id="oi_esf" class="input-box" style="text-align:center;" placeholder="ESF">
-          <input type="text" id="oi_cil" class="input-box" style="text-align:center;" placeholder="CIL">
-          <input type="text" id="oi_eje" class="input-box" style="text-align:center;" placeholder="EJE">
-          <input type="text" id="oi_add" class="input-box" style="text-align:center;" placeholder="ADD">
-          <input type="text" id="oi_di" class="input-box" style="text-align:center;" placeholder="D.I.">
-          <input type="text" id="oi_alt" class="input-box" style="text-align:center;" placeholder="ALT">
+          <input type="text" id="oi_diam" class="input-box" style="text-align:center; padding: 6px;" placeholder="DIÁM">
+          <input type="text" id="oi_esf" class="input-box" style="text-align:center; padding: 6px;" placeholder="ESF">
+          <input type="text" id="oi_cil" class="input-box" style="text-align:center; padding: 6px;" placeholder="CIL">
+          <input type="text" id="oi_eje" class="input-box" style="text-align:center; padding: 6px;" placeholder="EJE">
+          <input type="text" id="oi_base" class="input-box" style="text-align:center; padding: 6px;" placeholder="BASE">
+          <input type="text" id="oi_add" class="input-box" style="text-align:center; padding: 6px;" placeholder="ADD">
+          <input type="text" id="oi_di" class="input-box" style="text-align:center; padding: 6px;" placeholder="DNP">
+          <input type="text" id="oi_alt" class="input-box" style="text-align:center; padding: 6px;" placeholder="ALT">
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 15px; border-top: 1px dashed #fed7aa; padding-top: 15px;">
           <div>
-            <label class="receta-header" style="display: block; margin-bottom: 4px;">Tipo de cristal</label>
+            <label class="receta-header" style="display: block; margin-bottom: 4px;">Tipo de Lente</label>
             <select id="ordDp" class="input-box">
-              <option value="Lejos">Lejos</option>
-              <option value="Cerca">Cerca</option>
+              <option value="Monofocal">Monofocal</option>
               <option value="Bifocal">Bifocal</option>
+              <option value="Progresivo">Progresivo (Multifocal)</option>
               <option value="Ocupacional">Ocupacional</option>
-              <option value="Multifocal">Multifocal</option>
             </select>
           </div>
           <div>
-            <label class="receta-header" style="display: block; margin-bottom: 4px;">Tratamientos</label>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; background: #fff; padding: 10px; border: 1px solid var(--line); border-radius: 8px;">
-               <label><input type="checkbox" name="ordTrat" value="Coloración compacta"> Coloración compacta</label>
-               <label><input type="checkbox" name="ordTrat" value="Coloración degradee"> Coloración degradee</label>
-               <label><input type="checkbox" name="ordTrat" value="Coloración igual muestra"> Coloración igual muestra</label>
-               <label><input type="checkbox" name="ordTrat" value="Anti reflejo básico"> Anti reflejo básico</label>
-               <label><input type="checkbox" name="ordTrat" value="Anti reflejo premium"> Anti reflejo premium</label>
-            </div>
+            <label class="receta-header" style="display: block; margin-bottom: 4px;">Diseño / Degresión</label>
+            <input type="text" id="ordDiseno" class="input-box" placeholder="Ej: Freeform / Deg 1.25">
+          </div>
+          <div>
+            <label class="receta-header" style="display: block; margin-bottom: 4px;">Calibrado</label>
+            <select id="ordCalibrado" class="input-box">
+              <option value="Aro completo">Aro completo</option>
+              <option value="Ranurado">Ranurado</option>
+              <option value="Perforado">Perforado</option>
+              <option value="Cambio de Formato">Cambio de Formato</option>
+            </select>
+          </div>
+          <div>
+            <label class="receta-header" style="display: block; margin-bottom: 4px;">Materiales</label>
+            <select id="ordMaterial" class="input-box">
+              <option value="Orgánico">Orgánico</option>
+              <option value="Policarbonato">Policarbonato</option>
+              <option value="Trivex">Trivex</option>
+              <option value="Mineral">Mineral</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label class="receta-header" style="display: block; margin-bottom: 4px;">Color / Filtro</label>
+            <select id="ordColor" class="input-box">
+              <option value="Blanco">Blanco</option>
+              <option value="Fotocromático">Fotocromático</option>
+              <option value="Transitions VI">Transitions VI</option>
+              <option value="Polarizado">Polarizado</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div>
+            <label class="receta-header" style="display: block; margin-bottom: 4px;">Antirreflex</label>
+            <select id="ordAntirreflex" class="input-box">
+              <option value="Sin Antirreflex">Sin Antirreflex</option>
+              <option value="Stock">Stock</option>
+              <option value="PREMIUM">PREMIUM</option>
+              <option value="CRIZAL">CRIZAL</option>
+              <option value="ENDURECIDO">ENDURECIDO</option>
+            </select>
           </div>
         </div>
 
         <div>
-          <label class="receta-header" style="display: block; margin-bottom: 4px;">Observaciones de Laboratorio / Taller</label>
-          <textarea id="ordNotas" class="input-box" rows="2" placeholder="Ej: Centrado especial, detalles del armazón, material específico..."></textarea>
+          <label class="receta-header" style="display: block; margin-bottom: 4px;">Tratamientos de Coloración</label>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 13px; background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 8px; align-items: center;">
+             <label style="cursor: pointer;"><input type="checkbox" name="ordTrat" value="Compacto"> Compacto</label>
+             <label style="cursor: pointer;"><input type="checkbox" name="ordTrat" value="Degrade"> Degrade</label>
+             <label style="cursor: pointer;"><input type="checkbox" name="ordTrat" value="Según Muestra"> Según Muestra</label>
+             <div style="display: flex; align-items: center; gap: 8px;">
+               <strong>Tinte:</strong>
+               <input type="text" id="ordTinte" class="input-box" style="width: 150px; padding: 4px 8px; margin: 0;" placeholder="Color ej: Gris">
+             </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 15px;">
+          <label class="receta-header" style="display: block; margin-bottom: 4px;">Observaciones Generales</label>
+          <textarea id="ordNotas" class="input-box" rows="2" placeholder="Ej: Centrado especial, detalles del armazón..."></textarea>
         </div>
       </div>
 
@@ -384,7 +431,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: start;">
           <div>
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Valor Total (Armazón + Cristal) *</label>
-            <input type="text" id="ordTotal" class="input-box" style="font-size: 15px; font-weight: bold; color: var(--primary); background: #f8fafc; cursor: not-allowed;" placeholder="$ 0,00" required readonly>
+            <input type="text" id="ordTotal" class="input-box" style="font-size: 15px; font-weight: bold; color: var(--primary); background: #e2e8f0; cursor: not-allowed;" placeholder="$ 0,00" required readonly>
           </div>
           <div>
             <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seña Abonada Hoy</label>
@@ -399,7 +446,7 @@
               <option value="Transferencia">Transferencia</option>
             </select>
             <div id="divCuponOrden" style="display: none; margin-top: 8px;">
-               <input type="text" id="ordCupon" class="input-box" placeholder="N° de Cupón de Tarjeta" style="font-size: 13px; padding: 8px;">
+               <input type="text" id="ordCupon" class="input-box" placeholder="N° de Cupón / Lote" style="font-size: 13px; padding: 8px;">
             </div>
           </div>
         </div>
@@ -492,23 +539,28 @@
     </div>
 
     <table class="print-table">
-      <tr><th>OJO</th><th>DIÁMETRO</th><th>ESFÉRICO</th><th>CILÍNDRICO</th><th>EJE</th><th>ADICIÓN</th><th>D.I.</th><th>ALTURA</th></tr>
-      <tr><td><strong>D. (Der)</strong></td><td id="plOdDiam"></td><td id="plOdEsf"></td><td id="plOdCil"></td><td id="plOdEje"></td><td id="plOdAdd"></td><td id="plOdDi"></td><td id="plOdAlt"></td></tr>
-      <tr><td><strong>I. (Izq)</strong></td><td id="plOiDiam"></td><td id="plOiEsf"></td><td id="plOiCil"></td><td id="plOiEje"></td><td id="plOiAdd"></td><td id="plOiDi"></td><td id="plOiAlt"></td></tr>
+      <tr><th>OJO</th><th>DIÁM / Ø</th><th>ESFÉRICO</th><th>CILÍNDRICO</th><th>EJE</th><th>BASE</th><th>ADICIÓN</th><th>D.N.P.</th><th>ALTURA</th></tr>
+      <tr><td><strong>D. (Der)</strong></td><td id="plOdDiam"></td><td id="plOdEsf"></td><td id="plOdCil"></td><td id="plOdEje"></td><td id="plOdBase"></td><td id="plOdAdd"></td><td id="plOdDi"></td><td id="plOdAlt"></td></tr>
+      <tr><td><strong>I. (Izq)</strong></td><td id="plOiDiam"></td><td id="plOiEsf"></td><td id="plOiCil"></td><td id="plOiEje"></td><td id="plOiBase"></td><td id="plOiAdd"></td><td id="plOiDi"></td><td id="plOiAlt"></td></tr>
     </table>
-
-    <div style="margin-top:15px; padding: 10px; border: 1px solid #000; border-radius: 8px;">
-      <strong>OBSERVACIONES:</strong> <span id="plObs" style="font-style: italic;"></span>
-    </div>
 
     <div class="print-grid" style="margin-top:15px;">
       <div class="print-box">
-        <strong>TIPO DE CRISTAL:</strong> <span id="plUso"></span><br><br>
-        <strong>TRATAMIENTOS:</strong> <span id="plAlt"></span>
+        <strong>ESPECIFICACIONES DEL LENTE:</strong><br><br>
+        <table style="width:100%; font-size:12px; line-height: 1.8;">
+          <tr><td><strong>Tipo:</strong></td><td><span id="plUso"></span></td><td><strong>Diseño/Deg:</strong></td><td><span id="plDiseno"></span></td></tr>
+          <tr><td><strong>Material:</strong></td><td><span id="plMaterial"></span></td><td><strong>Color/Filtro:</strong></td><td><span id="plColor"></span></td></tr>
+          <tr><td><strong>Calibrado:</strong></td><td><span id="plCalibrado"></span></td><td><strong>Antirreflex:</strong></td><td><span id="plAntirreflex"></span></td></tr>
+        </table>
+        <div style="margin-top: 8px; border-top: 1px solid #ccc; padding-top: 8px;">
+           <strong>Tratamientos Extra:</strong> <span id="plAlt"></span><br>
+           <strong>Tinte:</strong> <span id="plTinte"></span>
+        </div>
       </div>
       <div class="print-box" style="background:#f8fafc;">
         <strong>ARMAZÓN A CALIBRAR:</strong><br><span id="plFrame" style="font-size:14px; font-weight:bold;"></span><br><br>
-        <strong>CRISTAL SOLICITADO:</strong><br><span id="plGlass" style="font-size:14px; font-weight:bold;"></span>
+        <strong>CRISTAL SOLICITADO:</strong><br><span id="plGlass" style="font-size:14px; font-weight:bold;"></span><br><br>
+        <strong>NOTAS TALLER:</strong><br><span id="plObs" style="font-style: italic;"></span>
       </div>
     </div>
   </div>
@@ -583,7 +635,6 @@
               if (!res.ok) return [];
               const contentType = res.headers.get("content-type") || "";
               if (contentType.includes("text/html")) {
-                  console.error(`❌ ERROR: La ruta ${url} devolvió HTML. Verificá el nombre del archivo en /functions/api/`);
                   return [];
               }
               return await res.json();
@@ -775,8 +826,13 @@
     document.getElementById('ordId').value = '';
     document.getElementById('ordDelivery').value = todayISO();
     
-    ['od_diam','od_di','od_alt','oi_diam','oi_di','oi_alt'].forEach(id => document.getElementById(id).value = '');
+    ['od_diam','od_esf','od_cil','od_eje','od_base','od_add','od_di','od_alt',
+     'oi_diam','oi_esf','oi_cil','oi_eje','oi_base','oi_add','oi_di','oi_alt'].forEach(id => document.getElementById(id).value = '');
+     
     document.querySelectorAll('input[name="ordTrat"]').forEach(cb => cb.checked = false);
+    
+    ['ordDp','ordDiseno','ordCalibrado','ordMaterial','ordColor','ordAntirreflex','ordTinte'].forEach(id => document.getElementById(id).value = (document.getElementById(id).tagName === 'SELECT' ? document.getElementById(id).options[0].value : ''));
+
     document.getElementById('ordCupon').value = '';
     document.getElementById('divCuponOrden').style.display = 'none';
     document.getElementById('ordPaymentMethod').value = 'Efectivo';
@@ -816,8 +872,8 @@
     const lensSelect = document.getElementById('ordLensId');
     const glassTypeName = lensSelect.selectedIndex > 0 ? lensSelect.options[lensSelect.selectedIndex].text.split(' - ')[0] : '';
 
-    const tratamientos = Array.from(document.querySelectorAll('input[name="ordTrat"]:checked')).map(cb => cb.value);
-    const tratStr = tratamientos.length > 0 ? tratamientos.join(' + ') : 'Sin tratamientos extra';
+    const tratamientosArr = Array.from(document.querySelectorAll('input[name="ordTrat"]:checked')).map(cb => cb.value);
+    const tratStr = tratamientosArr.length > 0 ? tratamientosArr.join(' + ') : 'Sin tratamientos extra';
 
     const obraSocialStr = document.getElementById('ordObraSocial').value.trim();
     const notasStr = document.getElementById('ordNotas').value.trim();
@@ -827,10 +883,19 @@
       id: id, date: todayISO(),
       clientId: document.getElementById('ordClientId').value || 'Consumidor Final',
       clientName: document.getElementById('ordClientName').value.trim() || 'Consumidor Final',
-      od_esf: document.getElementById('od_esf').value, od_cil: document.getElementById('od_cil').value, od_eje: document.getElementById('od_eje').value, od_add: document.getElementById('od_add').value, od_diam: document.getElementById('od_diam').value, od_di: document.getElementById('od_di').value, od_alt: document.getElementById('od_alt').value,
-      oi_esf: document.getElementById('oi_esf').value, oi_cil: document.getElementById('oi_cil').value, oi_eje: document.getElementById('oi_eje').value, oi_add: document.getElementById('oi_add').value, oi_diam: document.getElementById('oi_diam').value, oi_di: document.getElementById('oi_di').value, oi_alt: document.getElementById('oi_alt').value,
+      
+      od_esf: document.getElementById('od_esf').value, od_cil: document.getElementById('od_cil').value, od_eje: document.getElementById('od_eje').value, od_base: document.getElementById('od_base').value, od_add: document.getElementById('od_add').value, od_diam: document.getElementById('od_diam').value, od_di: document.getElementById('od_di').value, od_alt: document.getElementById('od_alt').value,
+      oi_esf: document.getElementById('oi_esf').value, oi_cil: document.getElementById('oi_cil').value, oi_eje: document.getElementById('oi_eje').value, oi_base: document.getElementById('oi_base').value, oi_add: document.getElementById('oi_add').value, oi_diam: document.getElementById('oi_diam').value, oi_di: document.getElementById('oi_di').value, oi_alt: document.getElementById('oi_alt').value,
+      
       dp: document.getElementById('ordDp').value, 
+      diseno: document.getElementById('ordDiseno').value,
+      calibrado: document.getElementById('ordCalibrado').value,
+      material: document.getElementById('ordMaterial').value,
+      color_lente: document.getElementById('ordColor').value,
+      antirreflex: document.getElementById('ordAntirreflex').value,
+      tinte: document.getElementById('ordTinte').value,
       tratamientos: tratStr,
+      
       doctor: document.getElementById('ordDoctor').value,
       frameCode: frameCode, frameName: document.getElementById('ordFrameName').value, 
       glassType: glassTypeName,
@@ -989,7 +1054,6 @@
       const csvData = filtradas.map(o => {
           let obsLimpia = o.notes;
           let obraSocialLimpia = "-";
-          
           if (o.notes && o.notes.includes("Obra Social:")) {
               const partes = o.notes.split(" | Obs: ");
               obraSocialLimpia = partes[0].replace("Obra Social: ", "").trim();
@@ -1010,8 +1074,9 @@
               "Valor Total": o.total,
               "Seña": o.deposit,
               "Saldo": o.balance,
-              "OD Diam": o.od_diam, "OD Esf": o.od_esf, "OD Cil": o.od_cil, "OD Eje": o.od_eje, "OD Add": o.od_add, "OD DI": o.od_di, "OD Alt": o.od_alt,
-              "OI Diam": o.oi_diam, "OI Esf": o.oi_esf, "OI Cil": o.oi_cil, "OI Eje": o.oi_eje, "OI Add": o.oi_add, "OI DI": o.oi_di, "OI Alt": o.oi_alt,
+              "OD Diam": o.od_diam, "OD Esf": o.od_esf, "OD Cil": o.od_cil, "OD Eje": o.od_eje, "OD Base": o.od_base, "OD Add": o.od_add, "OD DI": o.od_di, "OD Alt": o.od_alt,
+              "OI Diam": o.oi_diam, "OI Esf": o.oi_esf, "OI Cil": o.oi_cil, "OI Eje": o.oi_eje, "OI Base": o.oi_base, "OI Add": o.oi_add, "OI DI": o.oi_di, "OI Alt": o.oi_alt,
+              "Diseño": o.diseno, "Calibrado": o.calibrado, "Material": o.material, "Color": o.color_lente, "Antirreflex": o.antirreflex, "Tinte": o.tinte,
               "Tratamientos": o.tratamientos,
               "Observaciones": obsLimpia
           };
@@ -1053,11 +1118,18 @@
     document.getElementById('plOS').textContent = obraSocialLimpia;
     document.getElementById('plDelivery').textContent = o.deliveryDate;
     
-    document.getElementById('plOdDiam').textContent = o.od_diam || '-'; document.getElementById('plOdEsf').textContent = o.od_esf; document.getElementById('plOdCil').textContent = o.od_cil; document.getElementById('plOdEje').textContent = o.od_eje; document.getElementById('plOdAdd').textContent = o.od_add; document.getElementById('plOdDi').textContent = o.od_di || '-'; document.getElementById('plOdAlt').textContent = o.od_alt || '-';
-    document.getElementById('plOiDiam').textContent = o.oi_diam || '-'; document.getElementById('plOiEsf').textContent = o.oi_esf; document.getElementById('plOiCil').textContent = o.oi_cil; document.getElementById('plOiEje').textContent = o.oi_eje; document.getElementById('plOiAdd').textContent = o.oi_add; document.getElementById('plOiDi').textContent = o.oi_di || '-'; document.getElementById('plOiAlt').textContent = o.oi_alt || '-';
+    document.getElementById('plOdDiam').textContent = o.od_diam || '-'; document.getElementById('plOdEsf').textContent = o.od_esf; document.getElementById('plOdCil').textContent = o.od_cil; document.getElementById('plOdEje').textContent = o.od_eje; document.getElementById('plOdBase').textContent = o.od_base || '-'; document.getElementById('plOdAdd').textContent = o.od_add; document.getElementById('plOdDi').textContent = o.od_di || '-'; document.getElementById('plOdAlt').textContent = o.od_alt || '-';
+    document.getElementById('plOiDiam').textContent = o.oi_diam || '-'; document.getElementById('plOiEsf').textContent = o.oi_esf; document.getElementById('plOiCil').textContent = o.oi_cil; document.getElementById('plOiEje').textContent = o.oi_eje; document.getElementById('plOiBase').textContent = o.oi_base || '-'; document.getElementById('plOiAdd').textContent = o.oi_add; document.getElementById('plOiDi').textContent = o.oi_di || '-'; document.getElementById('plOiAlt').textContent = o.oi_alt || '-';
     
     document.getElementById('plUso').textContent = o.dp || '-'; 
-    document.getElementById('plAlt').textContent = o.tratamientos || 'Sin tratamientos';
+    document.getElementById('plDiseno').textContent = o.diseno || '-';
+    document.getElementById('plMaterial').textContent = o.material || '-';
+    document.getElementById('plColor').textContent = o.color_lente || '-';
+    document.getElementById('plAntirreflex').textContent = o.antirreflex || '-';
+    document.getElementById('plCalibrado').textContent = o.calibrado || '-';
+    
+    document.getElementById('plAlt').textContent = o.tratamientos || '-';
+    document.getElementById('plTinte').textContent = o.tinte || '-';
     document.getElementById('plObs').textContent = obsLimpia || 'Sin observaciones.';
     
     document.getElementById('plFrame').textContent = o.frameCode + ' - ' + o.frameName;
