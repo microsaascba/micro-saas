@@ -41,12 +41,14 @@ export async function onRequestPost(context) {
                 deliveryDate = excluded.deliveryDate,
                 notes = excluded.notes,
                 cupon = excluded.cupon,
+                od_esf = excluded.od_esf, od_cil = excluded.od_cil, od_eje = excluded.od_eje, od_add = excluded.od_add,
                 od_diam = excluded.od_diam, od_di = excluded.od_di, od_alt = excluded.od_alt, od_base = excluded.od_base,
+                oi_esf = excluded.oi_esf, oi_cil = excluded.oi_cil, oi_eje = excluded.oi_eje, oi_add = excluded.oi_add,
                 oi_diam = excluded.oi_diam, oi_di = excluded.oi_di, oi_alt = excluded.oi_alt, oi_base = excluded.oi_base,
-                tratamientos = excluded.tratamientos,
-                dp = excluded.dp,
-                diseno = excluded.diseno, calibrado = excluded.calibrado, material = excluded.material,
-                color_lente = excluded.color_lente, antirreflex = excluded.antirreflex, tinte = excluded.tinte
+                dp = excluded.dp, diseno = excluded.diseno, calibrado = excluded.calibrado, material = excluded.material,
+                color_lente = excluded.color_lente, antirreflex = excluded.antirreflex, tinte = excluded.tinte, tratamientos = excluded.tratamientos,
+                doctor = excluded.doctor, frameCode = excluded.frameCode, frameName = excluded.frameName, glassType = excluded.glassType,
+                total = excluded.total
         `).bind(
             data.id, companyId, data.date, data.clientId, data.clientName,
             data.od_esf || '', data.od_cil || '', data.od_eje || '', data.od_base || '', data.od_add || '', data.od_diam || '', data.od_di || '', data.od_alt || '',
