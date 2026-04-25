@@ -368,22 +368,31 @@
 
               <div style="overflow-x: auto;">
                 <table class="ficha-receta">
-                  <tr><th>Ojo</th><th>Esférico</th><th>Cilíndrico</th><th>Eje</th><th>Adición</th></tr>
+                  <tr><th>Ojo</th><th>Diámetro</th><th>Esférico</th><th>Cilíndrico</th><th>Eje</th><th>Adición</th><th>D.I.</th><th>Altura</th></tr>
                   <tr>
                     <td style="color:var(--muted);">O.D. (Der)</td>
+                    <td>${escapeHtml(o.od_diam || '-')}</td>
                     <td>${escapeHtml(o.od_esf || '-')}</td>
                     <td>${escapeHtml(o.od_cil || '-')}</td>
                     <td>${escapeHtml(o.od_eje || '-')}</td>
                     <td>${escapeHtml(o.od_add || '-')}</td>
+                    <td>${escapeHtml(o.od_di || '-')}</td>
+                    <td>${escapeHtml(o.od_alt || '-')}</td>
                   </tr>
                   <tr>
                     <td style="color:var(--muted);">O.I. (Izq)</td>
+                    <td>${escapeHtml(o.oi_diam || '-')}</td>
                     <td>${escapeHtml(o.oi_esf || '-')}</td>
                     <td>${escapeHtml(o.oi_cil || '-')}</td>
                     <td>${escapeHtml(o.oi_eje || '-')}</td>
                     <td>${escapeHtml(o.oi_add || '-')}</td>
+                    <td>${escapeHtml(o.oi_di || '-')}</td>
+                    <td>${escapeHtml(o.oi_alt || '-')}</td>
                   </tr>
                 </table>
+              </div>
+              <div style="margin-top: 10px; font-size: 12px; color: var(--muted); text-align: center;">
+                <strong>Tipo de cristal:</strong> ${escapeHtml(o.dp || '-')} | <strong>Tratamientos:</strong> ${escapeHtml(o.tratamientos || 'Sin tratamientos')} | <strong>Médico:</strong> ${escapeHtml(o.doctor || '-')}
               </div>
               <div style="margin-top: 10px; font-size: 12px; color: var(--muted); text-align: center;">
                 <strong>DP:</strong> ${escapeHtml(o.dp || '-')} | <strong>Altura:</strong> ${escapeHtml(o.altura || '-')} | <strong>Médico:</strong> ${escapeHtml(o.doctor || '-')}
