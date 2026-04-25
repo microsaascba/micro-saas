@@ -619,6 +619,90 @@
   let selectedFramePrice = 0;
   let selectedLensPrice = 0;
 
+
+  function editarOrden(id) {
+    const o = dbOrders.find(x => x.id === id);
+    if (!o) return;
+
+    // 1. Resetear el modal y clavar el ID para que la DB sepa que es una actualización
+    document.getElementById('formOrden').reset();
+    document.getElementById('ordId').value = o.id;
+
+    // 2. Datos del paciente y médico
+    document.getElementById('ordClientId').value = o.clientId || '';
+    document.getElementById('ordClientName').value = o.clientName || '';
+    document.getElementById('ordDoctor').value = o.doctor || '';
+    
+    // Desarmar las notas para sacar la Obra Social si estaba junta
+    let obraSocialLimpia = "";
+    let notasLimpias = o.notes || "";
+    if (o.notes && o.notes.includes("Obra Social:")) {
+        const partes = o.notes.split(" | Obs: ");
+        obraSocialLimpia = partes[0].replace("Obra Social: ", "").trim();
+        notasLimpias = partes.length > 1 ? partes[1].trim() : "";
+    }
+    document.getElementById('ordObraSocial').value = obraSocialLimpia;
+    document.getElementById('ordNotas').value = notasLimpias;
+    document.getElementById('ordDelivery').value = o.deliveryDate || todayISO();
+
+    // 3. Rellenar Ficha Clínica - Ojo Derecho
+    document.getElementById('od_diam').value = o.od_diam || '';
+    document.getElementById('od_esf').value = o.od_esf || '';
+    document.getElementById('od_cil').value = o.od_cil || '';
+    document.getElementById('od_eje').value = o.od_eje || '';
+    document.getElementById('od_base').value = o.od_base || '';
+    document.getElementById('od_add').value = o.od_add || '';
+    document.getElementById('od_di').value = o.od_di || '';
+    document.getElementById('od_alt').value = o.od_alt || '';
+
+    // Rellenar Ficha Clínica - Ojo Izquierdo
+    document.getElementById('oi_diam').value = o.oi_diam || '';
+    document.getElementById('oi_esf').value = o.oi_esf || '';
+    document.getElementById('oi_cil').value = o.oi_cil || '';
+    document.getElementById('oi_eje').value = o.oi_eje || '';
+    document.getElementById('oi_base').value = o.oi_base || '';
+    document.getElementById('oi_add').value = o.oi_add || '';
+    document.getElementById('oi_di').value = o.oi_di || '';
+    document.getElementById('oi_alt').value = o.oi_alt || '';
+
+    // 4. Parámetros del Servicio
+    document.getElementById('ordDp').value = o.dp || 'Monofocal';
+    document.getElementById('ordDiseno').value = o.diseno || '';
+    document.getElementById('ordCalibrado').value = o.calibrado || 'Aro completo';
+    document.getElementById('ordMaterial').value = o.material || 'Orgánico';
+    document.getElementById('ordColor').value = o.color_lente || 'Blanco';
+    document.getElementById('ordAntirreflex').value = o.antirreflex || 'Sin Antirreflex';
+    document.getElementById('ordTinte').value = o.tinte || '';
+
+    // Marcar Tratamientos
+    document.querySelectorAll('input[name="ordTrat"]').forEach(cb => cb.checked = false);
+    if (o.tratamientos && o.tratamientos !== 'Sin tratamientos extra') {
+        const tratArray = o.tratamientos.split(' + ');
+        document.querySelectorAll('input[name="ordTrat"]').forEach(cb => {
+            if (tratArray.includes(cb.value)) cb.checked = true;
+        });
+    }
+
+    // 5. Armazón y Finanzas
+    document.getElementById('ordFrameCode').value = o.frameCode || '';
+    document.getElementById('ordFrameName').value = o.frameName || '';
+    document.getElementById('ordTotal').value = currency(o.total);
+    document.getElementById('ordDeposit').value = currency(o.deposit);
+    document.getElementById('ordBalance').value = currency(o.balance);
+    
+    if (o.cupon) {
+        document.getElementById('ordPaymentMethod').value = 'Crédito';
+        document.getElementById('divCuponOrden').style.display = 'block';
+        document.getElementById('ordCupon').value = o.cupon;
+    }
+
+    // 6. Cambiar Títulos y Abrir
+    document.getElementById('modalOrdenTitle').textContent = `✏️ Editando Orden N° ${o.id}`;
+    document.getElementById('btnGuardarOrden').textContent = "Actualizar Orden";
+    document.getElementById('modalOrden').showModal();
+  }
+  
+
   async function initOrdenes() {
     mostrarCarga(true);
     try {
@@ -971,7 +1055,7 @@
           <td>${escapeHtml(o.frameName || o.frameCode)}<br><small style="color:var(--muted)">${escapeHtml(o.glassType)}</small></td>
           ${isPend || isListo ? `<td>${badge}</td><td style="color:var(--danger); font-weight:bold;">${currency(o.balance)}</td>` : `<td>${currency(o.total)}</td>`}
           <td style="text-align:center;">
-            ${isPend ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="marcarListo('${o.id}')">Marcar Recibido</button>` : ''}
+            ${isPend ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; margin-right:5px; border-color:var(--primary); color:var(--primary);" onclick="editarOrden('${o.id}')">✏️ Editar</button>             <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="marcarListo('${o.id}')">Marcar Recibido</button>` : ''}
             ${isListo ? `<button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>` : ''}
             <button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️ Imprimir</button>
           </td>
