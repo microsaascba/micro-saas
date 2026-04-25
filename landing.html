@@ -1,284 +1,708 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Micro SaaS Soluciones | Ordená y Hacé Crecer tu Empresa</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <style>
-        /* =========================================
-           ESTILOS BASE Y VARIABLES
-           ========================================= */
-        :root {
-            --primary-blue: #0A3D91;
-            --secondary-blue: #1E3A8A;
-            --text-dark: #1F2937;
-            --text-muted: #6B7280;
-            --bg-light: #F9FAFB;
-            --white: #FFFFFF;
-            --accent-green: #10B981;
-            
-            --radius-md: 12px;
-            --radius-lg: 24px;
-            --font-family: 'DM Sans', sans-serif;
-            --shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Micro SaaS Soluciones | Orden para PyMEs y Comercios</title>
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-family); }
-        body { color: var(--text-dark); line-height: 1.6; background-color: var(--white); overflow-x: hidden; }
-        a { text-decoration: none; transition: 0.2s ease; }
-        ul { list-style: none; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
 
-        /* Botones */
-        .btn {
-            display: inline-block;
-            padding: 16px 32px;
-            background-color: var(--primary-blue);
-            color: var(--white);
-            border-radius: var(--radius-md);
-            font-weight: 700;
-            font-size: 16px;
-            text-align: center;
-            border: 2px solid transparent;
-        }
-        .btn:hover { background-color: var(--secondary-blue); transform: translateY(-2px); box-shadow: 0 10px 20px rgba(10, 61, 145, 0.2); }
-        .btn-wpp { background-color: #25D366; display: inline-flex; align-items: center; gap: 10px; color: white; }
-        .btn-wpp:hover { background-color: #1CB354; box-shadow: 0 10px 20px rgba(37, 211, 102, 0.2); }
-        .btn-outline { background-color: transparent; border-color: var(--primary-blue); color: var(--primary-blue); }
-        .btn-outline:hover { background-color: #EFF6FF; border-color: var(--primary-blue); color: var(--primary-blue); box-shadow: none;}
+  <style>
+    :root {
+      --primary-blue: #0A3D91;
+      --secondary-blue: #1E3A8A;
+      --text-dark: #1F2937;
+      --text-muted: #6B7280;
+      --bg-light: #F9FAFB;
+      --white: #FFFFFF;
+      --accent-green: #10B981;
+      --radius-md: 12px;
+      --radius-lg: 24px;
+      --font-family: 'DM Sans', sans-serif;
+      --shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
+    }
 
-        /* Tipografía */
-        .section-tag { color: var(--accent-green); font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; display: block; }
-        h2 { font-size: 42px; color: var(--primary-blue); font-weight: 800; line-height: 1.2; margin-bottom: 24px; }
-        h2 span { color: var(--accent-green); }
-        p.lead { font-size: 18px; color: var(--text-muted); margin-bottom: 40px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-family); }
+    body { color: var(--text-dark); line-height: 1.6; background-color: var(--white); overflow-x: hidden; }
+    a { text-decoration: none; transition: 0.2s ease; }
+    ul { list-style: none; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 
-        /* Header */
-        .header { padding: 15px 0; background-color: var(--white); border-bottom: 1px solid #E5E7EB; position: sticky; top: 0; z-index: 1000; }
-        .navbar { display: flex; justify-content: space-between; align-items: center; }
-        .brand-logo-img { max-height: 45px; width: auto; }
-        .nav-links { display: flex; gap: 32px; font-size: 15px; font-weight: 600; }
-        .nav-links a { color: var(--text-dark); }
-        .nav-links a:hover { color: var(--primary-blue); }
+    .btn {
+      display: inline-block;
+      padding: 16px 32px;
+      background-color: var(--primary-blue);
+      color: var(--white);
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 16px;
+      text-align: center;
+      border: 2px solid transparent;
+    }
 
-        /* Hero Section */
-        .hero { padding: 80px 0 100px; background: linear-gradient(180deg, var(--bg-light) 0%, var(--white) 100%); }
-        .hero-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
-        .hero-content h1 { font-size: 56px; font-weight: 800; color: var(--primary-blue); line-height: 1.1; margin-bottom: 24px; letter-spacing: -1px; }
-        .hero-p { font-size: 20px; color: var(--text-muted); margin-bottom: 40px; max-width: 500px; }
-        .hero-image img { width: 100%; height: auto; border-radius: var(--radius-lg); box-shadow: var(--shadow); border: 1px solid #E5E7EB; }
+    .btn:hover {
+      background-color: var(--secondary-blue);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(10, 61, 145, 0.2);
+    }
 
-        /* Dashboard & Control */
-        .dashboard-hook { padding: 100px 0; background: var(--white); }
-        .hook-content { text-align: center; max-width: 800px; margin: 0 auto 60px; }
-        .dashboard-feature-img { width: 100%; max-width: 1000px; margin: 0 auto; display: block; border-radius: var(--radius-lg); box-shadow: var(--shadow); border: 1px solid #E5E7EB; }
+    .btn-wpp {
+      background-color: #25D366;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+    }
 
-        /* Modulos / Funcionalidades */
-        .modules { padding: 100px 0; background-color: var(--bg-light); border-top: 1px solid #E5E7EB; border-bottom: 1px solid #E5E7EB;}
-        .modules-header { text-align: center; max-width: 800px; margin: 0 auto 70px; }
-        .modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
-        .module-card { background-color: var(--white); padding: 40px; border-radius: var(--radius-lg); border: 1px solid #E5E7EB; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: 0.3s; }
-        .module-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); border-color: #BFDBFE; }
-        .module-icon { width: 64px; height: 64px; background: #EFF6FF; border-radius: 16px; display: grid; place-items: center; font-size: 32px; margin-bottom: 20px; }
-        .module-card h3 { font-size: 22px; color: var(--primary-blue); font-weight: 800; margin-bottom: 12px; }
-        .module-card p { color: var(--text-muted); font-size: 15px; }
+    .btn-wpp:hover {
+      background-color: #1CB354;
+      box-shadow: 0 10px 20px rgba(37, 211, 102, 0.2);
+    }
 
-        /* Doble Columna (A tu medida & Crecimiento) */
-        .split-section { padding: 100px 0; }
-        .split-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
-        .split-layout.reverse { direction: rtl; }
-        .split-layout.reverse > * { direction: ltr; }
-        .split-image img { width: 100%; border-radius: var(--radius-lg); box-shadow: var(--shadow); border: 1px solid #E5E7EB;}
-        .check-list { display: grid; gap: 16px; margin-top: 30px; }
-        .check-list li { display: flex; align-items: flex-start; gap: 15px; font-size: 16px; color: var(--text-dark); font-weight: 500; }
-        .check-list li span { color: var(--accent-green); font-size: 20px; line-height: 1; }
+    .btn-outline {
+      background-color: transparent;
+      border-color: var(--primary-blue);
+      color: var(--primary-blue);
+    }
 
-        /* Demo CTA */
-        .demo-section { padding: 100px 0; background-color: var(--white); }
-        .demo-card { background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%); color: white; border-radius: var(--radius-lg); padding: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; box-shadow: 0 25px 50px -12px rgba(30, 58, 138, 0.5); }
-        .demo-card h2 { color: white; margin-bottom: 20px; font-size: 46px; }
-        .demo-card p { color: rgba(255,255,255,0.8); font-size: 18px; margin-bottom: 30px; }
-        .demo-image img { width: 100%; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transform: rotate(2deg); transition: 0.3s; }
-        .demo-image img:hover { transform: rotate(0deg) scale(1.02); }
+    .btn-outline:hover {
+      background-color: #EFF6FF;
+      border-color: var(--primary-blue);
+      color: var(--primary-blue);
+      box-shadow: none;
+    }
 
-        /* Footer */
-        .footer { padding: 50px 0 30px; background-color: #0f172a; text-align: center; color: #94a3b8; font-size: 14px; }
-        .footer img { max-height: 40px; filter: brightness(0) invert(1); margin-bottom: 20px; opacity: 0.8; }
+    .section-tag {
+      color: var(--accent-green);
+      font-weight: 800;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+      display: block;
+    }
 
-        @media (max-width: 992px) {
-            .hero-layout, .split-layout, .demo-card { grid-template-columns: 1fr; text-align: center; gap: 40px; }
-            .split-layout.reverse { direction: ltr; }
-            .hero-content h1, h2, .demo-card h2 { font-size: 36px; }
-            .hero-p, .lead, .check-list { margin-left: auto; margin-right: auto; text-align: left; }
-            .nav-links { display: none; }
-            .demo-card { padding: 40px 20px; }
-        }
+    h2 {
+      font-size: 42px;
+      color: var(--primary-blue);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 24px;
+    }
 
-            .footer-logo {
-  max-height: 40px;
-  width: auto;
-  object-fit: contain;
-  display: block;
-  margin: 0 auto 20px auto;
-  filter: none;
-  opacity: 1;
-}
-        
-    </style>
+    h2 span,
+    h1 span {
+      color: var(--accent-green);
+    }
+
+    p.lead {
+      font-size: 18px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    .header {
+      padding: 15px 0;
+      background-color: var(--white);
+      border-bottom: 1px solid #E5E7EB;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-logo-img {
+      max-height: 45px;
+      width: auto;
+      display: block;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .nav-links a { color: var(--text-dark); }
+    .nav-links a:hover { color: var(--primary-blue); }
+
+    .hero {
+      padding: 80px 0 100px;
+      background: linear-gradient(180deg, var(--bg-light) 0%, var(--white) 100%);
+    }
+
+    .hero-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+
+    .hero-content h1 {
+      font-size: 58px;
+      font-weight: 800;
+      color: var(--primary-blue);
+      line-height: 1.08;
+      margin-bottom: 24px;
+      letter-spacing: -1.5px;
+    }
+
+    .hero-p {
+      font-size: 20px;
+      color: var(--text-muted);
+      margin-bottom: 36px;
+      max-width: 540px;
+    }
+
+    .hero-image img,
+    .dashboard-feature-img,
+    .split-image img,
+    .demo-image img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      border: 1px solid #E5E7EB;
+    }
+
+    .dashboard-hook {
+      padding: 100px 0;
+      background: var(--white);
+    }
+
+    .hook-content {
+      text-align: center;
+      max-width: 850px;
+      margin: 0 auto 50px;
+    }
+
+    .pain-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+      max-width: 980px;
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .pain-list li {
+      background: var(--bg-light);
+      border: 1px solid #E5E7EB;
+      border-radius: 16px;
+      padding: 18px;
+      font-size: 17px;
+      color: var(--text-dark);
+      font-weight: 600;
+    }
+
+    .pain-list li span {
+      color: var(--accent-green);
+      font-weight: 800;
+      margin-right: 8px;
+    }
+
+    .split-section {
+      padding: 100px 0;
+    }
+
+    .background-light {
+      background-color: var(--bg-light);
+      border-top: 1px solid #E5E7EB;
+      border-bottom: 1px solid #E5E7EB;
+    }
+
+    .split-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+
+    .split-layout.reverse {
+      direction: rtl;
+    }
+
+    .split-layout.reverse > * {
+      direction: ltr;
+    }
+
+    .check-list {
+      display: grid;
+      gap: 16px;
+      margin-top: 28px;
+    }
+
+    .check-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+      font-size: 17px;
+      color: var(--text-dark);
+      font-weight: 600;
+    }
+
+    .check-list li span {
+      color: var(--accent-green);
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .modules {
+      padding: 100px 0;
+      background-color: var(--bg-light);
+      border-top: 1px solid #E5E7EB;
+      border-bottom: 1px solid #E5E7EB;
+    }
+
+    .modules-header {
+      text-align: center;
+      max-width: 850px;
+      margin: 0 auto 70px;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 30px;
+    }
+
+    .module-card {
+      background-color: var(--white);
+      padding: 36px;
+      border-radius: var(--radius-lg);
+      border: 1px solid #E5E7EB;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      transition: 0.3s;
+    }
+
+    .module-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow);
+      border-color: #BFDBFE;
+    }
+
+    .module-icon {
+      width: 64px;
+      height: 64px;
+      background: #EFF6FF;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 32px;
+      margin-bottom: 20px;
+    }
+
+    .module-card h3 {
+      font-size: 22px;
+      color: var(--primary-blue);
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .module-card p {
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    .belief-section {
+      padding: 90px 0;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+    }
+
+    .belief-section h2 {
+      color: white;
+    }
+
+    .belief-section p {
+      color: rgba(255,255,255,0.82);
+      max-width: 780px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .demo-section {
+      padding: 100px 0;
+      background-color: var(--white);
+    }
+
+    .demo-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: white;
+      border-radius: var(--radius-lg);
+      padding: 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 50px;
+      align-items: center;
+      box-shadow: 0 25px 50px -12px rgba(30, 58, 138, 0.5);
+    }
+
+    .demo-card h2 {
+      color: white;
+      margin-bottom: 20px;
+      font-size: 44px;
+    }
+
+    .demo-card p {
+      color: rgba(255,255,255,0.84);
+      font-size: 18px;
+      margin-bottom: 24px;
+    }
+
+    .demo-access {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.18);
+      padding: 16px;
+      border-radius: 14px;
+      margin-bottom: 28px;
+      color: white;
+      font-size: 17px;
+    }
+
+    .footer {
+      padding: 50px 0 30px;
+      background-color: #0f172a;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .footer-logo {
+      max-height: 40px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 20px auto;
+      filter: none !important;
+      opacity: 1 !important;
+      background: white;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 992px) {
+      .hero-layout,
+      .split-layout,
+      .demo-card {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 40px;
+      }
+
+      .split-layout.reverse {
+        direction: ltr;
+      }
+
+      .hero-content h1,
+      h2,
+      .demo-card h2 {
+        font-size: 36px;
+      }
+
+      .hero-p,
+      .lead,
+      .check-list {
+        margin-left: auto;
+        margin-right: auto;
+        text-align: left;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .demo-card {
+        padding: 40px 20px;
+      }
+
+      .navbar {
+        gap: 10px;
+      }
+
+      .brand-logo-img {
+        max-height: 42px;
+      }
+
+      .btn {
+        padding: 14px 24px;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-    <header class="header">
-        <div class="container">
-            <nav class="navbar">
-                <div class="logo-group">
-                    <img src="img/logomicrosaas.png" alt="Micro SaaS Soluciones Logo" class="brand-logo-img">
-                </div>
-                <ul class="nav-links">
-                    <li><a href="#problema">¿Por qué Micro SaaS?</a></li>
-                    <li><a href="#modulos">Funcionalidades</a></li>
-                    <li><a href="#amedida">Sistema a Medida</a></li>
-                </ul>
-                <div style="display:flex; gap:10px;">
-                    <a href="https://laconsultorabc.com.ar/registro" target="_blank" class="btn btn-outline" style="padding: 10px 20px;">Ver Demo</a>
-                    <a href="https://wa.me/5493516506955?text=Hola!%20Quiero%20ordenar%20mi%20negocio%20con%20el%20sistema." target="_blank" class="btn btn-wpp" style="padding: 10px 20px;">Contactar</a>
-                </div>
-            </nav>
+  <header class="header">
+    <div class="container">
+      <nav class="navbar">
+        <div class="logo-group">
+          <img src="img/logomicrosaas.png" alt="Micro SaaS Soluciones Logo" class="brand-logo-img">
         </div>
-    </header>
 
-    <section class="hero">
-        <div class="container hero-layout">
-            <div class="hero-content">
-                <span class="section-tag">EL EXCEL YA TE QUEDÓ CHICO</span>
-                <h1>Dejá de perder plata por el <span>desorden</span>.</h1>
-                <p class="hero-p">Pasá al siguiente nivel con un sistema de facturación, stock y contabilidad que es <strong>rápido, económico y 100% adaptado a tu forma de trabajar</strong>. Automatizá lo aburrido y dedicate a vender.</p>
-                <div style="display:flex;gap:15px;flex-wrap:wrap;">
-                    <a href="https://laconsultorabc.com.ar/registro" target="_blank" class="btn">Probar Sistema Gratis</a>
-                    <a href="#modulos" class="btn btn-outline">Ver todo lo que hace</a>
-                </div>
-            </div>
-            <div class="hero-image">
-                <img src="img/img20.jpg" alt="Comerciante usando el sistema de gestión ERP">
-            </div>
-        </div>
-    </section>
+        <ul class="nav-links">
+          <li><a href="#problema">El problema</a></li>
+          <li><a href="#orden">Cómo ordena</a></li>
+          <li><a href="#diferencial">Quiénes somos</a></li>
+        </ul>
 
-    <section id="problema" class="dashboard-hook">
-        <div class="container">
-            <div class="hook-content">
-                <span class="section-tag">CONTROL TOTAL EN TIEMPO REAL</span>
-                <h2>Tu negocio en tu bolsillo, <span>estés donde estés</span>.</h2>
-                <p class="lead">¿No sabés cuánto ganaste realmente este mes después de pagar gastos y reponer mercadería? Nuestro panel financiero te muestra el <strong>Estado de Resultados (P&L) en vivo</strong>, cruce de IVA y el capital inmovilizado en tus depósitos.</p>
-            </div>
-            <img src="img/img21.jpg" alt="Panel de control Dashboard con ventas reales y contabilidad" class="dashboard-feature-img">
+        <div style="display:flex; gap:10px;">
+          <a href="https://laconsultorabc.com.ar/registro" target="_blank" class="btn btn-outline" style="padding: 10px 20px;">Ver Demo</a>
+          <a href="https://wa.me/5493516506955?text=Hola!%20Quiero%20ordenar%20mi%20negocio%20con%20Micro%20SaaS." target="_blank" class="btn btn-wpp" style="padding: 10px 20px;">Contactar</a>
         </div>
-    </section>
+      </nav>
+    </div>
+  </header>
 
-    <section id="amedida" class="split-section background-light">
-        <div class="container split-layout">
-            <div class="split-image">
-                <img src="img/img22.jpg" alt="Sistema contable personalizado a la medida de tu negocio">
-            </div>
-            <div class="split-content">
-                <span class="section-tag">LA VENTAJA COMPETITIVA</span>
-                <h2>No te vendemos un enlatado. Lo hacemos <span>A Tu Medida</span>.</h2>
-                <p class="lead">Sabemos que cada PyME es un mundo. Un supermercado no factura igual que una distribuidora mayorista. Nuestro diferencial es adaptar el sistema a <strong>tus procesos reales</strong>, sin cobrarte precios de multinacional.</p>
-                <ul class="check-list">
-                    <li><span>✔</span> <strong>Económico y accesible:</strong> No gastes fortunas en licencias. Pagás un abono justo.</li>
-                    <li><span>✔</span> <strong>Configuración Guiada:</strong> Nosotros lo armamos, vos solo lo usás.</li>
-                    <li><span>✔</span> <strong>Reglas Personalizadas:</strong> ¿Necesitás descuentos combinados o tipos de factura especiales? Lo configuramos para vos.</li>
-                </ul>
-            </div>
-        </div>
-    </section>
+  <section class="hero">
+    <div class="container hero-layout">
+      <div class="hero-content">
+        <span class="section-tag">EL PROBLEMA NO ES VENDER</span>
+        <h1>El problema es el <span>desorden</span>.</h1>
 
-    <section id="modulos" class="modules">
-        <div class="container">
-            <div class="modules-header">
-                <span class="section-tag">SISTEMA INTEGRAL ALL-IN-ONE</span>
-                <h2>Seis herramientas potentes. <span>Cero complicaciones.</span></h2>
-                <p class="lead">Desarrollamos módulos que se conectan entre sí para que la información fluya sola y sin errores de tipeo.</p>
-            </div>
-            <div class="modules-grid">
-                <div class="module-card">
-                    <div class="module-icon">🛒</div>
-                    <h3>Punto de Venta Rápido</h3>
-                    <p>Facturación fluida. Compatible con lectores de barra y ticketeras. Soporta promociones automáticas (2x1, 2da unidad al 50%). Cierre de caja Z ciego.</p>
-                </div>
-                <div class="module-card">
-                    <div class="module-icon">📓</div>
-                    <h3>Cuentas Corrientes (B2B)</h3>
-                    <p>Ideal para mayoristas. Controlá el "fiado", gestioná deudas, registrá cobranzas y emití recibos o facturas detalladas en PDF al instante.</p>
-                </div>
-                <div class="module-card">
-                    <div class="module-icon">📚</div>
-                    <h3>Stock Multi-Sucursal</h3>
-                    <p>Controlá múltiples depósitos o locales a la vez. Hacé transferencias internas, carga masiva desde Excel e imprimí remitos de traslado.</p>
-                </div>
-                <div class="module-card">
-                    <div class="module-icon">💸</div>
-                    <h3>Módulo Contable</h3>
-                    <p>Registrá gastos, carga las facturas de tus proveedores, armá tu libro de compras y calculá tu posición de IVA (Débito vs Crédito) mes a mes.</p>
-                </div>
-                <div class="module-card">
-                    <div class="module-icon">👥</div>
-                    <h3>Control de Permisos</h3>
-                    <p>Roles estrictos. Una cajera solo ve facturación, un administrativo carga compras y el dueño ve la rentabilidad. Tu información confidencial a salvo.</p>
-                </div>
-                <div class="module-card">
-                    <div class="module-icon">📊</div>
-                    <h3>Márgenes y Catálogo</h3>
-                    <p>Valorización de inventario en tiempo real. Calculá tu Utilidad Bruta y Margen Neto automáticamente al ingresar costo y precio de venta.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+        <p class="hero-p">
+          Vendés, facturás, comprás, atendés clientes y resolvés problemas todo el día.
+          Pero cuando querés mirar el negocio en serio, no sabés dónde estás parado.
+          No te falta trabajo. Te falta orden.
+        </p>
 
-    <section class="split-section">
-        <div class="container split-layout reverse">
-            <div class="split-image">
-                <img src="img/img23.jpg" alt="Control de stock para múltiples sucursales">
-            </div>
-            <div class="split-content">
-                <span class="section-tag">PENSADO PARA CRECER</span>
-                <h2>Preparado para cuando abras <span>tu próxima sucursal</span>.</h2>
-                <p class="lead">El sistema está diseñado con arquitectura corporativa. Podés agregar cajeros, vendedores y locales físicos nuevos con un solo clic.</p>
-                <ul class="check-list">
-                    <li><span>✔</span> El stock se descuenta automáticamente del local correcto.</li>
-                    <li><span>✔</span> Cajas y recaudaciones separadas por sucursal.</li>
-                    <li><span>✔</span> Historial completo de quién hizo qué y a qué hora.</li>
-                </ul>
-            </div>
+        <div style="display:flex;gap:15px;flex-wrap:wrap;">
+          <a href="https://wa.me/5493516506955?text=Hola!%20Quiero%20ver%20si%20Micro%20SaaS%20me%20puede%20ayudar%20a%20ordenar%20mi%20negocio." target="_blank" class="btn">Ver mi caso</a>
+          <a href="https://laconsultorabc.com.ar/registro" target="_blank" class="btn btn-outline">Ver Demo</a>
         </div>
-    </section>
+      </div>
 
-    <section class="demo-section">
-        <div class="container">
-            <div class="demo-card">
-                <div>
-                    <h2>Es hora de profesionalizarte.</h2>
-                    <p>Empezá a usar el sistema operativo de ventas y contabilidad más simple del mercado. Mirá cómo funciona desde adentro.</p>
-                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                        <a href="https://laconsultorabc.com.ar/registro" target="_blank" class="btn" style="background-color: var(--accent-green); color: white;">Ingresar al DEMO Gratis</a>
-                        <a href="https://wa.me/5493516506955?text=Hola!%20Me%20interesa%20implementar%20MicroSaaS%20en%20mi%20negocio." target="_blank" class="btn btn-wpp" style="background: transparent; border: 1px solid white;">Consultar Asesor</a>
-                    </div>
-                </div>
-                <div class="demo-image">
-                    <img src="img/img24.jpg" alt="Plataforma SaaS en funcionamiento">
-                </div>
-            </div>
-        </div>
-    </section>
+      <div class="hero-image">
+        <img src="img/img20.jpg" alt="Comerciante usando Micro SaaS">
+      </div>
+    </div>
+  </section>
 
-    <footer class="footer">
-        <div class="container">
-            <img src="img/logomicrosaas.png" alt="Micro SaaS Soluciones" class="footer-logo">
-            <p>Contabilidad · Comercial · Legal · RRHH · Sistemas</p>
-            <p style="margin-top: 15px; color: #475569;">&copy; 2026 Micro SaaS Soluciones by La Consultora. Córdoba, Argentina. Av. Colón 5034.</p>
+  <section id="problema" class="dashboard-hook">
+    <div class="container">
+      <div class="hook-content">
+        <span class="section-tag">SI TE PASA ESTO, NO ESTÁS SOLO</span>
+        <h2>El caos del día a día <span>te come el negocio</span>.</h2>
+        <p class="lead">
+          La mayoría de los emprendedores y PyMEs no tienen un problema de ganas.
+          Tienen demasiadas cosas sueltas funcionando al mismo tiempo.
+        </p>
+      </div>
+
+      <ul class="pain-list">
+        <li><span>•</span>No sabés cuánta mercadería tenés realmente.</li>
+        <li><span>•</span>Buscás precios en chats, cuadernos o planillas viejas.</li>
+        <li><span>•</span>Cada venta se carga de una forma distinta.</li>
+        <li><span>•</span>Comprás mercadería sin estar seguro si hacía falta.</li>
+        <li><span>•</span>Los gastos aparecen después, cuando ya es tarde.</li>
+        <li><span>•</span>Todo depende de vos para funcionar.</li>
+        <li><span>•</span>Si no estás encima, nadie sabe bien qué hacer.</li>
+        <li><span>•</span>No sabés si el negocio está ordenado o solo se mueve.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="belief-section">
+    <div class="container">
+      <span class="section-tag">ACÁ ESTÁ EL QUIEBRE</span>
+      <h2>No siempre necesitás vender más.<br><span>Primero necesitás ordenar.</span></h2>
+      <p class="lead">
+        Muchos negocios trabajan mucho, venden todos los días y aun así viven apagando incendios.
+        El problema no es la falta de movimiento. Es que la información está desparramada:
+        ventas por un lado, stock por otro, gastos en otro lado y decisiones tomadas a ojo.
+      </p>
+    </div>
+  </section>
+
+  <section id="orden" class="split-section background-light">
+    <div class="container split-layout">
+      <div class="split-image">
+        <img src="img/img21.jpg" alt="Panel de orden del negocio">
+      </div>
+
+      <div class="split-content">
+        <span class="section-tag">QUÉ ES MICRO SAAS</span>
+        <h2>No es una herramienta más.<br><span>Es una forma de ordenar tu negocio.</span></h2>
+
+        <p class="lead">
+          Micro SaaS junta en un mismo lugar lo que hoy muchas PyMEs tienen separado:
+          ventas, productos, stock, gastos, clientes y movimientos del día.
+          La idea es simple: que puedas trabajar con menos caos y más claridad.
+        </p>
+
+        <ul class="check-list">
+          <li><span>✔</span> Tener precios, productos y stock en un solo lugar.</li>
+          <li><span>✔</span> Registrar ventas sin perder tiempo.</li>
+          <li><span>✔</span> Ver qué salió, qué entró y qué queda.</li>
+          <li><span>✔</span> Dejar de depender de memoria, chats o planillas sueltas.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="modulos" class="modules">
+    <div class="container">
+      <div class="modules-header">
+        <span class="section-tag">QUÉ CAMBIA EN EL DÍA A DÍA</span>
+        <h2>Menos improvisación.<br><span>Más orden para trabajar mejor.</span></h2>
+        <p class="lead">
+          No lo pensamos como funciones técnicas. Lo pensamos como problemas reales que pasan todos los días en un comercio o PyME.
+        </p>
+      </div>
+
+      <div class="modules-grid">
+        <div class="module-card">
+          <div class="module-icon">🛒</div>
+          <h3>Vendés más rápido y más prolijo</h3>
+          <p>El mostrador deja de depender de buscar precios, preguntar todo o cargar ventas de cualquier manera.</p>
         </div>
-    </footer>
+
+        <div class="module-card">
+          <div class="module-icon">📦</div>
+          <h3>Sabés qué mercadería tenés</h3>
+          <p>Ingresás compras, asignás depósitos y ves qué hay disponible sin estar recorriendo estanterías o preguntando.</p>
+        </div>
+
+        <div class="module-card">
+          <div class="module-icon">💸</div>
+          <h3>Los gastos no quedan perdidos</h3>
+          <p>Cargás pagos, proveedores y gastos para entender mejor cómo se mueve el negocio durante el mes.</p>
+        </div>
+
+        <div class="module-card">
+          <div class="module-icon">📓</div>
+          <h3>Clientes y cuentas más claras</h3>
+          <p>Cuando vendés a cuenta, todo queda registrado. Menos mensajes sueltos, menos dudas y menos reclamos.</p>
+        </div>
+
+        <div class="module-card">
+          <div class="module-icon">🏪</div>
+          <h3>Orden por sucursal o depósito</h3>
+          <p>Si tenés más de un punto de trabajo, cada movimiento queda ubicado donde corresponde.</p>
+        </div>
+
+        <div class="module-card">
+          <div class="module-icon">👥</div>
+          <h3>Cada persona ve lo que necesita</h3>
+          <p>El dueño no tiene que estar encima de todo. Cada usuario trabaja con su parte, sin tocar información que no corresponde.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="diferencial" class="split-section">
+    <div class="container split-layout reverse">
+      <div class="split-image">
+        <img src="img/img22.jpg" alt="Negocio ordenado con Micro SaaS">
+      </div>
+
+      <div class="split-content">
+        <span class="section-tag">NUESTRO DIFERENCIAL</span>
+        <h2>No venimos del mundo del software.<br><span>Venimos del negocio real.</span></h2>
+
+        <p class="lead">
+          No somos una empresa de software tratando de entender comercios.
+          Somos gente que viene del mundo comercial, de ventas, de administración y de PyMEs.
+          Vimos el mismo problema muchas veces: negocios que trabajan mucho, pero trabajan desordenados.
+        </p>
+
+        <p class="lead">
+          Por eso Micro SaaS no nace desde la programación. Nace desde la realidad del mostrador,
+          del dueño que hace de todo, del stock que no coincide, de los gastos que se pierden y de las decisiones tomadas a ojo.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="split-section background-light">
+    <div class="container split-layout">
+      <div class="split-image">
+        <img src="img/img23.jpg" alt="Control por depósitos y sucursales">
+      </div>
+
+      <div class="split-content">
+        <span class="section-tag">NO ES PARA COMPLICARTE</span>
+        <h2>La idea es que puedas usarlo <span>sin frenar tu negocio</span>.</h2>
+
+        <p class="lead">
+          No necesitás cambiar toda tu forma de trabajar de un día para el otro.
+          Primero ordenamos lo básico: productos, ventas, stock, gastos y clientes.
+          Después, si hace falta, se adapta a cómo trabaja tu negocio.
+        </p>
+
+        <ul class="check-list">
+          <li><span>✔</span> Empezás por lo que más desorden te genera hoy.</li>
+          <li><span>✔</span> Lo usamos con lenguaje simple, sin tecnicismos.</li>
+          <li><span>✔</span> Vemos tu caso antes de decirte si te sirve.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="demo-section">
+    <div class="container">
+      <div class="demo-card">
+        <div>
+          <h2>Entrá, miralo y sacá tus propias conclusiones.</h2>
+
+          <p>
+            El demo está abierto para que veas cómo se siente trabajar con todo más ordenado.
+            No hace falta que te expliquemos demasiado: probalo y fijate si se parece a lo que necesitás.
+          </p>
+
+          <div class="demo-access">
+            <strong>Usuario:</strong> demo<br>
+            <strong>Contraseña:</strong> demo+1
+          </div>
+
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <a href="https://laconsultorabc.com.ar/registro" target="_blank" class="btn" style="background-color: var(--accent-green); color: white;">Ingresar al Demo</a>
+            <a href="https://wa.me/5493516506955?text=Hola!%20Quiero%20ver%20si%20Micro%20SaaS%20sirve%20para%20ordenar%20mi%20negocio." target="_blank" class="btn btn-wpp" style="background: transparent; border: 1px solid white;">Hablar por WhatsApp</a>
+          </div>
+        </div>
+
+        <div class="demo-image">
+          <img src="img/img24.jpg" alt="Micro SaaS funcionando">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="dashboard-hook">
+    <div class="container">
+      <div class="hook-content">
+        <span class="section-tag">CERRAMOS SIMPLE</span>
+        <h2>Si sentís que tu negocio está desordenado,<br><span>lo vemos juntos.</span></h2>
+        <p class="lead">
+          No se trata de venderte algo rápido.
+          Primero entendemos cómo estás trabajando hoy, dónde se desordena todo y qué necesitás ordenar primero.
+        </p>
+
+        <a href="https://wa.me/5493516506955?text=Hola!%20Quiero%20que%20veamos%20mi%20caso%20para%20ordenar%20mi%20negocio." target="_blank" class="btn btn-wpp">
+          Conversar mi caso
+        </a>
+      </div>
+
+      <img src="img/img30.jpg" alt="Orden para PyMEs y comercios" class="dashboard-feature-img">
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <img src="img/logomicrosaas.png" alt="Micro SaaS Soluciones" class="footer-logo">
+      <p>Comercial · Contabilidad · Orden operativo · Sistemas</p>
+      <p style="margin-top: 15px; color: #475569;">&copy; 2026 Micro SaaS Soluciones by La Consultora. Córdoba, Argentina.</p>
+    </div>
+  </footer>
 
 </body>
 </html>
