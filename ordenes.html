@@ -125,8 +125,8 @@
       <div style="display: flex; align-items: center; width: 100%;">
         <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
         <div class="page-title">
-          <h1 style="margin:0; font-size: 26px;">Órdenes</h1>
-          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión de pedidos, laboratorio y entregas.</p>
+          <h1 style="margin:0; font-size: 26px;">Órdenes y Trabajos</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión de pedidos, obras sociales y laboratorio.</p>
         </div>
       </div>
       <div class="topbar-actions" style="display: flex; gap: 10px;">
@@ -145,7 +145,7 @@
         <div id="kpiListos" style="font-size:28px; font-weight:800; color:var(--success);">0</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--warning);">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Saldos a Cobrar</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Saldos a Cobrar (Pacientes)</div>
         <div id="kpiSaldos" style="font-size:28px; font-weight:800; color:var(--warning);">$ 0,00</div>
       </article>
     </div>
@@ -163,7 +163,7 @@
         </div>
         <div style="overflow-x: auto;">
           <table>
-            <thead><tr><th>N° Orden</th><th>Fecha Est.</th><th>Paciente / Cliente</th><th>Armazón + Cristal</th><th>Estado</th><th>Saldo</th><th style="text-align: center;">Acciones</th></tr></thead>
+            <thead><tr><th>N° Orden</th><th>Fecha Est.</th><th>Paciente / Cliente</th><th>Armazón + Cristal</th><th>Estado</th><th>Saldo Paciente</th><th style="text-align: center;">Acciones</th></tr></thead>
             <tbody id="tbodyPendientes"></tbody>
           </table>
         </div>
@@ -175,7 +175,7 @@
         </div>
         <div style="overflow-x: auto;">
           <table>
-            <thead><tr><th>N° Orden</th><th>Entregado el</th><th>Paciente / Cliente</th><th>Armazón + Cristal</th><th>Total Abonado</th><th style="text-align: center;">Acciones</th></tr></thead>
+            <thead><tr><th>N° Orden</th><th>Entregado el</th><th>Paciente / Cliente</th><th>Armazón + Cristal</th><th>Total (Ticket)</th><th style="text-align: center;">Acciones</th></tr></thead>
             <tbody id="tbodyHistorial"></tbody>
           </table>
         </div>
@@ -277,15 +277,21 @@
       
       <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; margin-bottom: 20px;">
         <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line);">
-          <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">👤 1. Datos del Paciente</h3>
+          <h3 style="margin: 0 0 10px 0; font-size: 14px; color: var(--primary);">👤 1. Datos del Paciente y O.S.</h3>
           <div style="position: relative; margin-bottom: 10px;">
             <input type="hidden" id="ordClientId">
             <input type="text" id="ordClientName" class="input-box" placeholder="Buscar paciente por nombre o DNI..." autocomplete="off" oninput="buscarClienteOrd()" required>
             <div id="clientOrdResults" class="autocomplete-list"></div>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <input type="text" id="ordDoctor" class="input-box" placeholder="Médico / Oftalmólogo">
-            <input type="text" id="ordObraSocial" class="input-box" placeholder="Obra Social">
+            <div>
+               <label style="font-size: 10px; font-weight: bold; color: var(--muted);">Obra Social / Prepaga</label>
+               <input type="text" id="ordOsName" class="input-box" placeholder="Ej: PAMI, OSDE, Particular">
+            </div>
+            <div>
+               <label style="font-size: 10px; font-weight: bold; color: var(--muted);">Médico / Oftalmólogo</label>
+               <input type="text" id="ordDoctor" class="input-box" placeholder="Dr. Perez">
+            </div>
           </div>
         </div>
         
@@ -427,32 +433,51 @@
       </div>
 
       <div style="background: var(--panel-2); padding: 20px; border-radius: 8px; border: 1px dashed var(--primary); margin-bottom: 20px;">
-        <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--text);">💰 6. Liquidación</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: start;">
+        <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--text);">💰 6. Liquidación de Pagos y Coberturas</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
           <div>
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Valor Total (Armazón + Cristal) *</label>
-            <input type="text" id="ordTotal" class="input-box" style="font-size: 15px; font-weight: bold; color: var(--primary); background: #e2e8f0; cursor: not-allowed;" placeholder="$ 0,00" required readonly>
-          </div>
-          <div>
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Seña Abonada Hoy</label>
-            <input type="text" id="ordDeposit" class="input-box" style="font-size: 15px; font-weight: bold; color: var(--success);" oninput="formatCurrencyInput(this); calcSaldo()" placeholder="$ 0,00" autocomplete="off">
-          </div>
-          <div>
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de Pago (Seña)</label>
-            <select id="ordPaymentMethod" class="input-box" onchange="toggleCuponOrden()">
-              <option value="Efectivo">Efectivo</option>
-              <option value="Débito">Débito</option>
-              <option value="Crédito">Crédito</option>
-              <option value="Transferencia">Transferencia</option>
-            </select>
-            <div id="divCuponOrden" style="display: none; margin-top: 8px;">
-               <input type="text" id="ordCupon" class="input-box" placeholder="N° de Cupón / Lote" style="font-size: 13px; padding: 8px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
+              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Valor Total General</label>
+              <input type="text" id="ordTotal" class="input-box" style="width: 150px; padding: 4px 8px; font-size: 13px; font-weight: bold; color: var(--text); background: #e2e8f0; cursor: not-allowed; text-align: right;" placeholder="$ 0,00" required readonly>
+            </div>
+            
+            <div style="display:flex; justify-content:space-between; margin-bottom: 10px; align-items: center;">
+              <label style="font-size: 11px; font-weight: bold; color: var(--primary); text-transform: uppercase;">(-) Cubierto por O.S.</label>
+              <input type="text" id="ordOsAmount" class="input-box" style="width: 150px; padding: 4px 8px; font-size: 13px; font-weight: bold; color: var(--primary); border-color: var(--primary); text-align: right;" oninput="formatCurrencyInput(this); calcSaldo()" placeholder="$ 0,00" autocomplete="off">
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-bottom: 10px; align-items: center; border-top: 1px solid var(--line); padding-top: 10px;">
+              <label style="font-size: 11px; font-weight: 800; color: var(--text); text-transform: uppercase;">Subtotal Paciente</label>
+              <input type="text" id="ordTotalPaciente" class="input-box" style="width: 150px; padding: 4px 8px; font-size: 14px; font-weight: bold; color: var(--text); background: transparent; border: none; text-align: right;" value="$ 0,00" readonly>
             </div>
           </div>
-        </div>
-        <div style="margin-top:15px; padding-top:15px; border-top:1px dashed var(--line); display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-weight:bold; font-size:14px; color:var(--danger);">SALDO PENDIENTE A COBRAR EN LA ENTREGA:</span>
-          <input type="text" id="ordBalance" class="input-box" value="$ 0,00" readonly style="width:150px; background:transparent; border:none; font-size:22px; font-weight:900; color:var(--danger); text-align:right;">
+          
+          <div style="border-left: 1px solid var(--line); padding-left: 20px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 10px; align-items: center;">
+              <label style="font-size: 11px; font-weight: bold; color: var(--success); text-transform: uppercase;">Seña Abonada Hoy</label>
+              <input type="text" id="ordDeposit" class="input-box" style="width: 150px; padding: 4px 8px; font-size: 13px; font-weight: bold; color: var(--success); border-color: var(--success); text-align: right;" oninput="formatCurrencyInput(this); calcSaldo()" placeholder="$ 0,00" autocomplete="off">
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-bottom: 10px; align-items: center;">
+              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de Pago</label>
+              <select id="ordPaymentMethod" class="input-box" style="width: 150px; padding: 4px 8px; font-size: 12px;" onchange="toggleCuponOrden()">
+                <option value="Efectivo">Efectivo</option>
+                <option value="Débito">Débito</option>
+                <option value="Crédito">Crédito</option>
+                <option value="Transferencia">Transferencia</option>
+              </select>
+            </div>
+            
+            <div id="divCuponOrden" style="display: none; text-align: right; margin-bottom: 10px;">
+               <input type="text" id="ordCupon" class="input-box" placeholder="N° Cupón" style="width: 150px; padding: 4px 8px; font-size: 12px;">
+            </div>
+
+            <div style="margin-top:15px; padding-top:10px; border-top:1px dashed var(--danger); display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-weight:bold; font-size:12px; color:var(--danger); text-transform: uppercase;">SALDO PACIENTE AL RETIRAR:</span>
+              <input type="text" id="ordBalance" class="input-box" value="$ 0,00" readonly style="width:130px; background:transparent; border:none; font-size:20px; font-weight:900; color:var(--danger); text-align:right;">
+            </div>
+          </div>
         </div>
       </div>
 
@@ -470,7 +495,7 @@
     <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">El cliente retira el pedido. Se debe abonar el saldo pendiente para cerrar la orden.</p>
     <input type="hidden" id="cobroOrdId">
     <div style="margin-bottom: 15px;">
-      <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Saldo a Cobrar</label>
+      <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Saldo a Cobrar (Paciente)</label>
       <input type="text" id="cobroMonto" class="input-box" readonly style="font-size: 24px; font-weight: bold; color: var(--danger); background: var(--danger-soft); border:none; text-align:center;">
     </div>
     <div style="margin-bottom: 25px;">
@@ -504,13 +529,22 @@
       </div>
     </div>
     <div class="print-grid">
-      <div class="print-box"><strong>PACIENTE:</strong> <span id="pcName"></span><br><br><strong>FECHA ESTIMADA DE ENTREGA:</strong> <span id="pcDelivery"></span></div>
-      <div class="print-box"><strong>ARMAZÓN:</strong> <span id="pcFrame"></span><br><br><strong>CRISTALES:</strong> <span id="pcGlass"></span></div>
+      <div class="print-box">
+        <strong>PACIENTE:</strong> <span id="pcName"></span><br><br>
+        <strong>OBRA SOCIAL:</strong> <span id="pcOsName"></span><br><br>
+        <strong>FECHA ESTIMADA DE ENTREGA:</strong> <span id="pcDelivery"></span>
+      </div>
+      <div class="print-box">
+        <strong>ARMAZÓN:</strong> <span id="pcFrame"></span><br><br>
+        <strong>CRISTALES:</strong> <span id="pcGlass"></span>
+      </div>
     </div>
     <table class="print-table">
       <tr><th>CONCEPTO</th><th>VALOR</th></tr>
-      <tr><td>VALOR TOTAL DEL TRABAJO</td><td id="pcTotal"></td></tr>
-      <tr><td>SEÑA ABONADA</td><td id="pcDeposit"></td></tr>
+      <tr><td>VALOR TOTAL GENERAL</td><td id="pcTotal"></td></tr>
+      <tr><td style="color:#666;">(-) CUBIERTO POR OBRA SOCIAL</td><td id="pcOsAmount" style="color:#666;"></td></tr>
+      <tr><td style="font-weight:bold;">SUBTOTAL A CARGO DEL PACIENTE</td><td id="pcTotalPaciente" style="font-weight:bold;"></td></tr>
+      <tr><td>SEÑA ABONADA HOY</td><td id="pcDeposit"></td></tr>
       <tr><th style="background:#fff;">SALDO PENDIENTE AL RETIRAR</th><th id="pcBalance" style="background:#fff; font-size:16px;"></th></tr>
     </table>
     <p style="font-size:10px; margin-top:15px; text-align:center;">Conserve este comprobante para retirar su pedido. Los trabajos a medida no tienen devolución.</p>
@@ -590,7 +624,6 @@
   let selectedFramePrice = 0;
   let selectedLensPrice = 0;
   
-  // Variables globales auth admin
   let ordToAnular = null;
   let pendingAdminAction = null;
   let pendingAdminParam = null;
@@ -817,9 +850,17 @@
   }
 
   function calcSaldo() {
-    const tot = parseCurrency(document.getElementById('ordTotal').value);
+    const totGral = parseCurrency(document.getElementById('ordTotal').value);
+    const osMonto = parseCurrency(document.getElementById('ordOsAmount').value);
+    
+    // Lo que le queda pagar al paciente
+    const totPaciente = totGral - osMonto;
+    document.getElementById('ordTotalPaciente').value = currency(totPaciente);
+
+    // Saldo real después de la seña
     const dep = parseCurrency(document.getElementById('ordDeposit').value);
-    const balance = tot - dep;
+    const balance = totPaciente - dep;
+    
     document.getElementById('ordBalance').value = currency(balance);
   }
 
@@ -838,6 +879,12 @@
     document.getElementById('divCuponOrden').style.display = 'none';
     document.getElementById('ordPaymentMethod').value = 'Efectivo';
     document.getElementById('ordTotal').value = '';
+    
+    // Reset O.S. fields
+    document.getElementById('ordOsName').value = '';
+    document.getElementById('ordOsAmount').value = '$ 0,00';
+    document.getElementById('ordTotalPaciente').value = '$ 0,00';
+
     document.getElementById('ordDeposit').value = '$ 0,00';
     document.getElementById('ordBalance').value = '$ 0,00';
     document.getElementById('labelFramePrice').textContent = '$ 0,00';
@@ -862,15 +909,8 @@
     document.getElementById('ordClientName').value = o.clientName || '';
     document.getElementById('ordDoctor').value = o.doctor || '';
     
-    let obraSocialLimpia = "";
-    let notasLimpias = o.notes || "";
-    if (o.notes && o.notes.includes("Obra Social:")) {
-        const partes = o.notes.split(" | Obs: ");
-        obraSocialLimpia = partes[0].replace("Obra Social: ", "").trim();
-        notasLimpias = partes.length > 1 ? partes[1].trim() : "";
-    }
-    document.getElementById('ordObraSocial').value = obraSocialLimpia;
-    document.getElementById('ordNotas').value = notasLimpias;
+    document.getElementById('ordOsName').value = o.os_name || '';
+    document.getElementById('ordNotas').value = o.notes || '';
     document.getElementById('ordDelivery').value = o.deliveryDate || todayISO();
 
     document.getElementById('od_diam').value = o.od_diam || '';
@@ -907,11 +947,9 @@
         });
     }
 
-    // 5. Armazón y Finanzas
     document.getElementById('ordFrameCode').value = o.frameCode || ''; 
     document.getElementById('ordFrameName').value = o.frameName || ''; 
 
-    // --- MAGIA DE BÚSQUEDA INVERSA PARA EL CRISTAL ---
     if (o.glassType) {
         const cristalGuardado = dbProducts.find(p => p.category === 'Cristal' && p.name === o.glassType);
         if (cristalGuardado) {
@@ -930,8 +968,10 @@
     }
 
     document.getElementById('ordTotal').value = currency(o.total); 
+    document.getElementById('ordOsAmount').value = currency(o.os_amount); 
     document.getElementById('ordDeposit').value = currency(o.deposit); 
-    document.getElementById('ordBalance').value = currency(o.balance);
+    
+    calcSaldo(); // Ejecutamos para que actualice la vista de TotalPaciente y Balance
     
     if (o.cupon) {
         document.getElementById('ordPaymentMethod').value = 'Crédito';
@@ -954,6 +994,7 @@
     const id = document.getElementById('ordId').value || 'ORD-' + Math.floor(Math.random()*90000 + 10000);
     
     const totalFloat = parseCurrency(document.getElementById('ordTotal').value);
+    const osAmountFloat = parseCurrency(document.getElementById('ordOsAmount').value);
     const depositFloat = parseCurrency(document.getElementById('ordDeposit').value);
     const balanceFloat = parseCurrency(document.getElementById('ordBalance').value);
     
@@ -963,10 +1004,6 @@
 
     const tratamientosArr = Array.from(document.querySelectorAll('input[name="ordTrat"]:checked')).map(cb => cb.value);
     const tratStr = tratamientosArr.length > 0 ? tratamientosArr.join(' + ') : 'Sin tratamientos extra';
-
-    const obraSocialStr = document.getElementById('ordObraSocial').value.trim();
-    const notasStr = document.getElementById('ordNotas').value.trim();
-    const combinedNotes = `Obra Social: ${obraSocialStr || '-'} | Obs: ${notasStr || '-'}`;
 
     const ord = {
       id: id, date: todayISO(),
@@ -989,10 +1026,15 @@
       frameCode: frameCode, frameName: document.getElementById('ordFrameName').value, 
       glassType: glassTypeName,
       deliveryDate: document.getElementById('ordDelivery').value,
+      
       total: totalFloat,
-      deposit: depositFloat, balance: balanceFloat,
+      os_name: document.getElementById('ordOsName').value.trim(),
+      os_amount: osAmountFloat,
+      deposit: depositFloat, 
+      balance: balanceFloat,
+      
       status: 'Pendiente', seller: localStorage.getItem('activeUser') || 'Admin', 
-      notes: combinedNotes,
+      notes: document.getElementById('ordNotas').value.trim(),
       cupon: document.getElementById('ordCupon').value.trim(),
       createdAt: new Date().toISOString()
     };
@@ -1011,6 +1053,7 @@
         }
       }
 
+      // El paciente paga su seña hoy (Ingreso de caja)
       if (isNew && depositFloat > 0) {
         const method = document.getElementById('ordPaymentMethod').value;
         const cuponVal = document.getElementById('ordCupon').value.trim();
@@ -1047,18 +1090,20 @@
       
       if (isPend) kPend++;
       if (isListo) kListos++;
-      if (isPend || isListo) kSaldo += o.balance;
+      if (isPend || isListo) kSaldo += o.balance; // Saldo real que debe el paciente
 
       const badge = isAnulado ? `<span style="background:var(--line); color:var(--muted); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Anulado</span>` : 
                     isPend ? `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">En Laboratorio</span>` : 
                     isListo ? `<span style="background:#dcfce7; color:#16a34a; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Listo para Entregar</span>` : 
                     `<span style="background:#e0e7ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Entregado</span>`;
 
+      const osTag = o.os_name ? `<br><small style="color:var(--primary); font-weight:bold;">O.S: ${escapeHtml(o.os_name)}</small>` : '';
+
       const tr = `
         <tr style="${isAnulado ? 'opacity:0.6;' : ''}">
           <td><strong>${o.id}</strong></td>
           <td>${isPend || isListo ? o.deliveryDate : (o.date || '-')}</td>
-          <td style="${isAnulado ? 'text-decoration:line-through;' : ''}"><strong>${escapeHtml(o.clientName)}</strong></td>
+          <td style="${isAnulado ? 'text-decoration:line-through;' : ''}"><strong>${escapeHtml(o.clientName)}</strong>${osTag}</td>
           <td>${escapeHtml(o.frameName || o.frameCode)}<br><small style="color:var(--muted)">${escapeHtml(o.glassType)}</small></td>
           ${isPend || isListo ? `<td>${badge}</td><td style="color:var(--danger); font-weight:bold;">${currency(o.balance)}</td>` : `<td>${badge}</td><td>${currency(o.total)}</td>`}
           <td style="text-align:center; min-width:180px;">
@@ -1110,7 +1155,7 @@
         const ventaSaldo = {
           id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
           clientId: o.clientId, client: o.clientName, method: method, cupon: '', subtotal: o.balance, promoDiscount: 0, total: o.balance, isB2B: false,
-          itemsJSON: JSON.stringify([{id: 'saldo', code: 'SALDO', name: `Saldo Orden ${o.id} - Trabajo Terminado`, price: o.balance, cost: 0, qty: 1}])
+          itemsJSON: JSON.stringify([{id: 'saldo', code: 'SALDO', name: `Saldo Paciente Orden ${o.id}`, price: o.balance, cost: 0, qty: 1}])
         };
         await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSaldo) });
       }
@@ -1174,7 +1219,6 @@
       if (!o) return;
       mostrarCarga(true);
       try {
-          // 1. Devolver Stock Físico si había armazón
           if (o.frameCode) {
               const prod = dbProducts.find(p => p.code === o.frameCode && p.category !== 'Cristal');
               if (prod) {
@@ -1186,7 +1230,6 @@
               }
           }
 
-          // 2. Devolver la plata de la Seña si existía (Genera nota de crédito interna)
           if (o.deposit > 0) {
               const devSena = {
                   id: 'vta_dev_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
@@ -1194,10 +1237,9 @@
                   itemsJSON: JSON.stringify([{id: 'dev_sena', code: 'DEV-SENA', name: `Devolución Seña Orden Anulada ${o.id}`, price: -Math.abs(o.deposit), cost: 0, qty: 1}])
               };
               await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(devSena) });
-              alert(`⚠️ Se generó un egreso de caja por ${currency(o.deposit)} para devolver la seña.`);
+              alert(`⚠️ Se generó un egreso de caja por ${currency(o.deposit)} para devolver la seña al paciente.`);
           }
 
-          // 3. Marcar la Orden como Anulada en D1
           o.status = 'Anulado';
           o.balance = 0;
           await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) });
@@ -1229,33 +1271,21 @@
       if(filtradas.length === 0) return alert("No se encontraron órdenes que coincidan con esas fechas y estado.");
 
       const csvData = filtradas.map(o => {
-          let obsLimpia = o.notes;
-          let obraSocialLimpia = "-";
-          if (o.notes && o.notes.includes("Obra Social:")) {
-              const partes = o.notes.split(" | Obs: ");
-              obraSocialLimpia = partes[0].replace("Obra Social: ", "").trim();
-              obsLimpia = partes.length > 1 ? partes[1].trim() : "";
-          }
-
           return {
               "Fecha Orden": o.createdAt ? o.createdAt.split('T')[0] : o.date,
               "Fecha Entrega": o.deliveryDate,
               "Orden Nro": o.id,
               "Estado": o.status,
-              "Paciente / Cliente": o.clientName,
+              "Paciente": o.clientName,
+              "Obra Social": o.os_name || '-',
               "Médico": o.doctor || '-',
-              "Obra Social": obraSocialLimpia,
               "Armazón": o.frameName || o.frameCode,
               "Cristal": o.glassType,
-              "Tipo Cristal": o.dp,
               "Valor Total": o.total,
-              "Seña": o.deposit,
-              "Saldo": o.balance,
-              "OD Diam": o.od_diam, "OD Esf": o.od_esf, "OD Cil": o.od_cil, "OD Eje": o.od_eje, "OD Base": o.od_base, "OD Add": o.od_add, "OD DI": o.od_di, "OD Alt": o.od_alt,
-              "OI Diam": o.oi_diam, "OI Esf": o.oi_esf, "OI Cil": o.oi_cil, "OI Eje": o.oi_eje, "OI Base": o.oi_base, "OI Add": o.oi_add, "OI DI": o.oi_di, "OI Alt": o.oi_alt,
-              "Diseño": o.diseno, "Calibrado": o.calibrado, "Material": o.material, "Color": o.color_lente, "Antirreflex": o.antirreflex, "Tinte": o.tinte,
-              "Tratamientos": o.tratamientos,
-              "Observaciones": obsLimpia
+              "Cubierto OS": o.os_amount || 0,
+              "Seña (Paciente)": o.deposit,
+              "Saldo (Paciente)": o.balance,
+              "Observaciones": o.notes
           };
       });
 
@@ -1271,11 +1301,14 @@
     document.getElementById('pcDate').textContent = new Date().toLocaleDateString('es-AR');
     document.getElementById('pcId').textContent = 'N° ' + o.id;
     document.getElementById('pcName').textContent = o.clientName;
+    document.getElementById('pcOsName').textContent = o.os_name || 'Particular / Sin cobertura';
     document.getElementById('pcDelivery').textContent = o.deliveryDate;
     document.getElementById('pcFrame').textContent = o.frameName || o.frameCode;
     document.getElementById('pcGlass').textContent = o.glassType;
     
     document.getElementById('pcTotal').textContent = currency(o.total);
+    document.getElementById('pcOsAmount').textContent = currency(o.os_amount || 0);
+    document.getElementById('pcTotalPaciente').textContent = currency(o.total - (o.os_amount || 0));
     document.getElementById('pcDeposit').textContent = currency(o.deposit);
     document.getElementById('pcBalance').textContent = currency(o.balance);
 
@@ -1283,16 +1316,7 @@
     document.getElementById('plId').textContent = 'ORDEN LAB N° ' + o.id;
     document.getElementById('plName').textContent = o.clientName;
     document.getElementById('plDoc').textContent = o.doctor || '-';
-    
-    let obsLimpia = o.notes;
-    let obraSocialLimpia = "-";
-    if (o.notes && o.notes.includes("Obra Social:")) {
-        const partes = o.notes.split(" | Obs: ");
-        obraSocialLimpia = partes[0].replace("Obra Social: ", "").trim();
-        obsLimpia = partes.length > 1 ? partes[1].trim() : "";
-    }
-
-    document.getElementById('plOS').textContent = obraSocialLimpia;
+    document.getElementById('plOS').textContent = o.os_name || '-';
     document.getElementById('plDelivery').textContent = o.deliveryDate;
     
     document.getElementById('plOdDiam').textContent = o.od_diam || '-'; document.getElementById('plOdEsf').textContent = o.od_esf; document.getElementById('plOdCil').textContent = o.od_cil; document.getElementById('plOdEje').textContent = o.od_eje; document.getElementById('plOdBase').textContent = o.od_base || '-'; document.getElementById('plOdAdd').textContent = o.od_add; document.getElementById('plOdDi').textContent = o.od_di || '-'; document.getElementById('plOdAlt').textContent = o.od_alt || '-';
@@ -1307,7 +1331,7 @@
     
     document.getElementById('plAlt').textContent = o.tratamientos || '-';
     document.getElementById('plTinte').textContent = o.tinte || '-';
-    document.getElementById('plObs').textContent = obsLimpia || 'Sin observaciones.';
+    document.getElementById('plObs').textContent = o.notes || 'Sin observaciones.';
     
     document.getElementById('plFrame').textContent = o.frameCode + ' - ' + o.frameName;
     document.getElementById('plGlass').textContent = o.glassType;
