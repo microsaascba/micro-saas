@@ -3,72 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Facturación y POS | Micro SaaS</title>
+  <title>Facturación | Micro SaaS</title>
   
   <style>
-    html, body { background-color: #f0f2f7 !important; }
-    body { animation: fadeIn 0.15s ease-in-out; }
+    html, body { background-color: #f0f2f7 !important; height: 100vh; overflow: hidden; }
+    body { animation: fadeIn 0.15s ease-in-out; font-family: 'Inter', sans-serif; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
   <link rel="stylesheet" href="styles.css" />
   <style>
-    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
+    .app { display: grid; grid-template-columns: 260px 1fr; height: 100vh; width: 100vw; }
+    .sidebar { background: #0f172a; }
     
-    .pos-layout { display: grid; grid-template-columns: 2.5fr 1.2fr; gap: 20px; max-width: 1400px; margin: 0 auto; width: 100%; align-items: start;}
-    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
-    .input-box:focus { border-color: var(--primary); }
+    .pos-container { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; height: 100%; padding: 20px; box-sizing: border-box; }
     
-    .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; max-height: 600px; overflow-y: auto; padding-right: 5px; }
-    .prod-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 15px; cursor: pointer; transition: 0.2s; text-align: center; position: relative; }
-    .prod-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: var(--shadow-sm); }
-    .prod-card h4 { margin: 0 0 8px 0; font-size: 13px; color: var(--text); }
-    .prod-card .price { font-size: 16px; font-weight: 800; color: var(--primary); margin:0;}
-    .prod-card .stock { position: absolute; top: 8px; right: 8px; font-size: 10px; background: var(--panel-2); padding: 2px 6px; border-radius: 4px; font-weight: bold; color: var(--muted); }
-    .prod-card.sin-stock { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
+    /* CABECERA TRADICIONAL */
+    .invoice-header { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+    .header-box label { display: block; font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
+    .header-box span { font-size: 16px; font-weight: 700; color: var(--text); }
     
-    .cart-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-    .cart-table th { font-size: 11px; text-transform: uppercase; color: var(--muted); padding-bottom: 8px; border-bottom: 1px solid var(--line); text-align: left; }
-    .cart-table td { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
-    .qty-btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; width: 24px; height: 24px; cursor: pointer; font-weight: bold; color: var(--text); display: inline-flex; justify-content: center; align-items: center; }
+    /* BUSQUEDA CLIENTE */
+    .client-section { position: relative; background: #fff; padding: 15px 20px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; }
     
-    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 200px; overflow-y: auto; display: none; }
-    .autocomplete-list.active { display: block; }
-    .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
-    .autocomplete-item:hover { background: var(--primary-soft); }
+    /* CUERPO FACTURA */
+    .invoice-body { flex: 1; display: grid; grid-template-columns: 1fr 350px; gap: 20px; overflow: hidden; }
     
-    .print-wrapper { display: none; }
+    .items-panel { background: #fff; border-radius: 12px; border: 1px solid var(--line); display: flex; flex-direction: column; overflow: hidden; }
+    .search-products { padding: 15px; border-bottom: 1px solid var(--line); background: #f8fafc; }
+    
+    .cart-scroll { flex: 1; overflow-y: auto; padding: 0 15px; }
+    .cart-table { width: 100%; border-collapse: collapse; }
+    .cart-table th { position: sticky; top: 0; background: #fff; z-index: 10; padding: 12px 0; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--line); text-align: left; }
+    .cart-table td { padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 
-    @media print {
-      @page { margin: 0; size: 80mm 200mm; }
-      body * { visibility: hidden !important; }
-      .print-wrapper, .print-wrapper * { visibility: visible !important; }
-      .print-wrapper { display: block !important; position: absolute !important; left: 0 !important; top: 0 !important; width: 75mm !important; margin: 0 auto; background: white !important; font-family: monospace !important; color: #000 !important; }
-      .ticket-header { text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
-      .ticket-header h1 { font-size: 18px; margin: 0 0 5px 0; font-weight: bold; text-transform: uppercase;}
-      .ticket-header p { font-size: 12px; margin: 0; }
-      .ticket-items { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px;}
-      .ticket-items th { border-bottom: 1px solid #000; text-align: left; padding: 4px 0; }
-      .ticket-items td { padding: 4px 0; vertical-align: top; }
-      .ticket-totals { width: 100%; margin-bottom: 15px; font-size: 12px;}
-      .ticket-totals td { padding: 2px 0; text-align: right;}
-      .ticket-totals td:first-child { text-align: left; font-weight: bold;}
-      .ticket-totals tr.total td { font-size: 16px; font-weight: bold; border-top: 1px dashed #000; padding-top: 5px; }
-      .ticket-footer { text-align: center; font-size: 11px; border-top: 1px dashed #000; padding-top: 10px; }
-    }
+    /* TOTALES Y ACCIONES */
+    .totals-panel { background: #0f172a; color: #fff; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; }
+    .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: rgba(255,255,255,0.7); }
+    .total-main { font-size: 32px; font-weight: 900; color: #fff; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.2); }
+    
+    .btn-facturar { background: var(--success); color: white; border: none; padding: 20px; border-radius: 10px; font-size: 20px; font-weight: 800; cursor: pointer; transition: 0.2s; width: 100%; }
+    .btn-facturar:hover { transform: scale(1.02); filter: brightness(1.1); }
+
+    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 250px; overflow-y: auto; display: none; }
+    .autocomplete-list.active { display: block; }
+    .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; color: var(--text); }
+    .autocomplete-item:hover { background: var(--primary-soft); }
+
+    dialog { border: none; border-radius: 16px; padding: 30px; width: 400px; text-align: center; box-shadow: var(--shadow-lg); }
+    dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
 
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
-    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
 
     @media (max-width: 900px) {
-      .app { display: flex !important; flex-direction: column !important; }
+      .app { display: flex; flex-direction: column; }
       .mobile-toggle { display: block; }
-      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
-      .sidebar.open { left: 0 !important; }
-      .sidebar-overlay.open { display: block; }
-      .topbar { padding: 15px; flex-direction: column; align-items: flex-start; gap: 15px; }
-      .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
-      .pos-layout { grid-template-columns: 1fr; }
+      .invoice-header { grid-template-columns: 1fr; gap: 10px; }
+      .invoice-body { grid-template-columns: 1fr; overflow: visible; }
+      .totals-panel { margin-top: 20px; }
+      .pos-container { overflow-y: auto; height: auto; }
     }
   </style>
 </head>
@@ -81,563 +73,347 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
+      <div class="brand-text"><strong>Micro SaaS</strong><small>POS System</small></div>
     </div>
-     <nav class="nav">
-      <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-      <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
-      <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
-      <a href="facturacion.html" data-module="facturacion"><span class="active">🛒</span> Facturación</a>
-      <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-      <a href="cc.html" data-module="cc"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
-      <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
-      <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
-      <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
-      <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
-      <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
+    <nav class="nav">
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html" class="active"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html"><span class="nav-icon">📚</span> Stock</a>
+      <a href="ordenes.html"><span class="nav-icon">📋</span> Órdenes</a>
     </nav>
   </aside>
 
   <main class="content">
-    <header class="topbar">
-      <div style="display: flex; align-items: center; width: 100%;">
-        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
-        <div class="page-title">
-          <h1 style="margin:0; font-size: 26px;">Punto de Venta</h1>
-          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Facturación rápida y emisión de tickets.</p>
+    <div class="pos-container">
+      
+      <section class="invoice-header">
+        <div class="header-box">
+          <label>Tipo de Comprobante</label>
+          <span id="labelInvoiceType">Factura B - Consumidor Final</span>
         </div>
-      </div>
-    </header>
-
-    <div class="pos-layout">
-      <article class="card card-pad" style="height: fit-content;">
-        <div style="margin-bottom: 20px; display: flex; gap: 10px;">
-          <input type="text" id="searchCat" class="input-box" placeholder="🔍 Buscar por nombre o código de barras..." onkeyup="filtrarCatalogo()" autofocus>
-          <select id="filterCategory" class="input-box" style="max-width: 150px;" onchange="filtrarCatalogo()">
-            <option value="ALL">Todas las Categorías</option>
-          </select>
+        <div class="header-box">
+          <label>Fecha de Emisión</label>
+          <span id="labelDate">--/--/----</span>
         </div>
-        <div class="prod-grid" id="prodGrid"></div>
-      </article>
+        <div class="header-box">
+          <label>Punto de Venta / Sucursal</label>
+          <span id="labelBranch">Central</span>
+        </div>
+      </section>
 
-      <article class="card card-pad" style="height: fit-content; position: sticky; top: 20px;">
-        <h2 style="margin: 0 0 15px 0; font-size: 18px; border-bottom: 1px solid var(--line); padding-bottom: 10px;">Ticket de Venta</h2>
-        
-        <div style="position: relative; margin-bottom: 15px;">
+      <section class="client-section">
+        <label style="font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 8px;">Datos del Cliente</label>
+        <div style="position: relative;">
           <input type="hidden" id="clientId">
-          <input type="text" id="clientName" class="input-box" placeholder="👤 Buscar cliente por DNI o Nombre..." onkeyup="buscarCliente()" autocomplete="off">
+          <input type="text" id="clientSearch" class="input-box" placeholder="Clic para buscar cliente por DNI o Nombre..." onkeyup="buscarCliente()" autocomplete="off" style="font-weight: bold; border-color: var(--primary);">
           <div id="clientResults" class="autocomplete-list"></div>
         </div>
+      </section>
 
-        <div style="min-height: 150px; margin-bottom: 15px;">
-          <table class="cart-table">
-            <thead>
-              <tr><th style="width: 50%;">Producto</th><th style="text-align:center;">Cant</th><th style="text-align:right;">Subtotal</th></tr>
-            </thead>
-            <tbody id="cartBody">
-              <tr><td colspan="3" style="text-align:center; color:var(--muted); padding:30px 0;">El carrito está vacío</td></tr>
-            </tbody>
-          </table>
+      <section class="invoice-body">
+        
+        <div class="items-panel">
+          <div class="search-products">
+            <div style="position: relative;">
+              <input type="text" id="prodSearch" class="input-box" placeholder="🔍 Ingresar nombre del producto o escanear código de barras..." onkeyup="buscarProducto(event)" autocomplete="off">
+              <div id="prodResults" class="autocomplete-list"></div>
+            </div>
+          </div>
+          
+          <div class="cart-scroll">
+            <table class="cart-table">
+              <thead>
+                <tr>
+                  <th style="width: 10%;">Cód.</th>
+                  <th style="width: 45%;">Descripción</th>
+                  <th style="width: 15%; text-align: center;">Cantidad</th>
+                  <th style="width: 15%; text-align: right;">Precio</th>
+                  <th style="width: 15%; text-align: right;">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody id="cartBody">
+                <tr><td colspan="5" style="text-align:center; padding: 60px; color: var(--muted);">Presione el buscador de arriba para añadir productos.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div style="background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 20px;">
-          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-            <span style="font-weight:bold; color:var(--muted);">Subtotal:</span>
-            <span id="cartTotal" style="font-weight:bold;">$ 0,00</span>
-          </div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <span style="font-weight:bold; color:var(--muted);">Descuento ($):</span>
-            <input type="number" id="promoDiscount" class="input-box" style="width:100px; padding:4px 8px; text-align:right;" placeholder="0.00" oninput="applyDiscount()">
-          </div>
-          <div style="display:flex; justify-content:space-between; border-top: 1px dashed var(--line); padding-top: 10px;">
-            <span style="font-weight:900; font-size:18px;">TOTAL:</span>
-            <span id="cartTotalFinal" style="font-weight:900; font-size:18px; color:var(--primary);">$ 0,00</span>
-          </div>
-        </div>
+        <div class="totals-panel">
+          <div>
+            <div class="total-row"><span>Items:</span><span id="cartCount">0</span></div>
+            <div class="total-row"><span>Subtotal:</span><span id="cartSubtotal">$ 0,00</span></div>
+            <div class="total-row" style="color: #fb7185;"><span>Descuento:</span><input type="number" id="promoDiscount" class="input-box" style="width: 80px; padding: 4px; background: transparent; color: #fb7185; border: 1px dashed rgba(255,255,255,0.3); text-align: right;" value="0" oninput="renderCart()"></div>
+            
+            <div class="total-main">
+              <div style="font-size: 12px; text-transform: uppercase; color: rgba(255,255,255,0.5);">Total a Pagar</div>
+              <span id="cartTotal">$ 0,00</span>
+            </div>
 
-        <div style="background: #fff8f1; padding: 15px; border-radius: 8px; border: 1px dashed #f59e0b; margin-bottom: 20px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-             <h3 style="margin:0; font-size: 14px; color: #b45309;">Medios de Pago</h3>
-             <label style="font-size: 10px; font-weight: bold; cursor: pointer; color: #b45309; background: #fef3c7; padding: 4px 8px; border-radius: 4px;">
-               <input type="checkbox" id="isMixedPayment" onchange="toggleMixedPayment()"> 🔄 Pago Mixto
-             </label>
-          </div>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+              <label style="font-size: 10px; font-weight: bold; color: rgba(255,255,255,0.5); display: block; margin-bottom: 10px;">MÉDODO DE PAGO</label>
+              
+              <div style="margin-bottom: 10px;">
+                <label style="font-size: 10px; cursor: pointer; color: #3b82f6;">
+                  <input type="checkbox" id="isMixedPayment" onchange="toggleMixedUI()"> Activar Pago Mixto
+                </label>
+              </div>
 
-          <div id="simplePaymentDiv">
-             <select id="paymentMethod" class="input-box" onchange="toggleCuponsFacturacion('simple')">
-                <option value="Efectivo">Efectivo</option>
-                <option value="Débito">Débito</option>
-                <option value="Crédito">Crédito</option>
-                <option value="Transferencia">Transferencia</option>
-                <option value="CC">Cuenta Corriente</option>
-             </select>
-             <input type="text" id="paymentCupon" class="input-box" placeholder="N° de Cupón / Lote / Ref" style="display:none; margin-top:10px;">
-          </div>
-
-          <div id="mixedPaymentDiv" style="display: none; background: #fff; padding: 10px; border-radius: 8px; border: 1px dashed #fcd34d; margin-top: 10px;">
-             <div style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
-                <select id="mixedMethod1" class="input-box" style="width: 120px; padding: 6px; font-size: 12px;" onchange="toggleCuponsFacturacion('mix1')">
-                  <option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito">Crédito</option><option value="Transferencia">Transf.</option>
+              <div id="simplePayment">
+                <select id="paymentMethod" class="input-box" style="background: #1e293b; color: #fff; border-color: rgba(255,255,255,0.2);">
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Débito">Tarjeta Débito</option>
+                  <option value="Crédito">Tarjeta Crédito</option>
+                  <option value="Transferencia">Transferencia</option>
                 </select>
-                <input type="text" id="mixedAmount1" class="input-box" style="width: 110px; padding: 6px; font-size: 12px; text-align:right;" placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcMixedPayment()">
-             </div>
-             <div id="mixedCuponDiv1" style="display: none; margin-bottom: 10px; text-align: right;">
-               <input type="text" id="mixedCupon1" class="input-box" placeholder="Cupón 1" style="width: 150px; padding: 6px; font-size: 12px;">
-             </div>
+              </div>
 
-             <div style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
-                <select id="mixedMethod2" class="input-box" style="width: 120px; padding: 6px; font-size: 12px;" onchange="toggleCuponsFacturacion('mix2')">
-                  <option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito" selected>Crédito</option><option value="Transferencia">Transf.</option>
-                </select>
-                <input type="text" id="mixedAmount2" class="input-box" style="width: 110px; padding: 6px; font-size: 12px; text-align:right; background:#e2e8f0; border-color:transparent;" placeholder="$ 0,00" readonly>
-             </div>
-             <div id="mixedCuponDiv2" style="display: none; margin-bottom: 5px; text-align: right;">
-               <input type="text" id="mixedCupon2" class="input-box" placeholder="Cupón 2" style="width: 150px; padding: 6px; font-size: 12px;">
-             </div>
+              <div id="mixedPayment" style="display: none;">
+                <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                  <input type="text" id="mixAmount1" class="input-box" style="flex:1; font-size:12px;" placeholder="Monto 1" oninput="calcMixed()">
+                  <select id="mixMethod1" class="input-box" style="width:90px; font-size:12px;"><option value="Efectivo">Efe</option><option value="Débito">Déb</option><option value="Crédito">Créd</option></select>
+                </div>
+                <div style="display: flex; gap: 5px;">
+                  <input type="text" id="mixAmount2" class="input-box" style="flex:1; font-size:12px; background:#1e293b; color:#fff;" readonly>
+                  <select id="mixMethod2" class="input-box" style="width:90px; font-size:12px;"><option value="Crédito">Créd</option><option value="Débito">Déb</option></select>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <button class="btn-facturar" id="btnFacturar" onclick="confirmarFactura()">FACTURAR (F2)</button>
         </div>
 
-        <button class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="cobrar()">COBRAR E IMPRIMIR</button>
-      </article>
+      </section>
     </div>
   </main>
 </div>
 
-<div class="print-wrapper">
-  <div class="ticket-header">
-    <h1 id="printCompanyName">MICRO SAAS</h1>
-    <p id="printCompanyAddress">Dirección de prueba 123</p>
-    <p>CUIT: <span id="printCompanyCuit"></span></p>
-    <p>-------------------------</p>
-    <p>TICKET NO FISCAL</p>
-    <p>Fecha: <span id="ticketDate"></span></p>
-    <p>Ticket N°: <span id="ticketId"></span></p>
-    <p>Cliente: <span id="ticketClient"></span></p>
+<dialog id="confirmDialog">
+  <div style="font-size: 50px; margin-bottom: 10px;">💳</div>
+  <h2 style="margin: 0 0 10px 0;">¿Confirmar Factura?</h2>
+  <p style="color: var(--muted); margin-bottom: 30px;">Presione <strong>ENTER</strong> para confirmar o ESC para cancelar.</p>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+    <button class="btn btn-light" onclick="document.getElementById('confirmDialog').close()">Cancelar</button>
+    <button class="btn btn-primary" onclick="ejecutarCobro()">Confirmar</button>
   </div>
-  
-  <table class="ticket-items">
-    <thead><tr><th style="width:15%">CANT</th><th style="width:60%">DETALLE</th><th style="width:25%; text-align:right;">SUBT</th></tr></thead>
-    <tbody id="ticketItems"></tbody>
-  </table>
-  
-  <table class="ticket-totals">
-    <tr><td>SUBTOTAL:</td><td id="ticketSubtotal"></td></tr>
-    <tr id="ticketDescRow" style="display:none;"><td>DESCUENTO:</td><td id="ticketDiscount"></td></tr>
-    <tr class="total"><td>TOTAL:</td><td id="ticketTotal"></td></tr>
-  </table>
-  
-  <div class="ticket-footer">
-    <p style="font-weight: bold; font-size: 12px;">MEDIO DE PAGO:</p>
-    <p id="ticketMethod" style="margin-top: 5px; line-height: 1.4;"></p>
-    <p style="margin-top:15px;">Le atendió: <span id="ticketSeller"></span></p>
-    <p style="font-style: italic; margin-top:5px;">¡Gracias por su compra!</p>
-  </div>
-</div>
+</dialog>
 
 <script src="core.js"></script>
 <script>
-  const API_URL = "/api";
   let dbProducts = [];
   let dbClients = [];
   let cart = [];
-  let cartTotal = 0;
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
 
-  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function todayISO() { return new Date().toISOString().split('T')[0]; }
-  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
-  function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
-  
-  function currency(n) { 
-      return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n || 0)); 
-  }
+  function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 }).format(n || 0); }
+  function todayDate() { return new Date().toLocaleDateString('es-AR'); }
 
-  function formatCurrencyInput(input) {
-      let val = input.value.replace(/[^\d,]/g, '');
-      const parts = val.split(',');
-      if (parts.length > 2) { val = parts[0] + ',' + parts.slice(1).join(''); }
-      if (val === '') { input.value = ''; return; }
-      let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-      let decPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : '';
-      input.value = '$ ' + intPart + decPart;
-  }
-
-  function parseCurrency(val) {
-      if (!val) return 0;
-      let str = String(val).replace(/[\$\s\.]/g, '').replace(',', '.');
-      return parseFloat(str) || 0;
-  }
-
-  // --- LÓGICA DE PAGOS MIXTOS ---
-  function toggleMixedPayment() {
-      const isMixed = document.getElementById('isMixedPayment').checked;
-      document.getElementById('simplePaymentDiv').style.display = isMixed ? 'none' : 'block';
-      document.getElementById('mixedPaymentDiv').style.display = isMixed ? 'block' : 'none';
-      if (isMixed) {
-          calcMixedPayment();
-      }
-      toggleCuponsFacturacion('simple');
-      toggleCuponsFacturacion('mix1');
-      toggleCuponsFacturacion('mix2');
-  }
-
-  function calcMixedPayment() {
-      const isMixed = document.getElementById('isMixedPayment').checked;
-      if (!isMixed) return;
-
-      const discountVal = parseFloat(document.getElementById('promoDiscount').value) || 0;
-      const totalToPay = cartTotal - discountVal;
-      
-      const a1 = parseCurrency(document.getElementById('mixedAmount1').value);
-      let a2 = totalToPay - a1;
-      if (a2 < 0) a2 = 0;
-      
-      document.getElementById('mixedAmount2').value = currency(a2);
-  }
-
-  function toggleCuponsFacturacion(type) {
-      if (type === 'simple') {
-          const method = document.getElementById('paymentMethod').value;
-          document.getElementById('paymentCupon').style.display = method === 'Crédito' ? 'block' : 'none';
-          if(method !== 'Crédito') document.getElementById('paymentCupon').value = '';
-      } else if (type === 'mix1') {
-          const method = document.getElementById('mixedMethod1').value;
-          document.getElementById('mixedCuponDiv1').style.display = method === 'Crédito' ? 'block' : 'none';
-          if(method !== 'Crédito') document.getElementById('mixedCupon1').value = '';
-      } else if (type === 'mix2') {
-          const method = document.getElementById('mixedMethod2').value;
-          document.getElementById('mixedCuponDiv2').style.display = method === 'Crédito' ? 'block' : 'none';
-          if(method !== 'Crédito') document.getElementById('mixedCupon2').value = '';
-      }
-  }
-
-  // --- INICIALIZACIÓN ---
   async function initPOS() {
+    document.getElementById('labelDate').textContent = todayDate();
+    document.getElementById('labelBranch').textContent = terminalActiva;
+    
     mostrarCarga(true);
     try {
       const [resP, resC] = await Promise.all([
-        apiFetch(`${API_URL}/products?status=Activo`),
-        apiFetch(`${API_URL}/business_clients`)
+        apiFetch('/api/products?status=Activo'),
+        apiFetch('/api/business_clients')
       ]);
-      
       if (resP.ok) dbProducts = await resP.json();
       if (resC.ok) dbClients = await resC.json();
-      
-      const cats = [...new Set(dbProducts.map(p => p.category).filter(c => c))].sort();
-      document.getElementById('filterCategory').innerHTML = '<option value="ALL">Todas las Categorías</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
-
-      document.getElementById('printCompanyName').textContent = localStorage.getItem('company_name') || 'Mi Negocio';
-      document.getElementById('printCompanyAddress').textContent = localStorage.getItem('company_address') || '';
-      document.getElementById('printCompanyCuit').textContent = localStorage.getItem('company_cuit') || '-';
-
-    } catch (err) {
-      console.error(err);
-    } finally {
-      mostrarCarga(false);
-      filtrarCatalogo();
-    }
+    } catch (e) { console.error(e); }
+    finally { mostrarCarga(false); }
   }
 
-  function filtrarCatalogo() {
-    const term = document.getElementById('searchCat').value.toLowerCase();
-    const cat = document.getElementById('filterCategory').value;
-    const grid = document.getElementById('prodGrid');
-    
-    const filtrados = dbProducts.filter(p => {
-      const matchTerm = (p.name || '').toLowerCase().includes(term) || (p.code || '').toLowerCase().includes(term);
-      const matchCat = cat === 'ALL' || p.category === cat;
-      return matchTerm && matchCat;
-    });
-
-    grid.innerHTML = filtrados.map(p => {
-      let stockLocal = 0;
-      try { stockLocal = JSON.parse(p.stock_branches)[terminalActiva] || 0; } 
-      catch { stockLocal = p.stock || 0; }
-      
-      const agotado = stockLocal <= 0;
-      return `
-      <div class="prod-card ${agotado ? 'sin-stock' : ''}" onclick="!${agotado} && addToCart('${p.id}')">
-        <div class="stock" style="color: ${agotado ? 'var(--danger)' : 'var(--muted)'}">${agotado ? 'AGOTADO' : 'Stock: '+stockLocal}</div>
-        <div style="font-size: 30px; margin-bottom: 10px;">${agotado ? '⛔' : '📦'}</div>
-        <h4 title="${escapeHtml(p.name)}">${escapeHtml(p.name).substring(0, 30)}</h4>
-        <p class="price">${currency(p.price)}</p>
-      </div>`;
-    }).join('');
-
-    if (filtrados.length === 0) grid.innerHTML = '<p style="color:var(--muted); grid-column: 1/-1; text-align:center; padding: 40px;">No se encontraron productos.</p>';
-  }
-
+  // --- BUSCADORES ---
   function buscarCliente() {
-    const term = document.getElementById('clientName').value.toLowerCase().trim();
+    const term = document.getElementById('clientSearch').value.toLowerCase().trim();
     const list = document.getElementById('clientResults');
-    if (term.length < 1) { list.classList.remove('active'); document.getElementById('clientId').value = ''; return; }
+    if (!term) { list.classList.remove('active'); return; }
 
     const filtrados = dbClients.filter(c => (c.name||'').toLowerCase().includes(term) || (c.cuil||'').includes(term)).slice(0, 5);
-    list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">No encontrado. Venta como consumidor final.</div>' : filtrados.map(c => `
-      <div class="autocomplete-item" onclick="selCli('${c.id}', '${escapeHtml(c.name)}')">
-        <strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small>
+    list.innerHTML = filtrados.map(c => `
+      <div class="autocomplete-item" onclick="selCli('${c.id}', '${c.name}')">
+        <strong>${c.name}</strong><br><small>DNI/CUIT: ${c.cuil || 'S/N'}</small>
       </div>`).join('');
     list.classList.add('active');
   }
 
   function selCli(id, name) {
     document.getElementById('clientId').value = id;
-    document.getElementById('clientName').value = name;
+    document.getElementById('clientSearch').value = name;
     document.getElementById('clientResults').classList.remove('active');
   }
 
+  function buscarProducto(e) {
+    const term = document.getElementById('prodSearch').value.toLowerCase().trim();
+    const list = document.getElementById('prodResults');
+    if (!term) { list.classList.remove('active'); return; }
+
+    const filtrados = dbProducts.filter(p => (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term)).slice(0, 8);
+    
+    // Si es un escaneo exacto de código de barras
+    if (e.key === 'Enter' && filtrados.length === 1) {
+        addToCart(filtrados[0].id);
+        document.getElementById('prodSearch').value = '';
+        list.classList.remove('active');
+        return;
+    }
+
+    list.innerHTML = filtrados.map(p => `
+      <div class="autocomplete-item" onclick="addToCart('${p.id}'); document.getElementById('prodSearch').value=''; document.getElementById('prodResults').classList.remove('active');">
+        <div style="display:flex; justify-content:space-between;">
+            <strong>${p.name}</strong>
+            <span style="color:var(--primary); font-weight:bold;">${currency(p.price)}</span>
+        </div>
+        <small style="color:var(--muted);">${p.code || 'Sin código'}</small>
+      </div>`).join('');
+    list.classList.add('active');
+  }
+
+  // --- CARRITO ---
   function addToCart(id) {
     const p = dbProducts.find(x => x.id === id);
     if (!p) return;
     const item = cart.find(x => x.id === id);
-    
-    let stockLocal = 0; try { stockLocal = JSON.parse(p.stock_branches)[terminalActiva] || 0; } catch { stockLocal = p.stock || 0; }
-    const actualQty = item ? item.qty : 0;
-    if (actualQty + 1 > stockLocal) return alert("No hay stock suficiente en esta sucursal.");
-
-    if (item) item.qty++; else cart.push({ id: p.id, name: p.name, code: p.code, price: p.price, cost: p.cost, qty: 1 });
-    renderCart();
-  }
-
-  function changeQty(id, delta) {
-    const item = cart.find(x => x.id === id);
-    if (!item) return;
-    const p = dbProducts.find(x => x.id === id);
-    let stockLocal = 0; try { stockLocal = JSON.parse(p.stock_branches)[terminalActiva] || 0; } catch { stockLocal = p.stock || 0; }
-
-    if (delta > 0 && item.qty + 1 > stockLocal) return alert("Stock máximo alcanzado.");
-    
-    item.qty += delta;
-    if (item.qty <= 0) cart = cart.filter(x => x.id !== id);
+    if (item) item.qty++;
+    else cart.push({ id: p.id, name: p.name, code: p.code, price: p.price, cost: p.cost, qty: 1 });
     renderCart();
   }
 
   function renderCart() {
     const tbody = document.getElementById('cartBody');
-    cartTotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
-    
     if (cart.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--muted); padding:30px 0;">El carrito está vacío</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 60px; color: var(--muted);">Carrito vacío.</td></tr>';
       document.getElementById('cartTotal').textContent = '$ 0,00';
-    } else {
-      tbody.innerHTML = cart.map(i => `
+      document.getElementById('cartCount').textContent = '0';
+      return;
+    }
+
+    let subtotal = 0;
+    tbody.innerHTML = cart.map((i, index) => {
+      subtotal += i.price * i.qty;
+      return `
         <tr>
-          <td><div style="font-weight:bold; line-height:1.2;">${escapeHtml(i.name)}</div><div style="color:var(--muted); font-size:11px;">${currency(i.price)} x u.</div></td>
-          <td style="text-align:center; white-space:nowrap;">
-            <button class="qty-btn" onclick="changeQty('${i.id}', -1)">-</button>
-            <span style="margin:0 8px; font-weight:bold;">${i.qty}</span>
-            <button class="qty-btn" onclick="changeQty('${i.id}', 1)">+</button>
+          <td><small>${i.code || '-'}</small></td>
+          <td><strong>${i.name}</strong></td>
+          <td style="text-align:center;">
+            <button class="qty-btn" onclick="updateQty(${index}, -1)">-</button>
+            <span style="margin: 0 10px;">${i.qty}</span>
+            <button class="qty-btn" onclick="updateQty(${index}, 1)">+</button>
           </td>
-          <td style="text-align:right; font-weight:bold; color:var(--primary);">${currency(i.price * i.qty)}</td>
-        </tr>
-      `).join('');
-      document.getElementById('cartTotal').textContent = currency(cartTotal);
-    }
-    applyDiscount();
+          <td style="text-align:right;">${currency(i.price)}</td>
+          <td style="text-align:right; font-weight:bold;">${currency(i.price * i.qty)}</td>
+        </tr>`;
+    }).join('');
+
+    const discount = parseFloat(document.getElementById('promoDiscount').value) || 0;
+    const total = subtotal - discount;
+
+    document.getElementById('cartCount').textContent = cart.reduce((a, b) => a + b.qty, 0);
+    document.getElementById('cartSubtotal').textContent = currency(subtotal);
+    document.getElementById('cartTotal').textContent = currency(total > 0 ? total : 0);
+    calcMixed();
   }
 
-  function applyDiscount() {
-    const discVal = parseFloat(document.getElementById('promoDiscount').value) || 0;
-    let finalTotal = cartTotal - discVal;
-    if (finalTotal < 0) finalTotal = 0;
-    
-    document.getElementById('cartTotalFinal').textContent = currency(finalTotal);
-    
-    if (document.getElementById('isMixedPayment').checked) {
-        calcMixedPayment();
-    }
+  function updateQty(idx, delta) {
+      cart[idx].qty += delta;
+      if (cart[idx].qty <= 0) cart.splice(idx, 1);
+      renderCart();
   }
 
-  async function cobrar() {
-    if (cart.length === 0) return alert("El carrito está vacío.");
-    
-    const clientName = document.getElementById('clientName').value.trim();
-    const clientId = document.getElementById('clientId').value || '';
-    const discountVal = parseFloat(document.getElementById('promoDiscount').value) || 0;
-    const cartTotalAfterDiscount = cartTotal - discountVal;
-
-    const isMixed = document.getElementById('isMixedPayment').checked;
-    
-    mostrarCarga(true);
-    try {
-        if (!isMixed) {
-            // --- FLUJO DE PAGO SIMPLE (NORMAL) ---
-            const method = document.getElementById('paymentMethod').value;
-            const cupon = document.getElementById('paymentCupon').value.trim();
-
-            if (method === 'CC' && !clientName) {
-                alert("Debe seleccionar un cliente del directorio para vender en Cuenta Corriente.");
-                mostrarCarga(false); return;
-            }
-
-            const saleObj = {
-                id: 'vta_' + Date.now(),
-                date: todayISO(),
-                createdAt: new Date().toISOString(),
-                clientId: clientId,
-                client: clientName || 'Consumidor Final',
-                method: method,
-                cupon: cupon,
-                subtotal: cartTotal,
-                promoDiscount: discountVal,
-                total: cartTotalAfterDiscount,
-                branch: terminalActiva,
-                seller: localStorage.getItem('activeUser') || 'Caja',
-                isB2B: false,
-                itemsJSON: JSON.stringify(cart)
-            };
-
-            if (method === 'CC') {
-                const movement = {
-                    id: 'cc_' + Date.now(), company_id: localStorage.getItem('company_id'),
-                    client_id: clientId, date: todayISO(), type: 'debit',
-                    amount: cartTotalAfterDiscount, description: 'Compra en sucursal (Ticket: ' + saleObj.id + ')',
-                    createdAt: new Date().toISOString()
-                };
-                await apiFetch('/api/cc_movements', { method: 'POST', body: JSON.stringify(movement) });
-            }
-
-            await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(saleObj) });
-            
-            printTicket(saleObj);
-
-        } else {
-            // --- FLUJO DE PAGO MIXTO (SPLIT PAYMENT) ---
-            const m1 = document.getElementById('mixedMethod1').value;
-            const a1 = parseCurrency(document.getElementById('mixedAmount1').value);
-            const c1 = document.getElementById('mixedCupon1').value.trim();
-            
-            const m2 = document.getElementById('mixedMethod2').value;
-            const a2 = parseCurrency(document.getElementById('mixedAmount2').value);
-            const c2 = document.getElementById('mixedCupon2').value.trim();
-
-            if (Math.abs((a1 + a2) - cartTotalAfterDiscount) > 1) {
-                alert("Los montos del pago mixto no coinciden con el total a cobrar.");
-                mostrarCarga(false); return;
-            }
-            if ((m1 === 'CC' || m2 === 'CC') && !clientName) {
-                alert("Debe seleccionar un cliente para aplicar a Cuenta Corriente.");
-                mostrarCarga(false); return;
-            }
-
-            const baseId = 'vta_' + Date.now();
-            const sale1Id = baseId + '_1';
-            const sale2Id = baseId + '_2';
-
-            // VENTA 1: Lleva el carrito real (para descontar stock)
-            const sale1 = {
-                id: sale1Id, date: todayISO(), createdAt: new Date().toISOString(),
-                clientId: clientId, client: clientName || 'Consumidor Final',
-                method: m1, cupon: c1,
-                subtotal: a1, promoDiscount: discountVal > 0 ? (discountVal / 2) : 0, 
-                total: a1, branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Caja', isB2B: false,
-                itemsJSON: JSON.stringify(cart)
-            };
-
-            // VENTA 2: Lleva un ítem genérico para no duplicar descuento de stock
-            const sale2 = {
-                id: sale2Id, date: todayISO(), createdAt: new Date().toISOString(),
-                clientId: clientId, client: clientName || 'Consumidor Final',
-                method: m2, cupon: c2,
-                subtotal: a2, promoDiscount: discountVal > 0 ? (discountVal / 2) : 0, 
-                total: a2, branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Caja', isB2B: false,
-                itemsJSON: JSON.stringify([{id: 'pago_mixto', code: 'MIXTO', name: `Pago Mixto (Parte 2) - Ref: ${sale1Id}`, price: a2, cost: 0, qty: 1}])
-            };
-
-            if (m1 === 'CC' && a1 > 0) {
-                await apiFetch('/api/cc_movements', { method: 'POST', body: JSON.stringify({
-                    id: 'cc_' + Date.now() + '_1', company_id: localStorage.getItem('company_id'),
-                    client_id: clientId, date: todayISO(), type: 'debit',
-                    amount: a1, description: 'Compra Mixta 1 (Ticket: ' + sale1Id + ')', createdAt: new Date().toISOString()
-                })});
-            }
-            if (m2 === 'CC' && a2 > 0) {
-                await apiFetch('/api/cc_movements', { method: 'POST', body: JSON.stringify({
-                    id: 'cc_' + Date.now() + '_2', company_id: localStorage.getItem('company_id'),
-                    client_id: clientId, date: todayISO(), type: 'debit',
-                    amount: a2, description: 'Compra Mixta 2 (Ticket: ' + sale2Id + ')', createdAt: new Date().toISOString()
-                })});
-            }
-
-            if(a1 > 0) await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(sale1) });
-            if(a2 > 0) await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(sale2) });
-
-            // Inyectamos datos auxiliares en sale1 para que el ticket se imprima unificado
-            sale1.mixedMethod2 = m2;
-            sale1.mixedAmount2 = a2;
-            sale1.totalOriginalSubtotal = cartTotal;
-            sale1.totalOriginal = cartTotalAfterDiscount;
-            sale1.promoDiscountOriginal = discountVal;
-
-            printTicket(sale1);
-        }
-        
-    } catch(err) {
-        alert("Error al procesar la venta. Verifique la conexión.");
-    } finally {
-        mostrarCarga(false);
-    }
+  // --- LÓGICA COBRO ---
+  function toggleMixedUI() {
+      const isMixed = document.getElementById('isMixedPayment').checked;
+      document.getElementById('simplePayment').style.display = isMixed ? 'none' : 'block';
+      document.getElementById('mixedPayment').style.display = isMixed ? 'block' : 'none';
+      calcMixed();
   }
 
-  function printTicket(saleObj) {
-      document.getElementById('ticketDate').textContent = new Date(saleObj.createdAt).toLocaleString('es-AR');
-      document.getElementById('ticketId').textContent = saleObj.id.split('_')[1] || saleObj.id;
-      document.getElementById('ticketSeller').textContent = saleObj.seller;
-      document.getElementById('ticketClient').textContent = saleObj.client || 'Consumidor Final';
+  function calcMixed() {
+      if (!document.getElementById('isMixedPayment').checked) return;
+      const totalStr = document.getElementById('cartTotal').textContent.replace(/[$\s.]/g, '').replace(',', '.');
+      const total = parseFloat(totalStr);
+      const a1 = parseFloat(document.getElementById('mixAmount1').value) || 0;
+      let a2 = total - a1;
+      document.getElementById('mixAmount2').value = currency(a2 > 0 ? a2 : 0);
+  }
+
+  function confirmarFactura() {
+      if (cart.length === 0) return alert("Añada productos al carrito.");
+      document.getElementById('confirmDialog').showModal();
+  }
+
+  async function ejecutarCobro() {
+      document.getElementById('confirmDialog').close();
+      mostrarCarga(true);
       
-      const tbody = document.getElementById('ticketItems');
-      const items = JSON.parse(saleObj.itemsJSON || '[]');
+      const totalStr = document.getElementById('cartTotal').textContent.replace(/[$\s.]/g, '').replace(',', '.');
+      const total = parseFloat(totalStr);
+      const client = document.getElementById('clientSearch').value || 'Consumidor Final';
       
-      tbody.innerHTML = items.map(i => `
-        <tr>
-          <td>${i.qty}</td>
-          <td>${escapeHtml(i.name)}</td>
-          <td style="text-align:right;">${currency(i.price * i.qty)}</td>
-        </tr>
-      `).join('');
+      const isMixed = document.getElementById('isMixedPayment').checked;
+      
+      try {
+          if (!isMixed) {
+              const sale = {
+                  id: 'vta_' + Date.now(),
+                  date: new Date().toISOString().split('T')[0],
+                  client: client,
+                  method: document.getElementById('paymentMethod').value,
+                  total: total,
+                  branch: terminalActiva,
+                  itemsJSON: JSON.stringify(cart),
+                  createdAt: new Date().toISOString()
+              };
+              await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(sale) });
+          } else {
+              // Generamos dos registros para el cierre de caja
+              const m1 = document.getElementById('mixMethod1').value;
+              const a1 = parseFloat(document.getElementById('mixAmount1').value) || 0;
+              const m2 = document.getElementById('mixMethod2').value;
+              const a2 = total - a1;
 
-      if (saleObj.mixedMethod2) {
-          // Es un pago mixto
-          document.getElementById('ticketSubtotal').textContent = currency(saleObj.totalOriginalSubtotal);
-          if (saleObj.promoDiscountOriginal > 0) {
-              document.getElementById('ticketDescRow').style.display = 'table-row';
-              document.getElementById('ticketDiscount').textContent = '- ' + currency(saleObj.promoDiscountOriginal);
-          } else {
-              document.getElementById('ticketDescRow').style.display = 'none';
+              if (a1 > 0) {
+                await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify({
+                    id: 'vta_' + Date.now() + '_1', date: new Date().toISOString().split('T')[0], client: client,
+                    method: m1, total: a1, branch: terminalActiva, itemsJSON: JSON.stringify(cart), createdAt: new Date().toISOString()
+                })});
+              }
+              if (a2 > 0) {
+                await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify({
+                    id: 'vta_' + Date.now() + '_2', date: new Date().toISOString().split('T')[0], client: client,
+                    method: m2, total: a2, branch: terminalActiva, itemsJSON: JSON.stringify([{name: 'Saldo Pago Mixto', qty:1, price: a2}]), createdAt: new Date().toISOString()
+                })});
+              }
           }
-          document.getElementById('ticketTotal').textContent = currency(saleObj.totalOriginal);
-          
-          let method1Text = `${saleObj.method}: ${currency(saleObj.total)}`;
-          let method2Text = `${saleObj.mixedMethod2}: ${currency(saleObj.mixedAmount2)}`;
-          document.getElementById('ticketMethod').innerHTML = `${method1Text}<br>${method2Text}`;
-      } else {
-          // Pago simple
-          document.getElementById('ticketSubtotal').textContent = currency(saleObj.subtotal);
-          if (saleObj.promoDiscount > 0) {
-              document.getElementById('ticketDescRow').style.display = 'table-row';
-              document.getElementById('ticketDiscount').textContent = '- ' + currency(saleObj.promoDiscount);
-          } else {
-              document.getElementById('ticketDescRow').style.display = 'none';
-          }
-          document.getElementById('ticketTotal').textContent = currency(saleObj.total);
-          document.getElementById('ticketMethod').textContent = saleObj.method;
+
+          alert("✅ Venta procesada con éxito.");
+          cart = [];
+          document.getElementById('clientSearch').value = '';
+          document.getElementById('promoDiscount').value = '0';
+          renderCart();
+      } catch (err) {
+          alert("Error de conexión.");
+      } finally {
+          mostrarCarga(false);
       }
-      
-      window.print();
-
-      // Limpiar carrito post impresión
-      setTimeout(() => {
-        cart = [];
-        document.getElementById('clientName').value = '';
-        document.getElementById('clientId').value = '';
-        document.getElementById('promoDiscount').value = '';
-        document.getElementById('paymentCupon').value = '';
-        document.getElementById('isMixedPayment').checked = false;
-        toggleMixedPayment();
-        renderCart();
-        initPOS(); // Refresca el stock visual
-      }, 1000);
   }
+
+  // --- HOTKEYS ---
+  window.addEventListener('keydown', (e) => {
+      if (e.key === 'F2') {
+          e.preventDefault();
+          confirmarFactura();
+      }
+      if (e.key === 'Enter' && document.getElementById('confirmDialog').open) {
+          e.preventDefault();
+          ejecutarCobro();
+      }
+  });
 
   initPOS();
 </script>
