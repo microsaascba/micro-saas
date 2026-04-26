@@ -267,17 +267,32 @@
     btnElement.classList.add('active'); document.getElementById(tabId).classList.add('active');
   }
 
+  // --- FUNCIÓN ESCUDO: Evita errores si la API falla y devuelve HTML ---
+  async function fetchSeguro(url) {
+      try {
+          const res = await apiFetch(url);
+          if (!res.ok) return [];
+          const contentType = res.headers.get("content-type") || "";
+          if (contentType.includes("text/html")) return []; // Bloqueamos el HTML de error de Cloudflare
+          return await res.json();
+      } catch(e) { 
+          console.error("FetchSeguro error:", e);
+          return []; 
+      }
+  }
+
   async function initStock() {
     mostrarCarga(true);
     try {
-      const nocache = '?v=' + Date.now();
+      const timestamp = Date.now();
+      
       const [resP, resB] = await Promise.all([
-        apiFetch(`${API_URL}/products?status=Activo${nocache}`),
-        apiFetch(`${API_URL}/branches${nocache}`)
+        fetchSeguro(`${API_URL}/products?status=Activo&v=${timestamp}`), // & en vez de ?
+        fetchSeguro(`${API_URL}/branches?v=${timestamp}`)
       ]);
       
-      if (resP.ok) dbProducts = await resP.json();
-      if (resB.ok) dbBranches = await resB.json();
+      dbProducts = Array.isArray(resP) ? resP : [];
+      dbBranches = Array.isArray(resB) ? resB : [];
 
       // Llenar selects de sucursales
       const branchOptions = '<option value="ALL">Todas las Sucursales</option>' + dbBranches.map(b => `<option value="${escapeHtml(b.name)}">${escapeHtml(b.name)}</option>`).join('');
@@ -538,6 +553,8 @@
     XLSX.utils.book_append_sheet(wb, ws, "Inventario");
     XLSX.writeFile(wb, `Reporte_Inventario_${todayISO()}.xlsx`);
   }
+
+  function todayISO() { return new Date().toISOString().split('T')[0]; }
 
   initStock();
 </script>
