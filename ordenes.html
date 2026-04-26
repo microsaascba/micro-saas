@@ -136,9 +136,9 @@
     </header>
 
     <div class="kpi-grid">
-      <article class="card card-pad" style="border-top: 4px solid var(--danger);">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Pendientes (En Laboratorio)</div>
-        <div id="kpiPendientes" style="font-size:28px; font-weight:800; color:var(--danger);">0</div>
+      <article class="card card-pad" style="border-top: 4px solid var(--primary);">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">En Proceso (Taller / Lab)</div>
+        <div id="kpiPendientes" style="font-size:28px; font-weight:800; color:var(--primary);">0</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--success);">
         <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Listos para Entregar</div>
@@ -164,7 +164,7 @@
         </div>
         <div style="overflow-x: auto;">
           <table>
-            <thead><tr><th>N° Orden</th><th>Fecha Est.</th><th>Paciente / Cliente</th><th>Armazón + Cristal</th><th>Estado</th><th>Saldo Paciente</th><th style="text-align: center;">Acciones</th></tr></thead>
+            <thead><tr><th>N° Orden</th><th>Fecha Est.</th><th>Paciente / Cliente</th><th>Armazón + Cristal</th><th>Estado Actual</th><th>Saldo Paciente</th><th style="text-align: center;">Acciones</th></tr></thead>
             <tbody id="tbodyPendientes"></tbody>
           </table>
         </div>
@@ -259,7 +259,7 @@
         <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Estado de la Orden:</label>
         <select id="expEstado" class="input-box">
           <option value="ALL">Todos los estados</option>
-          <option value="Pendiente">Solo Pendientes (Laboratorio)</option>
+          <option value="En Proceso">En Proceso (Lab/Taller)</option>
           <option value="Recibido - Listo">Solo Listos para Entregar</option>
           <option value="Entregado">Solo Entregados (Historial)</option>
         </select>
@@ -1162,7 +1162,7 @@
       deposit: depositFloat, 
       balance: balanceFloat,
       
-      status: 'Pendiente', 
+      status: document.getElementById('ordId').value ? dbOrders.find(x=>x.id===id).status : 'Pedido a Lab', 
       seller: localStorage.getItem('activeUser') || 'Admin', 
       branch: terminalActiva,
       notes: document.getElementById('ordNotas').value.trim(),
@@ -1206,6 +1206,23 @@
     } catch(err) { alert("Error guardando orden."); } finally { mostrarCarga(false); }
   }
 
+  async function actualizarEstadoOrden(id, nuevoEstado) {
+      const o = dbOrders.find(x => x.id === id);
+      if(!o) return;
+      if(o.status === nuevoEstado) return;
+
+      o.status = nuevoEstado;
+      mostrarCarga(true);
+      try {
+          await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) });
+          renderOrders();
+      } catch(err) {
+          alert("Error actualizando estado.");
+      } finally {
+          mostrarCarga(false);
+      }
+  }
+
   function renderOrders() {
     const termPend = document.getElementById('searchOrder').value.toLowerCase();
     const termHist = document.getElementById('searchHistorial').value.toLowerCase();
@@ -1215,33 +1232,57 @@
     let kPend = 0, kListos = 0, kSaldo = 0;
     let htmlPend = '', htmlHist = '';
 
+    const enProcesoStates = ['Pendiente', 'Pedido a Lab', 'En Taller', 'Control Calidad', 'Garantía / Rehacer'];
+
     dbOrders.forEach(o => {
-      const isPend = o.status === 'Pendiente';
+      const enProceso = enProcesoStates.includes(o.status);
       const isListo = o.status === 'Recibido - Listo';
       const isAnulado = o.status === 'Anulado';
       
-      if (isPend) kPend++;
+      if (enProceso) kPend++;
       if (isListo) kListos++;
-      if (isPend || isListo) kSaldo += o.balance; 
+      if (enProceso || isListo) kSaldo += o.balance; 
 
-      const badge = isAnulado ? `<span style="background:var(--line); color:var(--muted); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Anulado</span>` : 
-                    isPend ? `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">En Laboratorio</span>` : 
-                    isListo ? `<span style="background:#dcfce7; color:#16a34a; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Listo para Entregar</span>` : 
-                    `<span style="background:#e0e7ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Entregado</span>`;
+      let badge = '';
+      if (isAnulado) badge = `<span style="background:var(--line); color:var(--muted); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Anulado</span>`;
+      else if (isListo) badge = `<span style="background:#dcfce7; color:#16a34a; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Listo para Entregar</span>`;
+      else if (o.status === 'Entregado') badge = `<span style="background:#e0e7ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Entregado</span>`;
+      else if (o.status === 'Garantía / Rehacer') badge = `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Garantía / Rehacer</span>`;
+      else if (o.status === 'En Taller') badge = `<span style="background:#dbeafe; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">En Taller</span>`;
+      else if (o.status === 'Control Calidad') badge = `<span style="background:#f3e8ff; color:#7e22ce; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Control Calidad</span>`;
+      else badge = `<span style="background:#ffedd5; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Pedido a Lab.</span>`;
 
       const osTag = o.os_name ? `<br><small style="color:var(--primary); font-weight:bold;">O.S: ${escapeHtml(o.os_name)}</small>` : '';
+
+      let actionsHtml = '';
+      if (enProceso) {
+          actionsHtml = `
+            <div style="margin-bottom: 5px;">
+              <select class="input-box" style="padding:2px 4px; font-size:11px; width:auto; border-color:var(--line); font-weight:bold; color:var(--text);" onchange="actualizarEstadoOrden('${o.id}', this.value)">
+                  <option value="Pedido a Lab" ${o.status === 'Pedido a Lab' || o.status === 'Pendiente' ? 'selected' : ''}>Pedido a Lab</option>
+                  <option value="En Taller" ${o.status === 'En Taller' ? 'selected' : ''}>En Taller</option>
+                  <option value="Control Calidad" ${o.status === 'Control Calidad' ? 'selected' : ''}>Control Calidad</option>
+                  <option value="Garantía / Rehacer" ${o.status === 'Garantía / Rehacer' ? 'selected' : ''}>Garantía / Rehacer</option>
+                  <option value="Recibido - Listo">➡ Marcar Listo</option>
+              </select>
+            </div>
+            <button class="btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--primary); color:var(--primary);" onclick="editarOrden('${o.id}')">✏️ Editar</button>
+          `;
+      } else if (isListo) {
+          actionsHtml = `<button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>`;
+      }
 
       const tr = `
         <tr style="${isAnulado ? 'opacity:0.6;' : ''}">
           <td><strong>${o.id}</strong></td>
-          <td>${isPend || isListo ? o.deliveryDate : (o.date || '-')}</td>
+          <td>${enProceso || isListo ? o.deliveryDate : (o.date || '-')}</td>
           <td style="${isAnulado ? 'text-decoration:line-through;' : ''}"><strong>${escapeHtml(o.clientName)}</strong>${osTag}</td>
           <td>${escapeHtml(o.frameName || o.frameCode)}<br><small style="color:var(--muted)">${escapeHtml(o.glassType)}</small></td>
-          ${isPend || isListo ? `<td>${badge}</td><td style="color:var(--danger); font-weight:bold;">${currency(o.balance)}</td>` : `<td>${badge}</td><td>${currency(o.total)}</td>`}
+          <td>${badge}</td>
+          ${enProceso || isListo ? `<td style="color:var(--danger); font-weight:bold;">${currency(o.balance)}</td>` : `<td>${currency(o.total)}</td>`}
           <td style="text-align:center; min-width:180px;">
-            ${isPend ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; margin-right:5px; border-color:var(--primary); color:var(--primary);" onclick="editarOrden('${o.id}')">✏️ Editar</button><button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="marcarListo('${o.id}')">Recibido</button>` : ''}
-            ${isListo ? `<button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>` : ''}
-            ${(isPend || isListo) && localStorage.getItem('userRole') === 'admin' ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#ef4444; border-color:#ef4444; margin-top:4px;" onclick="promptAnularOrden('${o.id}')">Anular</button>` : ''}
+            ${actionsHtml}
+            ${(enProceso || isListo) && localStorage.getItem('userRole') === 'admin' ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#ef4444; border-color:#ef4444; margin-top:4px;" onclick="promptAnularOrden('${o.id}')">Anular</button>` : ''}
             ${!isAnulado ? `<button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️</button>` : ''}
           </td>
         </tr>`;
@@ -1336,14 +1377,6 @@
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Liquidacion_OS");
       XLSX.writeFile(wb, `Reporte_ObraSocial_${desde}_al_${hasta}.xlsx`);
-  }
-
-  async function marcarListo(id) {
-    if(!confirm("¿El pedido llegó del laboratorio y está listo?")) return;
-    const o = dbOrders.find(x => x.id === id); o.status = 'Recibido - Listo';
-    mostrarCarga(true);
-    await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) });
-    mostrarCarga(false); renderOrders();
   }
 
   function prepararEntrega(id) {
@@ -1473,8 +1506,12 @@
       const filtradas = dbOrders.filter(o => {
           const fechaObj = o.createdAt ? o.createdAt.split('T')[0] : o.date;
           const matchFechas = fechaObj >= desde && fechaObj <= hasta;
-          const matchEstado = estado === 'ALL' || o.status === estado;
-          return matchFechas && matchEstado;
+          
+          if (estado === 'ALL') return matchFechas;
+          if (estado === 'En Proceso') {
+              return matchFechas && ['Pendiente', 'Pedido a Lab', 'En Taller', 'Control Calidad', 'Garantía / Rehacer'].includes(o.status);
+          }
+          return matchFechas && o.status === estado;
       });
 
       if(filtradas.length === 0) return alert("No se encontraron órdenes que coincidan con esas fechas y estado.");
