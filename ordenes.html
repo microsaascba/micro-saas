@@ -496,7 +496,7 @@
       </div>
 
       <div style="background: var(--panel-2); padding: 20px; border-radius: 8px; border: 1px dashed var(--primary); margin-bottom: 20px;">
-        <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--text);">💰 6. Liquidación de Pagos y Coberturas</h3>
+        <h3 style="margin: 0 0 15px 0; font-size: 14px; color: var(--text);">💰 6. Liquidación y Pago</h3>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
           <div>
@@ -517,27 +517,56 @@
           </div>
           
           <div style="border-left: 1px solid var(--line); padding-left: 20px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom: 10px; align-items: center;">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
               <label style="font-size: 11px; font-weight: bold; color: var(--success); text-transform: uppercase;">Seña Abonada Hoy</label>
               <input type="text" id="ordDeposit" class="input-box" style="width: 150px; padding: 4px 8px; font-size: 13px; font-weight: bold; color: var(--success); border-color: var(--success); text-align: right;" oninput="formatCurrencyInput(this); calcSaldo()" placeholder="$ 0,00" autocomplete="off">
             </div>
 
-            <div style="display:flex; justify-content:space-between; margin-bottom: 10px; align-items: center;">
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de Pago</label>
-              <select id="ordPaymentMethod" class="input-box" style="width: 150px; padding: 4px 8px; font-size: 12px;" onchange="toggleCuponOrden()">
-                <option value="Efectivo">Efectivo</option>
-                <option value="Débito">Débito</option>
-                <option value="Crédito">Crédito</option>
-                <option value="Transferencia">Transferencia</option>
-              </select>
+            <div style="margin-bottom: 10px; text-align: right;">
+               <label style="font-size: 10px; font-weight: bold; cursor: pointer; color: var(--primary); background: var(--primary-soft); padding: 2px 6px; border-radius: 4px;">
+                 <input type="checkbox" id="ordIsMixed" onchange="toggleMixed('ord')"> 🔄 Pago Mixto (Dividir cobro)
+               </label>
             </div>
-            
-            <div id="divCuponOrden" style="display: none; text-align: right; margin-bottom: 10px;">
-               <input type="text" id="ordCupon" class="input-box" placeholder="N° Cupón" style="width: 150px; padding: 4px 8px; font-size: 12px;">
+
+            <div id="ordSimpleDiv">
+              <div style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
+                <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de Pago</label>
+                <select id="ordPaymentMethod" class="input-box" style="width: 150px; padding: 4px 8px; font-size: 12px;" onchange="toggleCupons('ord')">
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Débito">Débito</option>
+                  <option value="Crédito">Crédito</option>
+                  <option value="Transferencia">Transferencia</option>
+                </select>
+              </div>
+              <div id="ordCuponDiv" style="display: none; text-align: right; margin-bottom: 10px;">
+                 <input type="text" id="ordCupon" class="input-box" placeholder="N° Cupón" style="width: 150px; padding: 4px 8px; font-size: 12px;">
+              </div>
+            </div>
+
+            <div id="ordMixedDiv" style="display: none; background: #fff; padding: 10px; border-radius: 8px; border: 1px dashed var(--line); margin-bottom: 10px;">
+               <div style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
+                  <select id="ordMixedMethod1" class="input-box" style="width: 100px; padding: 4px; font-size: 11px;" onchange="toggleCupons('ord')">
+                    <option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito">Crédito</option><option value="Transferencia">Transf.</option>
+                  </select>
+                  <input type="text" id="ordMixedAmount1" class="input-box" style="width: 90px; padding: 4px; font-size: 11px; text-align:right;" placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcMixed('ord')">
+               </div>
+               <div id="ordMixedCuponDiv1" style="display: none; text-align: right; margin-bottom: 5px;">
+                 <input type="text" id="ordMixedCupon1" class="input-box" placeholder="Cupón 1" style="width: 90px; padding: 4px; font-size: 11px;">
+               </div>
+               
+               <div style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
+                  <select id="ordMixedMethod2" class="input-box" style="width: 100px; padding: 4px; font-size: 11px;" onchange="toggleCupons('ord')">
+                    <option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito" selected>Crédito</option><option value="Transferencia">Transf.</option>
+                  </select>
+                  <input type="text" id="ordMixedAmount2" class="input-box" style="width: 90px; padding: 4px; font-size: 11px; text-align:right; background:#f8fafc;" placeholder="$ 0,00" readonly>
+               </div>
+               <div id="ordMixedCuponDiv2" style="display: none; text-align: right; margin-bottom: 5px;">
+                 <input type="text" id="ordMixedCupon2" class="input-box" placeholder="Cupón 2" style="width: 90px; padding: 4px; font-size: 11px;">
+               </div>
             </div>
 
             <div style="margin-top:15px; padding-top:10px; border-top:1px dashed var(--danger); display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-weight:bold; font-size:12px; color:var(--danger); text-transform: uppercase;">SALDO PACIENTE AL RETIRAR:</span>
+              <span style="font-weight:bold; font-size:12px; color:var(--danger); text-transform: uppercase;">SALDO AL RETIRAR:</span>
               <input type="text" id="ordBalance" class="input-box" value="$ 0,00" readonly style="width:130px; background:transparent; border:none; font-size:20px; font-weight:900; color:var(--danger); text-align:right;">
             </div>
           </div>
@@ -557,20 +586,56 @@
     <h2 style="margin: 0 0 15px 0; font-size:18px;">Cobrar Saldo y Entregar</h2>
     <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">El cliente retira el pedido. Se debe abonar el saldo pendiente para cerrar la orden.</p>
     <input type="hidden" id="cobroOrdId">
+    
     <div style="margin-bottom: 15px;">
       <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Saldo a Cobrar (Paciente)</label>
       <input type="text" id="cobroMonto" class="input-box" readonly style="font-size: 24px; font-weight: bold; color: var(--danger); background: var(--danger-soft); border:none; text-align:center;">
     </div>
-    <div style="margin-bottom: 25px;">
-      <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de Pago</label>
-      <select id="cobroMethod" class="input-box">
-        <option value="Efectivo">Efectivo</option>
-        <option value="Débito">Débito</option>
-        <option value="Crédito">Crédito</option>
-        <option value="Transferencia">Transferencia</option>
-      </select>
+    
+    <div style="margin-bottom: 10px; text-align: right;">
+       <label style="font-size: 10px; font-weight: bold; cursor: pointer; color: var(--primary); background: var(--primary-soft); padding: 2px 6px; border-radius: 4px;">
+         <input type="checkbox" id="cobroIsMixed" onchange="toggleMixed('cobro')"> 🔄 Pago Mixto (Dividir cobro)
+       </label>
     </div>
-    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+
+    <div id="cobroSimpleDiv">
+      <div style="margin-bottom: 5px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Medio de Pago</label>
+        <select id="cobroPaymentMethod" class="input-box" onchange="toggleCupons('cobro')">
+          <option value="Efectivo">Efectivo</option>
+          <option value="Débito">Débito</option>
+          <option value="Crédito">Crédito</option>
+          <option value="Transferencia">Transferencia</option>
+        </select>
+      </div>
+      <div id="cobroCuponDiv" style="display: none; margin-bottom: 15px;">
+         <input type="text" id="cobroCupon" class="input-box" placeholder="N° Cupón / Ref">
+      </div>
+    </div>
+
+    <div id="cobroMixedDiv" style="display: none; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 15px;">
+       <div style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
+          <select id="cobroMixedMethod1" class="input-box" style="width: 130px; padding: 6px; font-size: 12px;" onchange="toggleCupons('cobro')">
+            <option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito">Crédito</option><option value="Transferencia">Transf.</option>
+          </select>
+          <input type="text" id="cobroMixedAmount1" class="input-box" style="width: 120px; padding: 6px; font-size: 12px; text-align:right;" placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcMixed('cobro')">
+       </div>
+       <div id="cobroMixedCuponDiv1" style="display: none; margin-bottom: 10px;">
+         <input type="text" id="cobroMixedCupon1" class="input-box" placeholder="Cupón 1" style="padding: 6px; font-size: 12px;">
+       </div>
+       
+       <div style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
+          <select id="cobroMixedMethod2" class="input-box" style="width: 130px; padding: 6px; font-size: 12px;" onchange="toggleCupons('cobro')">
+            <option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito" selected>Crédito</option><option value="Transferencia">Transf.</option>
+          </select>
+          <input type="text" id="cobroMixedAmount2" class="input-box" style="width: 120px; padding: 6px; font-size: 12px; text-align:right; background:#e2e8f0;" placeholder="$ 0,00" readonly>
+       </div>
+       <div id="cobroMixedCuponDiv2" style="display: none; margin-bottom: 5px;">
+         <input type="text" id="cobroMixedCupon2" class="input-box" placeholder="Cupón 2" style="padding: 6px; font-size: 12px;">
+       </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top:20px;">
       <button type="button" class="btn btn-light" onclick="document.getElementById('modalCobroSaldo').close()">Cancelar</button>
       <button type="button" class="btn btn-success" onclick="ejecutarCobroYEntrega()">Confirmar Pago y Entregar</button>
     </div>
@@ -578,7 +643,6 @@
 </dialog>
 
 <div class="print-wrapper">
-  
   <div id="printClient">
     <div class="print-header">
       <div>
@@ -661,7 +725,6 @@
       </div>
     </div>
   </div>
-
 </div>
 
 <dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: var(--panel);">
@@ -709,11 +772,42 @@
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
 
-  function toggleCuponOrden() {
-    const method = document.getElementById('ordPaymentMethod').value;
-    document.getElementById('divCuponOrden').style.display = method === 'Crédito' ? 'block' : 'none';
-    if (method !== 'Crédito') document.getElementById('ordCupon').value = '';
+  // --- LÓGICA DE PAGOS MIXTOS ---
+  function toggleMixed(type) {
+      const isMixed = document.getElementById(type + 'IsMixed').checked;
+      document.getElementById(type + 'SimpleDiv').style.display = isMixed ? 'none' : 'block';
+      document.getElementById(type + 'MixedDiv').style.display = isMixed ? 'block' : 'none';
+      toggleCupons(type);
+      calcMixed(type);
   }
+
+  function toggleCupons(type) {
+      const isMixed = document.getElementById(type + 'IsMixed').checked;
+      if (!isMixed) {
+          const m = document.getElementById(type + 'PaymentMethod').value;
+          document.getElementById(type + 'CuponDiv').style.display = m === 'Crédito' ? 'block' : 'none';
+          if(m !== 'Crédito') document.getElementById(type + 'Cupon').value = '';
+      } else {
+          const m1 = document.getElementById(type + 'MixedMethod1').value;
+          const m2 = document.getElementById(type + 'MixedMethod2').value;
+          document.getElementById(type + 'MixedCuponDiv1').style.display = m1 === 'Crédito' ? 'block' : 'none';
+          document.getElementById(type + 'MixedCuponDiv2').style.display = m2 === 'Crédito' ? 'block' : 'none';
+          if(m1 !== 'Crédito') document.getElementById(type + 'MixedCupon1').value = '';
+          if(m2 !== 'Crédito') document.getElementById(type + 'MixedCupon2').value = '';
+      }
+  }
+
+  function calcMixed(type) {
+      const totalInputId = type === 'ord' ? 'ordDeposit' : 'cobroMonto';
+      const total = parseCurrency(document.getElementById(totalInputId).value);
+      const p1 = parseCurrency(document.getElementById(type + 'MixedAmount1').value);
+      
+      let p2 = total - p1;
+      if (p2 < 0) p2 = 0; // Evitar negativos visuales
+      
+      document.getElementById(type + 'MixedAmount2').value = currency(p2);
+  }
+  // ------------------------------
 
   function formatCurrencyInput(input) {
     let val = input.value.replace(/[^\d,]/g, '');
@@ -992,6 +1086,11 @@
     const balance = totPaciente - dep;
     
     document.getElementById('ordBalance').value = currency(balance);
+
+    // Si pago mixto está activado, recalcular el split de Seña
+    if(document.getElementById('ordIsMixed').checked) {
+        calcMixed('ord');
+    }
   }
 
   function abrirModalOrden() {
@@ -1005,11 +1104,12 @@
     document.querySelectorAll('input[name="ordTrat"]').forEach(cb => cb.checked = false);
     ['ordDp','ordDiseno','ordCalibrado','ordMaterial','ordColor','ordAntirreflex','ordTinte'].forEach(id => document.getElementById(id).value = (document.getElementById(id).tagName === 'SELECT' ? document.getElementById(id).options[0].value : ''));
 
-    document.getElementById('ordCupon').value = '';
-    document.getElementById('divCuponOrden').style.display = 'none';
+    // Reset pagos y mixtos
+    document.getElementById('ordIsMixed').checked = false;
+    toggleMixed('ord');
     document.getElementById('ordPaymentMethod').value = 'Efectivo';
-    document.getElementById('ordTotal').value = '';
     
+    document.getElementById('ordTotal').value = '';
     document.getElementById('ordOsName').value = '';
     document.getElementById('ordOsAmount').value = '$ 0,00';
     document.getElementById('ordTotalPaciente').value = '$ 0,00';
@@ -1102,7 +1202,11 @@
     
     calcSaldo();
     
-    if (o.cupon) {
+    // Reset mixed payment UI
+    document.getElementById('ordIsMixed').checked = false;
+    toggleMixed('ord');
+    
+    if (o.cupon && !o.cupon.includes('/')) {
         document.getElementById('ordPaymentMethod').value = 'Crédito';
         document.getElementById('divCuponOrden').style.display = 'block';
         document.getElementById('ordCupon').value = o.cupon;
@@ -1166,7 +1270,7 @@
       seller: localStorage.getItem('activeUser') || 'Admin', 
       branch: terminalActiva,
       notes: document.getElementById('ordNotas').value.trim(),
-      cupon: document.getElementById('ordCupon').value.trim(),
+      cupon: '', // We update this below if simple
       createdAt: new Date().toISOString()
     };
 
@@ -1184,15 +1288,51 @@
         }
       }
 
+      // --- LOGICA DE PAGOS: REGISTRO DE VENTA EN CAJA ---
+      const isMixed = document.getElementById('ordIsMixed').checked;
+      
       if (isNew && depositFloat > 0) {
-        const method = document.getElementById('ordPaymentMethod').value;
-        const cuponVal = document.getElementById('ordCupon').value.trim();
-        const ventaSena = {
-          id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
-          clientId: ord.clientId, client: ord.clientName, method: method, cupon: cuponVal, subtotal: depositFloat, promoDiscount: 0, total: depositFloat, isB2B: false,
-          itemsJSON: JSON.stringify([{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Abono inicial`, price: depositFloat, cost: 0, qty: 1}])
-        };
-        await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSena) });
+        if (!isMixed) {
+            // Pago Simple
+            const method = document.getElementById('ordPaymentMethod').value;
+            const cuponVal = document.getElementById('ordCupon').value.trim();
+            ord.cupon = cuponVal; // Guardar en orden para historial
+            
+            const ventaSena = {
+              id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
+              clientId: ord.clientId, client: ord.clientName, method: method, cupon: cuponVal, subtotal: depositFloat, promoDiscount: 0, total: depositFloat, isB2B: false,
+              itemsJSON: JSON.stringify([{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Abono inicial`, price: depositFloat, cost: 0, qty: 1}])
+            };
+            await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSena) });
+        } else {
+            // Pago Mixto: Mandamos 2 transacciones a la API para que Cierre de Caja no se rompa
+            const m1 = document.getElementById('ordMixedMethod1').value;
+            const a1 = parseCurrency(document.getElementById('ordMixedAmount1').value);
+            const c1 = document.getElementById('ordMixedCupon1').value.trim();
+            
+            const m2 = document.getElementById('ordMixedMethod2').value;
+            const a2 = parseCurrency(document.getElementById('ordMixedAmount2').value);
+            const c2 = document.getElementById('ordMixedCupon2').value.trim();
+            
+            ord.cupon = (c1 ? c1 : '') + ' / ' + (c2 ? c2 : '');
+
+            if (a1 > 0) {
+                const venta1 = {
+                  id: 'vta_' + Date.now() + '_1', createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
+                  clientId: ord.clientId, client: ord.clientName, method: m1, cupon: c1, subtotal: a1, promoDiscount: 0, total: a1, isB2B: false,
+                  itemsJSON: JSON.stringify([{id: 'sena1', code: 'SENA-1', name: `Seña Orden ${id} - Parte 1 (${m1})`, price: a1, cost: 0, qty: 1}])
+                };
+                await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(venta1) });
+            }
+            if (a2 > 0) {
+                const venta2 = {
+                  id: 'vta_' + Date.now() + '_2', createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
+                  clientId: ord.clientId, client: ord.clientName, method: m2, cupon: c2, subtotal: a2, promoDiscount: 0, total: a2, isB2B: false,
+                  itemsJSON: JSON.stringify([{id: 'sena2', code: 'SENA-2', name: `Seña Orden ${id} - Parte 2 (${m2})`, price: a2, cost: 0, qty: 1}])
+                };
+                await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(venta2) });
+            }
+        }
       }
 
       await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(ord) });
@@ -1383,23 +1523,55 @@
     const o = dbOrders.find(x => x.id === id);
     document.getElementById('cobroOrdId').value = o.id;
     document.getElementById('cobroMonto').value = currency(o.balance); 
+    
+    document.getElementById('cobroIsMixed').checked = false;
+    toggleMixed('cobro');
+    
     document.getElementById('modalCobroSaldo').showModal();
   }
 
   async function ejecutarCobroYEntrega() {
     const id = document.getElementById('cobroOrdId').value;
-    const method = document.getElementById('cobroMethod').value;
     const o = dbOrders.find(x => x.id === id);
+    const isMixed = document.getElementById('cobroIsMixed').checked;
     
     mostrarCarga(true);
     try {
       if (o.balance > 0) {
-        const ventaSaldo = {
-          id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
-          clientId: o.clientId, client: o.clientName, method: method, cupon: '', subtotal: o.balance, promoDiscount: 0, total: o.balance, isB2B: false,
-          itemsJSON: JSON.stringify([{id: 'saldo', code: 'SALDO', name: `Saldo Paciente Orden ${o.id}`, price: o.balance, cost: 0, qty: 1}])
-        };
-        await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSaldo) });
+        if (!isMixed) {
+            const method = document.getElementById('cobroPaymentMethod').value;
+            const ventaSaldo = {
+              id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
+              clientId: o.clientId, client: o.clientName, method: method, cupon: '', subtotal: o.balance, promoDiscount: 0, total: o.balance, isB2B: false,
+              itemsJSON: JSON.stringify([{id: 'saldo', code: 'SALDO', name: `Saldo Paciente Orden ${o.id}`, price: o.balance, cost: 0, qty: 1}])
+            };
+            await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSaldo) });
+        } else {
+            const m1 = document.getElementById('cobroMixedMethod1').value;
+            const a1 = parseCurrency(document.getElementById('cobroMixedAmount1').value);
+            const c1 = document.getElementById('cobroMixedCupon1').value.trim();
+            
+            const m2 = document.getElementById('cobroMixedMethod2').value;
+            const a2 = parseCurrency(document.getElementById('cobroMixedAmount2').value);
+            const c2 = document.getElementById('cobroMixedCupon2').value.trim();
+
+            if (a1 > 0) {
+                const venta1 = {
+                  id: 'vta_' + Date.now() + '_1', createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
+                  clientId: o.clientId, client: o.clientName, method: m1, cupon: c1, subtotal: a1, promoDiscount: 0, total: a1, isB2B: false,
+                  itemsJSON: JSON.stringify([{id: 'saldo1', code: 'SALDO-1', name: `Saldo Orden ${o.id} - Parte 1 (${m1})`, price: a1, cost: 0, qty: 1}])
+                };
+                await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(venta1) });
+            }
+            if (a2 > 0) {
+                const venta2 = {
+                  id: 'vta_' + Date.now() + '_2', createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Admin',
+                  clientId: o.clientId, client: o.clientName, method: m2, cupon: c2, subtotal: a2, promoDiscount: 0, total: a2, isB2B: false,
+                  itemsJSON: JSON.stringify([{id: 'saldo2', code: 'SALDO-2', name: `Saldo Orden ${o.id} - Parte 2 (${m2})`, price: a2, cost: 0, qty: 1}])
+                };
+                await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(venta2) });
+            }
+        }
       }
 
       o.status = 'Entregado';
