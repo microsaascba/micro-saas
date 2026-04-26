@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Stock Multi-Depósito | Micro SaaS</title>
+  <title>Control de Stock | Micro SaaS</title>
   
   <style>
     html, body { background-color: #f0f2f7 !important; }
-    body { animation: fadeIn 0.15s ease-in-out; }
+    body { animation: fadeIn 0.15s ease-in-out; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  
+
   <style>
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
@@ -20,50 +20,34 @@
     .layout-1col { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
-    .input-box:disabled { background-color: #f8fafc; color: var(--muted); cursor: not-allowed; }
+    .input-box:disabled { background: #f8fafc; color: var(--muted); font-weight: bold; cursor: not-allowed; }
     
-    .excel-table { width: 100%; border-collapse: collapse; text-align: left; background: #fff; }
-    .excel-table th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
-    .excel-table td { padding: 10px 15px; border: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
-    .excel-table tbody tr:hover { background-color: #f8fafc; }
-    .col-number { text-align: center; font-weight: 600; font-family: monospace; font-size: 14px;}
-    .col-val { text-align: right; font-weight: 800; color: var(--primary); }
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
-    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
-    .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
     .tabs { display: flex; gap: 20px; border-bottom: 2px solid var(--line); margin-bottom: 20px; flex-wrap: wrap;}
     .tab-btn { background: none; border: none; padding: 10px 5px; font-size: 14px; font-weight: bold; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: 0.2s; }
     .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
     .tab-content { display: none; animation: fadeIn 0.3s ease; }
     .tab-content.active { display: block; }
-    #printRemito { display: none; }
-    
-    .topbar-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-    .topbar-actions button { font-size: 12px; padding: 8px 14px; }
 
-    @media print {
-      @page { margin: 15mm; size: A4 portrait; }
-      body { margin: 0; background: #fff; font-family: sans-serif; color: #000; }
-      .app, dialog { display: none !important; }
-      #printRemito { display: block !important; width: 100%; }
-      .remito-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
-      .remito-title { font-size: 16px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin:0;}
-      .remito-boxes { display: flex; gap: 10px; margin-bottom: 15px; }
-      .remito-box { border: 1px solid #000; padding: 8px; border-radius: 4px; flex: 1; }
-      .remito-box strong { font-size: 10px; color: #333; text-transform: uppercase; }
-      .remito-box h3 { margin: 2px 0; font-size: 13px; }
-      .remito-box p { margin: 0; font-size: 10px; }
-      .remito-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px; }
-      .remito-table th, .remito-table td { border: 1px solid #000; padding: 4px 6px; text-align: left; }
-      .remito-table th { background: #f0f0f0; font-weight: bold; }
-      .firmas { display: flex; justify-content: space-between; margin-top: 30px; }
-      .firma-line { border-top: 1px solid #000; width: 40%; text-align: center; padding-top: 4px; font-size: 10px; }
-    }
+    table { width: 100%; border-collapse: collapse; text-align: left; background: #fff; }
+    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
+    td { padding: 10px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+    
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
+    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
+    .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
+    
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
     
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
 
+    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 9999; max-height: 250px; overflow-y: auto; display: none; }
+    .autocomplete-list.active { display: block !important; }
+    .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; color: var(--text); }
+    .autocomplete-item:hover { background: var(--primary-soft); }
+
+    .form-section { background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+    
     @media (max-width: 900px) {
       .app { display: flex !important; flex-direction: column !important; }
       .mobile-toggle { display: block; }
@@ -71,15 +55,13 @@
       .sidebar.open { left: 0 !important; }
       .sidebar-overlay.open { display: block; }
       .topbar { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
-      .topbar-actions { justify-content: flex-start; width: 100%; }
-      .topbar-actions button { flex: 1 1 auto; }
       .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
     }
   </style>
 </head>
 <body>
 
-<div id="loadingOverlay">Sincronizando con la nube...</div>
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; font-weight:bold; color:var(--primary); font-size:18px;">Procesando...</div>
 
 <div class="app">
   <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
@@ -89,17 +71,14 @@
       <div class="brand-text"><strong id="sidebarUserName">Usuario: Admin</strong><small>Control del negocio</small></div>
     </div>
      <nav class="nav">
-      <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-      <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
-      <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
-      <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
-      <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-      <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
-      <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
-      <a href="stock.html" data-module="stock"><span class="active">📚</span> Stock</a>
-      <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
-      <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
-      <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
+      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas</a>
+      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html" class="active"><span class="active">📚</span> Stock</a>
+      <a href="ordenes.html"><span class="nav-icon">📋</span> Órdenes</a>
     </nav>
   </aside>
 
@@ -108,80 +87,144 @@
       <div style="display: flex; align-items: center; width: 100%;">
         <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
         <div class="page-title">
-          <h1 style="margin:0; font-size: 26px;">Inventario y Logística</h1>
-          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Ingreso de facturas de compra, remitos y estado de depósitos.</p>
+          <h1 style="margin:0; font-size: 26px;">Control de Inventario</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión de existencias, ingresos y auditoría.</p>
         </div>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="descargarExcelValorizado()">⬇ Exportar Valorizado PVP</button>
-        <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalIngresoMasivo()">📥 Ingreso Masivo (Excel)</button>
-        <button class="btn btn-primary" onclick="abrirModalIngresoCompra()">📥 Ingreso Recepción (Manual)</button>
-        <button class="btn btn-primary" style="background: var(--text); border:none;" onclick="abrirModalAjuste()">+ Ajuste</button>
-        <button class="btn btn-primary" style="background: #0f766e; border:none;" onclick="abrirModalTransferencia()">⇄ Transferir</button>
-        <button class="btn btn-primary" style="background: #0284c7; border:none;" onclick="abrirModalTransferenciaMasiva()">⇄ Transf. Masiva</button>
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Descargar Reporte</button>
       </div>
     </header>
 
     <div class="kpi-grid">
-      <article class="card card-pad">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Unidades Visibles</div>
-        <div id="kpiUnidades" style="font-size:28px; font-weight:800; color:var(--text);">0</div>
-      </article>
       <article class="card card-pad" style="border-top: 4px solid var(--primary);">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Valorización Inventario (PVP)</div>
-        <div id="kpiValorizado" style="font-size:28px; font-weight:800; color:var(--primary);">$ 0</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Capital en Stock (Costo)</div>
+        <div id="kpiCosto" style="font-size:28px; font-weight:800; color:var(--primary);">$ 0</div>
       </article>
-      <article class="card card-pad" style="border-top: 4px solid var(--warning);">
-        <div style="font-size:11px; color:var(--warning); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Productos Faltantes</div>
-        <div id="kpiBajo" style="font-size:28px; font-weight:800; color:var(--warning);">0</div>
+      <article class="card card-pad" style="border-top: 4px solid var(--success);">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Valuación de Venta (PVP)</div>
+        <div id="kpiVenta" style="font-size:28px; font-weight:800; color:var(--success);">$ 0</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--danger);">
-        <div style="font-size:11px; color:var(--danger); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Agotados (Stock Cero)</div>
-        <div id="kpiCero" style="font-size:28px; font-weight:800; color:var(--danger);">0</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Productos Agotados</div>
+        <div id="kpiAgotados" style="font-size:28px; font-weight:800; color:var(--danger);">0</div>
       </article>
     </div>
 
     <div class="layout-1col">
       <article class="card card-pad">
         <div class="tabs">
-          <button class="tab-btn active" onclick="switchTab('tab-inventario', this)">Estado de Inventario (Columnas por Sucursal)</button>
-          <button class="tab-btn" onclick="switchTab('tab-movimientos', this)">Historial de Remitos y Entradas</button>
+          <button class="tab-btn active" onclick="switchTab('tab-inventario', this)">📦 Inventario Actual</button>
+          <button class="tab-btn" onclick="switchTab('tab-ingreso', this)">📥 Ingreso de Mercadería</button>
+          <button class="tab-btn" style="color: var(--danger);" onclick="switchTab('tab-ajuste', this)">⚠️ Ajuste Manual / Bajas</button>
         </div>
 
         <div id="tab-inventario" class="tab-content active">
-          <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
-            <input type="text" id="searchStock" class="input-box" placeholder="🔍 Buscar producto o SKU..." style="flex: 1; min-width: 250px;" onkeyup="renderStock()">
-            <select id="branchFilter" class="input-box" style="width: auto; font-weight: bold; color: var(--muted);" onchange="renderStock()">
-              <option value="ALL">Mostrar Todas las Sucursales</option>
+          <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center; flex-wrap:wrap; gap:10px;">
+            <input type="text" id="searchStock" class="input-box" placeholder="🔍 Buscar producto por nombre o código..." style="max-width: 400px; margin:0;" onkeyup="renderStock()">
+            <select id="branchFilter" class="input-box" style="max-width: 200px;" onchange="renderStock()">
+                <option value="ALL">Todas las Sucursales</option>
             </select>
           </div>
 
           <div style="overflow-x: auto;">
-            <table class="excel-table">
-              <thead id="tableHeadStock"></thead>
-              <tbody id="tableBodyStock"></tbody>
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Producto</th>
+                  <th>Categoría</th>
+                  <th style="text-align:right;">Costo (CPP)</th>
+                  <th style="text-align:right;">PVP</th>
+                  <th style="text-align:center;">Stock Global</th>
+                  <th style="text-align:center;">Stock Local</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyStock"></tbody>
             </table>
           </div>
         </div>
 
-        <div id="tab-movimientos" class="tab-content">
-          <div style="display:flex; gap:10px; margin-bottom:15px;">
-            <input type="text" id="searchHistory" class="input-box" placeholder="🔍 Buscar por N° de Comprobante, Factura u Origen..." style="max-width: 400px; width: 100%;" onkeyup="renderHistory()">
+        <div id="tab-ingreso" class="tab-content">
+          <div class="form-section" style="max-width: 700px; margin: 0 auto;">
+            <h2 style="margin: 0 0 10px 0; font-size: 18px; color: var(--primary);">Registrar Compra / Ingreso</h2>
+            <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Suma unidades al inventario y actualiza automáticamente el Costo Promedio Ponderado (CPP).</p>
+
+            <form onsubmit="ejecutarIngreso(event)">
+                <div style="position: relative; margin-bottom: 20px;">
+                  <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Buscar Producto *</label>
+                  <input type="hidden" id="ingProdId" required>
+                  <input type="text" id="ingSearch" class="input-box" placeholder="Nombre o código del producto..." onkeyup="buscarProducto('ing')" autocomplete="off" required>
+                  <div id="ingResults" class="autocomplete-list"></div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                  <div>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Cantidad a Ingresar *</label>
+                    <input type="number" id="ingQty" class="input-box" required min="1" step="1" oninput="calcIngTotal()">
+                  </div>
+                  <div>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Sucursal Destino *</label>
+                    <select id="ingBranch" class="input-box" required></select>
+                  </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line);">
+                  <div>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Costo Unitario de Compra ($) *</label>
+                    <input type="number" id="ingCost" class="input-box" required min="0" step="0.01" oninput="calcIngTotal()">
+                  </div>
+                  <div>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--text); text-transform: uppercase;">Costo Total Lote ($)</label>
+                    <input type="text" id="ingTotal" class="input-box" disabled value="$ 0.00" style="color: var(--primary); font-size: 16px;">
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px;">📥 Confirmar Ingreso de Stock</button>
+            </form>
           </div>
-          <div style="overflow-x: auto;">
-            <table class="excel-table">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Comprobante</th>
-                  <th>Operación</th>
-                  <th>Ruta (Origen ➔ Destino)</th>
-                  <th>Detalle / Cantidades</th>
-                  <th style="text-align: center;">Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="tableBodyHistory"></tbody>
-            </table>
+        </div>
+
+        <div id="tab-ajuste" class="tab-content">
+          <div class="form-section" style="max-width: 700px; margin: 0 auto; border-color: var(--danger-soft); background: #fffcfc;">
+            <h2 style="margin: 0 0 10px 0; font-size: 18px; color: var(--danger);">⚠️ Ajuste Manual de Inventario</h2>
+            <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Forzar la cantidad exacta de stock de un producto (pérdidas, robos, recuentos). Requiere PIN de administrador.</p>
+
+            <form onsubmit="pedirAuthAjuste(event)">
+                <div style="position: relative; margin-bottom: 20px;">
+                  <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Buscar Producto *</label>
+                  <input type="hidden" id="ajuProdId" required>
+                  <input type="text" id="ajuSearch" class="input-box" placeholder="Nombre o código del producto..." onkeyup="buscarProducto('aju')" autocomplete="off" required>
+                  <div id="ajuResults" class="autocomplete-list"></div>
+                </div>
+
+                <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 12px; display: none;" id="ajuCurrentInfo">
+                   <strong>Stock Actual del Sistema:</strong> <span id="ajuCurrentStock" style="color: var(--primary); font-size: 16px; font-weight: 900; margin-left: 5px;">0</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                  <div>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--danger); text-transform: uppercase;">Nuevo Stock Real (Exacto) *</label>
+                    <input type="number" id="ajuQty" class="input-box" required min="0" step="1" style="border-color: var(--danger); font-size: 16px; font-weight: bold;">
+                  </div>
+                  <div>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Sucursal *</label>
+                    <select id="ajuBranch" class="input-box" required onchange="actualizarInfoStockAjuste()"></select>
+                  </div>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Motivo del Ajuste *</label>
+                    <select id="ajuReason" class="input-box" required>
+                        <option value="Recuento / Inventario">Recuento Físico / Inventario</option>
+                        <option value="Mercadería Dañada">Mercadería Dañada / Rota</option>
+                        <option value="Robo / Extravío">Robo / Extravío</option>
+                        <option value="Uso Interno / Muestra">Uso Interno / Muestra</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; background: var(--danger); border: none;">🔒 Aplicar Ajuste (Requiere PIN)</button>
+            </form>
           </div>
         </div>
 
@@ -190,858 +233,310 @@
   </main>
 </div>
 
-<dialog id="modalIngresoCompra" style="width: 100%; max-width: 700px;">
-  <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;">Recepción Logística de Mercadería (Manual)</h2>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalIngresoCompra').close()">✕</button>
-    </div>
-    <form id="formIngresoCompra">
-      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px;">
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Proveedor Origen *</label>
-          <select id="ingresoProveedor" class="input-box" required></select>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">N° Remito / Comprobante Prov. *</label>
-          <input type="text" id="ingresoFactura" class="input-box" required placeholder="Ej: R-0001-45678">
-        </div>
-      </div>
-      
-      <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; padding: 15px; background: #f8fafc; border: 1px solid var(--line); border-radius: 8px;">
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Producto a Ingresar *</label>
-          <select id="ingresoProducto" class="input-box" required></select>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Destino *</label>
-          <select id="ingresoDestino" class="input-box" required></select>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Cant. *</label>
-          <input type="number" id="ingresoCant" class="input-box" min="1" required placeholder="Ej: 50">
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--primary);">Costo Unit. Compra *</label>
-          <input type="number" step="0.01" id="ingresoCostoUnitario" class="input-box" min="0" required placeholder="$ 0.00">
-        </div>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-light" onclick="document.getElementById('modalIngresoCompra').close()">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="procesarIngresoCompra(event)">Confirmar Recepción Logística</button>
-      </div>
-    </form>
+<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: #fff; text-align: left;">
+  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
+    <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
   </div>
+  <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
+    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Ingresá el PIN de administrador para autorizar el ajuste manual de stock.</p>
+    <input type="password" id="adminAuthPin" required placeholder="PIN de Seguridad (Ej: 1234)" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
+      <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
+    </div>
+  </form>
 </dialog>
-
-<dialog id="modalIngresoMasivo" style="width: 100%; max-width: 600px;">
-  <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;">Recepción Masiva de Lote (Excel)</h2>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalIngresoMasivo').close()">✕</button>
-    </div>
-    
-    <div style="background: #fff8f1; padding: 15px; border-radius: 8px; border: 1px dashed #f59e0b; margin-bottom: 20px; font-size: 12px; color: #b45309;">
-      <strong>Instrucciones:</strong> Subí un archivo .xlsx o .csv con la mercadería recibida.<br>
-      La primera fila debe tener obligatoriamente estas columnas:<br><br>
-      <span style="background: #fef3c7; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; margin-right: 10px;">SKU</span>  
-      <span style="background: #fef3c7; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold;">CANTIDAD</span>
-      <span style="background: #fef3c7; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold;">COSTO</span>
-    </div>
-
-    <form id="formIngresoMasivo">
-      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px;">
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Proveedor Origen *</label>
-          <select id="masivaProv" class="input-box" required></select>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">N° Remito / Comprobante Lote *</label>
-          <input type="text" id="masivaFactura" class="input-box" required placeholder="Ej: LOTE-OCT-2026">
-        </div>
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Depósito de Destino *</label>
-          <select id="masivaDestino" class="input-box" required></select>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Archivo Excel / CSV *</label>
-          <input type="file" id="masivaFile" accept=".xlsx, .xls, .csv" required class="input-box" style="padding: 8px;">
-        </div>
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-light" onclick="document.getElementById('modalIngresoMasivo').close()">Cancelar</button>
-        <button type="button" class="btn btn-primary" style="background:#0f766e; border-color:#0f766e;" onclick="procesarIngresoMasivo(event)">Procesar Lote y Calcular CPP</button>
-      </div>
-    </form>
-  </div>
-</dialog>
-
-<dialog id="modalTransferencia" style="width: 100%; max-width: 500px;">
-  <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;">Transferencia Interna</h2>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalTransferencia').close()">✕</button>
-    </div>
-    <form>
-      <div style="margin-bottom: 15px;">
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Producto a Mover *</label>
-        <select id="transfProducto" class="input-box" required></select>
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Origen (Sale) *</label>
-          <select id="transfOrigen" class="input-box" required></select>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Destino (Entra) *</label>
-          <select id="transfDestino" class="input-box" required></select>
-        </div>
-      </div>
-      <div style="margin-bottom: 25px;">
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Cantidad *</label>
-        <input type="number" id="transfCant" class="input-box" min="1" required>
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-light" onclick="document.getElementById('modalTransferencia').close()">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="procesarTransferencia(event)">Confirmar</button>
-      </div>
-    </form>
-  </div>
-</dialog>
-
-<dialog id="modalAjuste" style="width: 100%; max-width: 500px;">
-  <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;">Ajuste Manual</h2>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalAjuste').close()">✕</button>
-    </div>
-    <form>
-      <div style="margin-bottom: 15px;">
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Producto *</label>
-        <select id="ajusteProducto" class="input-box" required></select>
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Depósito *</label>
-          <select id="ajusteSucursal" class="input-box" required></select>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Tipo Ajuste *</label>
-          <select id="ajusteTipo" class="input-box"><option value="ingreso">Ingreso (+)</option><option value="egreso">Egreso (-)</option></select>
-        </div>
-      </div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Cantidad *</label>
-          <input type="number" id="ajusteCant" class="input-box" required>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--danger);">Clave Administrador *</label>
-          <input type="password" id="ajusteAdminPass" class="input-box" style="border-color: var(--danger);" required placeholder="••••••••">
-        </div>
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-light" onclick="document.getElementById('modalAjuste').close()">Cancelar</button>
-        <button type="button" class="btn btn-primary" onclick="procesarAjuste(event)">Aplicar Ajuste</button>
-      </div>
-    </form>
-  </div>
-</dialog>
-
-<dialog id="modalTransferenciaMasiva" style="width: 100%; max-width: 600px;">
-  <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;">Transferencia Masiva (Excel)</h2>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalTransferenciaMasiva').close()">✕</button>
-    </div>
-    
-    <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px dashed #3b82f6; margin-bottom: 20px; font-size: 12px; color: #1d4ed8; line-height: 1.5;">
-      <strong>Instrucciones:</strong> Subí un archivo .xlsx o .csv con la mercadería a mover.<br>
-      Podés usar el mismo Excel que descargás de "Valorizado PVP" y agregarle la columna de cantidad. El sistema leerá obligatoriamente:<br><br>
-      <span style="background: #dbeafe; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold; margin-right: 10px;">SKU</span>  
-      <span style="background: #dbeafe; padding: 4px 8px; border-radius: 4px; font-family: monospace; font-weight: bold;">CANTIDAD</span>
-    </div>
-
-    <form id="formTransferenciaMasiva">
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Origen (Sale de...) *</label>
-          <select id="transfMasivaOrigen" class="input-box" required></select>
-        </div>
-        <div>
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Destino (Entra en...) *</label>
-          <select id="transfMasivaDestino" class="input-box" required></select>
-        </div>
-      </div>
-      <div style="margin-bottom: 25px;">
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Archivo Excel / CSV *</label>
-        <input type="file" id="transfMasivaFile" accept=".xlsx, .xls, .csv" required class="input-box" style="padding: 8px;">
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 10px;">
-        <button type="button" class="btn btn-light" onclick="document.getElementById('modalTransferenciaMasiva').close()">Cancelar</button>
-        <button type="button" class="btn btn-primary" style="background:#0284c7; border-color:#0284c7;" onclick="procesarTransferenciaMasiva(event)">Validar y Transferir</button>
-      </div>
-    </form>
-  </div>
-</dialog>
-
-<div id="printRemito">
-  <div class="remito-header">
-    <div>
-      <h1 style="margin: 0; font-size: 20px; font-weight: 900;">MICRO SAAS SOLUCIONES</h1>
-      <p style="margin: 2px 0 0 0; font-size: 10px; color: #555;">Documento de Traslado / Ingreso de Mercadería</p>
-    </div>
-    <div style="text-align: right;">
-      <h2 class="remito-title" id="remitoTitle">REMITO N°</h2>
-      <p style="margin: 2px 0 0 0; font-size: 10px;" id="remitoDate">Fecha: </p>
-    </div>
-  </div>
-  <div class="remito-boxes">
-    <div class="remito-box">
-      <strong>Origen (Salida)</strong>
-      <h3 id="remitoOrigen">---</h3>
-      <p id="remitoAutorizante">Responsable: ---</p>
-    </div>
-    <div class="remito-box">
-      <strong>Destino (Entrada)</strong>
-      <h3 id="remitoDestino">---</h3>
-      <p id="remitoRef">Operación registrada en sistema</p>
-    </div>
-  </div>
-  <table class="remito-table">
-    <thead>
-      <tr><th style="width:15%">CÓDIGO</th><th style="width:70%">DESCRIPCIÓN DEL ARTÍCULO</th><th style="width:15%; text-align:center;">CANTIDAD</th></tr>
-    </thead>
-    <tbody id="remitoItemsBody"></tbody>
-  </table>
-  <div style="font-size: 9px; color: #555; text-align: center; margin-bottom: 10px;">
-    La mercadería detallada viaja bajo responsabilidad de la empresa y debe ser controlada al momento de recepción.
-  </div>
-  <div class="firmas">
-    <div class="firma-line">Firma y Aclaración Origen</div>
-    <div class="firma-line">Firma y Aclaración Recepción</div>
-  </div>
-</div>
 
 <script src="core.js"></script>
 <script>
   const API_URL = "/api";
   let dbProducts = [];
   let dbBranches = [];
-  let dbSuppliers = [];
-  let historyLogs = getData('saas_movements_log', []);
+  const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+  const PIN_ADMIN = "1234"; 
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 }).format(n || 0); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+  function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
+  
   function switchTab(tabId, btnElement) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    btnElement.classList.add('active');
-    document.getElementById(tabId).classList.add('active');
-  }
-  function todayISO() { return new Date().toISOString().split('T')[0]; }
-  function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR').format(Number(n || 0)); }
-  function toggleMenu() {
-    document.querySelector('.sidebar').classList.toggle('open');
-    document.getElementById('sidebarOverlay').classList.toggle('open');
-  }
-
-  function getBranches(prod) {
-    if (!prod.stock_branches) return { "Central": Number(prod.stock || 0) };
-    try {
-      const parsed = typeof prod.stock_branches === 'string' ? JSON.parse(prod.stock_branches) : prod.stock_branches;
-      return typeof parsed === 'object' && parsed !== null ? parsed : { "Central": Number(prod.stock || 0) };
-    } catch(e) {
-      return { "Central": Number(prod.stock || 0) };
-    }
-  }
-
-  async function saveProduct(product) {
-    const payload = {
-      ...product,
-      stock_branches: typeof product.stock_branches === 'string'
-        ? product.stock_branches
-        : JSON.stringify(product.stock_branches || { Central: Number(product.stock || 0) })
-    };
-
-    const res = await apiFetch(`${API_URL}/products`, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      let errMsg = "Error del servidor";
-      try {
-         const errData = await res.json();
-         errMsg = errData.error || errMsg;
-      } catch(e) {
-         errMsg = await res.text();
-      }
-      throw new Error(errMsg);
-    }
-  }
-
-  function logMovement(type, origin, dest, summary, itemsArray, isPurchase = false) {
-    const log = {
-      id: (isPurchase ? 'ING-' : 'REM-') + Math.floor(Math.random() * 90000 + 10000),
-      date: new Date().toISOString(),
-      type,
-      origen: origin,
-      destino: dest,
-      user: localStorage.getItem('activeUser') || 'Admin',
-      summary,
-      items: itemsArray
-    };
-    historyLogs.unshift(log);
-    setData('saas_movements_log', historyLogs);
-    renderHistory();
-    return log;
+    btnElement.classList.add('active'); document.getElementById(tabId).classList.add('active');
   }
 
   async function initStock() {
     mostrarCarga(true);
     try {
-      const nocache = '&v=' + Date.now();
-      const nocacheSimple = '?v=' + Date.now();
-
-      const [resP, resB, resS] = await Promise.all([
-        apiFetch(`${API_URL}/products?status=Todos` + nocache),
-        apiFetch(`${API_URL}/branches` + nocacheSimple),
-        apiFetch(`${API_URL}/suppliers` + nocacheSimple)
+      const nocache = '?v=' + Date.now();
+      const [resP, resB] = await Promise.all([
+        apiFetch(`${API_URL}/products?status=Activo${nocache}`),
+        apiFetch(`${API_URL}/branches${nocache}`)
       ]);
-
+      
       if (resP.ok) dbProducts = await resP.json();
       if (resB.ok) dbBranches = await resB.json();
-      if (resS.ok) dbSuppliers = await resS.json();
 
-    } catch (error) {
-      console.error("Error cargando stock:", error);
-    } finally {
-      const branchOptions = dbBranches.map(b => `<option value="${b.name}">${escapeHtml(b.name)}</option>`).join('');
-      const filter = document.getElementById('branchFilter');
-      if (filter) filter.innerHTML = '<option value="ALL">Todas las Sucursales</option>' + branchOptions;
+      // Llenar selects de sucursales
+      const branchOptions = '<option value="ALL">Todas las Sucursales</option>' + dbBranches.map(b => `<option value="${escapeHtml(b.name)}">${escapeHtml(b.name)}</option>`).join('');
+      const inputBranchOptions = dbBranches.map(b => `<option value="${escapeHtml(b.name)}" ${b.name === terminalActiva ? 'selected' : ''}>${escapeHtml(b.name)}</option>`).join('');
       
-      const destElements = ['masivaDestino', 'ingresoDestino', 'transfOrigen', 'transfDestino', 'ajusteSucursal', 'transfMasivaOrigen', 'transfMasivaDestino'];
-      destElements.forEach(id => {
-        if (document.getElementById(id)) document.getElementById(id).innerHTML = branchOptions;
-      });
+      document.getElementById('branchFilter').innerHTML = branchOptions;
+      document.getElementById('branchFilter').value = terminalActiva; // Filtro default
+      
+      document.getElementById('ingBranch').innerHTML = inputBranchOptions;
+      document.getElementById('ajuBranch').innerHTML = inputBranchOptions;
 
-      const supplierOptions = '<option value="">Seleccioná...</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
-      document.getElementById('ingresoProveedor').innerHTML = supplierOptions;
-      document.getElementById('masivaProv').innerHTML = supplierOptions;
-
-      const prodOptions = dbProducts
-        .filter(p => (p.status || 'Activo') !== 'Inactivo')
-        .map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`)
-        .join('');
-
-      document.getElementById('ingresoProducto').innerHTML = prodOptions;
-      document.getElementById('transfProducto').innerHTML = prodOptions;
-      document.getElementById('ajusteProducto').innerHTML = prodOptions;
-
-      mostrarCarga(false);
-      renderStock();
-      renderHistory();
+    } catch (e) { console.error("Error cargando stock:", e); }
+    finally { 
+        mostrarCarga(false); 
+        renderStock(); 
     }
   }
 
   function renderStock() {
-    const term = document.getElementById('searchStock').value.toLowerCase();
-    const branchFilterEl = document.getElementById('branchFilter');
-    const thead = document.getElementById('tableHeadStock');
+    const term = document.getElementById('searchStock').value.toLowerCase().trim();
+    const branchFilter = document.getElementById('branchFilter').value;
+    const tbody = document.getElementById('tbodyStock');
     
-    const role = localStorage.getItem('userRole') || 'admin';
-    const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+    let kCosto = 0, kVenta = 0, kAgotados = 0;
 
-    let branchToView = 'ALL';
-    if (role === 'cajera' || role === 'vendedora' || role === 'pos') {
-      branchToView = terminalActiva;
-      if (branchFilterEl) branchFilterEl.style.display = 'none';
-    } else {
-      branchToView = branchFilterEl ? branchFilterEl.value : 'ALL';
-    }
+    const filtrados = dbProducts.filter(p => {
+      if (term && !(p.name||'').toLowerCase().includes(term) && !(p.code||'').toLowerCase().includes(term)) return false;
+      return true;
+    });
 
-    let theadHtml = `<tr>
-      <th>Código</th>
-      <th>Producto / Descripción</th>
-      <th>Precio Venta</th>
-      <th style="background:#e2e8f0; color:#0f172a; text-align:center;">STOCK TOTAL</th>`;
-
-    if (branchToView === 'ALL') {
-      dbBranches.forEach(b => { theadHtml += `<th style="text-align:center;">${escapeHtml(b.name)}</th>`; });
-    } else {
-      theadHtml += `<th style="text-align:center;">${escapeHtml(branchToView)}</th>`;
-    }
-    theadHtml += `<th style="background:#e0e7ff; color:#1d4ed8; text-align:right;">Valorizado (PVP)</th></tr>`;
-    thead.innerHTML = theadHtml;
-
-    let kpiUnidades = 0, kpiBajo = 0, kpiCero = 0, kpiValorizado = 0;
-    const filtrados = dbProducts.filter(p =>
-      ((p.name || '').toLowerCase().includes(term) || ((p.code || '').toLowerCase().includes(term)))
-    );
-    const tbody = document.getElementById('tableBodyStock');
-    
     tbody.innerHTML = filtrados.map(p => {
-      const branches = getBranches(p);
-      let stockTotalGlobal = 0;
-      for (let b in branches) stockTotalGlobal += Number(branches[b] || 0);
+      let stockBranches = {};
+      try { stockBranches = JSON.parse(p.stock_branches); } catch(e) { stockBranches = {"Central": p.stock || 0}; }
       
-      let branchCellsHtml = '';
-      let displayStockForKPI = 0;
-
-      if (branchToView === 'ALL') {
-        displayStockForKPI = stockTotalGlobal;
-        dbBranches.forEach(b => {
-          const qty = Number(branches[b.name] || 0);
-          const colorStyle = qty === 0 ? 'color:var(--danger);' : '';
-          branchCellsHtml += `<td class="col-number" style="${colorStyle}">${qty}</td>`;
-        });
-      } else {
-        displayStockForKPI = Number(branches[branchToView] || 0);
-        const colorStyle = displayStockForKPI === 0 ? 'color:var(--danger);' : '';
-        branchCellsHtml += `<td class="col-number" style="${colorStyle}">${displayStockForKPI}</td>`;
-      }
-
-      kpiUnidades += displayStockForKPI;
-      kpiValorizado += (displayStockForKPI * Number(p.price || 0));
-      if (displayStockForKPI <= 3 && displayStockForKPI > 0) kpiBajo++;
-      if (displayStockForKPI === 0) kpiCero++;
-
-      return `
-      <tr style="${(p.status || 'Activo') === 'Inactivo' ? 'opacity:.5;' : ''}">
-        <td><span style="color:var(--muted); font-family:monospace; font-size: 11px;">${p.code || '-'}</span></td>
-        <td><strong>${escapeHtml(p.name)}</strong><br><small style="color:var(--muted)">${escapeHtml(p.category || '')}</small></td>
-        <td>${currency(p.price)}</td>
-        <td class="col-number" style="background:#f8fafc;">${stockTotalGlobal}</td>
-        ${branchCellsHtml}
-        <td class="col-val">${currency(displayStockForKPI * Number(p.price || 0))}</td>
-      </tr>`;
-    }).join('');
-
-    document.getElementById('kpiUnidades').textContent = kpiUnidades;
-    document.getElementById('kpiValorizado').textContent = currency(kpiValorizado);
-    document.getElementById('kpiBajo').textContent = kpiBajo;
-    document.getElementById('kpiCero').textContent = kpiCero;
-    
-    if (filtrados.length === 0) tbody.innerHTML = `<tr><td colspan="${4 + (branchToView==='ALL'?dbBranches.length:1) + 1}" style="text-align:center; padding:30px; color:var(--muted);">No hay productos.</td></tr>`;
-  }
-
-  function renderHistory() {
-    const term = document.getElementById('searchHistory').value.toLowerCase();
-    const tbody = document.getElementById('tableBodyHistory');
+      const stockGlobal = p.stock || 0;
+      let stockLocal = branchFilter === 'ALL' ? stockGlobal : (stockBranches[branchFilter] || 0);
       
-    const filtrados = historyLogs.filter(log =>
-      (log.id || '').toLowerCase().includes(term) ||
-      (log.origen || '').toLowerCase().includes(term) ||
-      (log.destino || '').toLowerCase().includes(term) ||
-      (log.summary || '').toLowerCase().includes(term)
-    );
-
-    if (filtrados.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted);">No hay movimientos.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = filtrados.map(log => {
-      const isIngreso = log.type === 'Ingreso Compra';
-      const isTransf = log.type === 'Transferencia';
-          
-      let badge = '';
-      if (isIngreso) badge = `<span style="background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Recepción</span>`;
-      else if (isTransf) badge = `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Transferencia</span>`;
-      else badge = `<span style="background:var(--panel-2); color:var(--text); border:1px solid var(--line); padding:2px 8px; border-radius:4px; font-size:11px; font-weight:bold;">Ajuste</span>`;
-          
-      const d = new Date(log.date);
-      const fechaStr = `${d.toLocaleDateString('es-AR')}<br><small style="color:var(--muted)">${d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'})} hs</small>`;
+      if (stockLocal <= 0) kAgotados++;
+      
+      // Valuaciones basadas en stock local visible
+      kCosto += (p.cost * stockLocal);
+      kVenta += (p.price * stockLocal);
 
       return `
       <tr>
-        <td>${fechaStr}</td>
-        <td><strong>${log.id}</strong></td>
-        <td>${badge}</td>
-        <td><strong>${escapeHtml(log.origen || '')}</strong> ${log.destino ? '➔ <strong>'+escapeHtml(log.destino)+'</strong>' : ''}</td>
-        <td>${escapeHtml(log.summary || '')}<br><small style="color:var(--muted);">Resp: ${escapeHtml(log.user || '')}</small></td>
-        <td style="text-align: center;">
-          ${(isTransf || isIngreso) ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick='imprimirRemito(${JSON.stringify(log).replace(/'/g, "&apos;")})'>🖨️ Remito</button>` : '-'}
+        <td><span style="font-family:monospace; color:var(--muted);">${escapeHtml(p.code || '-')}</span></td>
+        <td><strong>${escapeHtml(p.name)}</strong></td>
+        <td><span style="background:var(--panel-2); padding:2px 6px; border-radius:4px; font-size:10px;">${escapeHtml(p.category || '-')}</span></td>
+        <td style="text-align:right;">${currency(p.cost)}</td>
+        <td style="text-align:right; font-weight:bold; color:var(--success);">${currency(p.price)}</td>
+        <td style="text-align:center;">${stockGlobal}</td>
+        <td style="text-align:center;">
+            <span style="background:${stockLocal > 5 ? '#dcfce7' : '#fee2e2'}; color:${stockLocal > 5 ? '#16a34a' : '#dc2626'}; padding:4px 8px; border-radius:6px; font-weight:bold; font-size:14px;">
+                ${stockLocal}
+            </span>
         </td>
       </tr>`;
     }).join('');
+
+    if (filtrados.length === 0) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No se encontraron productos.</td></tr>`;
+
+    document.getElementById('kpiCosto').textContent = currency(kCosto);
+    document.getElementById('kpiVenta').textContent = currency(kVenta);
+    document.getElementById('kpiAgotados').textContent = kAgotados;
   }
 
-  function imprimirRemito(log) {
-    document.getElementById('remitoTitle').textContent = log.type === 'Ingreso Compra' ? `RECEPCIÓN N° ${log.id}` : `REMITO N° ${log.id}`;
-    document.getElementById('remitoDate').textContent = `Fecha: ${new Date(log.date).toLocaleString('es-AR')}`;
-    document.getElementById('remitoOrigen').textContent = log.origen;
-    document.getElementById('remitoDestino').textContent = log.destino;
-    document.getElementById('remitoAutorizante').textContent = `Autoriza: ${log.user}`;
-    document.getElementById('remitoRef').textContent = log.summary;
+  // --- BUSCADOR REUTILIZABLE PARA INGRESOS Y AJUSTES ---
+  function buscarProducto(prefix) {
+    const term = document.getElementById(`${prefix}Search`).value.toLowerCase().trim();
+    const list = document.getElementById(`${prefix}Results`);
+    if (!term) { list.classList.remove('active'); return; }
 
-    const tbody = document.getElementById('remitoItemsBody');
-    tbody.innerHTML = (log.items || []).map(i => `<tr><td>${escapeHtml(i.code)}</td><td>${escapeHtml(i.name)}</td><td style="text-align:center; font-weight:bold; font-size:12px;">${i.qty}</td></tr>`).join('');
-    window.print();
+    const filtrados = dbProducts.filter(p => (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term)).slice(0, 6);
+    
+    list.innerHTML = filtrados.map(p => `
+      <div class="autocomplete-item" onclick="selProd('${prefix}', '${p.id}', '${escapeHtml(p.name).replace(/'/g, "\\'")}', ${p.cost})">
+        <div style="display:flex; justify-content:space-between;">
+            <strong>${escapeHtml(p.name)}</strong>
+            <span style="color:var(--muted); font-size:11px;">Costo act: ${currency(p.cost)}</span>
+        </div>
+        <small style="color:var(--muted);">${p.code || 'S/N'}</small>
+      </div>`).join('');
+    list.classList.add('active');
   }
 
-  function descargarExcelValorizado() {
-    if (dbProducts.length === 0) return alert("No hay datos.");
+  function selProd(prefix, id, name, cost) {
+    document.getElementById(`${prefix}ProdId`).value = id;
+    document.getElementById(`${prefix}Search`).value = name;
+    document.getElementById(`${prefix}Results`).classList.remove('active');
+    
+    if (prefix === 'ing') {
+        document.getElementById('ingCost').value = cost;
+        calcIngTotal();
+    } else if (prefix === 'aju') {
+        actualizarInfoStockAjuste();
+    }
+  }
+
+  // --- LÓGICA DE INGRESO (COMPRAS) ---
+  function calcIngTotal() {
+      const q = parseInt(document.getElementById('ingQty').value) || 0;
+      const c = parseFloat(document.getElementById('ingCost').value) || 0;
+      document.getElementById('ingTotal').value = currency(q * c);
+  }
+
+  async function ejecutarIngreso(e) {
+      e.preventDefault();
+      const id = document.getElementById('ingProdId').value;
+      if(!id) return alert("Busque y seleccione un producto del catálogo.");
       
-    const rows = dbProducts.map(p => {
-      const branches = getBranches(p);
-      let stockTotalGlobal = 0;
-      for (let b in branches) stockTotalGlobal += Number(branches[b] || 0);
+      const qty = parseInt(document.getElementById('ingQty').value) || 0;
+      const newCost = parseFloat(document.getElementById('ingCost').value) || 0;
+      const branch = document.getElementById('ingBranch').value;
 
-      let rowData = {
-        "SKU": p.code || '',
-        "Producto": p.name,
-        "Categoria": p.category || '',
-        "Precio Venta": p.price || 0,
-        "STOCK TOTAL": stockTotalGlobal
-      };
+      const p = dbProducts.find(x => x.id === id);
+      if(!p) return;
 
-      dbBranches.forEach(b => { rowData[b.name] = Number(branches[b.name] || 0); });
-      rowData["VALORIZADO (PVP)"] = stockTotalGlobal * Number(p.price || 0);
-      return rowData;
+      mostrarCarga(true);
+      try {
+          // CÁLCULO DE COSTO PROMEDIO PONDERADO (CPP)
+          const stockActualTotal = p.stock || 0;
+          const costoActual = p.cost || 0;
+          const totalValorAntiguo = stockActualTotal * costoActual;
+          const totalValorNuevo = qty * newCost;
+          
+          let nuevoCPP = costoActual;
+          if ((stockActualTotal + qty) > 0) {
+              nuevoCPP = (totalValorAntiguo + totalValorNuevo) / (stockActualTotal + qty);
+          }
+
+          // ACTUALIZAR STOCK
+          let branches = {}; try { branches = JSON.parse(p.stock_branches); } catch(err) { branches = {"Central": p.stock||0}; }
+          branches[branch] = (branches[branch] || 0) + qty;
+          
+          p.stock = stockActualTotal + qty;
+          p.stock_branches = JSON.stringify(branches);
+          p.cost = nuevoCPP; // Actualizamos el costo matemáticamente
+
+          await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(p) });
+          
+          alert(`✅ Ingreso registrado con éxito.\nNuevo Costo Promedio (CPP): ${currency(nuevoCPP)}`);
+          document.getElementById('ingProdId').value = '';
+          document.getElementById('ingSearch').value = '';
+          document.getElementById('ingQty').value = '';
+          document.getElementById('ingCost').value = '';
+          document.getElementById('ingTotal').value = '$ 0.00';
+          
+          await initStock(); // Recargar todo
+      } catch (err) {
+          alert("Error de conexión al registrar ingreso.");
+      } finally {
+          mostrarCarga(false);
+      }
+  }
+
+  // --- LÓGICA DE AJUSTE MANUAL CON SEGURIDAD PIN ---
+  function actualizarInfoStockAjuste() {
+      const id = document.getElementById('ajuProdId').value;
+      const branch = document.getElementById('ajuBranch').value;
+      if(!id) return;
+      
+      const p = dbProducts.find(x => x.id === id);
+      if(!p) return;
+
+      let branches = {}; try { branches = JSON.parse(p.stock_branches); } catch(err) { branches = {"Central": p.stock||0}; }
+      const currentStock = branches[branch] || 0;
+
+      document.getElementById('ajuCurrentInfo').style.display = 'block';
+      document.getElementById('ajuCurrentStock').textContent = currentStock;
+  }
+
+  function pedirAuthAjuste(e) {
+      e.preventDefault();
+      const id = document.getElementById('ajuProdId').value;
+      if(!id) return alert("Busque y seleccione un producto del catálogo.");
+      
+      document.getElementById('adminAuthPin').value = '';
+      document.getElementById('adminAuthDialog').showModal();
+      setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
+  }
+
+  function validarAdminAuth(e) {
+      e.preventDefault();
+      const pin = document.getElementById('adminAuthPin').value;
+      
+      if (pin === PIN_ADMIN) {
+          document.getElementById('adminAuthDialog').close();
+          ejecutarAjuste();
+      } else {
+          alert("❌ PIN de administrador incorrecto.");
+          document.getElementById('adminAuthPin').value = '';
+          document.getElementById('adminAuthPin').focus();
+      }
+  }
+
+  function cerrarAdminAuth() {
+      document.getElementById('adminAuthDialog').close();
+  }
+
+  async function ejecutarAjuste() {
+      const id = document.getElementById('ajuProdId').value;
+      const newQty = parseInt(document.getElementById('ajuQty').value) || 0;
+      const branch = document.getElementById('ajuBranch').value;
+
+      const p = dbProducts.find(x => x.id === id);
+      if(!p) return;
+
+      mostrarCarga(true);
+      try {
+          let branches = {}; try { branches = JSON.parse(p.stock_branches); } catch(err) { branches = {"Central": p.stock||0}; }
+          
+          // Reemplazo directo (Ajuste forzado)
+          branches[branch] = newQty;
+          
+          // Recalcular el stock total
+          let newTotal = 0;
+          for (let b in branches) newTotal += branches[b];
+          
+          p.stock = newTotal;
+          p.stock_branches = JSON.stringify(branches);
+
+          await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(p) });
+          
+          alert("🔒 Ajuste Manual aplicado exitosamente.");
+          document.getElementById('ajuProdId').value = '';
+          document.getElementById('ajuSearch').value = '';
+          document.getElementById('ajuQty').value = '';
+          document.getElementById('ajuCurrentInfo').style.display = 'none';
+          
+          await initStock();
+      } catch (err) {
+          alert("Error de conexión al aplicar el ajuste.");
+      } finally {
+          mostrarCarga(false);
+      }
+  }
+
+  function exportarExcel() {
+    if (dbProducts.length === 0) return alert("No hay datos para exportar.");
+    const dataExport = dbProducts.map(p => {
+        let sb = {}; try { sb = JSON.parse(p.stock_branches); } catch(e) {}
+        let row = {
+            "Código": p.code || '',
+            "Producto": p.name || '',
+            "Categoría": p.category || '',
+            "Costo (CPP)": p.cost || 0,
+            "Precio Venta": p.price || 0,
+            "Stock Global": p.stock || 0
+        };
+        dbBranches.forEach(b => {
+            row[`Stock ${b.name}`] = sb[b.name] || 0;
+        });
+        return row;
     });
 
-    const headers = Object.keys(rows[0]);
-    const csvContent = [headers.join(';'), ...rows.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
-    link.download = `Inventario_Valorizado_PVP_${todayISO()}.csv`;
-    link.click();
-  }
-
-  function abrirModalAjuste() { document.getElementById('modalAjuste').showModal(); }
-  function abrirModalTransferencia() { document.getElementById('modalTransferencia').showModal(); }
-  
-  function abrirModalIngresoCompra() { 
-    document.getElementById('formIngresoCompra').reset();
-    document.getElementById('modalIngresoCompra').showModal(); 
-  }
-
-  function abrirModalIngresoMasivo() { 
-    document.getElementById('formIngresoMasivo').reset();
-    document.getElementById('modalIngresoMasivo').showModal(); 
-  }
-
-  function abrirModalTransferenciaMasiva() { 
-    document.getElementById('transfMasivaFile').value = ''; 
-    document.getElementById('modalTransferenciaMasiva').showModal(); 
-  }
-
-  async function procesarIngresoCompra(e) {
-    e.preventDefault();
-    const prodId = document.getElementById('ingresoProducto').value;
-    const destino = document.getElementById('ingresoDestino').value;
-    const cant = parseInt(document.getElementById('ingresoCant').value);
-    const costoUnitarioCompra = parseFloat(document.getElementById('ingresoCostoUnitario').value) || 0;
-    const provId = document.getElementById('ingresoProveedor').value;
-    const comprobanteRef = document.getElementById('ingresoFactura').value.trim();
-    
-    if (!provId || !comprobanteRef) return alert("Seleccioná el proveedor y el comprobante de origen.");
-    if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
-
-    const provObj = dbSuppliers.find(s => s.id == provId);
-    const provName = provObj ? provObj.name : 'Proveedor';
-
-    const prod = dbProducts.find(p => p.id == prodId);
-    if (!prod) return alert("Error: Producto no encontrado.");
-
-    let branches = getBranches(prod);
-    let oldStockGlobal = 0;
-    for (let b in branches) oldStockGlobal += Number(branches[b] || 0);
-
-    if (branches[destino] === undefined) branches[destino] = 0;
-    branches[destino] = Number(branches[destino] || 0) + cant;
-
-    let newStockTotal = 0;
-    for (let b in branches) newStockTotal += Number(branches[b] || 0);
-
-    // --- MAGIA CFO: COSTO PROMEDIO PONDERADO (CPP) ---
-    const oldCost = Number(prod.cost || 0);
-    let nuevoCostoPromedio = oldCost;
-    if (newStockTotal > 0) {
-        nuevoCostoPromedio = ((oldStockGlobal * oldCost) + (cant * costoUnitarioCompra)) / newStockTotal;
-    }
-
-    prod.stock_branches = branches; 
-    prod.stock = newStockTotal;
-    prod.cost = nuevoCostoPromedio; // Actualiza costo real
-
-    mostrarCarga(true);
-    try {
-      await saveProduct(prod);
-      logMovement('Ingreso Compra', `${provName}`, destino, `Ref: ${comprobanteRef}`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}], true);
-      
-      document.getElementById('modalIngresoCompra').close();
-      await initStock();
-      alert("✅ Recepción registrada. Costo Promedio Ponderado (CPP) actualizado en el catálogo.");
-    } catch(err) {
-      alert("Error guardando el ingreso.");
-    } finally {
-      mostrarCarga(false);
-    }
-  }
-
-  async function procesarIngresoMasivo(e) {
-    e.preventDefault();
-    const destino = document.getElementById('masivaDestino').value;
-    const provId = document.getElementById('masivaProv').value;
-    const comprobanteRef = document.getElementById('masivaFactura').value.trim();
-    const fileInput = document.getElementById('masivaFile');
-
-    if (!provId || !comprobanteRef) return alert("Seleccioná el proveedor y la referencia del lote.");
-    if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
-
-    const provObj = dbSuppliers.find(s => s.id == provId);
-    const provName = provObj ? provObj.name : 'Proveedor';
-
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-
-    reader.onload = async function(evt) {
-      const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(firstSheet);
-
-      if (rows.length === 0) return alert("El archivo está vacío o mal formateado.");
-
-      let prodUpdates = [];
-      let errores = [];
-      let itemsParaRemito = [];
-
-      rows.forEach((row, index) => {
-        const findVal = (names) => {
-          const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
-          return key ? row[key] : null;
-        };
-
-        const sku = String(findVal(['sku', 'codigo', 'código']) || '').trim();
-        const cant = parseInt(findVal(['cantidad', 'cant', 'stock', 'qty']));
-        const costoUnitario = parseFloat(findVal(['costo', 'precio costo', 'precio de costo']));
-
-        if (!sku || isNaN(cant) || cant <= 0) return;
-
-        const prod = dbProducts.find(p => p.code == sku);
-        if (!prod) { errores.push(`Fila ${index + 2}: SKU ${sku} no existe en catálogo.`); return; }
-
-        let branches = getBranches(prod);
-        let oldStockGlobal = 0;
-        for (let b in branches) oldStockGlobal += Number(branches[b] || 0);
-
-        if (branches[destino] === undefined) branches[destino] = 0;
-        branches[destino] = Number(branches[destino] || 0) + cant;
-              
-        let stockTotal = 0;
-        for (let b in branches) stockTotal += Number(branches[b] || 0);
-        
-        // CÁLCULO CPP MASIVO
-        let nuevoCostoPromedio = Number(prod.cost || 0);
-        if (!isNaN(costoUnitario) && costoUnitario >= 0) {
-            nuevoCostoPromedio = ((oldStockGlobal * Number(prod.cost || 0)) + (cant * costoUnitario)) / stockTotal;
-        }
-              
-        prodUpdates.push({ ...prod, stock_branches: branches, stock: stockTotal, cost: nuevoCostoPromedio });
-        itemsParaRemito.push({ code: prod.code, name: prod.name, qty: cant });
-      });
-
-      if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron productos válidos.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
-
-      let msj = `Vas a ingresar ${itemsParaRemito.length} referencias a ${destino}.\nLote logístico: ${comprobanteRef}\n`;
-      if (errores.length > 0) msj += `\n⚠️ Hubo ${errores.length} filas ignoradas por errores:\n` + errores.slice(0,3).join('\n') + `\n`;
-      if (!confirm(msj + `\n¿Confirmás la recepción del lote y actualización de costos (CPP)?`)) return;
-
-      mostrarCarga(true);
-      try {
-        await Promise.all(prodUpdates.map(saveProduct));
-        logMovement('Ingreso Compra', `${provName}`, destino, `Lote logístico: ${comprobanteRef}`, itemsParaRemito, true);
-        document.getElementById('modalIngresoMasivo').close();
-        await initStock();
-        alert("✅ Lote logístico recibido y procesado en sistema. Costos actualizados.");
-      } catch(err) {
-        alert("Error de conexión durante el ingreso del lote.");
-      } finally {
-        mostrarCarga(false);
-      }
-    };
-
-    reader.readAsArrayBuffer(file);
-  }
-
-  async function procesarTransferenciaMasiva(e) {
-    e.preventDefault();
-    const origen = document.getElementById('transfMasivaOrigen').value;
-    const destino = document.getElementById('transfMasivaDestino').value;
-    const fileInput = document.getElementById('transfMasivaFile');
-
-    if (origen === destino) return alert("La sucursal de origen y destino no pueden ser la misma.");
-    if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo Excel o CSV.");
-
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-
-    reader.onload = async function(evt) {
-      const data = new Uint8Array(evt.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(firstSheet);
-
-      if (rows.length === 0) return alert("El archivo está vacío o mal formateado.");
-
-      let prodUpdates = [];
-      let errores = [];
-      let itemsParaRemito = [];
-
-      rows.forEach((row, index) => {
-        const findVal = (names) => {
-          const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
-          return key ? row[key] : null;
-        };
-
-        const sku = String(findVal(['sku', 'codigo', 'código']) || '').trim();
-        const cant = parseInt(findVal(['cantidad', 'cant', 'qty']));
-
-        if (!sku || isNaN(cant) || cant <= 0) return;
-
-        const prod = dbProducts.find(p => p.code == sku);
-        if (!prod) { errores.push(`Fila ${index + 2}: SKU ${sku} no existe en catálogo.`); return; }
-
-        let branches = getBranches(prod);
-              
-        if ((branches[origen] === undefined ? 0 : Number(branches[origen])) < cant) {
-          errores.push(`Fila ${index + 2}: Sin stock suficiente de ${sku} en ${origen} (Disponible: ${branches[origen] || 0}).`);
-          return;
-        }
-
-        if (branches[destino] === undefined) branches[destino] = 0;
-              
-        branches[origen] = Number(branches[origen] || 0) - cant;
-        branches[destino] = Number(branches[destino] || 0) + cant;
-              
-        let stockTotal = 0;
-        for (let b in branches) stockTotal += Number(branches[b] || 0);
-              
-        prodUpdates.push({ ...prod, stock_branches: branches, stock: stockTotal });
-        itemsParaRemito.push({ code: prod.code, name: prod.name, qty: cant });
-      });
-
-      if (prodUpdates.length === 0) return alert("Operación cancelada. No se detectaron transferencias válidas.\n\nErrores:\n" + errores.slice(0,5).join('\n'));
-
-      let msj = `Vas a transferir ${itemsParaRemito.length} referencias de ${origen} a ${destino}.\n`;
-      if (errores.length > 0) msj += `⚠️ Hubo ${errores.length} filas ignoradas por errores o falta de stock:\n` + errores.slice(0,3).join('\n') + `\n`;
-      if (!confirm(msj + `\n¿Confirmás la transferencia masiva?`)) return;
-
-      mostrarCarga(true);
-      try {
-        await Promise.all(prodUpdates.map(saveProduct));
-        logMovement('Transferencia', origen, destino, `Transferencia Masiva (Lote Excel)`, itemsParaRemito);
-        document.getElementById('modalTransferenciaMasiva').close();
-        await initStock();
-        alert("✅ Transferencia Masiva completada. Remito interno generado en el historial.");
-      } catch(err) {
-        alert("Error de conexión durante la transferencia.");
-      } finally {
-        mostrarCarga(false);
-      }
-    };
-
-    reader.readAsArrayBuffer(file);
-  }
-
-  async function procesarAjuste(e) {
-    e.preventDefault();
-    const prodId = document.getElementById('ajusteProducto').value;
-    const branch = document.getElementById('ajusteSucursal').value;
-    const tipo = document.getElementById('ajusteTipo').value;
-    const cant = parseInt(document.getElementById('ajusteCant').value);
-    const adminPass = document.getElementById('ajusteAdminPass').value.trim(); 
-    
-    if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
-    if (!adminPass) return alert("La contraseña de administrador es obligatoria.");
-
-    const prod = dbProducts.find(p => p.id == prodId);
-    if (!prod) return alert("Error: Producto no encontrado en el sistema.");
-
-    let branches = getBranches(prod);
-    if (branches[branch] === undefined) branches[branch] = 0;
-
-    if (tipo === 'ingreso') {
-        branches[branch] = Number(branches[branch] || 0) + cant;
-    } else {
-      if (Number(branches[branch] || 0) < cant) return alert("Stock insuficiente en esta sucursal para restar.");
-      branches[branch] = Number(branches[branch] || 0) - cant;
-    }
-
-    let stockTotal = 0;
-    for (let b in branches) stockTotal += Number(branches[b] || 0);
-
-    prod.stock_branches = branches; 
-    prod.stock = stockTotal;
-    
-    prod.isAdjustment = true;
-    prod.adminPass = adminPass; 
-
-    mostrarCarga(true);
-    try {
-      await saveProduct(prod);
-      logMovement('Ajuste', branch, '', `${tipo === 'ingreso' ? '+' : '-'}${cant} un. - ${prod.name}`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}]);
-      
-      document.getElementById('modalAjuste').close();
-      document.getElementById('ajusteCant').value = ''; 
-      document.getElementById('ajusteAdminPass').value = ''; 
-      await initStock();
-      alert("✅ Ajuste de stock aplicado correctamente."); 
-    } catch(err) {
-      alert("❌ " + err.message); 
-    } finally {
-      mostrarCarga(false);
-    }
-  }
-
-  async function procesarTransferencia(e) {
-    e.preventDefault();
-    const prodId = document.getElementById('transfProducto').value;
-    const origen = document.getElementById('transfOrigen').value;
-    const destino = document.getElementById('transfDestino').value;
-    const cant = parseInt(document.getElementById('transfCant').value);
-
-    if (origen === destino) return alert("El origen y el destino no pueden ser iguales.");
-    if (isNaN(cant) || cant <= 0) return alert("Cantidad inválida.");
-    
-    const prod = dbProducts.find(p => p.id == prodId);
-    if (!prod) return alert("Error: Producto no encontrado en el sistema.");
-
-    let branches = getBranches(prod);
-
-    if ((branches[origen] === undefined ? 0 : Number(branches[origen])) < cant) return alert(`Sin stock suficiente en ${origen}.`);
-    if (branches[destino] === undefined) branches[destino] = 0;
-
-    branches[origen] = Number(branches[origen] || 0) - cant;
-    branches[destino] = Number(branches[destino] || 0) + cant;
-
-    let stockTotal = 0;
-    for (let b in branches) stockTotal += Number(branches[b] || 0);
-
-    prod.stock_branches = branches;
-    prod.stock = stockTotal;
-
-    mostrarCarga(true);
-    try {
-      await saveProduct(prod);
-      logMovement('Transferencia', origen, destino, `Traslado interno`, [{code: prod.code || 'S/N', name: prod.name, qty: cant}]);
-      
-      document.getElementById('modalTransferencia').close();
-      document.getElementById('transfCant').value = ''; 
-      await initStock();
-      alert("✅ Transferencia realizada con éxito.");
-    } catch(err) {
-      alert("Error al procesar transferencia.");
-    } finally {
-      mostrarCarga(false);
-    }
+    const ws = XLSX.utils.json_to_sheet(dataExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+    XLSX.writeFile(wb, `Reporte_Inventario_${todayISO()}.xlsx`);
   }
 
   initStock();
