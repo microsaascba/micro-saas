@@ -130,7 +130,7 @@
         </div>
       </div>
       <div class="topbar-actions" style="display: flex; gap: 10px;">
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="document.getElementById('modalExportar').showModal()">⬇ Exportar Excel</button>
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="document.getElementById('modalExportar').showModal()">⬇ Exportar Órdenes</button>
         <button class="btn btn-primary" onclick="abrirModalOrden()">+ Nueva Orden</button>
       </div>
     </header>
@@ -154,6 +154,7 @@
       <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('tab-pendientes', this)">Órdenes en Curso</button>
         <button class="tab-btn" onclick="switchTab('tab-historial', this)">Historial Entregados</button>
+        <button class="tab-btn" onclick="switchTab('tab-os', this)" style="color: var(--primary);">Liquidación O.S.</button>
         <button class="tab-btn" onclick="switchTab('tab-cristales', this)">Catálogo de Cristales</button>
       </div>
 
@@ -177,6 +178,46 @@
           <table>
             <thead><tr><th>N° Orden</th><th>Entregado el</th><th>Paciente / Cliente</th><th>Armazón + Cristal</th><th>Total (Ticket)</th><th style="text-align: center;">Acciones</th></tr></thead>
             <tbody id="tbodyHistorial"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="tab-os" class="tab-content">
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; background: #f0f9ff; padding: 15px; border-radius: 8px; border: 1px solid #bae6fd;">
+          <div style="flex: 1; min-width: 150px;">
+            <label style="font-size: 11px; font-weight: bold; color: #0369a1;">Desde Fecha:</label>
+            <input type="date" id="osFilterDesde" class="input-box" onchange="renderLiquidacionOS()">
+          </div>
+          <div style="flex: 1; min-width: 150px;">
+            <label style="font-size: 11px; font-weight: bold; color: #0369a1;">Hasta Fecha:</label>
+            <input type="date" id="osFilterHasta" class="input-box" onchange="renderLiquidacionOS()">
+          </div>
+          <div style="flex: 1; min-width: 200px;">
+            <label style="font-size: 11px; font-weight: bold; color: #0369a1;">Obra Social:</label>
+            <select id="osFilterName" class="input-box" onchange="renderLiquidacionOS()">
+               <option value="ALL">Todas las Obras Sociales</option>
+            </select>
+          </div>
+          <div style="flex: 1; min-width: 150px;">
+            <label style="font-size: 11px; font-weight: bold; color: #0369a1;">Sucursal:</label>
+            <select id="osFilterBranch" class="input-box" onchange="renderLiquidacionOS()">
+               <option value="ALL">Todas las Sucursales</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <div>
+             <span style="font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: bold;">Total a Reclamar:</span><br>
+             <span id="kpiOsTotal" style="font-size: 24px; font-weight: 900; color: #0369a1;">$ 0,00</span>
+          </div>
+          <button class="btn btn-primary" style="background:#0284c7; border:none;" onclick="exportarOSExcel()">⬇ Descargar Reporte O.S.</button>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table>
+            <thead><tr><th>Fecha Ord.</th><th>N° Orden</th><th>Sucursal</th><th>Obra Social</th><th>Paciente</th><th>Afiliado / Nro</th><th style="text-align: right;">Cobertura (Monto)</th></tr></thead>
+            <tbody id="tbodyOs"></tbody>
           </table>
         </div>
       </div>
@@ -399,8 +440,8 @@
         </div>
 
         <div style="margin-top: 15px;">
-          <label class="receta-header" style="display: block; margin-bottom: 4px;">Observaciones Generales</label>
-          <textarea id="ordNotas" class="input-box" rows="2" placeholder="Ej: Centrado especial, detalles del armazón..."></textarea>
+          <label class="receta-header" style="display: block; margin-bottom: 4px;">Observaciones Generales / Nro Afiliado</label>
+          <textarea id="ordNotas" class="input-box" rows="2" placeholder="Ej: Centrado especial, número de afiliado de O.S. ..."></textarea>
         </div>
       </div>
 
@@ -618,7 +659,7 @@
 
 <script src="core.js"></script>
 <script>
-  let dbOrders = []; let dbProducts = []; let dbClients = []; let dbSuppliers = [];
+  let dbOrders = []; let dbProducts = []; let dbClients = []; let dbSuppliers = []; let dbBranches = [];
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
 
   let selectedFramePrice = 0;
@@ -633,6 +674,7 @@
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     btnElement.classList.add('active'); document.getElementById(tabId).classList.add('active');
+    if(tabId === 'tab-os') renderLiquidacionOS(); // Actualizar al abrir
   }
   
   function todayISO() { return new Date().toISOString().split('T')[0]; }
@@ -674,6 +716,10 @@
       const primerDiaMes = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
       document.getElementById('expDesde').value = primerDiaMes;
       document.getElementById('expHasta').value = todayISO();
+      
+      // Filtros de la pestaña O.S.
+      document.getElementById('osFilterDesde').value = primerDiaMes;
+      document.getElementById('osFilterHasta').value = todayISO();
 
       const nocache = '?v=' + Date.now();
 
@@ -687,22 +733,32 @@
           } catch(e) { return []; }
       }
 
-      const [resO, resP, resC, resS] = await Promise.all([
+      const [resO, resP, resC, resS, resB] = await Promise.all([
         fetchSeguro('/api/orders' + nocache), 
         fetchSeguro('/api/products' + nocache), 
         fetchSeguro('/api/business_clients' + nocache),
-        fetchSeguro('/api/suppliers' + nocache)
+        fetchSeguro('/api/suppliers' + nocache),
+        fetchSeguro('/api/branches' + nocache)
       ]);
       
       dbOrders = Array.isArray(resO) ? resO : [];
       dbProducts = Array.isArray(resP) ? resP : [];
       dbClients = Array.isArray(resC) ? resC : [];
       dbSuppliers = Array.isArray(resS) ? resS : [];
+      dbBranches = Array.isArray(resB) ? resB : [];
       
       const suppOptions = '<option value="">Seleccione Laboratorio...</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
       document.getElementById('lensSupplier').innerHTML = suppOptions;
       document.getElementById('ordLensSupplier').innerHTML = suppOptions;
       document.getElementById('filterLensSupplier').innerHTML = '<option value="ALL">Todos los Laboratorios</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+
+      // Llenar selector de sucursales en filtro O.S.
+      const branchOptions = '<option value="ALL">Todas las Sucursales</option>' + dbBranches.map(b => `<option value="${b.name}">${escapeHtml(b.name)}</option>`).join('');
+      document.getElementById('osFilterBranch').innerHTML = branchOptions;
+
+      // Extraer y llenar selector de Obras Sociales (limpiando vacíos)
+      const obrasSociales = [...new Set(dbOrders.filter(o => o.os_amount > 0 && o.os_name).map(o => o.os_name.trim().toUpperCase()))];
+      document.getElementById('osFilterName').innerHTML = '<option value="ALL">Todas las Obras Sociales</option>' + obrasSociales.map(os => `<option value="${escapeHtml(os)}">${escapeHtml(os)}</option>`).join('');
 
       renderOrders();
       renderLenses();
@@ -853,11 +909,9 @@
     const totGral = parseCurrency(document.getElementById('ordTotal').value);
     const osMonto = parseCurrency(document.getElementById('ordOsAmount').value);
     
-    // Lo que le queda pagar al paciente
     const totPaciente = totGral - osMonto;
     document.getElementById('ordTotalPaciente').value = currency(totPaciente);
 
-    // Saldo real después de la seña
     const dep = parseCurrency(document.getElementById('ordDeposit').value);
     const balance = totPaciente - dep;
     
@@ -880,7 +934,6 @@
     document.getElementById('ordPaymentMethod').value = 'Efectivo';
     document.getElementById('ordTotal').value = '';
     
-    // Reset O.S. fields
     document.getElementById('ordOsName').value = '';
     document.getElementById('ordOsAmount').value = '$ 0,00';
     document.getElementById('ordTotalPaciente').value = '$ 0,00';
@@ -971,7 +1024,7 @@
     document.getElementById('ordOsAmount').value = currency(o.os_amount); 
     document.getElementById('ordDeposit').value = currency(o.deposit); 
     
-    calcSaldo(); // Ejecutamos para que actualice la vista de TotalPaciente y Balance
+    calcSaldo();
     
     if (o.cupon) {
         document.getElementById('ordPaymentMethod').value = 'Crédito';
@@ -1033,7 +1086,9 @@
       deposit: depositFloat, 
       balance: balanceFloat,
       
-      status: 'Pendiente', seller: localStorage.getItem('activeUser') || 'Admin', 
+      status: 'Pendiente', 
+      seller: localStorage.getItem('activeUser') || 'Admin', 
+      branch: terminalActiva,
       notes: document.getElementById('ordNotas').value.trim(),
       cupon: document.getElementById('ordCupon').value.trim(),
       createdAt: new Date().toISOString()
@@ -1053,7 +1108,6 @@
         }
       }
 
-      // El paciente paga su seña hoy (Ingreso de caja)
       if (isNew && depositFloat > 0) {
         const method = document.getElementById('ordPaymentMethod').value;
         const cuponVal = document.getElementById('ordCupon').value.trim();
@@ -1071,6 +1125,9 @@
       document.getElementById('modalOrden').close();
       renderOrders();
       if(isNew) imprimirComprobantes(ord);
+      
+      // Si la orden tenía OS y se guardó exitosamente, actualizamos la pestaña de liquidación en fondo
+      renderLiquidacionOS();
     } catch(err) { alert("Error guardando orden."); } finally { mostrarCarga(false); }
   }
 
@@ -1090,7 +1147,7 @@
       
       if (isPend) kPend++;
       if (isListo) kListos++;
-      if (isPend || isListo) kSaldo += o.balance; // Saldo real que debe el paciente
+      if (isPend || isListo) kSaldo += o.balance; 
 
       const badge = isAnulado ? `<span style="background:var(--line); color:var(--muted); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Anulado</span>` : 
                     isPend ? `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">En Laboratorio</span>` : 
@@ -1127,6 +1184,86 @@
     document.getElementById('kpiPendientes').textContent = kPend;
     document.getElementById('kpiListos').textContent = kListos;
     document.getElementById('kpiSaldos').textContent = currency(kSaldo);
+  }
+
+  // --- NUEVA LÓGICA: LIQUIDACIÓN DE OBRA SOCIAL ---
+  function renderLiquidacionOS() {
+      const desde = document.getElementById('osFilterDesde').value;
+      const hasta = document.getElementById('osFilterHasta').value;
+      const osNameFilter = document.getElementById('osFilterName').value;
+      const branchFilter = document.getElementById('osFilterBranch').value;
+      
+      const tbody = document.getElementById('tbodyOs');
+      let totalDeudaOS = 0;
+      let htmlRows = '';
+
+      // Filtramos solo órdenes que tengan monto de O.S. y no estén anuladas
+      const ordenesOS = dbOrders.filter(o => o.os_amount > 0 && o.status !== 'Anulado');
+
+      ordenesOS.forEach(o => {
+          const fechaObj = o.createdAt ? o.createdAt.split('T')[0] : o.date;
+          const matchFechas = fechaObj >= desde && fechaObj <= hasta;
+          const matchOS = osNameFilter === 'ALL' || (o.os_name && o.os_name.toUpperCase() === osNameFilter);
+          const matchBranch = branchFilter === 'ALL' || (o.branch || 'Central') === branchFilter;
+
+          if (matchFechas && matchOS && matchBranch) {
+              totalDeudaOS += o.os_amount;
+              
+              // Extraer afiliado si está en notas
+              let nroAfiliado = "-";
+              if(o.notes && o.notes.length > 0) {
+                 nroAfiliado = o.notes.substring(0, 30) + (o.notes.length > 30 ? '...' : ''); 
+              }
+
+              htmlRows += `
+              <tr>
+                <td>${fechaObj}</td>
+                <td><strong>${o.id}</strong></td>
+                <td>${escapeHtml(o.branch || 'Central')}</td>
+                <td><span style="background: var(--primary-soft); color: var(--primary); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px;">${escapeHtml(o.os_name)}</span></td>
+                <td>${escapeHtml(o.clientName)}</td>
+                <td><small style="color:var(--muted);">${escapeHtml(nroAfiliado)}</small></td>
+                <td style="text-align:right; font-weight:bold; color:var(--text);">${currency(o.os_amount)}</td>
+              </tr>`;
+          }
+      });
+
+      tbody.innerHTML = htmlRows || '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted);">No hay liquidaciones pendientes para los filtros seleccionados.</td></tr>';
+      document.getElementById('kpiOsTotal').textContent = currency(totalDeudaOS);
+  }
+
+  function exportarOSExcel() {
+      const desde = document.getElementById('osFilterDesde').value;
+      const hasta = document.getElementById('osFilterHasta').value;
+      const osNameFilter = document.getElementById('osFilterName').value;
+      const branchFilter = document.getElementById('osFilterBranch').value;
+
+      const ordenesOS = dbOrders.filter(o => o.os_amount > 0 && o.status !== 'Anulado');
+      const filtradas = ordenesOS.filter(o => {
+          const fechaObj = o.createdAt ? o.createdAt.split('T')[0] : o.date;
+          return fechaObj >= desde && fechaObj <= hasta && 
+                 (osNameFilter === 'ALL' || (o.os_name && o.os_name.toUpperCase() === osNameFilter)) &&
+                 (branchFilter === 'ALL' || (o.branch || 'Central') === branchFilter);
+      });
+
+      if(filtradas.length === 0) return alert("No hay datos de Obra Social para exportar con estos filtros.");
+
+      const csvData = filtradas.map(o => {
+          return {
+              "Fecha": o.createdAt ? o.createdAt.split('T')[0] : o.date,
+              "Nro Orden": o.id,
+              "Sucursal": o.branch || 'Central',
+              "Obra Social": o.os_name,
+              "Paciente": o.clientName,
+              "Notas / Afiliado": o.notes || '-',
+              "Monto a Reclamar": o.os_amount
+          };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(csvData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Liquidacion_OS");
+      XLSX.writeFile(wb, `Reporte_ObraSocial_${desde}_al_${hasta}.xlsx`);
   }
 
   async function marcarListo(id) {
@@ -1244,6 +1381,7 @@
           o.balance = 0;
           await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) });
           renderOrders();
+          renderLiquidacionOS(); // Actualizar pestaña de liquidación si estaba abierta
       } catch (error) {
           alert("Error al anular orden.");
       } finally {
@@ -1275,6 +1413,7 @@
               "Fecha Orden": o.createdAt ? o.createdAt.split('T')[0] : o.date,
               "Fecha Entrega": o.deliveryDate,
               "Orden Nro": o.id,
+              "Sucursal": o.branch || 'Central',
               "Estado": o.status,
               "Paciente": o.clientName,
               "Obra Social": o.os_name || '-',
@@ -1292,7 +1431,7 @@
       const ws = XLSX.utils.json_to_sheet(csvData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Ordenes_Optica");
-      XLSX.writeFile(wb, `Reporte_Ordenes_${desde}_al_${hasta}.xlsx`);
+      XLSX.writeFile(wb, `Reporte_Ordenes_General_${desde}_al_${hasta}.xlsx`);
       
       document.getElementById('modalExportar').close();
   }
