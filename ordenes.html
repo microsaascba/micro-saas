@@ -306,6 +306,25 @@
   </div>
 </dialog>
 
+<dialog id="modalOS" style="width: 100%; max-width: 400px; z-index: 10000;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:18px;">Nueva Obra Social / Seguro</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalOS').close()">✕</button>
+    </div>
+    <form onsubmit="guardarOS(event)">
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; display:block; margin-bottom:6px;">Nombre de la Obra Social *</label>
+        <input type="text" id="newOsName" required class="input-box" placeholder="Ej: OSDE, PAMI, Apross" autocomplete="off">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalOS').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px;">Crear O.S.</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
 <dialog id="modalOrden" style="width: 100%; max-width: 900px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
@@ -327,7 +346,10 @@
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div>
                <label style="font-size: 10px; font-weight: bold; color: var(--muted);">Obra Social / Prepaga</label>
-               <input type="text" id="ordOsName" class="input-box" placeholder="Ej: PAMI, OSDE, Particular">
+               <div style="display: flex; gap: 5px;">
+                 <select id="ordOsName" class="input-box" style="font-weight: bold;"></select>
+                 <button type="button" class="btn btn-primary" style="padding: 10px; flex-shrink: 0;" onclick="abrirModalOS()" title="Crear nueva Obra Social">+</button>
+               </div>
             </div>
             <div>
                <label style="font-size: 10px; font-weight: bold; color: var(--muted);">Médico / Oftalmólogo</label>
@@ -659,7 +681,7 @@
 
 <script src="core.js"></script>
 <script>
-  let dbOrders = []; let dbProducts = []; let dbClients = []; let dbSuppliers = []; let dbBranches = [];
+  let dbOrders = []; let dbProducts = []; let dbClients = []; let dbSuppliers = []; let dbBranches = []; let dbObrasSociales = [];
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
 
   let selectedFramePrice = 0;
@@ -674,7 +696,7 @@
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     btnElement.classList.add('active'); document.getElementById(tabId).classList.add('active');
-    if(tabId === 'tab-os') renderLiquidacionOS(); // Actualizar al abrir
+    if(tabId === 'tab-os') renderLiquidacionOS();
   }
   
   function todayISO() { return new Date().toISOString().split('T')[0]; }
@@ -717,7 +739,6 @@
       document.getElementById('expDesde').value = primerDiaMes;
       document.getElementById('expHasta').value = todayISO();
       
-      // Filtros de la pestaña O.S.
       document.getElementById('osFilterDesde').value = primerDiaMes;
       document.getElementById('osFilterHasta').value = todayISO();
 
@@ -733,12 +754,13 @@
           } catch(e) { return []; }
       }
 
-      const [resO, resP, resC, resS, resB] = await Promise.all([
+      const [resO, resP, resC, resS, resB, resOS] = await Promise.all([
         fetchSeguro('/api/orders' + nocache), 
         fetchSeguro('/api/products' + nocache), 
         fetchSeguro('/api/business_clients' + nocache),
         fetchSeguro('/api/suppliers' + nocache),
-        fetchSeguro('/api/branches' + nocache)
+        fetchSeguro('/api/branches' + nocache),
+        fetchSeguro('/api/obras_sociales' + nocache)
       ]);
       
       dbOrders = Array.isArray(resO) ? resO : [];
@@ -746,23 +768,77 @@
       dbClients = Array.isArray(resC) ? resC : [];
       dbSuppliers = Array.isArray(resS) ? resS : [];
       dbBranches = Array.isArray(resB) ? resB : [];
+      dbObrasSociales = Array.isArray(resOS) ? resOS : [];
       
       const suppOptions = '<option value="">Seleccione Laboratorio...</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
       document.getElementById('lensSupplier').innerHTML = suppOptions;
       document.getElementById('ordLensSupplier').innerHTML = suppOptions;
       document.getElementById('filterLensSupplier').innerHTML = '<option value="ALL">Todos los Laboratorios</option>' + dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
 
-      // Llenar selector de sucursales en filtro O.S.
       const branchOptions = '<option value="ALL">Todas las Sucursales</option>' + dbBranches.map(b => `<option value="${b.name}">${escapeHtml(b.name)}</option>`).join('');
       document.getElementById('osFilterBranch').innerHTML = branchOptions;
 
-      // Extraer y llenar selector de Obras Sociales (limpiando vacíos)
-      const obrasSociales = [...new Set(dbOrders.filter(o => o.os_amount > 0 && o.os_name).map(o => o.os_name.trim().toUpperCase()))];
-      document.getElementById('osFilterName').innerHTML = '<option value="ALL">Todas las Obras Sociales</option>' + obrasSociales.map(os => `<option value="${escapeHtml(os)}">${escapeHtml(os)}</option>`).join('');
+      actualizarSelectOS();
 
       renderOrders();
       renderLenses();
     } catch(e) { console.error("Error crítico en initOrdenes:", e); } finally { mostrarCarga(false); }
+  }
+
+  function actualizarSelectOS(selectedName = null) {
+      const selectOrd = document.getElementById('ordOsName');
+      const selectFilter = document.getElementById('osFilterName');
+      const currentOrdVal = selectOrd ? selectOrd.value : null;
+      const currentFilterVal = selectFilter ? selectFilter.value : 'ALL';
+      
+      const legacyOS = [...new Set(dbOrders.filter(o => o.os_amount > 0 && o.os_name).map(o => o.os_name.trim().toUpperCase()))];
+      const activeOS = dbObrasSociales.map(os => os.name.toUpperCase());
+      const allOS = [...new Set([...legacyOS, ...activeOS])].sort();
+
+      const optionsHTML = '<option value="">Particular / Sin O.S.</option>' + allOS.map(os => `<option value="${escapeHtml(os)}">${escapeHtml(os)}</option>`).join('');
+      const filterHTML = '<option value="ALL">Todas las Obras Sociales</option>' + allOS.map(os => `<option value="${escapeHtml(os)}">${escapeHtml(os)}</option>`).join('');
+
+      if (selectOrd) {
+          selectOrd.innerHTML = optionsHTML;
+          if (selectedName) selectOrd.value = selectedName.toUpperCase();
+          else if (currentOrdVal) selectOrd.value = currentOrdVal;
+      }
+      
+      if (selectFilter) {
+          selectFilter.innerHTML = filterHTML;
+          if (currentFilterVal !== 'ALL') selectFilter.value = currentFilterVal;
+      }
+  }
+
+  function abrirModalOS() {
+      document.getElementById('newOsName').value = '';
+      document.getElementById('modalOS').showModal();
+  }
+
+  async function guardarOS(e) {
+      e.preventDefault();
+      const name = document.getElementById('newOsName').value.trim();
+      if (!name) return;
+
+      const id = 'os_' + Date.now();
+      const osData = { id, name };
+
+      mostrarCarga(true);
+      try {
+          const res = await apiFetch('/api/obras_sociales', {
+              method: 'POST',
+              body: JSON.stringify(osData)
+          });
+          if (!res.ok) throw new Error(await res.text());
+          
+          dbObrasSociales.push(osData);
+          actualizarSelectOS(name);
+          document.getElementById('modalOS').close();
+      } catch(err) {
+          alert("Error guardando Obra Social.");
+      } finally {
+          mostrarCarga(false);
+      }
   }
 
   function renderLenses() {
@@ -962,7 +1038,7 @@
     document.getElementById('ordClientName').value = o.clientName || '';
     document.getElementById('ordDoctor').value = o.doctor || '';
     
-    document.getElementById('ordOsName').value = o.os_name || '';
+    document.getElementById('ordOsName').value = o.os_name ? o.os_name.toUpperCase() : '';
     document.getElementById('ordNotas').value = o.notes || '';
     document.getElementById('ordDelivery').value = o.deliveryDate || todayISO();
 
@@ -1126,7 +1202,6 @@
       renderOrders();
       if(isNew) imprimirComprobantes(ord);
       
-      // Si la orden tenía OS y se guardó exitosamente, actualizamos la pestaña de liquidación en fondo
       renderLiquidacionOS();
     } catch(err) { alert("Error guardando orden."); } finally { mostrarCarga(false); }
   }
@@ -1186,7 +1261,6 @@
     document.getElementById('kpiSaldos').textContent = currency(kSaldo);
   }
 
-  // --- NUEVA LÓGICA: LIQUIDACIÓN DE OBRA SOCIAL ---
   function renderLiquidacionOS() {
       const desde = document.getElementById('osFilterDesde').value;
       const hasta = document.getElementById('osFilterHasta').value;
@@ -1197,7 +1271,6 @@
       let totalDeudaOS = 0;
       let htmlRows = '';
 
-      // Filtramos solo órdenes que tengan monto de O.S. y no estén anuladas
       const ordenesOS = dbOrders.filter(o => o.os_amount > 0 && o.status !== 'Anulado');
 
       ordenesOS.forEach(o => {
@@ -1209,7 +1282,6 @@
           if (matchFechas && matchOS && matchBranch) {
               totalDeudaOS += o.os_amount;
               
-              // Extraer afiliado si está en notas
               let nroAfiliado = "-";
               if(o.notes && o.notes.length > 0) {
                  nroAfiliado = o.notes.substring(0, 30) + (o.notes.length > 30 ? '...' : ''); 
@@ -1307,7 +1379,6 @@
     } catch(err) { alert("Error cerrando orden."); } finally { mostrarCarga(false); }
   }
 
-  // --- LÓGICA DE ANULACIÓN CON CONTRASEÑA ---
   function promptAnularOrden(id) {
       ordToAnular = id;
       const o = dbOrders.find(x => x.id === id);
@@ -1381,7 +1452,7 @@
           o.balance = 0;
           await apiFetch('/api/orders', { method: 'POST', body: JSON.stringify(o) });
           renderOrders();
-          renderLiquidacionOS(); // Actualizar pestaña de liquidación si estaba abierta
+          renderLiquidacionOS(); 
       } catch (error) {
           alert("Error al anular orden.");
       } finally {
