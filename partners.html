@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sé un Sales Closer Independiente | Micro SaaS</title>
+  
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f8fafc;
+      min-height: 100vh;
+    }
+
+    /* Layout Split Screen 50/50 */
+    .split-container {
+      display: flex;
+      min-height: 100vh;
+      width: 100vw;
+    }
+
+    /* LADO IZQUIERDO: Propuesta de Valor y Ganancias */
+    .split-left {
+      flex: 1.2;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 58, 138, 0.95)), url('img/img30.jpg') center/cover no-repeat;
+      color: #fff;
+      padding: 80px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* LADO DERECHO: Proceso y Requisitos (El "Cómo") */
+    .split-right {
+      flex: 1;
+      background: #ffffff;
+      padding: 80px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+
+    .badge-money {
+      display: inline-block;
+      background: #16a34a;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-weight: 800;
+      font-size: 14px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    h1 { font-size: 48px; font-weight: 900; line-height: 1.1; margin: 0 0 20px 0; }
+    h2 { font-size: 28px; font-weight: 800; color: #0f172a; margin-bottom: 30px; }
+    
+    .highlight { color: #3b82f6; }
+
+    .benefit-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .benefit-icon {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .benefit-text h4 { margin: 0 0 5px 0; font-size: 18px; color: #1e293b; }
+    .benefit-text p { margin: 0; font-size: 15px; color: #64748b; line-height: 1.5; }
+
+    .cta-container {
+      margin-top: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .btn-whatsapp {
+      background: #25D366;
+      color: white;
+      text-decoration: none;
+      padding: 20px 30px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 18px;
+      text-align: center;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-whatsapp:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(37, 211, 102, 0.3); }
+
+    .earning-box {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 20px;
+      margin-top: 40px;
+    }
+
+    .earning-box h3 { font-size: 32px; margin: 0; color: #86efac; }
+    .earning-box p { font-size: 16px; color: rgba(255, 255, 255, 0.7); margin: 10px 0 0 0; }
+
+    @media (max-width: 1000px) {
+      .split-container { flex-direction: column; }
+      .split-left, .split-right { padding: 60px 30px; }
+      h1 { font-size: 36px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="split-container">
+    
+    <div class="split-left">
+      <img src="img/logomicrosaas.png" alt="Logo" style="width: 150px; margin-bottom: 40px;">
+      
+      <div class="badge-money">Oportunidad de Negocio</div>
+      <h1>Tu propio negocio de Software, <span class="highlight">sin saber programar.</span></h1>
+      <p style="font-size: 18px; line-height: 1.6; color: rgba(255,255,255,0.8);">
+        Buscamos <strong>Sales Closers Independientes</strong> para expandir nuestro ecosistema de soluciones digitales para PyMEs. 
+        Tú pones la conexión, nosotros ponemos la tecnología de punta.
+      </p>
+
+      <div class="earning-box">
+        <h3>Desde USD 40 por cierre</h3>
+        <p>Comisiones directas por cada proyecto implementado. Sin límites, sin techos.</p>
+      </div>
+
+      <div style="margin-top: 40px; font-size: 14px; color: rgba(255,255,255,0.5);">
+        © 2026 Micro SaaS Soluciones - Partners Program
+      </div>
+    </div>
+
+    <div class="split-right">
+      <h2>¿Qué buscamos en un Closer?</h2>
+
+      <div class="benefit-item">
+        <div class="benefit-icon">⏱️</div>
+        <div class="benefit-text">
+          <h4>1 Hora Diaria</h4>
+          <p>Solo necesitas dedicar 60 minutos al día a prospectar y conectar en tus Redes Sociales. Tú manejas tus horarios al 100%.</p>
+        </div>
+      </div>
+
+      <div class="benefit-item">
+        <div class="benefit-icon">📱</div>
+        <div class="benefit-text">
+          <h4>Social Selling</h4>
+          <p>Identifica dueños de negocios (Ópticas, Comercios, Emprendedores) que necesiten orden y control. Nosotros te damos el material.</p>
+        </div>
+      </div>
+
+      <div class="benefit-item">
+        <div class="benefit-icon">🤝</div>
+        <div class="benefit-text">
+          <h4>Cierre de Proyectos</h4>
+          <p>Presenta nuestras soluciones a medida y cierra el acuerdo. El soporte técnico y la implementación corren por nuestra cuenta.</p>
+        </div>
+      </div>
+
+      <div class="benefit-item">
+        <div class="benefit-icon">🚀</div>
+        <div class="benefit-text">
+          <h4>Escalabilidad</h4>
+          <p>No vendes un producto, vendes una transformación. Una vez que entiendes el flujo, los ingresos crecen exponencialmente.</p>
+        </div>
+      </div>
+
+      <div class="cta-container">
+        <a href="https://wa.me/5493516506955?text=Hola,%20quiero%20sumarme%20como%20Closer%20Independiente" target="_blank" class="btn-whatsapp">
+          Quiero empezar hoy mismo 🚀
+        </a>
+        <p style="text-align: center; font-size: 13px; color: #94a3b8;">
+          Haz clic para hablar directamente con nuestro equipo de Partners.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
