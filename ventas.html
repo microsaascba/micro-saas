@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ventas y Caja | Micro SaaS</title>
+  <title>Ventas e Historial | Micro SaaS</title>
   
   <style>
     html, body { background-color: #f0f2f7 !important; }
@@ -11,126 +11,68 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
   <link rel="stylesheet" href="styles.css" />
-  
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
-    /* FIX RESPONSIVE: Sin !important en la grilla principal */
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a;}
+    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
-    .filter-bar { display: flex; gap: 15px; margin-bottom: 20px; background: var(--panel-2); padding: 15px; border-radius: 12px; border: 1px solid var(--line); flex-wrap: wrap; align-items: flex-end; }
+    .layout-1col { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
-    .input-box:disabled { background: #f1f5f9; color: var(--muted); cursor: not-allowed; }
-
-    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-    @media (max-width: 1000px) { .kpi-grid { grid-template-columns: 1fr 1fr; } }
     
-    .layout-z { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
-    @media (max-width: 1000px) { .layout-z { grid-template-columns: 1fr; } }
-
-    table { width: 100%; border-collapse: collapse; text-align: left; }
+    table { width: 100%; border-collapse: collapse; text-align: left; background: #fff; }
     th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
-    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
-    tbody tr:hover { background-color: #f8fafc; }
+    td { padding: 10px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+    
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
     
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
-
-    .warning-box { background: #fffbeb; border: 1px dashed #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-    .warning-box p { margin: 0; font-size: 12px; color: #b45309; }
-
-    /* --- ESTILOS FUERTES DE IMPRESIÓN --- */
-    .print-area { display: none; }
     
-    @media print {
-      @page { margin: 0; size: 80mm auto; } /* Formato ticketera térmica */
-      
-      /* Ocultar TODO el sistema web de forma agresiva */
-      body * { visibility: hidden !important; }
-      
-      /* Rescatar solo el ticket y sus hijos */
-      #printTicketVenta, #printZ, #printTicketVenta *, #printZ * { 
-          visibility: visible !important; 
-      }
-      
-      /* Posicionar el ticket arriba a la izquierda para que no haya hojas en blanco */
-      #printTicketVenta, #printZ { 
-          position: absolute !important; 
-          left: 0 !important; 
-          top: 0 !important; 
-          width: 100% !important;
-          background: white !important;
-          padding: 5mm !important;
-          box-sizing: border-box;
-      }
-      
-      body { margin: 0; padding: 0; background: #fff !important; font-family: monospace; color: #000; }
-      .app, dialog, #sidebarOverlay, #loadingOverlay { display: none !important; }
-      
-      .ticket-header { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
-      .ticket-header h1 { font-size: 16px; margin: 0 0 5px 0; }
-      .ticket-header p { margin: 0; font-size: 12px; }
-      .ticket-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
-      .ticket-total { font-size: 16px; font-weight: bold; border-top: 1px dashed #000; padding-top: 10px; margin-top: 10px; }
-    }
-    /* ----------------------------------- */
-
-    /* REGLAS OBLIGATORIAS PARA CELULARES */
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
-    
+
+    .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+    .summary-row strong { color: var(--text); }
+    .summary-total { display: flex; justify-content: space-between; padding: 15px 0; margin-top: 10px; border-top: 2px solid var(--primary); font-size: 18px; font-weight: 900; color: var(--primary); }
+
     @media (max-width: 900px) {
       .app { display: flex !important; flex-direction: column !important; }
       .mobile-toggle { display: block; }
       .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
       .sidebar.open { left: 0 !important; }
       .sidebar-overlay.open { display: block; }
-      
-      .topbar { padding: 15px; flex-direction: column; align-items: flex-start !important; gap: 15px; }
-      .topbar-actions { width: 100%; display: flex; justify-content: space-between; }
-      .topbar-actions button { flex: 1; }
-      
+      .topbar { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
       .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
-      
-      /* Apilar barra de filtros en móviles */
-      .filter-bar { flex-direction: column; gap: 10px; align-items: stretch; }
-      .filter-bar > div { width: 100%; }
-      
-      /* Permitir scroll en la tabla */
-      .table-responsive-wrapper { width: 100%; overflow-x: auto; }
-    }
-    
-    @media (max-width: 500px) {
-      .kpi-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-<div id="loadingOverlay">Cargando...</div>
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; font-weight:bold; color:var(--primary); font-size:18px;">Procesando...</div>
 
 <div class="app">
   <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
-
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
+      <div class="brand-text"><strong id="sidebarUserName">Usuario: Admin</strong><small>Control del negocio</small></div>
     </div>
      <nav class="nav">
-  <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-  <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
-  <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
-  <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
-  <a href="ventas.html" data-module="ventas"><span class="active">🧾</span> Ventas - Cierre de Caja</a>
-  <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
-  <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
-  <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
-  <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
-  <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
-  <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
-</nav>
+      <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html" data-module="ventas"><span class="active">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html" data-module="cc"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
+      <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
+      <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
+    </nav>
   </aside>
 
   <main class="content">
@@ -139,79 +81,48 @@
         <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
         <div class="page-title">
           <h1 style="margin:0; font-size: 26px;">Ventas y Caja</h1>
-          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Historial de transacciones y arqueo de caja Z.</p>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Seguimiento de operaciones y cierre de turno.</p>
         </div>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-primary" style="background: var(--success); border-color: var(--success);" onclick="exportarExcelVentas()">⬇ Exportar Reporte</button>
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Exportar Excel</button>
+        <button class="btn btn-primary" style="background: var(--danger); border:none;" onclick="abrirModalCierre()">🔒 Realizar Cierre de Caja</button>
       </div>
     </header>
 
-    <div class="filter-bar">
-      <div>
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; display:block; margin-bottom:5px;">Desde</label>
-        <input type="date" id="filterDesde" class="input-box" style="padding: 8px 12px;" onchange="renderVentas()">
-      </div>
-      <div>
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; display:block; margin-bottom:5px;">Hasta</label>
-        <input type="date" id="filterHasta" class="input-box" style="padding: 8px 12px;" onchange="renderVentas()">
-      </div>
-      <div>
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; display:block; margin-bottom:5px;">Sucursal</label>
-        <select id="filterSucursal" class="input-box" style="padding: 8px 12px; font-weight: bold;" onchange="renderVentas()"></select>
-      </div>
-      <div style="flex: 1; min-width: 250px;">
-        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase; display:block; margin-bottom:5px;">Buscar Ticket / Cliente</label>
-        <input type="text" id="searchVenta" class="input-box" placeholder="🔍 Buscar..." style="padding: 8px 12px;" onkeyup="renderVentas()">
-      </div>
-    </div>
-
     <div class="kpi-grid">
-      <article class="card card-pad" style="border-top: 4px solid var(--success);">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Efectivo en Caja</div>
-        <div id="kpiEfectivo" style="font-size:28px; font-weight:800;">$0</div>
+      <article class="card card-pad">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Efectivo en Caja (Actual)</div>
+        <div id="kpiEfectivo" style="font-size:28px; font-weight:800; color:var(--success);">$ 0</div>
       </article>
-      <article class="card card-pad" style="border-top: 4px solid #3b82f6;">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Transferencias</div>
-        <div id="kpiTransf" style="font-size:28px; font-weight:800;">$0</div>
+      <article class="card card-pad">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Ventas con Tarjeta (Actual)</div>
+        <div id="kpiTarjeta" style="font-size:28px; font-weight:800; color:var(--primary);">$ 0</div>
       </article>
-      <article class="card card-pad" style="border-top: 4px solid #f97316;">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Tarjetas / Posnet</div>
-        <div id="kpiTarjetas" style="font-size:28px; font-weight:800;">$0</div>
-      </article>
-      <article class="card card-pad" style="border-top: 4px solid var(--primary);">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Total Facturado</div>
-        <div id="kpiTotal" style="font-size:28px; font-weight:800; color:var(--primary);">$0</div>
+      <article class="card card-pad">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Total Facturado (Turno Actual)</div>
+        <div id="kpiTotal" style="font-size:28px; font-weight:800; color:var(--text);">$ 0</div>
       </article>
     </div>
 
-    <div class="layout-z">
+    <div class="layout-1col">
       <article class="card card-pad">
-        <h2 style="margin: 0 0 5px 0; font-size: 18px;">Arqueo y Cierre Z</h2>
-        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Finalización del turno operativo.</p>
-        
-        <div class="warning-box">
-          <p><strong>Atención:</strong> El Cierre Z requiere autorización del encargado.<br>Generará el ticket resumen para la caja física.</p>
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+          <h2 style="margin:0; font-size:18px;">Historial de Operaciones</h2>
+          <input type="text" id="searchVenta" class="input-box" placeholder="🔍 Buscar por ticket, cliente o medio de pago..." style="max-width: 350px; margin:0;" onkeyup="renderSales()">
         </div>
-        
-        <button class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 15px; font-weight: bold; background: #ea580c; border: none; display: flex; justify-content: center; gap: 10px;" onclick="iniciarCierreZ()">
-          🔒 CERRAR CAJA E IMPRIMIR
-        </button>
-      </article>
 
-      <article class="card card-pad" style="overflow: hidden;">
-        <h2 style="margin: 0 0 15px 0; font-size: 16px;" id="titleHistorial">Historial Filtrado</h2>
-        <div class="table-responsive-wrapper">
+        <div style="overflow-x: auto;">
           <table>
             <thead>
               <tr>
-                <th>Hora / Fecha</th>
-                <th>Vendedor</th>
-                <th>Comprobante</th>
+                <th>Fecha / Hora</th>
+                <th>Ticket ID</th>
                 <th>Cliente</th>
-                <th>Método / Cupón</th>
+                <th>Medio de Pago</th>
+                <th>N° Cupón / Ref.</th>
                 <th style="text-align: right;">Total</th>
-                <th style="text-align: center;">Acción</th>
+                <th style="text-align: center;">Acciones</th>
               </tr>
             </thead>
             <tbody id="tbodyVentas"></tbody>
@@ -222,326 +133,185 @@
   </main>
 </div>
 
-<dialog id="modalDetalleVenta" style="width: 100%; max-width: 600px;">
+<dialog id="modalCierre" style="width: 100%; max-width: 450px;">
   <div class="modal-content">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
-      <h2 style="margin: 0; font-size:20px;" id="detalleTitle">Detalle del Ticket</h2>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalDetalleVenta').close()">✕</button>
-    </div>
+    <h2 style="margin: 0 0 10px 0; font-size:22px; color: var(--danger);">Resumen de Cierre de Caja</h2>
+    <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Verificá los totales antes de finalizar el turno. Esta acción bloqueará las ventas actuales.</p>
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px;">
-      <div><small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Cliente</small><div id="detalleCliente" style="font-weight:bold; font-size:14px;">-</div></div>
-      <div><small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Vendedor / Sucursal</small><div id="detalleVendedor" style="font-size:14px;">-</div></div>
-      <div><small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Medio de Pago</small><div id="detallePago" style="font-weight:bold; font-size:14px;">-</div></div>
-      <div><small style="color:var(--muted); font-weight:bold; font-size:11px; text-transform:uppercase;">Cupón / Lote</small><div id="detalleCupon" style="font-size:14px;">-</div></div>
+    <div id="summaryContainer">
+        <div class="summary-row"><span>Efectivo:</span><strong id="sumCash">$ 0,00</strong></div>
+        <div class="summary-row"><span>Débito:</span><strong id="sumDebit">$ 0,00</strong></div>
+        <div class="summary-row"><span>Crédito:</span><strong id="sumCredit">$ 0,00</strong></div>
+        <div class="summary-row"><span>Transferencia:</span><strong id="sumTransfer">$ 0,00</strong></div>
+        <div class="summary-row"><span>Cta. Corriente (CC):</span><strong id="sumCC">$ 0,00</strong></div>
+        <div class="summary-total"><span>TOTAL GENERAL:</span><span id="sumTotal">$ 0,00</span></div>
     </div>
 
-    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-      <thead>
-        <tr>
-          <th style="padding: 8px; border-bottom: 2px solid var(--line);">Cód.</th>
-          <th style="padding: 8px; border-bottom: 2px solid var(--line);">Producto</th>
-          <th style="padding: 8px; border-bottom: 2px solid var(--line); text-align:center;">Cant.</th>
-          <th style="padding: 8px; border-bottom: 2px solid var(--line); text-align:right;">Subtotal</th>
-        </tr>
-      </thead>
-      <tbody id="detalleItemsBody"></tbody>
-    </table>
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 2px solid var(--line); padding-top: 15px;">
-      <div style="display:flex; gap:10px;">
-        <button class="btn btn-light" style="font-size:12px;" onclick="imprimirTicketDesdeModal()">🖨️ Imprimir Ticket</button>
-        <button class="btn btn-outline" style="border-color:var(--danger); color:var(--danger); font-size:12px;" onclick="anularVentaPrompt()">Anular Venta (Devolver Stock)</button>
-      </div>
-      <div style="text-align: right;">
-        <span style="font-size:14px; font-weight:bold; color:var(--muted); margin-right:10px;">TOTAL:</span>
-        <span id="detalleTotal" style="font-size:24px; font-weight:900; color:var(--primary);">$0</span>
-      </div>
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <button type="button" class="btn btn-light" style="flex:1" onclick="document.getElementById('modalCierre').close()">Seguir Vendiendo</button>
+      <button type="button" class="btn btn-primary" style="flex:1; background: var(--danger); border:none;" onclick="confirmarCierre()">Confirmar y Cerrar</button>
     </div>
-    <input type="hidden" id="detalleIdVenta">
   </div>
 </dialog>
-
-<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: var(--panel);">
-  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
-    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
-    <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
-  </div>
-  <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
-    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Se requiere PIN de administrador para <strong id="authActionText"></strong>.</p>
-    <input type="password" id="adminAuthPin" required placeholder="Ingresá el PIN" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none; margin-bottom: 24px;">
-    <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
-      <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
-    </div>
-  </form>
-</dialog>
-
-<div id="printTicketVenta" class="print-area">
-  <div class="ticket-header">
-    <h1>COMPROBANTE DE VENTA</h1>
-    <p id="ptDate"></p>
-    <p>Sucursal: <span id="ptBranch"></span></p>
-  </div>
-  <div style="font-size:12px; margin-bottom:15px; line-height:1.6;">
-    <strong>Ticket N°:</strong> <span id="ptId"></span><br>
-    <strong>Atendió:</strong> <span id="ptSeller"></span><br>
-    <strong>Cliente:</strong> <span id="ptClient"></span><br>
-    <strong>Cond. Venta:</strong> <span id="ptMethod"></span>
-  </div>
-  <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:10px 0; margin-bottom:10px; font-size:12px; line-height:1.6;" id="ptItems">
-    </div>
-  <div style="text-align:right; font-size:16px; font-weight:bold;">
-    TOTAL: <span id="ptTotal"></span>
-  </div>
-  <div style="text-align:center; font-size:10px; margin-top:30px; color:#555;">
-    ¡Gracias por su compra!<br>Conserve este comprobante.
-  </div>
-</div>
-
-<div id="printZ" class="print-area">
-  <div class="ticket-header">
-    <h1>CIERRE DE CAJA (Z)</h1>
-    <p id="zDate"></p>
-    <p id="zBranch"></p>
-  </div>
-  <div class="ticket-row" style="margin-top: 15px;"><span>Efectivo:</span><span id="zCash"></span></div>
-  <div class="ticket-row"><span>Transferencias:</span><span id="zTransf"></span></div>
-  <div class="ticket-row"><span>Tarjetas/Posnet:</span><span id="zCards"></span></div>
-  <div class="ticket-row" style="margin-top: 10px; color: #555;"><span>Cta. Cte. (Deuda):</span><span id="zDebt"></span></div>
-  <div class="ticket-row ticket-total"><span>TOTAL FACTURADO:</span><span id="zTotal"></span></div>
-  <div style="text-align: center; margin-top: 20px; font-size: 10px;">
-    <p>Operaciones totales: <span id="zCount"></span></p>
-    <p>Firma Encargado: ____________________</p>
-  </div>
-</div>
 
 <script src="core.js"></script>
 <script>
-function toggleMenu() {
-  document.querySelector('.sidebar').classList.toggle('open');
-  document.getElementById('sidebarOverlay').classList.toggle('open');
-}
+  let dbSales = [];
+  const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
 
-function todayISO() { return new Date().toISOString().split('T')[0]; }
-function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR').format(n || 0); }
-function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 }).format(n || 0); }
+  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+  function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
 
-let dbSales = [];
-let dbClients = [];
-
-async function initVentas() {
-  mostrarCarga(true);
-  try {
-    const hoy = todayISO();
-    document.getElementById('filterDesde').value = hoy;
-    document.getElementById('filterHasta').value = hoy;
-
-    const nocache = '?v=' + Date.now();
-    const [resS, resB, resC] = await Promise.all([
-      apiFetch('/api/sales' + nocache),
-      apiFetch('/api/branches' + nocache),
-      apiFetch('/api/business_clients?withBalance=1' + nocache)
-    ]);
-
-    if (resS.ok) dbSales = await resS.json();
-    if (resC.ok) dbClients = await resC.json();
-
-    const role = localStorage.getItem('userRole') || 'admin';
-    const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
-    const selSuc = document.getElementById('filterSucursal');
-
-    if (role === 'admin') {
-      selSuc.innerHTML = `<option value="ALL">Todas</option>`;
-      if (resB.ok) {
-        const branches = await resB.json();
-        branches.forEach(b => {
-          const selected = b.name === terminalActiva ? 'selected' : '';
-          selSuc.innerHTML += `<option value="${b.name}" ${selected}>${b.name}</option>`;
-        });
+  async function initVentas() {
+    mostrarCarga(true);
+    try {
+      const res = await apiFetch('/api/sales');
+      if (res.ok) {
+          const allSales = await res.json();
+          // Solo mostramos las ventas de ESTA sucursal
+          dbSales = allSales.filter(s => s.branch === terminalActiva);
       }
-    } else {
-      selSuc.innerHTML = `<option value="${terminalActiva}">${terminalActiva}</option>`;
-      selSuc.disabled = true;
+    } catch(e) { console.error(e); }
+    finally {
+      mostrarCarga(false);
+      renderSales();
+    }
+  }
+
+  function renderSales() {
+    const term = document.getElementById('searchVenta').value.toLowerCase();
+    const tbody = document.getElementById('tbodyVentas');
+    
+    // Filtrar solo las que NO están cerradas para los KPIs
+    const currentSales = dbSales.filter(s => Number(s.closed || 0) === 0);
+    
+    let kCash = 0, kCards = 0, kTotal = 0;
+    
+    tbody.innerHTML = dbSales.map(s => {
+      const isClosed = Number(s.closed || 0) === 1;
+      const match = s.id.toLowerCase().includes(term) || s.client.toLowerCase().includes(term) || s.method.toLowerCase().includes(term);
+      if (!match) return '';
+
+      if (!isClosed) {
+          if (s.method === 'Efectivo') kCash += s.total;
+          if (s.method === 'Débito' || s.method === 'Crédito') kCards += s.total;
+          kTotal += s.total;
+      }
+
+      const d = new Date(s.createdAt);
+      const timeStr = d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+      const dateStr = d.toLocaleDateString('es-AR');
+
+      return `
+      <tr style="${isClosed ? 'opacity:0.6; background:#f1f5f9;' : ''}">
+        <td>${dateStr} <small>${timeStr}</small></td>
+        <td><strong>${s.id.split('_')[1] || s.id}</strong></td>
+        <td>${escapeHtml(s.client)}</td>
+        <td>
+            <span class="badge" style="background:${s.method === 'Efectivo' ? '#dcfce7' : '#e0e7ff'}; color:${s.method === 'Efectivo' ? '#16a34a' : '#1d4ed8'}; font-weight:bold;">
+                ${s.method}
+            </span>
+        </td>
+        <td><small style="color:var(--muted); font-family:monospace;">${escapeHtml(s.cupon || '-')}</small></td>
+        <td style="text-align:right; font-weight:bold;">${currency(s.total)}</td>
+        <td style="text-align:center;">
+          <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="reimprimirTicket('${s.id}')">🖨️ Ticket</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('kpiEfectivo').textContent = currency(kCash);
+    document.getElementById('kpiTarjeta').textContent = currency(kCards);
+    document.getElementById('kpiTotal').textContent = currency(kTotal);
+  }
+
+  function abrirModalCierre() {
+    // Calculamos el resumen SOLO de las ventas abiertas (closed = 0)
+    const openSales = dbSales.filter(s => Number(s.closed || 0) === 0);
+    
+    if (openSales.length === 0) {
+        return alert("No hay ventas abiertas para cerrar en esta sucursal.");
     }
 
-    renderVentas();
-  } catch (e) {
-    console.error(e);
-  } finally {
-    mostrarCarga(false);
-  }
-}
+    let cash = 0, debit = 0, credit = 0, transfer = 0, cc = 0;
 
-function getClientName(clientId) {
-  if (!clientId || clientId === 'Consumidor Final') return 'Consumidor Final';
-  const c = dbClients.find(x => x.id === clientId);
-  return c ? c.name : 'Consumidor Final';
-}
-
-function renderVentas() {
-  const desde = document.getElementById('filterDesde').value;
-  const hasta = document.getElementById('filterHasta').value;
-  const sucursal = document.getElementById('filterSucursal').value;
-  const search = document.getElementById('searchVenta').value.toLowerCase();
-
-  const tbody = document.getElementById('tbodyVentas');
-  let total = 0, efectivo = 0, transf = 0, tarjetas = 0, ctaCte = 0, count = 0;
-
-  const filtradas = dbSales.filter(s => {
-    const d = s.date || (s.createdAt || '').split('T')[0];
-    const cliente = getClientName(s.clientId).toLowerCase();
-
-    return (
-      d >= desde && d <= hasta &&
-      (sucursal === 'ALL' || s.branch === sucursal) &&
-      (search === '' || s.id.toLowerCase().includes(search) || cliente.includes(search))
-    );
-  });
-
-  tbody.innerHTML = filtradas.map(s => {
-    const cliente = getClientName(s.clientId);
-    const isAnulada = s.status === 'Anulada';
-
-    if (!isAnulada) {
-      total += s.total;
-      count++;
-      if (s.method === 'Efectivo') efectivo += s.total;
-      else if (s.method === 'Transferencia') transf += s.total;
-      else if (s.method === 'A Cuenta Corriente') ctaCte += s.total;
-      else tarjetas += s.total;
-    }
-
-    // Botón seguro sin inyectar objetos pesados en el HTML
-    const btnVer = `<button style="background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:6px 12px; cursor:pointer; font-weight:bold; font-size:12px;" onclick="verDetalle('${s.id}')">👁️ Ver</button>`;
-
-    return `
-    <tr style="${isAnulada ? 'opacity:0.5; text-decoration:line-through; background:#f1f5f9;' : ''}">
-      <td>${s.date}</td>
-      <td>${s.seller || 'Admin'}</td>
-      <td>${s.id.split('_')[1] || s.id}</td>
-      <td><strong>${escapeHtml(cliente)}</strong></td>
-      <td>${s.method}</td>
-      <td style="text-align:right; font-weight:bold; color: ${isAnulada ? 'inherit' : 'var(--primary)'}">${currency(s.total)}</td>
-      <td style="text-align:center;">${btnVer}</td>
-    </tr>`;
-  }).join('');
-
-  if (filtradas.length === 0) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted);">No hay ventas en este período.</td></tr>';
-
-  document.getElementById('kpiTotal').textContent = currency(total);
-  document.getElementById('kpiEfectivo').textContent = currency(efectivo);
-  document.getElementById('kpiTransf').textContent = currency(transf);
-  document.getElementById('kpiTarjetas').textContent = currency(tarjetas);
-
-  window.dataZ = { total, efectivo, transf, tarjetas, ctaCte, count };
-}
-
-// ==========================================
-// FUNCIONES DEL MODAL DE DETALLE Y REIMPRESIÓN
-// ==========================================
-window.verDetalle = function(idVenta) {
-  const venta = dbSales.find(s => s.id === idVenta);
-  if (!venta) return;
-
-  const isAnulada = venta.status === 'Anulada';
-  
-  document.getElementById('detalleTitle').textContent = `Detalle del Ticket #${venta.id.split('_')[1] || venta.id}`;
-  document.getElementById('detalleCliente').textContent = getClientName(venta.clientId);
-  document.getElementById('detalleVendedor').textContent = `${venta.seller || 'Admin'} / ${venta.branch || 'Central'}`;
-  document.getElementById('detallePago').innerHTML = `${venta.method || '-'} ${isAnulada ? '<span style="color:var(--danger);">(ANULADA)</span>' : ''}`;
-  document.getElementById('detalleCupon').textContent = venta.cupon || '-';
-  
-  const tbody = document.getElementById('detalleItemsBody');
-  tbody.innerHTML = (venta.items || []).map(i => `
-    <tr>
-      <td style="padding: 8px; border-bottom: 1px solid var(--line); font-size:12px;">${i.code || '-'}</td>
-      <td style="padding: 8px; border-bottom: 1px solid var(--line); font-size:12px;"><strong>${escapeHtml(i.name)}</strong></td>
-      <td style="padding: 8px; border-bottom: 1px solid var(--line); text-align:center; font-weight:bold;">${i.qty}</td>
-      <td style="padding: 8px; border-bottom: 1px solid var(--line); text-align:right; font-weight:bold; color:var(--primary);">${currency(i.subtotal)}</td>
-    </tr>
-  `).join('');
-
-  document.getElementById('detalleTotal').textContent = currency(venta.total);
-  document.getElementById('detalleIdVenta').value = venta.id;
-  
-  document.getElementById('modalDetalleVenta').showModal();
-};
-
-window.imprimirTicketDesdeModal = function() {
-  const id = document.getElementById('detalleIdVenta').value;
-  const venta = dbSales.find(s => s.id === id);
-  if (venta) {
-      const ventaParaImprimir = {...venta, client: getClientName(venta.clientId)};
-      localStorage.setItem('last_sale_to_print', JSON.stringify(ventaParaImprimir));
-      window.open('imprimir_ticket.html', '_blank');
-  }
-};
-
-// ==========================================
-// FUNCIONES DE ANULACIÓN (CON CONTRASEÑA)
-// ==========================================
-window.anularVentaPrompt = function() {
-  const id = document.getElementById('detalleIdVenta').value;
-  const venta = dbSales.find(s => s.id === id);
-  if (venta && venta.status === 'Anulada') {
-    alert("Esta venta ya se encuentra anulada.");
-    return;
-  }
-  document.getElementById('authActionText').textContent = 'anular esta venta (devolver stock)';
-  document.getElementById('adminAuthPin').value = '';
-  document.getElementById('adminAuthDialog').showModal();
-};
-
-window.cerrarAdminAuth = function() {
-  document.getElementById('adminAuthDialog').close();
-};
-
-window.validarAdminAuth = async function(event) {
-  event.preventDefault();
-  const pin = document.getElementById('adminAuthPin').value.trim();
-  const id = document.getElementById('detalleIdVenta').value;
-  cerrarAdminAuth();
-  
-  if (!pin) return alert("Debes ingresar el PIN.");
-  await ejecutarAnulacion(id, pin);
-};
-
-window.ejecutarAnulacion = async function(id, pin) {
-  mostrarCarga(true);
-  try {
-    const vta = dbSales.find(s => s.id === id);
-    if (!vta) return;
-
-    // Payload especial para el backend
-    const payload = {...vta, status: 'Anulada', adminPass: pin};
-
-    const res = await apiFetch('/api/sales', {
-      method: 'POST',
-      body: JSON.stringify(payload)
+    openSales.forEach(s => {
+        if (s.method === 'Efectivo') cash += s.total;
+        else if (s.method === 'Débito') debit += s.total;
+        else if (s.method === 'Crédito') credit += s.total;
+        else if (s.method === 'Transferencia') transfer += s.total;
+        else if (s.method === 'CC') cc += s.total;
     });
 
-    if (!res.ok) {
-      let errMsg = "Error al anular";
-      try { const err = await res.json(); errMsg = err.error || errMsg; } catch(e){}
-      throw new Error(errMsg);
-    }
+    const total = cash + debit + credit + transfer + cc;
 
-    // Actualizamos localmente para no tener que recargar toda la BD
-    vta.status = 'Anulada';
-    renderVentas();
-    document.getElementById('modalDetalleVenta').close();
-    alert("✅ Venta anulada exitosamente. El stock ha sido restituido.");
+    document.getElementById('sumCash').textContent = currency(cash);
+    document.getElementById('sumDebit').textContent = currency(debit);
+    document.getElementById('sumCredit').textContent = currency(credit);
+    document.getElementById('sumTransfer').textContent = currency(transfer);
+    document.getElementById('sumCC').textContent = currency(cc);
+    document.getElementById('sumTotal').textContent = currency(total);
 
-  } catch (e) {
-    alert("❌ " + e.message);
-  } finally {
-    mostrarCarga(false);
+    document.getElementById('modalCierre').showModal();
   }
-};
 
-initVentas();
+  async function confirmarCierre() {
+    const openSales = dbSales.filter(s => Number(s.closed || 0) === 0);
+    let cash = 0, debit = 0, credit = 0, transfer = 0, cc = 0;
+    openSales.forEach(s => {
+        if (s.method === 'Efectivo') cash += s.total;
+        else if (s.method === 'Débito') debit += s.total;
+        else if (s.method === 'Crédito') credit += s.total;
+        else if (s.method === 'Transferencia') transfer += s.total;
+        else if (s.method === 'CC') cc += s.total;
+    });
+    const total = cash + debit + credit + transfer + cc;
+
+    const closureData = {
+        id: 'cls_' + Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        branch: terminalActiva,
+        user: localStorage.getItem('activeUser') || 'Caja',
+        total_cash: cash,
+        total_debit: debit,
+        total_credit: credit,
+        total_transfer: transfer,
+        total_cc: cc,
+        grand_total: total,
+        createdAt: new Date().toISOString()
+    };
+
+    mostrarCarga(true);
+    try {
+        const res = await apiFetch('/api/closures', {
+            method: 'POST',
+            body: JSON.stringify(closureData)
+        });
+
+        if (res.ok) {
+            alert("✅ Cierre de Caja realizado con éxito. Los totales han sido bloqueados.");
+            document.getElementById('modalCierre').close();
+            await initVentas(); // Recarga para ver el cambio de opacidad
+        } else {
+            alert("Error al realizar el cierre.");
+        }
+    } catch(e) {
+        alert("Error de conexión.");
+    } finally {
+        mostrarCarga(false);
+    }
+  }
+
+  function exportarExcel() {
+    const ws = XLSX.utils.json_to_sheet(dbSales);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ventas");
+    XLSX.writeFile(wb, `Historial_Ventas_${terminalActiva}.xlsx`);
+  }
+
+  initVentas();
 </script>
 </body>
 </html>
