@@ -40,7 +40,6 @@
     .btn-facturar { background: var(--success); color: white; border: none; padding: 20px; border-radius: 10px; font-size: 20px; font-weight: 800; cursor: pointer; transition: 0.2s; width: 100%; }
     .btn-facturar:hover { transform: scale(1.01); filter: brightness(1.1); }
 
-    /* CORRECCIÓN CRÍTICA DE VISIBILIDAD */
     .autocomplete-list { 
         position: absolute; 
         top: 100%; 
@@ -77,7 +76,7 @@
 </head>
 <body>
 
-<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:999999; justify-content:center; align-items:center; font-weight:bold; color:var(--primary); font-size:18px;">Conectando con base de datos...</div>
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:999999; justify-content:center; align-items:center; font-weight:bold; color:var(--primary); font-size:18px;">Procesando...</div>
 
 <div class="app">
   <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
@@ -143,7 +142,7 @@
             <div class="total-row" style="color: #fb7185;">
               <span>Descuento:</span>
               <div style="display:flex; gap:5px; align-items:center;">
-                <input type="number" id="promoDiscount" class="input-box" style="width: 80px; padding: 4px; background: rgba(255,255,255,0.1); color: #fb7185; border: 1px dashed rgba(255,255,255,0.3); text-align: right;" value="0" readonly onclick="pedirAuthDescuento()">
+                <input type="number" id="promoDiscount" class="input-box" style="width: 80px; padding: 4px; background: rgba(255,255,255,0.1); color: #fb7185; border: 1px dashed rgba(255,255,255,0.3); text-align: right;" value="0" readonly onclick="pedirAuthDescuento()" oninput="renderCart()">
                 <span style="font-size:10px; cursor:pointer;" onclick="pedirAuthDescuento()">🔐</span>
               </div>
             </div>
@@ -198,10 +197,10 @@
 </dialog>
 
 <dialog id="adminAuthDialog" style="text-align: left;">
-  <h3 style="color: var(--danger); margin-top:0;">Autorización</h3>
+  <h3 style="color: var(--danger); margin-top:0;">Autorización Requerida</h3>
   <form onsubmit="validarAdminAuth(event)">
-    <p style="font-size: 14px;">Ingrese PIN para habilitar descuento:</p>
-    <input type="password" id="adminAuthPin" required placeholder="PIN" style="width:100%; padding:12px; border:1px solid var(--line); border-radius:8px; font-size: 20px; text-align:center; margin-bottom: 20px;">
+    <p style="font-size: 14px;">Ingrese Contraseña de Administrador para habilitar descuento:</p>
+    <input type="password" id="adminAuthPin" required placeholder="Contraseña..." style="width:100%; padding:12px; border:1px solid var(--line); border-radius:8px; font-size: 16px; text-align:center; margin-bottom: 20px;">
     <div style="display: flex; justify-content: flex-end; gap: 10px;">
       <button type="button" class="btn btn-light" onclick="document.getElementById('adminAuthDialog').close()">Cancelar</button>
       <button type="submit" class="btn btn-primary">Autorizar</button>
@@ -215,12 +214,13 @@
   let dbClients = [];
   let cart = [];
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
-  const PIN_ADMIN = "1234";
+  
+  // ESTADO GLOBAL DE AUTORIZACIÓN PARA DESCUENTOS
+  let isDiscountAuthorized = false;
 
   function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 }).format(n || 0); }
   function todayDate() { return new Date().toLocaleDateString('es-AR'); }
 
-  // --- ESCUDO ANTI-ERROR HTML ---
   async function fetchSeguro(url) {
       try {
           const res = await apiFetch(url);
@@ -248,8 +248,6 @@
       
       dbProducts = Array.isArray(resP) ? resP : [];
       dbClients = Array.isArray(resC) ? resC : [];
-      
-      console.log(`Datos cargados: ${dbProducts.length} productos, ${dbClients.length} clientes.`);
     } catch (e) { console.error(e); }
     finally { mostrarCarga(false); }
   }
@@ -354,7 +352,8 @@
   }
 
   function actualizarTotales(sub) {
-    const disc = parseFloat(document.getElementById('promoDiscount').value) || 0;
+    const discStr = document.getElementById('promoDiscount').value;
+    const disc = parseFloat(discStr) || 0; // Maneja string vacío como 0
     const total = sub - disc;
     document.getElementById('cartCount').textContent = cart.reduce((a, b) => a + b.qty, 0);
     document.getElementById('cartSubtotal').textContent = currency(sub);
@@ -391,20 +390,45 @@
   }
 
   function pedirAuthDescuento() {
+      if (isDiscountAuthorized) return; // Si ya pusimos la clave, no volver a pedir.
       document.getElementById('adminAuthPin').value = '';
       document.getElementById('adminAuthDialog').showModal();
       setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
   }
 
-  function validarAdminAuth(e) {
+  async function validarAdminAuth(e) {
       e.preventDefault();
-      if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
-          document.getElementById('promoDiscount').readOnly = false;
-          document.getElementById('promoDiscount').style.background = "#fff";
-          document.getElementById('promoDiscount').focus();
-          document.getElementById('adminAuthDialog').close();
-      } else { alert("PIN incorrecto."); }
+      const passwordInput = document.getElementById('adminAuthPin').value;
+      const adminUser = localStorage.getItem('saas_username') || localStorage.getItem('activeUser');
+
+      mostrarCarga(true);
+      try {
+          const res = await fetch('/api/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username: adminUser, password: passwordInput })
+          });
+          const data = await res.json();
+
+          if (data.success && data.user.role === 'admin') {
+              isDiscountAuthorized = true;
+              document.getElementById('promoDiscount').readOnly = false;
+              document.getElementById('promoDiscount').style.background = "#fff";
+              document.getElementById('promoDiscount').focus();
+              cerrarAdminAuth();
+          } else {
+              alert("❌ Contraseña de administrador incorrecta.");
+              document.getElementById('adminAuthPin').value = '';
+              document.getElementById('adminAuthPin').focus();
+          }
+      } catch (error) {
+          alert("Error de conexión al verificar credenciales.");
+      } finally {
+          mostrarCarga(false);
+      }
   }
+
+  function cerrarAdminAuth() { document.getElementById('adminAuthDialog').close(); }
 
   function confirmarFactura() {
       if (cart.length === 0) return alert("Añada productos.");
@@ -438,8 +462,26 @@
                   total: a2, cupon: document.getElementById('mixCupon2').value, branch: terminalActiva, itemsJSON: JSON.stringify([{name:'Saldo Mixto', qty:1, price:a2}]), createdAt: new Date().toISOString()
               })});
           }
-          alert("✅ Venta exitosa.");
-          location.reload();
+          alert("✅ Venta procesada con éxito.");
+          
+          // LIMPIEZA DE VARIABLES Y CAMPOS POST-VENTA
+          cart = [];
+          document.getElementById('clientSearch').value = '';
+          document.getElementById('clientId').value = '';
+          document.getElementById('promoDiscount').value = '0';
+          document.getElementById('promoDiscount').readOnly = true;
+          document.getElementById('promoDiscount').style.background = "rgba(255,255,255,0.1)";
+          isDiscountAuthorized = false; // Resetea el candado
+          
+          document.getElementById('simpleCupon').value = '';
+          document.getElementById('mixAmount1').value = '';
+          document.getElementById('mixAmount2').value = '';
+          document.getElementById('mixCupon1').value = '';
+          document.getElementById('mixCupon2').value = '';
+
+          renderCart();
+          document.getElementById('prodSearch').focus();
+
       } catch (err) { alert("Error de conexión."); }
       finally { mostrarCarga(false); }
   }
