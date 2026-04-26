@@ -17,38 +17,47 @@
     
     .pos-container { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; height: 100%; padding: 20px; box-sizing: border-box; }
     
-    /* CABECERA TRADICIONAL */
-    .invoice-header { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; box-shadow: var(--shadow-sm); z-index: 2; }
+    .invoice-header { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; box-shadow: var(--shadow-sm); position: relative; z-index: 10; }
     .header-box label { display: block; font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
     .header-box span { font-size: 16px; font-weight: 700; color: var(--text); }
     
-    /* BUSQUEDA CLIENTE */
-    .client-section { position: relative; background: #fff; padding: 15px 20px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; z-index: 30; }
+    .client-section { position: relative; background: #fff; padding: 15px 20px; border-radius: 12px; border: 1px solid var(--line); margin-bottom: 20px; z-index: 100; }
     
-    /* CUERPO FACTURA */
-    /* CORRECCIÓN: Se quitó el overflow:hidden para que los menús desplegables no se corten */
     .invoice-body { flex: 1; display: grid; grid-template-columns: 1fr 350px; gap: 20px; align-items: start; }
     
-    .items-panel { background: #fff; border-radius: 12px; border: 1px solid var(--line); display: flex; flex-direction: column; }
-    .search-products { padding: 15px; border-bottom: 1px solid var(--line); background: #f8fafc; z-index: 20; position: relative; }
+    .items-panel { background: #fff; border-radius: 12px; border: 1px solid var(--line); display: flex; flex-direction: column; position: relative; }
+    .search-products { padding: 15px; border-bottom: 1px solid var(--line); background: #f8fafc; position: relative; z-index: 50; }
     
-    .cart-scroll { flex: 1; overflow-y: auto; padding: 0 15px; max-height: 400px; }
+    .cart-scroll { flex: 1; overflow-y: auto; padding: 0 15px; max-height: 380px; }
     .cart-table { width: 100%; border-collapse: collapse; }
-    .cart-table th { position: sticky; top: 0; background: #fff; z-index: 10; padding: 12px 0; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--line); text-align: left; }
+    .cart-table th { position: sticky; top: 0; background: #fff; z-index: 5; padding: 12px 0; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 2px solid var(--line); text-align: left; }
     .cart-table td { padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 
-    /* TOTALES Y ACCIONES */
-    .totals-panel { background: #0f172a; color: #fff; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; }
+    .totals-panel { background: #0f172a; color: #fff; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; z-index: 5; }
     .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: rgba(255,255,255,0.7); }
     .total-main { font-size: 32px; font-weight: 900; color: #fff; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.2); }
     
     .btn-facturar { background: var(--success); color: white; border: none; padding: 20px; border-radius: 10px; font-size: 20px; font-weight: 800; cursor: pointer; transition: 0.2s; width: 100%; }
-    .btn-facturar:hover { transform: scale(1.02); filter: brightness(1.1); }
+    .btn-facturar:hover { transform: scale(1.01); filter: brightness(1.1); }
 
-    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 9999; max-height: 250px; overflow-y: auto; display: none; }
+    /* CORRECCIÓN CRÍTICA DE VISIBILIDAD */
+    .autocomplete-list { 
+        position: absolute; 
+        top: 100%; 
+        left: 0; 
+        right: 0; 
+        background: #fff !important; 
+        border: 2px solid var(--primary); 
+        border-radius: 0 0 10px 10px; 
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+        z-index: 99999 !important; 
+        max-height: 250px; 
+        overflow-y: auto; 
+        display: none; 
+    }
     .autocomplete-list.active { display: block !important; }
-    .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; color: var(--text); }
-    .autocomplete-item:hover { background: var(--primary-soft); }
+    .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; color: #000; font-weight: 600; }
+    .autocomplete-item:hover { background: #eff6ff; color: var(--primary); }
 
     dialog { border: none; border-radius: 16px; padding: 30px; width: 400px; text-align: center; box-shadow: var(--shadow-lg); }
     dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
@@ -68,7 +77,7 @@
 </head>
 <body>
 
-<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; font-weight:bold; color:var(--primary); font-size:18px;">Procesando...</div>
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:999999; justify-content:center; align-items:center; font-weight:bold; color:var(--primary); font-size:18px;">Conectando con base de datos...</div>
 
 <div class="app">
   <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
@@ -93,52 +102,35 @@
     <div class="pos-container">
       
       <section class="invoice-header">
-        <div class="header-box">
-          <label>Tipo de Comprobante</label>
-          <span id="labelInvoiceType">Factura B - Consumidor Final</span>
-        </div>
-        <div class="header-box">
-          <label>Fecha de Emisión</label>
-          <span id="labelDate">--/--/----</span>
-        </div>
-        <div class="header-box">
-          <label>Punto de Venta / Sucursal</label>
-          <span id="labelBranch">Central</span>
-        </div>
+        <div class="header-box"><label>Tipo Comprobante</label><span id="labelInvoiceType">Factura B - Consumidor Final</span></div>
+        <div class="header-box"><label>Fecha Emisión</label><span id="labelDate">--/--/----</span></div>
+        <div class="header-box"><label>Sucursal</label><span id="labelBranch">Cargando...</span></div>
       </section>
 
       <section class="client-section">
         <label style="font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 8px;">Datos del Cliente</label>
         <div style="position: relative;">
           <input type="hidden" id="clientId">
-          <input type="text" id="clientSearch" class="input-box" placeholder="Clic para buscar cliente por DNI o Nombre..." onkeyup="buscarCliente()" autocomplete="off" style="font-weight: bold; border-color: var(--primary);">
+          <input type="text" id="clientSearch" class="input-box" placeholder="Escriba DNI o Nombre para buscar..." oninput="buscarCliente()" autocomplete="off" style="font-weight: bold; border: 2px solid var(--primary);">
           <div id="clientResults" class="autocomplete-list"></div>
         </div>
       </section>
 
       <section class="invoice-body">
-        
         <div class="items-panel">
           <div class="search-products">
             <div style="position: relative;">
-              <input type="text" id="prodSearch" class="input-box" placeholder="🔍 Ingresar nombre del producto o escanear código de barras..." onkeyup="buscarProducto(event)" autocomplete="off">
+              <input type="text" id="prodSearch" class="input-box" placeholder="🔍 Buscar producto por nombre o código SKU..." oninput="buscarProducto()" onkeyup="handleScanner(event)" autocomplete="off">
               <div id="prodResults" class="autocomplete-list"></div>
             </div>
           </div>
-          
           <div class="cart-scroll">
             <table class="cart-table">
               <thead>
-                <tr>
-                  <th style="width: 10%;">Cód.</th>
-                  <th style="width: 45%;">Descripción</th>
-                  <th style="width: 15%; text-align: center;">Cantidad</th>
-                  <th style="width: 15%; text-align: right;">Precio</th>
-                  <th style="width: 15%; text-align: right;">Subtotal</th>
-                </tr>
+                <tr><th style="width: 10%;">Cód.</th><th style="width: 45%;">Descripción</th><th style="width: 15%; text-align: center;">Cant.</th><th style="width: 15%; text-align: right;">Precio</th><th style="width: 15%; text-align: right;">Subt.</th></tr>
               </thead>
               <tbody id="cartBody">
-                <tr><td colspan="5" style="text-align:center; padding: 60px; color: var(--muted);">Presione el buscador de arriba para añadir productos.</td></tr>
+                <tr><td colspan="5" style="text-align:center; padding: 60px; color: var(--muted);">Buscador habilitado. Ingrese productos.</td></tr>
               </tbody>
             </table>
           </div>
@@ -157,50 +149,39 @@
             </div>
             
             <div class="total-main">
-              <div style="font-size: 12px; text-transform: uppercase; color: rgba(255,255,255,0.5);">Total a Pagar</div>
+              <div style="font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.5);">Total a Pagar</div>
               <span id="cartTotal">$ 0,00</span>
             </div>
 
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-              <label style="font-size: 10px; font-weight: bold; color: rgba(255,255,255,0.5); display: block; margin-bottom: 10px;">MÉTODO DE PAGO</label>
+            <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+              <label style="font-size: 10px; font-weight: bold; color: rgba(255,255,255,0.5); display: block; margin-bottom: 8px;">FORMA DE PAGO</label>
               
-              <div style="margin-bottom: 10px;">
-                <label style="font-size: 10px; cursor: pointer; color: #3b82f6;">
-                  <input type="checkbox" id="isMixedPayment" onchange="toggleMixedUI()"> Activar Pago Mixto
-                </label>
-              </div>
+              <div style="margin-bottom: 10px;"><label style="font-size: 10px; cursor: pointer; color: #3b82f6;"><input type="checkbox" id="isMixedPayment" onchange="toggleMixedUI()"> Activar Pago Mixto</label></div>
 
               <div id="simplePayment">
-                <select id="paymentMethod" class="input-box" style="background: #1e293b; color: #fff; border-color: rgba(255,255,255,0.2);" onchange="toggleCuponsFacturacion('simple')">
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Débito">Tarjeta Débito</option>
-                  <option value="Crédito">Tarjeta Crédito</option>
-                  <option value="Transferencia">Transferencia</option>
+                <select id="paymentMethod" class="input-box" style="background: #1e293b; color: #fff; border-color: rgba(255,255,255,0.2);" onchange="toggleCuponsFacturacion()">
+                  <option value="Efectivo">Efectivo</option><option value="Débito">Tarjeta Débito</option><option value="Crédito">Tarjeta Crédito</option><option value="Transferencia">Transferencia</option>
                 </select>
                 <input type="text" id="simpleCupon" class="input-box" placeholder="N° de Cupón / Lote" style="display:none; margin-top:10px; background: #1e293b; color: #fff;">
               </div>
 
               <div id="mixedPayment" style="display: none;">
-                <div style="display: flex; flex-direction:column; gap: 8px;">
-                  <div style="display: flex; gap: 5px;">
-                    <select id="mixMethod1" class="input-box" style="width:110px; font-size:12px;" onchange="toggleCuponsFacturacion('mix1')"><option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito">Crédito</option></select>
+                  <div style="display: flex; gap: 5px; margin-bottom: 8px;">
+                    <select id="mixMethod1" class="input-box" style="width:110px; font-size:12px; background: #1e293b; color:#fff;" onchange="toggleCuponsFacturacion()"><option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito">Crédito</option></select>
                     <input type="text" id="mixAmount1" class="input-box" style="flex:1; font-size:12px;" placeholder="Monto 1" oninput="formatCurrencyInput(this); calcMixed()">
                   </div>
-                  <input type="text" id="mixCupon1" class="input-box" placeholder="Cupón 1" style="display:none; font-size:11px; background: #1e293b; color: #fff; border-color: rgba(255,255,255,0.2);">
+                  <input type="text" id="mixCupon1" class="input-box" placeholder="Cupón 1" style="display:none; margin-bottom:8px; font-size:11px; background: #1e293b; color: #fff;">
                   
                   <div style="display: flex; gap: 5px;">
-                    <select id="mixMethod2" class="input-box" style="width:110px; font-size:12px;" onchange="toggleCuponsFacturacion('mix2')"><option value="Crédito">Crédito</option><option value="Débito">Débito</option><option value="Efectivo">Efectivo</option></select>
+                    <select id="mixMethod2" class="input-box" style="width:110px; font-size:12px; background: #1e293b; color:#fff;" onchange="toggleCuponsFacturacion()"><option value="Crédito">Crédito</option><option value="Débito">Débito</option><option value="Efectivo">Efectivo</option></select>
                     <input type="text" id="mixAmount2" class="input-box" style="flex:1; font-size:12px; background:#1e293b; color:#fff;" readonly>
                   </div>
-                  <input type="text" id="mixCupon2" class="input-box" placeholder="Cupón 2" style="display:none; font-size:11px; background: #1e293b; color: #fff; border-color: rgba(255,255,255,0.2);">
-                </div>
+                  <input type="text" id="mixCupon2" class="input-box" placeholder="Cupón 2" style="display:none; margin-top:8px; font-size:11px; background: #1e293b; color: #fff;">
               </div>
             </div>
           </div>
-
-          <button class="btn-facturar" id="btnFacturar" onclick="confirmarFactura()">FACTURAR (F2)</button>
+          <button class="btn-facturar" style="margin-top: 20px;" onclick="confirmarFactura()">FACTURAR (F2)</button>
         </div>
-
       </section>
     </div>
   </main>
@@ -208,25 +189,22 @@
 
 <dialog id="confirmDialog">
   <div style="font-size: 50px; margin-bottom: 10px;">💳</div>
-  <h2 style="margin: 0 0 10px 0;">¿Confirmar Factura?</h2>
-  <p style="color: var(--muted); margin-bottom: 30px;">Presione <strong>ENTER</strong> para confirmar o ESC para cancelar.</p>
+  <h2>¿Confirmar Factura?</h2>
+  <p>Presione <strong>ENTER</strong> para confirmar o ESC para cancelar.</p>
   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-    <button class="btn btn-light" onclick="document.getElementById('confirmDialog').close()">Cancelar</button>
+    <button class="btn btn-light" onclick="document.getElementById('confirmDialog').close()">Volver</button>
     <button class="btn btn-primary" onclick="ejecutarCobro()">Confirmar</button>
   </div>
 </dialog>
 
-<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: #fff; text-align: left;">
-  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
-    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
-    <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
-  </div>
-  <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
-    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Ingresá el PIN de administrador para habilitar el descuento.</p>
-    <input type="password" id="adminAuthPin" required placeholder="PIN de Seguridad" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none; margin-bottom: 20px;">
+<dialog id="adminAuthDialog" style="text-align: left;">
+  <h3 style="color: var(--danger); margin-top:0;">Autorización</h3>
+  <form onsubmit="validarAdminAuth(event)">
+    <p style="font-size: 14px;">Ingrese PIN para habilitar descuento:</p>
+    <input type="password" id="adminAuthPin" required placeholder="PIN" style="width:100%; padding:12px; border:1px solid var(--line); border-radius:8px; font-size: 20px; text-align:center; margin-bottom: 20px;">
     <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
-      <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
+      <button type="button" class="btn btn-light" onclick="document.getElementById('adminAuthDialog').close()">Cancelar</button>
+      <button type="submit" class="btn btn-primary">Autorizar</button>
     </div>
   </form>
 </dialog>
@@ -242,55 +220,57 @@
   function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 }).format(n || 0); }
   function todayDate() { return new Date().toLocaleDateString('es-AR'); }
 
-  function formatCurrencyInput(input) {
-      let val = input.value.replace(/[^\d,]/g, '');
-      const parts = val.split(',');
-      if (parts.length > 2) { val = parts[0] + ',' + parts.slice(1).join(''); }
-      if (val === '') { input.value = ''; return; }
-      let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-      let decPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : '';
-      input.value = '$ ' + intPart + decPart;
-  }
-
-  function parseCurrency(val) {
-      if (!val) return 0;
-      let str = String(val).replace(/[\$\s\.]/g, '').replace(',', '.');
-      return parseFloat(str) || 0;
+  // --- ESCUDO ANTI-ERROR HTML ---
+  async function fetchSeguro(url) {
+      try {
+          const res = await apiFetch(url);
+          if (!res.ok) return [];
+          const contentType = res.headers.get("content-type") || "";
+          if (contentType.includes("text/html")) {
+              console.error("Error: La API devolvió HTML en vez de JSON");
+              return [];
+          }
+          return await res.json();
+      } catch(e) { console.error("Fetch error:", e); return []; }
   }
 
   async function initPOS() {
     document.getElementById('labelDate').textContent = todayDate();
     document.getElementById('labelBranch').textContent = terminalActiva;
-    
     mostrarCarga(true);
+    
     try {
-      const nocache = '?v=' + Date.now();
+      const ts = Date.now();
       const [resP, resC] = await Promise.all([
-        apiFetch('/api/products?status=Activo&v=' + Date.now()),
-        apiFetch('/api/business_clients' + nocache)
+        fetchSeguro(`/api/products?status=Activo&v=${ts}`),
+        fetchSeguro(`/api/business_clients?v=${ts}`)
       ]);
-      if (resP.ok) dbProducts = await resP.json();
-      if (resC.ok) dbClients = await resC.json();
+      
+      dbProducts = Array.isArray(resP) ? resP : [];
+      dbClients = Array.isArray(resC) ? resC : [];
+      
+      console.log(`Datos cargados: ${dbProducts.length} productos, ${dbClients.length} clientes.`);
     } catch (e) { console.error(e); }
     finally { mostrarCarga(false); }
   }
 
-  // --- BUSCADORES ---
   function buscarCliente() {
     const term = document.getElementById('clientSearch').value.toLowerCase().trim();
     const list = document.getElementById('clientResults');
     if (!term) { list.classList.remove('active'); return; }
 
-    const filtrados = dbClients.filter(c => (c.name||'').toLowerCase().includes(term) || (c.cuil||'').includes(term)).slice(0, 5);
+    const filtrados = dbClients.filter(c => 
+        (c.name||'').toLowerCase().includes(term) || (c.cuil||'').includes(term)
+    ).slice(0, 6);
     
     if (filtrados.length > 0) {
       list.innerHTML = filtrados.map(c => `
-        <div class="autocomplete-item" onclick="selCli('${c.id}', '${c.name}')">
-          <strong>${c.name}</strong><br><small>DNI/CUIT: ${c.cuil || 'S/N'}</small>
+        <div class="autocomplete-item" onclick="selCli('${c.id}', '${c.name.replace(/'/g, "\\'")}')">
+          ${escapeHtml(c.name)} <br> <small style="color:#666">DNI: ${c.cuil || 'S/N'}</small>
         </div>`).join('');
       list.classList.add('active');
     } else {
-      list.innerHTML = '<div style="padding:10px; color:var(--muted);">Sin resultados. Se facturará a C. Final.</div>';
+      list.innerHTML = '<div style="padding:12px; color:#999; font-size:12px;">No se encontraron resultados.</div>';
       list.classList.add('active');
     }
   }
@@ -301,32 +281,43 @@
     document.getElementById('clientResults').classList.remove('active');
   }
 
-  function buscarProducto(e) {
+  function buscarProducto() {
     const term = document.getElementById('prodSearch').value.toLowerCase().trim();
     const list = document.getElementById('prodResults');
     if (!term) { list.classList.remove('active'); return; }
 
-    const filtrados = dbProducts.filter(p => (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term)).slice(0, 8);
+    const filtrados = dbProducts.filter(p => 
+        (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term)
+    ).slice(0, 8);
     
-    if (e.key === 'Enter' && filtrados.length === 1) {
-        addToCart(filtrados[0].id);
-        document.getElementById('prodSearch').value = '';
-        list.classList.remove('active');
-        return;
+    if (filtrados.length > 0) {
+      list.innerHTML = filtrados.map(p => `
+        <div class="autocomplete-item" onclick="addToCart('${p.id}'); document.getElementById('prodSearch').value=''; document.getElementById('prodResults').classList.remove('active');">
+          <div style="display:flex; justify-content:space-between;">
+              <span>${escapeHtml(p.name)}</span>
+              <span style="color:var(--primary)">${currency(p.price)}</span>
+          </div>
+          <small style="color:#888">${p.code || 'S/N'}</small>
+        </div>`).join('');
+      list.classList.add('active');
+    } else {
+      list.innerHTML = '<div style="padding:12px; color:#999; font-size:12px;">Producto no encontrado.</div>';
+      list.classList.add('active');
     }
-
-    list.innerHTML = filtrados.map(p => `
-      <div class="autocomplete-item" onclick="addToCart('${p.id}'); document.getElementById('prodSearch').value=''; document.getElementById('prodResults').classList.remove('active');">
-        <div style="display:flex; justify-content:space-between;">
-            <strong>${p.name}</strong>
-            <span style="color:var(--primary); font-weight:bold;">${currency(p.price)}</span>
-        </div>
-        <small style="color:var(--muted);">${p.code || 'Sin código'}</small>
-      </div>`).join('');
-    list.classList.add('active');
   }
 
-  // --- CARRITO ---
+  function handleScanner(e) {
+      if (e.key === 'Enter') {
+          const term = document.getElementById('prodSearch').value.trim();
+          const p = dbProducts.find(x => x.code === term);
+          if (p) {
+              addToCart(p.id);
+              document.getElementById('prodSearch').value = '';
+              document.getElementById('prodResults').classList.remove('active');
+          }
+      }
+  }
+
   function addToCart(id) {
     const p = dbProducts.find(x => x.id === id);
     if (!p) return;
@@ -339,36 +330,21 @@
   function renderCart() {
     const tbody = document.getElementById('cartBody');
     if (cart.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 60px; color: var(--muted);">Carrito vacío.</td></tr>';
-      document.getElementById('cartTotal').textContent = '$ 0,00';
-      document.getElementById('cartCount').textContent = '0';
-      return;
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 60px; color: var(--muted);">Buscador habilitado. Ingrese productos.</td></tr>';
+      actualizarTotales(0); return;
     }
-
-    let subtotal = 0;
-    tbody.innerHTML = cart.map((i, index) => {
-      subtotal += i.price * i.qty;
-      return `
-        <tr>
+    let sub = 0;
+    tbody.innerHTML = cart.map((i, idx) => {
+      sub += i.price * i.qty;
+      return `<tr>
           <td><small>${i.code || '-'}</small></td>
           <td><strong>${i.name}</strong></td>
-          <td style="text-align:center;">
-            <button class="qty-btn" style="background:#f1f5f9; border:none; padding:4px 8px; cursor:pointer;" onclick="updateQty(${index}, -1)">-</button>
-            <span style="margin: 0 10px;">${i.qty}</span>
-            <button class="qty-btn" style="background:#f1f5f9; border:none; padding:4px 8px; cursor:pointer;" onclick="updateQty(${index}, 1)">+</button>
-          </td>
+          <td style="text-align:center;"><button class="qty-btn" onclick="updateQty(${idx},-1)">-</button> <span style="margin:0 8px">${i.qty}</span> <button class="qty-btn" onclick="updateQty(${idx},1)">+</button></td>
           <td style="text-align:right;">${currency(i.price)}</td>
           <td style="text-align:right; font-weight:bold;">${currency(i.price * i.qty)}</td>
-        </tr>`;
+      </tr>`;
     }).join('');
-
-    const discount = parseFloat(document.getElementById('promoDiscount').value) || 0;
-    const total = subtotal - discount;
-
-    document.getElementById('cartCount').textContent = cart.reduce((a, b) => a + b.qty, 0);
-    document.getElementById('cartSubtotal').textContent = currency(subtotal);
-    document.getElementById('cartTotal').textContent = currency(total > 0 ? total : 0);
-    calcMixed();
+    actualizarTotales(sub);
   }
 
   function updateQty(idx, delta) {
@@ -377,43 +353,43 @@
       renderCart();
   }
 
-  // --- LÓGICA COBRO Y CUPONES ---
+  function actualizarTotales(sub) {
+    const disc = parseFloat(document.getElementById('promoDiscount').value) || 0;
+    const total = sub - disc;
+    document.getElementById('cartCount').textContent = cart.reduce((a, b) => a + b.qty, 0);
+    document.getElementById('cartSubtotal').textContent = currency(sub);
+    document.getElementById('cartTotal').textContent = currency(total > 0 ? total : 0);
+    calcMixed();
+  }
+
   function toggleMixedUI() {
       const isMixed = document.getElementById('isMixedPayment').checked;
       document.getElementById('simplePayment').style.display = isMixed ? 'none' : 'block';
       document.getElementById('mixedPayment').style.display = isMixed ? 'block' : 'none';
-      toggleCuponsFacturacion('simple');
-      toggleCuponsFacturacion('mix1');
-      toggleCuponsFacturacion('mix2');
+      toggleCuponsFacturacion();
       calcMixed();
   }
 
-  function toggleCuponsFacturacion(type) {
-      if (type === 'simple') {
-          const method = document.getElementById('paymentMethod').value;
-          document.getElementById('simpleCupon').style.display = (method === 'Crédito' || method === 'Débito') ? 'block' : 'none';
-          if (method !== 'Crédito' && method !== 'Débito') document.getElementById('simpleCupon').value = '';
-      } else if (type === 'mix1') {
-          const method = document.getElementById('mixMethod1').value;
-          document.getElementById('mixCupon1').style.display = (method === 'Crédito' || method === 'Débito') ? 'block' : 'none';
-          if (method !== 'Crédito' && method !== 'Débito') document.getElementById('mixCupon1').value = '';
-      } else if (type === 'mix2') {
-          const method = document.getElementById('mixMethod2').value;
-          document.getElementById('mixCupon2').style.display = (method === 'Crédito' || method === 'Débito') ? 'block' : 'none';
-          if (method !== 'Crédito' && method !== 'Débito') document.getElementById('mixCupon2').value = '';
+  function toggleCuponsFacturacion() {
+      const isMixed = document.getElementById('isMixedPayment').checked;
+      if (!isMixed) {
+          const m = document.getElementById('paymentMethod').value;
+          document.getElementById('simpleCupon').style.display = (m === 'Crédito' || m === 'Débito') ? 'block' : 'none';
+      } else {
+          const m1 = document.getElementById('mixMethod1').value;
+          const m2 = document.getElementById('mixMethod2').value;
+          document.getElementById('mixCupon1').style.display = (m1 === 'Crédito' || m1 === 'Débito') ? 'block' : 'none';
+          document.getElementById('mixCupon2').style.display = (m2 === 'Crédito' || m2 === 'Débito') ? 'block' : 'none';
       }
   }
 
   function calcMixed() {
       if (!document.getElementById('isMixedPayment').checked) return;
-      const totalStr = document.getElementById('cartTotal').textContent.replace(/[$\s.]/g, '').replace(',', '.');
-      const total = parseFloat(totalStr);
+      const t = parseCurrency(document.getElementById('cartTotal').textContent);
       const a1 = parseCurrency(document.getElementById('mixAmount1').value);
-      let a2 = total - a1;
-      document.getElementById('mixAmount2').value = currency(a2 > 0 ? a2 : 0);
+      document.getElementById('mixAmount2').value = currency(t - a1 > 0 ? t - a1 : 0);
   }
 
-  // --- SEGURIDAD DESCUENTOS ---
   function pedirAuthDescuento() {
       document.getElementById('adminAuthPin').value = '';
       document.getElementById('adminAuthDialog').showModal();
@@ -426,95 +402,63 @@
           document.getElementById('promoDiscount').readOnly = false;
           document.getElementById('promoDiscount').style.background = "#fff";
           document.getElementById('promoDiscount').focus();
-          cerrarAdminAuth();
-      } else {
-          alert("PIN incorrecto.");
-          document.getElementById('adminAuthPin').value = '';
-      }
+          document.getElementById('adminAuthDialog').close();
+      } else { alert("PIN incorrecto."); }
   }
 
-  function cerrarAdminAuth() { document.getElementById('adminAuthDialog').close(); }
-
   function confirmarFactura() {
-      if (cart.length === 0) return alert("Añada productos al carrito.");
+      if (cart.length === 0) return alert("Añada productos.");
       document.getElementById('confirmDialog').showModal();
   }
 
   async function ejecutarCobro() {
       document.getElementById('confirmDialog').close();
       mostrarCarga(true);
-      
-      const totalStr = document.getElementById('cartTotal').textContent.replace(/[$\s.]/g, '').replace(',', '.');
-      const total = parseFloat(totalStr);
-      const client = document.getElementById('clientSearch').value || 'Consumidor Final';
-      const clientId = document.getElementById('clientId').value || '';
-      
+      const t = parseCurrency(document.getElementById('cartTotal').textContent);
+      const cli = document.getElementById('clientSearch').value || 'Consumidor Final';
       const isMixed = document.getElementById('isMixedPayment').checked;
       
       try {
           if (!isMixed) {
-              const sale = {
-                  id: 'vta_' + Date.now(),
-                  date: todayISO(),
-                  client: client,
-                  clientId: clientId,
+              await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify({
+                  id: 'vta_' + Date.now(), date: todayISO(), client: cli,
                   method: document.getElementById('paymentMethod').value,
                   cupon: document.getElementById('simpleCupon').value,
-                  total: total,
-                  branch: terminalActiva,
-                  itemsJSON: JSON.stringify(cart),
-                  createdAt: new Date().toISOString()
-              };
-              await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(sale) });
+                  total: t, branch: terminalActiva, itemsJSON: JSON.stringify(cart), createdAt: new Date().toISOString()
+              })});
           } else {
-              const m1 = document.getElementById('mixMethod1').value;
               const a1 = parseCurrency(document.getElementById('mixAmount1').value);
-              const c1 = document.getElementById('mixCupon1').value;
-              
-              const m2 = document.getElementById('mixMethod2').value;
-              const a2 = total - a1;
-              const c2 = document.getElementById('mixCupon2').value;
-
-              if (a1 > 0) {
-                await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify({
-                    id: 'vta_' + Date.now() + '_1', date: todayISO(), client: client, clientId: clientId,
-                    method: m1, total: a1, cupon: c1, branch: terminalActiva, itemsJSON: JSON.stringify(cart), createdAt: new Date().toISOString()
-                })});
-              }
-              if (a2 > 0) {
-                await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify({
-                    id: 'vta_' + Date.now() + '_2', date: todayISO(), client: client, clientId: clientId,
-                    method: m2, total: a2, cupon: c2, branch: terminalActiva, itemsJSON: JSON.stringify([{name: 'Saldo Pago Mixto', qty:1, price: a2}]), createdAt: new Date().toISOString()
-                })});
-              }
+              const a2 = t - a1;
+              if (a1 > 0) await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify({
+                  id: 'vta_' + Date.now() + '_1', date: todayISO(), client: cli, method: document.getElementById('mixMethod1').value,
+                  total: a1, cupon: document.getElementById('mixCupon1').value, branch: terminalActiva, itemsJSON: JSON.stringify(cart), createdAt: new Date().toISOString()
+              })});
+              if (a2 > 0) await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify({
+                  id: 'vta_' + Date.now() + '_2', date: todayISO(), client: cli, method: document.getElementById('mixMethod2').value,
+                  total: a2, cupon: document.getElementById('mixCupon2').value, branch: terminalActiva, itemsJSON: JSON.stringify([{name:'Saldo Mixto', qty:1, price:a2}]), createdAt: new Date().toISOString()
+              })});
           }
-
-          alert("✅ Venta procesada con éxito.");
-          cart = [];
-          document.getElementById('clientSearch').value = '';
-          document.getElementById('clientId').value = '';
-          document.getElementById('promoDiscount').value = '0';
-          document.getElementById('promoDiscount').readOnly = true;
-          document.getElementById('promoDiscount').style.background = "rgba(255,255,255,0.1)";
-          document.getElementById('prodSearch').focus();
-          renderCart();
-      } catch (err) {
-          alert("Error de conexión.");
-      } finally {
-          mostrarCarga(false);
-      }
+          alert("✅ Venta exitosa.");
+          location.reload();
+      } catch (err) { alert("Error de conexión."); }
+      finally { mostrarCarga(false); }
   }
 
-  // --- ATAJOS TECLADO ---
+  function parseCurrency(val) { return parseFloat(String(val).replace(/[$\s.]/g, '').replace(',', '.')) || 0; }
+  function formatCurrencyInput(i) {
+      let v = i.value.replace(/[^\d,]/g, '');
+      const p = v.split(',');
+      if (p.length > 2) v = p[0] + ',' + p.slice(1).join('');
+      if (v === '') { i.value = ''; return; }
+      i.value = '$ ' + p[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (p.length > 1 ? ',' + p[1].substring(0, 2) : '');
+  }
+  function todayISO() { return new Date().toISOString().split('T')[0]; }
+  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+  function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
+
   window.addEventListener('keydown', (e) => {
-      if (e.key === 'F2') {
-          e.preventDefault();
-          confirmarFactura();
-      }
-      if (e.key === 'Enter' && document.getElementById('confirmDialog').open) {
-          e.preventDefault();
-          ejecutarCobro();
-      }
+      if (e.key === 'F2') { e.preventDefault(); confirmarFactura(); }
+      if (e.key === 'Enter' && document.getElementById('confirmDialog').open) { e.preventDefault(); ejecutarCobro(); }
   });
 
   initPOS();
