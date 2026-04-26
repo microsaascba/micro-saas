@@ -34,13 +34,12 @@
     .cart-table td { padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 
     .totals-panel { background: #0f172a; color: #fff; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; justify-content: space-between; }
-    .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: rgba(255,255,255,0.7); }
-    .total-main { font-size: 32px; font-weight: 900; color: #fff; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.2); }
+    .total-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: rgba(255,255,255,0.7); align-items: center; }
+    .total-main { font-size: 32px; font-weight: 900; color: #fff; margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.2); display: flex; justify-content: space-between; align-items: center; }
     
     .btn-facturar { background: var(--success); color: white; border: none; padding: 20px; border-radius: 10px; font-size: 20px; font-weight: 800; cursor: pointer; transition: 0.2s; width: 100%; }
     .btn-facturar:hover { transform: scale(1.01); filter: brightness(1.1); }
 
-    /* CORRECCIÓN DE VISIBILIDAD DE BUSCADORES */
     .autocomplete-list { 
         position: absolute; 
         top: 100%; 
@@ -138,9 +137,10 @@
             <div class="total-row"><span>Items:</span><span id="cartCount">0</span></div>
             <div class="total-row"><span>Subtotal:</span><span id="cartSubtotal">$ 0,00</span></div>
             <div class="total-row" style="color: #fb7185;">
-              <span>Descuento:</span>
+              <span>Descuento (%):</span>
               <div style="display:flex; gap:5px; align-items:center;">
-                <input type="number" id="promoDiscount" class="input-box" style="width: 90px; padding: 4px; background: rgba(255,255,255,0.1); color: #fb7185; border: 1px dashed rgba(255,255,255,0.3); text-align: right;" value="0" readonly onclick="controlarDescuento()" oninput="renderCart()">
+                <span id="discountAmountMoney" style="font-size: 12px; font-weight: bold; margin-right: 5px;"></span>
+                <input type="number" id="promoDiscount" class="input-box" style="width: 70px; padding: 4px; background: rgba(255,255,255,0.1); color: #fb7185; border: 1px dashed rgba(255,255,255,0.3); text-align: right; font-weight: bold;" value="0" min="0" max="100" readonly onclick="controlarDescuento()" oninput="renderCart()">
                 <span id="lockIcon" style="font-size:12px; cursor:pointer;" onclick="controlarDescuento()">🔒</span>
               </div>
             </div>
@@ -287,7 +287,7 @@
   }
   function renderCart() {
     const tbody = document.getElementById('cartBody');
-    if (cart.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 60px; color: var(--muted);">Buscador habilitado.</td></tr>'; actualizarTotales(0); return; }
+    if (cart.length === 0) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 60px; color: var(--muted);">Buscador habilitado. Ingrese productos.</td></tr>'; actualizarTotales(0); return; }
     let sub = 0;
     tbody.innerHTML = cart.map((i, idx) => {
       sub += i.price * i.qty;
@@ -296,11 +296,20 @@
     actualizarTotales(sub);
   }
   function updateQty(idx, delta) { cart[idx].qty += delta; if (cart[idx].qty <= 0) cart.splice(idx, 1); renderCart(); }
+  
   function actualizarTotales(sub) {
-    const disc = parseFloat(document.getElementById('promoDiscount').value) || 0;
-    const total = sub - disc;
+    const discPct = parseFloat(document.getElementById('promoDiscount').value) || 0;
+    const discMoney = sub * (discPct / 100);
+    const total = sub - discMoney;
+    
     document.getElementById('cartCount').textContent = cart.reduce((a, b) => a + b.qty, 0);
     document.getElementById('cartSubtotal').textContent = currency(sub);
+    
+    const labelMoney = document.getElementById('discountAmountMoney');
+    if (labelMoney) {
+        labelMoney.textContent = discMoney > 0 ? '- ' + currency(discMoney) : '';
+    }
+    
     document.getElementById('cartTotal').textContent = currency(total > 0 ? total : 0);
     calcMixed();
   }
@@ -332,7 +341,7 @@
 
   // --- AUTORIZACIÓN REAL ---
   function controlarDescuento() {
-      if (isDiscountAuthorized) return; // Ya está abierto el candado
+      if (isDiscountAuthorized) return; 
       document.getElementById('adminAuthUser').value = '';
       document.getElementById('adminAuthPass').value = '';
       document.getElementById('adminAuthDialog').showModal();
@@ -372,26 +381,59 @@
   async function ejecutarCobro() {
       document.getElementById('confirmDialog').close();
       mostrarCarga(true);
+      
       const t = parseCurrency(document.getElementById('cartTotal').textContent);
+      
+      // Capturamos el subtotal original para calcular el descuento en dinero real que enviaremos a la DB
+      const sub = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+      const discPct = parseFloat(document.getElementById('promoDiscount').value) || 0;
+      const discMoney = sub * (discPct / 100);
+
       const cli = document.getElementById('clientSearch').value || 'Consumidor Final';
       const isMixed = document.getElementById('isMixedPayment').checked;
+      
       try {
           if (!isMixed) {
               await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify({
                   id: 'vta_' + Date.now(), date: todayISO(), client: cli, method: document.getElementById('paymentMethod').value,
-                  cupon: document.getElementById('simpleCupon').value, total: t, branch: terminalActiva, itemsJSON: JSON.stringify(cart), createdAt: new Date().toISOString()
+                  cupon: document.getElementById('simpleCupon').value, total: t, 
+                  subtotal: sub, promoDiscount: discMoney, // Guardamos los datos monetarios exactos
+                  branch: terminalActiva, itemsJSON: JSON.stringify(cart), createdAt: new Date().toISOString()
               })});
           } else {
               const a1 = parseCurrency(document.getElementById('mixAmount1').value); const a2 = t - a1;
               if (a1 > 0) await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify({
-                  id: 'vta_' + Date.now() + '_1', date: todayISO(), client: cli, method: document.getElementById('mixMethod1').value, total: a1, cupon: document.getElementById('mixCupon1').value, branch: terminalActiva, itemsJSON: JSON.stringify(cart), createdAt: new Date().toISOString()
+                  id: 'vta_' + Date.now() + '_1', date: todayISO(), client: cli, method: document.getElementById('mixMethod1').value, 
+                  total: a1, subtotal: a1, promoDiscount: 0, // Al dividir, no aplicamos el descuento bruto a la línea parcial para no romper contabilidad
+                  cupon: document.getElementById('mixCupon1').value, branch: terminalActiva, itemsJSON: JSON.stringify(cart), createdAt: new Date().toISOString()
               })});
               if (a2 > 0) await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify({
-                  id: 'vta_' + Date.now() + '_2', date: todayISO(), client: cli, method: document.getElementById('mixMethod2').value, total: a2, cupon: document.getElementById('mixCupon2').value, branch: terminalActiva, itemsJSON: JSON.stringify([{name:'Saldo Mixto', qty:1, price:a2}]), createdAt: new Date().toISOString()
+                  id: 'vta_' + Date.now() + '_2', date: todayISO(), client: cli, method: document.getElementById('mixMethod2').value, 
+                  total: a2, subtotal: a2, promoDiscount: 0,
+                  cupon: document.getElementById('mixCupon2').value, branch: terminalActiva, itemsJSON: JSON.stringify([{name:'Saldo Mixto', qty:1, price:a2}]), createdAt: new Date().toISOString()
               })});
           }
           alert("✅ Factura emitida con éxito.");
-          location.reload();
+          
+          // RESETEO DE SEGURIDAD Y CAMPOS
+          cart = [];
+          document.getElementById('clientSearch').value = '';
+          document.getElementById('clientId').value = '';
+          document.getElementById('promoDiscount').value = '0';
+          document.getElementById('promoDiscount').readOnly = true;
+          document.getElementById('promoDiscount').style.background = "rgba(255,255,255,0.1)";
+          document.getElementById('lockIcon').textContent = "🔒";
+          isDiscountAuthorized = false;
+
+          document.getElementById('simpleCupon').value = '';
+          document.getElementById('mixAmount1').value = '';
+          document.getElementById('mixAmount2').value = '';
+          document.getElementById('mixCupon1').value = '';
+          document.getElementById('mixCupon2').value = '';
+          
+          renderCart();
+          document.getElementById('prodSearch').focus();
+
       } catch (err) { alert("Error de conexión."); }
       finally { mostrarCarga(false); }
   }
