@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Facturación | Micro SaaS</title>
+  <title>Facturación y POS | Micro SaaS</title>
   
   <style>
     html, body { background-color: #f0f2f7 !important; }
@@ -13,38 +13,52 @@
   <link rel="stylesheet" href="styles.css" />
   <style>
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a;}
+    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
-    .pos-container { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+    .pos-layout { display: grid; grid-template-columns: 2.5fr 1.2fr; gap: 20px; max-width: 1400px; margin: 0 auto; width: 100%; align-items: start;}
+    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
+    .input-box:focus { border-color: var(--primary); }
     
-    .pos-search-input { width: 100%; padding: 14px 18px; font-size: 15px; font-weight: 600; border: 2px solid var(--primary-soft); border-radius: 10px; outline: none; background: #fff; transition: 0.2s; box-sizing: border-box; }
-    .pos-search-input:focus { border-color: var(--primary); box-shadow: 0 4px 15px rgba(37,99,235,0.15); }
+    .prod-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; max-height: 600px; overflow-y: auto; padding-right: 5px; }
+    .prod-card { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 15px; cursor: pointer; transition: 0.2s; text-align: center; position: relative; }
+    .prod-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: var(--shadow-sm); }
+    .prod-card h4 { margin: 0 0 8px 0; font-size: 13px; color: var(--text); }
+    .prod-card .price { font-size: 16px; font-weight: 800; color: var(--primary); margin:0;}
+    .prod-card .stock { position: absolute; top: 8px; right: 8px; font-size: 10px; background: var(--panel-2); padding: 2px 6px; border-radius: 4px; font-weight: bold; color: var(--muted); }
+    .prod-card.sin-stock { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
     
-    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 300px; overflow-y: auto; display: none; margin-top: 5px; }
+    .cart-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+    .cart-table th { font-size: 11px; text-transform: uppercase; color: var(--muted); padding-bottom: 8px; border-bottom: 1px solid var(--line); text-align: left; }
+    .cart-table td { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+    .qty-btn { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; width: 24px; height: 24px; cursor: pointer; font-weight: bold; color: var(--text); display: inline-flex; justify-content: center; align-items: center; }
+    
+    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 200px; overflow-y: auto; display: none; }
     .autocomplete-list.active { display: block; }
-    .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-    .autocomplete-item.selected, .autocomplete-item:hover { background: var(--primary-soft); }
+    .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .autocomplete-item:hover { background: var(--primary-soft); }
     
-    .excel-table { width: 100%; border-collapse: collapse; text-align: left; }
-    .excel-table th { background: var(--panel-2); padding: 12px 16px; font-size: 12px; color: var(--muted); text-transform: uppercase; border-bottom: 2px solid var(--line); border-top: 1px solid var(--line); }
-    .excel-table td { padding: 10px 16px; border-bottom: 1px solid var(--line); vertical-align: middle; font-size: 14px; }
-    
-    .qty-control { display: flex; align-items: center; gap: 4px; justify-content: center; }
-    .qty-btn { background: var(--panel-2); border: 1px solid var(--line); width: 26px; height: 26px; border-radius: 6px; font-weight: bold; cursor: pointer; color: var(--text); }
-    .qty-input { width: 50px; text-align: center; border: 1px solid var(--primary-soft); border-radius: 6px; padding: 6px 4px; font-weight: bold; outline:none; }
-    
-    .checkout-footer { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: start; }
-    .pay-btn { border: 2px solid var(--line); background: #fff; padding: 12px 20px; border-radius: 10px; font-weight: 800; color: var(--muted); cursor: pointer; text-align: center; flex: 1; }
-    .pay-btn.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
-    .btn-charge { width: 100%; padding: 18px; font-size: 18px; font-weight: 800; border-radius: 10px; margin-top: 15px; cursor: pointer; background: var(--success); color: white; border: none; }
-    
-    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); }
+    .print-wrapper { display: none; }
+
+    @media print {
+      @page { margin: 0; size: 80mm 200mm; }
+      body * { visibility: hidden !important; }
+      .print-wrapper, .print-wrapper * { visibility: visible !important; }
+      .print-wrapper { display: block !important; position: absolute !important; left: 0 !important; top: 0 !important; width: 75mm !important; margin: 0 auto; background: white !important; font-family: monospace !important; color: #000 !important; }
+      .ticket-header { text-align: center; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
+      .ticket-header h1 { font-size: 18px; margin: 0 0 5px 0; font-weight: bold; text-transform: uppercase;}
+      .ticket-header p { font-size: 12px; margin: 0; }
+      .ticket-items { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px;}
+      .ticket-items th { border-bottom: 1px solid #000; text-align: left; padding: 4px 0; }
+      .ticket-items td { padding: 4px 0; vertical-align: top; }
+      .ticket-totals { width: 100%; margin-bottom: 15px; font-size: 12px;}
+      .ticket-totals td { padding: 2px 0; text-align: right;}
+      .ticket-totals td:first-child { text-align: left; font-weight: bold;}
+      .ticket-totals tr.total td { font-size: 16px; font-weight: bold; border-top: 1px dashed #000; padding-top: 5px; }
+      .ticket-footer { text-align: center; font-size: 11px; border-top: 1px dashed #000; padding-top: 10px; }
+    }
 
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
-    
-    #toggleArca:checked + span { background-color: var(--success); }
-    #toggleArca:checked + span span { transform: translateX(20px); }
 
     @media (max-width: 900px) {
       .app { display: flex !important; flex-direction: column !important; }
@@ -52,121 +66,172 @@
       .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
       .sidebar.open { left: 0 !important; }
       .sidebar-overlay.open { display: block; }
-      
-      .topbar { padding: 15px; display: flex; align-items: center; justify-content: space-between; }
+      .topbar { padding: 15px; flex-direction: column; align-items: flex-start; gap: 15px; }
       .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
-      
-      .checkout-footer { grid-template-columns: 1fr; }
-      .table-responsive-wrapper { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
-      .pay-btn { padding: 10px; font-size: 13px; flex: 1 1 40%; }
+      .pos-layout { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
-<div id="loadingOverlay">Sincronizando con la nube...</div>
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; font-weight:bold; color:var(--primary); font-size:18px;">Procesando...</div>
 
 <div class="app">
   <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
-
   <aside class="sidebar">
-    <div class="brand"><div class="brand-logo">M</div><div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div></div>
+    <div class="brand">
+      <div class="brand-logo">M</div>
+      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
+    </div>
      <nav class="nav">
-  <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-  <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
-  <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
-  <a href="facturacion.html" data-module="facturacion"><span class="active">🛒</span> Facturación</a>
-  <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-  <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
-  <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
-  <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
-  <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
-  <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
-  <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
-</nav>
+      <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html" data-module="facturacion"><span class="active">🛒</span> Facturación</a>
+      <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html" data-module="cc"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
+      <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
+      <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
+    </nav>
   </aside>
 
   <main class="content">
-    <header class="topbar" style="display: flex; justify-content: space-between; align-items: center;">
-      <div style="display: flex; align-items: center;">
+    <header class="topbar">
+      <div style="display: flex; align-items: center; width: 100%;">
         <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
-        <div class="page-title"><h1 style="margin:0; font-size: 26px;">Nueva Factura</h1></div>
+        <div class="page-title">
+          <h1 style="margin:0; font-size: 26px;">Punto de Venta</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Facturación rápida y emisión de tickets.</p>
+        </div>
       </div>
-      <button class="btn btn-light" style="white-space: nowrap;" onclick="cancelarVenta()">🗑️ Vaciar</button>
     </header>
 
-    <div class="pos-container">
-      
-      <article class="card card-pad">
-        <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;">1. Cliente</label>
-        <div style="position: relative;">
-          <input type="hidden" id="clientId" value="">
-          <input type="text" id="clientName" value="Consumidor Final" autocomplete="off" 
-                 onfocus="this.value=''; verificarClienteLibre()" 
-                 oninput="verificarClienteLibre()"
-                 class="pos-search-input" placeholder="Buscar cliente...">
+    <div class="pos-layout">
+      <article class="card card-pad" style="height: fit-content;">
+        <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+          <input type="text" id="searchCat" class="input-box" placeholder="🔍 Buscar por nombre o código de barras..." onkeyup="filtrarCatalogo()" autofocus>
+          <select id="filterCategory" class="input-box" style="max-width: 150px;" onchange="filtrarCatalogo()">
+            <option value="ALL">Todas las Categorías</option>
+          </select>
+        </div>
+        <div class="prod-grid" id="prodGrid"></div>
+      </article>
+
+      <article class="card card-pad" style="height: fit-content; position: sticky; top: 20px;">
+        <h2 style="margin: 0 0 15px 0; font-size: 18px; border-bottom: 1px solid var(--line); padding-bottom: 10px;">Ticket de Venta</h2>
+        
+        <div style="position: relative; margin-bottom: 15px;">
+          <input type="hidden" id="clientId">
+          <input type="text" id="clientName" class="input-box" placeholder="👤 Buscar cliente por DNI o Nombre..." onkeyup="buscarCliente()" autocomplete="off">
           <div id="clientResults" class="autocomplete-list"></div>
         </div>
-      </article>
 
-      <article class="card">
-        <div style="padding: 20px;">
-          <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 8px;">2. Artículos</label>
-          <div style="position: relative;">
-            <input type="text" id="posSearch" class="pos-search-input" placeholder="🔍 Buscar por nombre o código / Escanear código de barras..." autocomplete="off" autofocus>
-            <div id="searchResults" class="autocomplete-list"></div>
-          </div>
-        </div>
-        <div class="table-responsive-wrapper">
-          <table class="excel-table">
+        <div style="min-height: 150px; margin-bottom: 15px;">
+          <table class="cart-table">
             <thead>
-              <tr><th>Código</th><th>Descripción</th><th style="text-align: right;">Precio</th><th style="text-align: center;">Cant.</th><th style="text-align: right;">Subtotal</th><th></th></tr>
+              <tr><th style="width: 50%;">Producto</th><th style="text-align:center;">Cant</th><th style="text-align:right;">Subtotal</th></tr>
             </thead>
-            <tbody id="cartBody"></tbody>
+            <tbody id="cartBody">
+              <tr><td colspan="3" style="text-align:center; color:var(--muted); padding:30px 0;">El carrito está vacío</td></tr>
+            </tbody>
           </table>
         </div>
+
+        <div style="background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 20px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span style="font-weight:bold; color:var(--muted);">Subtotal:</span>
+            <span id="cartTotal" style="font-weight:bold;">$ 0,00</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-weight:bold; color:var(--muted);">Descuento ($):</span>
+            <input type="number" id="promoDiscount" class="input-box" style="width:100px; padding:4px 8px; text-align:right;" placeholder="0.00" oninput="applyDiscount()">
+          </div>
+          <div style="display:flex; justify-content:space-between; border-top: 1px dashed var(--line); padding-top: 10px;">
+            <span style="font-weight:900; font-size:18px;">TOTAL:</span>
+            <span id="cartTotalFinal" style="font-weight:900; font-size:18px; color:var(--primary);">$ 0,00</span>
+          </div>
+        </div>
+
+        <div style="background: #fff8f1; padding: 15px; border-radius: 8px; border: 1px dashed #f59e0b; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+             <h3 style="margin:0; font-size: 14px; color: #b45309;">Medios de Pago</h3>
+             <label style="font-size: 10px; font-weight: bold; cursor: pointer; color: #b45309; background: #fef3c7; padding: 4px 8px; border-radius: 4px;">
+               <input type="checkbox" id="isMixedPayment" onchange="toggleMixedPayment()"> 🔄 Pago Mixto
+             </label>
+          </div>
+
+          <div id="simplePaymentDiv">
+             <select id="paymentMethod" class="input-box" onchange="toggleCuponsFacturacion('simple')">
+                <option value="Efectivo">Efectivo</option>
+                <option value="Débito">Débito</option>
+                <option value="Crédito">Crédito</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="CC">Cuenta Corriente</option>
+             </select>
+             <input type="text" id="paymentCupon" class="input-box" placeholder="N° de Cupón / Lote / Ref" style="display:none; margin-top:10px;">
+          </div>
+
+          <div id="mixedPaymentDiv" style="display: none; background: #fff; padding: 10px; border-radius: 8px; border: 1px dashed #fcd34d; margin-top: 10px;">
+             <div style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
+                <select id="mixedMethod1" class="input-box" style="width: 120px; padding: 6px; font-size: 12px;" onchange="toggleCuponsFacturacion('mix1')">
+                  <option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito">Crédito</option><option value="Transferencia">Transf.</option>
+                </select>
+                <input type="text" id="mixedAmount1" class="input-box" style="width: 110px; padding: 6px; font-size: 12px; text-align:right;" placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcMixedPayment()">
+             </div>
+             <div id="mixedCuponDiv1" style="display: none; margin-bottom: 10px; text-align: right;">
+               <input type="text" id="mixedCupon1" class="input-box" placeholder="Cupón 1" style="width: 150px; padding: 6px; font-size: 12px;">
+             </div>
+
+             <div style="display:flex; justify-content:space-between; margin-bottom: 5px; align-items: center;">
+                <select id="mixedMethod2" class="input-box" style="width: 120px; padding: 6px; font-size: 12px;" onchange="toggleCuponsFacturacion('mix2')">
+                  <option value="Efectivo">Efectivo</option><option value="Débito">Débito</option><option value="Crédito" selected>Crédito</option><option value="Transferencia">Transf.</option>
+                </select>
+                <input type="text" id="mixedAmount2" class="input-box" style="width: 110px; padding: 6px; font-size: 12px; text-align:right; background:#e2e8f0; border-color:transparent;" placeholder="$ 0,00" readonly>
+             </div>
+             <div id="mixedCuponDiv2" style="display: none; margin-bottom: 5px; text-align: right;">
+               <input type="text" id="mixedCupon2" class="input-box" placeholder="Cupón 2" style="width: 150px; padding: 6px; font-size: 12px;">
+             </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px;" onclick="cobrar()">COBRAR E IMPRIMIR</button>
       </article>
-
-      <div class="checkout-footer">
-        <article class="card card-pad">
-          <h3 style="font-size: 12px; text-transform: uppercase; color: var(--muted);">3. Pago</h3>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;" id="payMethodsB2C">
-            <button class="pay-btn active" onclick="setPayment('Efectivo', this)">💵 Efectivo</button>
-            <button class="pay-btn" onclick="setPayment('Transferencia', this)">📱 Transf.</button>
-            <button class="pay-btn" onclick="setPayment('Débito', this)">💳 Débito</button>
-            <button class="pay-btn" onclick="setPayment('Crédito', this)">💳 Crédito</button>
-          </div>
-          <div id="payMethodsB2B" style="display: none;">
-            <button class="pay-btn active" style="border-color: var(--warning); color: #b45309; width: 100%;">📓 A Cuenta Corriente</button>
-          </div>
-          
-          <div id="cuponContainer" style="display: none; margin-top: 15px;">
-            <label style="font-size: 11px; color: var(--danger); text-transform: uppercase; font-weight:bold; display:block; margin-bottom:6px;">Número de Cupón / Lote *</label>
-            <input type="number" id="cuponNumber" placeholder="Ingresá el número del comprobante" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 600; border: 2px solid var(--line); border-radius: 8px; outline: none; box-sizing: border-box;">
-          </div>
-        </article>
-
-        <article class="card card-pad">
-          <div id="arcaContainer" style="margin-bottom: 20px; padding: 15px; border-radius: 8px; border: 1px solid var(--line); background: #f8fafc; display: none !important; align-items: center; justify-content: space-between;">
-            <div>
-              <strong style="font-size: 14px; color: var(--primary);">Validar con ARCA (AFIP)</strong>
-              <p style="margin: 3px 0 0 0; font-size: 11px; color: var(--muted);">Emite Factura Electrónica legal.</p>
-            </div>
-            <label style="position: relative; display: inline-block; width: 44px; height: 24px;">
-              <input type="checkbox" id="toggleArca" style="opacity: 0; width: 0; height: 0;" onchange="verificarRequisitosArca()">
-              <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 24px;">
-                <span style="position: absolute; content: ''; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;"></span>
-              </span>
-            </label>
-          </div>
-          <div style="display:flex; justify-content: space-between; font-size: 24px; font-weight: 800;">
-            <span>Total</span><span id="txtTotal" style="color: var(--primary);">$0</span>
-          </div>
-          <button class="btn-charge" id="btnCobrar" onclick="procesarVenta()">Confirmar e Imprimir</button>
-        </article>
-      </div>
     </div>
   </main>
+</div>
+
+<div class="print-wrapper">
+  <div class="ticket-header">
+    <h1 id="printCompanyName">MICRO SAAS</h1>
+    <p id="printCompanyAddress">Dirección de prueba 123</p>
+    <p>CUIT: <span id="printCompanyCuit"></span></p>
+    <p>-------------------------</p>
+    <p>TICKET NO FISCAL</p>
+    <p>Fecha: <span id="ticketDate"></span></p>
+    <p>Ticket N°: <span id="ticketId"></span></p>
+    <p>Cliente: <span id="ticketClient"></span></p>
+  </div>
+  
+  <table class="ticket-items">
+    <thead><tr><th style="width:15%">CANT</th><th style="width:60%">DETALLE</th><th style="width:25%; text-align:right;">SUBT</th></tr></thead>
+    <tbody id="ticketItems"></tbody>
+  </table>
+  
+  <table class="ticket-totals">
+    <tr><td>SUBTOTAL:</td><td id="ticketSubtotal"></td></tr>
+    <tr id="ticketDescRow" style="display:none;"><td>DESCUENTO:</td><td id="ticketDiscount"></td></tr>
+    <tr class="total"><td>TOTAL:</td><td id="ticketTotal"></td></tr>
+  </table>
+  
+  <div class="ticket-footer">
+    <p style="font-weight: bold; font-size: 12px;">MEDIO DE PAGO:</p>
+    <p id="ticketMethod" style="margin-top: 5px; line-height: 1.4;"></p>
+    <p style="margin-top:15px;">Le atendió: <span id="ticketSeller"></span></p>
+    <p style="font-style: italic; margin-top:5px;">¡Gracias por su compra!</p>
+  </div>
 </div>
 
 <script src="core.js"></script>
@@ -175,428 +240,404 @@
   let dbProducts = [];
   let dbClients = [];
   let cart = [];
-  let currentPaymentMethod = 'Efectivo';
-  let isB2B = false;
-  let filteredProducts = [];
+  let cartTotal = 0;
+  const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
 
-  const terminalActiva = localStorage.getItem('terminal_assigned_branch');
-
-  function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
   function todayISO() { return new Date().toISOString().split('T')[0]; }
-
-  function getLocalStock(prod) {
-    if (!prod.stock_branches) return parseInt(prod.stock || 0);
-    try {
-      const branches = JSON.parse(prod.stock_branches);
-      return parseInt(branches[terminalActiva] || 0);
-    } catch(e) {
-      return parseInt(prod.stock || 0);
-    }
+  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+  function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
+  
+  function currency(n) { 
+      return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(n || 0)); 
   }
 
-  async function initPOS() {
-    // 🔥 BLOQUEO DE SEGURIDAD: Verifica si la PC tiene una sucursal asignada
-    if (!terminalActiva || terminalActiva === 'null' || terminalActiva === '') {
-      document.querySelector('.pos-container').innerHTML = `
-        <div style="text-align:center; padding: 60px 20px; background: #fff; border-radius: 12px; border: 1px solid var(--line); margin-top: 20px; box-shadow: var(--shadow);">
-          <div style="font-size: 50px; margin-bottom: 15px;">🚫</div>
-          <h2 style="color: var(--danger); font-size: 22px; margin:0 0 10px 0;">Acceso Restringido</h2>
-          <p style="color: var(--text); font-size: 16px; font-weight: 500; margin-bottom: 10px;">
-            Esta terminal no se encuentra asignada a ninguna sucursal.
-          </p>
-          <p style="color: var(--muted); font-size: 14px; max-width: 450px; margin: 0 auto 25px auto; line-height: 1.5;">
-            Para poder realizar ventas y descontar stock, un <strong>Administrador</strong> debe iniciar sesión en esta PC y vincularla a un local desde el menú de Sucursales.
-          </p>
-          <div style="display: inline-block; padding: 10px 20px; background: var(--panel-2); border-radius: 8px; color: var(--muted); font-size: 12px; font-weight: bold; text-transform: uppercase;">
-            Contactar al soporte técnico o administrador
-          </div>
-        </div>
-      `;
-      // Detenemos la carga para que no se vea nada del sistema de ventas
-      return; 
-    }
+  function formatCurrencyInput(input) {
+      let val = input.value.replace(/[^\d,]/g, '');
+      const parts = val.split(',');
+      if (parts.length > 2) { val = parts[0] + ',' + parts.slice(1).join(''); }
+      if (val === '') { input.value = ''; return; }
+      let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      let decPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : '';
+      input.value = '$ ' + intPart + decPart;
+  }
 
-    // Si la terminal está asignada, procedemos con la carga normal
+  function parseCurrency(val) {
+      if (!val) return 0;
+      let str = String(val).replace(/[\$\s\.]/g, '').replace(',', '.');
+      return parseFloat(str) || 0;
+  }
+
+  // --- LÓGICA DE PAGOS MIXTOS ---
+  function toggleMixedPayment() {
+      const isMixed = document.getElementById('isMixedPayment').checked;
+      document.getElementById('simplePaymentDiv').style.display = isMixed ? 'none' : 'block';
+      document.getElementById('mixedPaymentDiv').style.display = isMixed ? 'block' : 'none';
+      if (isMixed) {
+          calcMixedPayment();
+      }
+      toggleCuponsFacturacion('simple');
+      toggleCuponsFacturacion('mix1');
+      toggleCuponsFacturacion('mix2');
+  }
+
+  function calcMixedPayment() {
+      const isMixed = document.getElementById('isMixedPayment').checked;
+      if (!isMixed) return;
+
+      const discountVal = parseFloat(document.getElementById('promoDiscount').value) || 0;
+      const totalToPay = cartTotal - discountVal;
+      
+      const a1 = parseCurrency(document.getElementById('mixedAmount1').value);
+      let a2 = totalToPay - a1;
+      if (a2 < 0) a2 = 0;
+      
+      document.getElementById('mixedAmount2').value = currency(a2);
+  }
+
+  function toggleCuponsFacturacion(type) {
+      if (type === 'simple') {
+          const method = document.getElementById('paymentMethod').value;
+          document.getElementById('paymentCupon').style.display = method === 'Crédito' ? 'block' : 'none';
+          if(method !== 'Crédito') document.getElementById('paymentCupon').value = '';
+      } else if (type === 'mix1') {
+          const method = document.getElementById('mixedMethod1').value;
+          document.getElementById('mixedCuponDiv1').style.display = method === 'Crédito' ? 'block' : 'none';
+          if(method !== 'Crédito') document.getElementById('mixedCupon1').value = '';
+      } else if (type === 'mix2') {
+          const method = document.getElementById('mixedMethod2').value;
+          document.getElementById('mixedCuponDiv2').style.display = method === 'Crédito' ? 'block' : 'none';
+          if(method !== 'Crédito') document.getElementById('mixedCupon2').value = '';
+      }
+  }
+
+  // --- INICIALIZACIÓN ---
+  async function initPOS() {
     mostrarCarga(true);
     try {
       const [resP, resC] = await Promise.all([
-        apiFetch(`${API_URL}/products`),
-        apiFetch(`${API_URL}/business_clients?withBalance=1`)
+        apiFetch(`${API_URL}/products?status=Activo`),
+        apiFetch(`${API_URL}/business_clients`)
       ]);
+      
+      if (resP.ok) dbProducts = await resP.json();
+      if (resC.ok) dbClients = await resC.json();
+      
+      const cats = [...new Set(dbProducts.map(p => p.category).filter(c => c))].sort();
+      document.getElementById('filterCategory').innerHTML = '<option value="ALL">Todas las Categorías</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
 
-      if (!resP.ok) console.error("Error Productos:", await resP.text());
-      if (!resC.ok) console.error("Error Clientes:", await resC.text());
+      document.getElementById('printCompanyName').textContent = localStorage.getItem('company_name') || 'Mi Negocio';
+      document.getElementById('printCompanyAddress').textContent = localStorage.getItem('company_address') || '';
+      document.getElementById('printCompanyCuit').textContent = localStorage.getItem('company_cuit') || '-';
 
-      dbProducts = resP.ok ? await resP.json() : [];
-      dbClients = resC.ok ? await resC.json() : [];
-
-      console.log(`✅ Terminal vinculada a: ${terminalActiva}`);
-      renderCart();
-    } catch (e) {
-      console.error("Error de conexión:", e);
+    } catch (err) {
+      console.error(err);
     } finally {
       mostrarCarga(false);
-      // Solo intentamos dar foco si el buscador existe (no está bloqueado)
-      const searchInput = document.getElementById('posSearch');
-      if (searchInput) searchInput.focus();
+      filtrarCatalogo();
     }
   }
 
-  document.addEventListener('click', (e) => {
-    if (!document.getElementById('posSearch').contains(e.target) && !document.getElementById('searchResults').contains(e.target)) {
-      document.getElementById('searchResults').classList.remove('active');
-    }
-    if (!document.getElementById('clientName').contains(e.target) && !document.getElementById('clientResults').contains(e.target)) {
-      document.getElementById('clientResults').classList.remove('active');
-    }
-  });
-
-  window.verificarClienteLibre = function() {
-    const term = document.getElementById('clientName').value.toLowerCase().trim();
-    if (term === "") {
-      document.getElementById('clientId').value = '';
-      activarModoB2C();
-    }
+  function filtrarCatalogo() {
+    const term = document.getElementById('searchCat').value.toLowerCase();
+    const cat = document.getElementById('filterCategory').value;
+    const grid = document.getElementById('prodGrid');
     
-    const clientResults = document.getElementById('clientResults');
-    if (term.length < 1) {
-      clientResults.classList.remove('active');
-      return;
-    }
+    const filtrados = dbProducts.filter(p => {
+      const matchTerm = (p.name || '').toLowerCase().includes(term) || (p.code || '').toLowerCase().includes(term);
+      const matchCat = cat === 'ALL' || p.category === cat;
+      return matchTerm && matchCat;
+    });
 
-    const filtrados = dbClients.filter(c =>
-      ((c.name || '').toLowerCase().includes(term)) ||
-      ((c.cuil || '').toLowerCase().includes(term))
-    ).slice(0, 5);
-
-    clientResults.innerHTML = filtrados.length === 0
-      ? '<div style="padding:15px; text-align:center; color:var(--muted);">Dejar como Consumidor Final</div>'
-      : filtrados.map(c => `
-        <div class="autocomplete-item" onclick="seleccionarClientePOS('${c.id}', '${escapeHtml(c.name).replace(/'/g, "\\'")}')">
-          <div>
-            <strong>${escapeHtml(c.name)}</strong><br>
-            <small>${c.cuil || 'Sin CUIT'}${Number(c.balance || 0) > 0 ? ` | Saldo: ${currency(c.balance)}` : ''}</small>
-          </div>
-        </div>`).join('');
-
-    clientResults.classList.add('active');
-  };
-
-  window.seleccionarClientePOS = function(id, name) {
-    document.getElementById('clientName').value = name;
-    document.getElementById('clientId').value = id;
-    document.getElementById('clientResults').classList.remove('active');
-    activarModoB2B();
-  };
-
-  function activarModoB2C() {
-    isB2B = false;
-    document.getElementById('payMethodsB2C').style.display = 'flex';
-    document.getElementById('payMethodsB2B').style.display = 'none';
-    document.getElementById('cuponContainer').style.display = 'none';
-    document.getElementById('btnCobrar').textContent = "Confirmar e Imprimir (F12)";
-    document.getElementById('arcaContainer').style.display = 'flex'; // Mostrar ARCA
-    setPayment('Efectivo', document.querySelector('#payMethodsB2C .pay-btn'), false);
-  }
-
-  function activarModoB2B() {
-    isB2B = true;
-    currentPaymentMethod = 'A Cuenta Corriente';
-    document.getElementById('payMethodsB2C').style.display = 'none';
-    document.getElementById('payMethodsB2B').style.display = 'flex';
-    document.getElementById('cuponContainer').style.display = 'none';
-    document.getElementById('arcaContainer').style.display = 'none'; // Ocultar ARCA para CC
-    document.getElementById('btnCobrar').textContent = "Confirmar en Cuenta Corriente (F12)";
-    document.getElementById('toggleArca').checked = false; // Resetear el switch si estaba activo
-  }
-
-  function setPayment(method, btn, focus = true) {
-    if (isB2B) return;
-    currentPaymentMethod = method;
-    document.querySelectorAll('#payMethodsB2C .pay-btn').forEach(b => b.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    
-    const cupon = document.getElementById('cuponContainer');
-    if (method === 'Crédito') {
-      cupon.style.display = 'block';
-      if (focus) document.getElementById('cuponNumber').focus();
-    } else {
-      cupon.style.display = 'none';
-      document.getElementById('cuponNumber').value = '';
-      if (focus) document.getElementById('posSearch').focus();
-    }
-  }
-
-  document.getElementById('posSearch').addEventListener('input', (e) => {
-    const term = e.target.value.toLowerCase().trim();
-    const searchResults = document.getElementById('searchResults');
-    if (term.length < 1) {
-      searchResults.classList.remove('active');
-      return;
-    }
-
-    filteredProducts = dbProducts.filter(p =>
-      ((p.name || '').toLowerCase().includes(term)) ||
-      ((p.code || '').toLowerCase().includes(term))
-    ).slice(0, 10);
-
-    if (filteredProducts.length === 0) {
-      searchResults.innerHTML = '<div style="padding:15px; text-align:center; color:var(--danger); font-weight:bold;">No se encontró el producto</div>';
-    } else {
-      searchResults.innerHTML = filteredProducts.map((p, idx) => {
-        const localStock = getLocalStock(p);
-        const colorStock = localStock > 0 ? 'var(--success)' : 'var(--danger)';
-        
-        return `
-        <div class="autocomplete-item" onclick="agregarAlCarrito(${idx})">
-          <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code || 'S/N'} | <span style="color:${colorStock}; font-weight:bold;">Stock Local: ${localStock}</span></small></div>
-          <div style="font-weight:800; color:var(--primary);">${currency(p.price)}</div>
-        </div>`;
-      }).join('');
-    }
-    searchResults.classList.add('active');
-  });
-
-  document.getElementById('posSearch').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const term = e.target.value.trim();
-      if (term === '') return;
-
-      const prodExacto = dbProducts.find(p => p.code && p.code.toLowerCase() === term.toLowerCase());
-
-      if (prodExacto) {
-        const localStock = getLocalStock(prodExacto);
-        const existe = cart.find(i => i.id === prodExacto.id);
-        const qtyDeseada = existe ? existe.qty + 1 : 1;
-
-        if (qtyDeseada > localStock) {
-          alert(`❌ STOCK INSUFICIENTE\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés facturar sin stock físico.`);
-        } else {
-          if (existe) existe.qty++; else cart.unshift({ ...prodExacto, qty: 1 });
-          renderCart();
-        }
-      } else {
-        alert(`⚠️ El código "${term}" no está registrado en el catálogo.`);
-      }
+    grid.innerHTML = filtrados.map(p => {
+      let stockLocal = 0;
+      try { stockLocal = JSON.parse(p.stock_branches)[terminalActiva] || 0; } 
+      catch { stockLocal = p.stock || 0; }
       
-      e.target.value = '';
-      document.getElementById('searchResults').classList.remove('active');
-    }
-  });
+      const agotado = stockLocal <= 0;
+      return `
+      <div class="prod-card ${agotado ? 'sin-stock' : ''}" onclick="!${agotado} && addToCart('${p.id}')">
+        <div class="stock" style="color: ${agotado ? 'var(--danger)' : 'var(--muted)'}">${agotado ? 'AGOTADO' : 'Stock: '+stockLocal}</div>
+        <div style="font-size: 30px; margin-bottom: 10px;">${agotado ? '⛔' : '📦'}</div>
+        <h4 title="${escapeHtml(p.name)}">${escapeHtml(p.name).substring(0, 30)}</h4>
+        <p class="price">${currency(p.price)}</p>
+      </div>`;
+    }).join('');
 
-  function agregarAlCarrito(idx) {
-    const p = filteredProducts[idx];
-    const localStock = getLocalStock(p);
-    const existe = cart.find(i => i.id === p.id);
-    const qtyDeseada = existe ? existe.qty + 1 : 1;
+    if (filtrados.length === 0) grid.innerHTML = '<p style="color:var(--muted); grid-column: 1/-1; text-align:center; padding: 40px;">No se encontraron productos.</p>';
+  }
 
-    if (qtyDeseada > localStock) {
-      alert(`❌ STOCK INSUFICIENTE\nStock actual en ${terminalActiva}: ${localStock} unidades.\nNo podés facturar sin stock físico.`);
-      document.getElementById('posSearch').value = '';
-      document.getElementById('searchResults').classList.remove('active');
-      document.getElementById('posSearch').focus();
-      return;
-    }
+  function buscarCliente() {
+    const term = document.getElementById('clientName').value.toLowerCase().trim();
+    const list = document.getElementById('clientResults');
+    if (term.length < 1) { list.classList.remove('active'); document.getElementById('clientId').value = ''; return; }
 
-    if (existe) existe.qty++; else cart.unshift({ ...p, qty: 1 });
-    document.getElementById('posSearch').value = '';
-    document.getElementById('searchResults').classList.remove('active');
-    document.getElementById('posSearch').focus();
+    const filtrados = dbClients.filter(c => (c.name||'').toLowerCase().includes(term) || (c.cuil||'').includes(term)).slice(0, 5);
+    list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">No encontrado. Venta como consumidor final.</div>' : filtrados.map(c => `
+      <div class="autocomplete-item" onclick="selCli('${c.id}', '${escapeHtml(c.name)}')">
+        <strong>${escapeHtml(c.name)}</strong><br><small>${c.cuil || 'Sin CUIT'}</small>
+      </div>`).join('');
+    list.classList.add('active');
+  }
+
+  function selCli(id, name) {
+    document.getElementById('clientId').value = id;
+    document.getElementById('clientName').value = name;
+    document.getElementById('clientResults').classList.remove('active');
+  }
+
+  function addToCart(id) {
+    const p = dbProducts.find(x => x.id === id);
+    if (!p) return;
+    const item = cart.find(x => x.id === id);
+    
+    let stockLocal = 0; try { stockLocal = JSON.parse(p.stock_branches)[terminalActiva] || 0; } catch { stockLocal = p.stock || 0; }
+    const actualQty = item ? item.qty : 0;
+    if (actualQty + 1 > stockLocal) return alert("No hay stock suficiente en esta sucursal.");
+
+    if (item) item.qty++; else cart.push({ id: p.id, name: p.name, code: p.code, price: p.price, cost: p.cost, qty: 1 });
+    renderCart();
+  }
+
+  function changeQty(id, delta) {
+    const item = cart.find(x => x.id === id);
+    if (!item) return;
+    const p = dbProducts.find(x => x.id === id);
+    let stockLocal = 0; try { stockLocal = JSON.parse(p.stock_branches)[terminalActiva] || 0; } catch { stockLocal = p.stock || 0; }
+
+    if (delta > 0 && item.qty + 1 > stockLocal) return alert("Stock máximo alcanzado.");
+    
+    item.qty += delta;
+    if (item.qty <= 0) cart = cart.filter(x => x.id !== id);
     renderCart();
   }
 
   function renderCart() {
     const tbody = document.getElementById('cartBody');
-    let total = 0;
-    tbody.innerHTML = cart.map(i => {
-      const sub = i.price * i.qty;
-      total += sub;
-      return `<tr>
-        <td style="color: var(--muted);">${i.code || '-'}</td>
-        <td><strong>${escapeHtml(i.name)}</strong></td>
-        <td style="text-align:right;">${currency(i.price)}</td>
-        <td style="text-align:center;">
-          <div class="qty-control">
-            <button class="qty-btn" onclick="updateQty('${i.id}', ${i.qty - 1})">-</button>
-            <input type="number" class="qty-input" value="${i.qty}" onchange="updateQty('${i.id}', this.value)">
-            <button class="qty-btn" onclick="updateQty('${i.id}', ${i.qty + 1})">+</button>
-          </div>
-        </td>
-        <td style="text-align:right; color:var(--primary);"><strong>${currency(sub)}</strong></td>
-        <td style="text-align:center;"><button onclick="quitar('${i.id}')" style="background:none; border:none; color:red; cursor:pointer; font-weight:bold;">✕</button></td>
-      </tr>`;
-    }).join('');
-    if (!cart.length) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--muted);">El comprobante está vacío.<br><small>Buscá un artículo para comenzar.</small></td></tr>';
+    cartTotal = cart.reduce((acc, i) => acc + (i.price * i.qty), 0);
     
-    document.getElementById('txtTotal').textContent = currency(total);
-    // Disparamos la verificación de ARCA al actualizar el total
-    verificarRequisitosArca();
+    if (cart.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--muted); padding:30px 0;">El carrito está vacío</td></tr>';
+      document.getElementById('cartTotal').textContent = '$ 0,00';
+    } else {
+      tbody.innerHTML = cart.map(i => `
+        <tr>
+          <td><div style="font-weight:bold; line-height:1.2;">${escapeHtml(i.name)}</div><div style="color:var(--muted); font-size:11px;">${currency(i.price)} x u.</div></td>
+          <td style="text-align:center; white-space:nowrap;">
+            <button class="qty-btn" onclick="changeQty('${i.id}', -1)">-</button>
+            <span style="margin:0 8px; font-weight:bold;">${i.qty}</span>
+            <button class="qty-btn" onclick="changeQty('${i.id}', 1)">+</button>
+          </td>
+          <td style="text-align:right; font-weight:bold; color:var(--primary);">${currency(i.price * i.qty)}</td>
+        </tr>
+      `).join('');
+      document.getElementById('cartTotal').textContent = currency(cartTotal);
+    }
+    applyDiscount();
   }
 
-  window.updateQty = (id, v) => {
-    const i = cart.find(x => x.id === id);
-    if (i) {
-      const nuevaCant = parseInt(v) > 0 ? parseInt(v) : 1;
-      const pDB = dbProducts.find(p => p.id === id);
-      const localStock = getLocalStock(pDB);
-
-      if (nuevaCant > localStock) {
-        alert(`❌ STOCK INSUFICIENTE\nSolo tenés ${localStock} unidades disponibles en ${terminalActiva}.`);
-        renderCart();
-        return;
-      }
-      i.qty = nuevaCant;
-    }
-    renderCart();
-  };
-  
-  window.quitar = (id) => { cart = cart.filter(x => x.id !== id); renderCart(); };
-  window.cancelarVenta = () => { if (confirm("¿Vaciar?")) { cart = []; renderCart(); } };
-
-  // --- LOGICA ARCA ---
-  function verificarRequisitosArca() {
-    const isChecked = document.getElementById('toggleArca').checked;
-    const cid = document.getElementById('clientId').value;
-    const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
+  function applyDiscount() {
+    const discVal = parseFloat(document.getElementById('promoDiscount').value) || 0;
+    let finalTotal = cartTotal - discVal;
+    if (finalTotal < 0) finalTotal = 0;
     
-    // AFIP requiere identificar para comprobantes mayores a un monto (ej: $344,000 en 2024, usando 300,000 preventivo)
-    if (isChecked && (!cid) && total > 300000) {
-      alert("⚠️ ARCA requiere identificar al cliente con CUIT/DNI para facturas superiores a $300.000. Seleccioná o creá el cliente primero.");
-      document.getElementById('toggleArca').checked = false;
+    document.getElementById('cartTotalFinal').textContent = currency(finalTotal);
+    
+    if (document.getElementById('isMixedPayment').checked) {
+        calcMixedPayment();
     }
   }
-  // --- FIN LÓGICA ARCA ---
 
-  window.procesarVenta = async function() {
-    if (!cart.length) return;
-    if (!confirm(isB2B ? "¿Confirmar y enviar deuda a la Cuenta Corriente?" : "¿Confirmar venta e imprimir ticket?")) return;
+  async function cobrar() {
+    if (cart.length === 0) return alert("El carrito está vacío.");
     
-    let cuponText = '';
-    if (!isB2B && currentPaymentMethod === 'Crédito') {
-      cuponText = document.getElementById('cuponNumber').value.trim();
-      if (!cuponText) {
-        alert("⚠️ Ingresá el número de lote/cupón para poder cobrar con Tarjeta de Crédito.");
-        document.getElementById('cuponNumber').focus();
-        return;
-      }
-    }
+    const clientName = document.getElementById('clientName').value.trim();
+    const clientId = document.getElementById('clientId').value || '';
+    const discountVal = parseFloat(document.getElementById('promoDiscount').value) || 0;
+    const cartTotalAfterDiscount = cartTotal - discountVal;
 
-    const usaArca = document.getElementById('toggleArca').checked && !isB2B;
-
+    const isMixed = document.getElementById('isMixedPayment').checked;
+    
     mostrarCarga(true);
-    const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
-    const dateStr = todayISO();
-    const cid = document.getElementById('clientId').value;
-
-    const itemsLimpios = cart.map(i => ({
-      id: i.id,
-      code: i.code || '',
-      name: i.name,
-      price: i.price,
-      cost: i.cost || 0,
-      qty: i.qty,
-      subtotal: i.price * i.qty
-    }));
-
-    const venta = {
-      id: 'vta_' + Date.now(),
-      createdAt: new Date().toISOString(),
-      date: dateStr,
-      branch: terminalActiva,
-      seller: localStorage.getItem('activeUser') || 'Admin',
-      clientId: cid || 'Consumidor Final',
-      client: document.getElementById('clientName').value || 'Consumidor Final',
-      method: currentPaymentMethod,
-      cupon: cuponText,
-      subtotal: total,
-      promoDiscount: 0,
-      total: total,
-      isB2B: isB2B,
-      items: itemsLimpios
-    };
-
     try {
-      
-      // 1. PROCESO ARCA (Si está activo)
-      if (usaArca) {
-        document.getElementById('loadingOverlay').textContent = "Conectando con ARCA (AFIP)...";
-        const resArca = await apiFetch('/api/arca', {
-          method: 'POST',
-          body: JSON.stringify(venta)
-        });
-        
-        const arcaData = await resArca.json();
-        
-        if (resArca.ok && arcaData.success) {
-          // Asignamos los datos devueltos por AFIP a la venta
-          venta.cae = arcaData.cae;
-          venta.caeVto = arcaData.caeVto;
-          venta.factNum = arcaData.numeroComprobante;
-          venta.puntoVenta = arcaData.puntoVenta;
-          venta.documentTitle = "FACTURA"; 
-          
-          alert(`✅ Factura Electrónica autorizada.\nCAE: ${venta.cae}`);
+        if (!isMixed) {
+            // --- FLUJO DE PAGO SIMPLE (NORMAL) ---
+            const method = document.getElementById('paymentMethod').value;
+            const cupon = document.getElementById('paymentCupon').value.trim();
+
+            if (method === 'CC' && !clientName) {
+                alert("Debe seleccionar un cliente del directorio para vender en Cuenta Corriente.");
+                mostrarCarga(false); return;
+            }
+
+            const saleObj = {
+                id: 'vta_' + Date.now(),
+                date: todayISO(),
+                createdAt: new Date().toISOString(),
+                clientId: clientId,
+                client: clientName || 'Consumidor Final',
+                method: method,
+                cupon: cupon,
+                subtotal: cartTotal,
+                promoDiscount: discountVal,
+                total: cartTotalAfterDiscount,
+                branch: terminalActiva,
+                seller: localStorage.getItem('activeUser') || 'Caja',
+                isB2B: false,
+                itemsJSON: JSON.stringify(cart)
+            };
+
+            if (method === 'CC') {
+                const movement = {
+                    id: 'cc_' + Date.now(), company_id: localStorage.getItem('company_id'),
+                    client_id: clientId, date: todayISO(), type: 'debit',
+                    amount: cartTotalAfterDiscount, description: 'Compra en sucursal (Ticket: ' + saleObj.id + ')',
+                    createdAt: new Date().toISOString()
+                };
+                await apiFetch('/api/cc_movements', { method: 'POST', body: JSON.stringify(movement) });
+            }
+
+            await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(saleObj) });
+            
+            printTicket(saleObj);
+
         } else {
-          throw new Error(arcaData.error || "La transacción fue rechazada por AFIP.");
+            // --- FLUJO DE PAGO MIXTO (SPLIT PAYMENT) ---
+            const m1 = document.getElementById('mixedMethod1').value;
+            const a1 = parseCurrency(document.getElementById('mixedAmount1').value);
+            const c1 = document.getElementById('mixedCupon1').value.trim();
+            
+            const m2 = document.getElementById('mixedMethod2').value;
+            const a2 = parseCurrency(document.getElementById('mixedAmount2').value);
+            const c2 = document.getElementById('mixedCupon2').value.trim();
+
+            if (Math.abs((a1 + a2) - cartTotalAfterDiscount) > 1) {
+                alert("Los montos del pago mixto no coinciden con el total a cobrar.");
+                mostrarCarga(false); return;
+            }
+            if ((m1 === 'CC' || m2 === 'CC') && !clientName) {
+                alert("Debe seleccionar un cliente para aplicar a Cuenta Corriente.");
+                mostrarCarga(false); return;
+            }
+
+            const baseId = 'vta_' + Date.now();
+            const sale1Id = baseId + '_1';
+            const sale2Id = baseId + '_2';
+
+            // VENTA 1: Lleva el carrito real (para descontar stock)
+            const sale1 = {
+                id: sale1Id, date: todayISO(), createdAt: new Date().toISOString(),
+                clientId: clientId, client: clientName || 'Consumidor Final',
+                method: m1, cupon: c1,
+                subtotal: a1, promoDiscount: discountVal > 0 ? (discountVal / 2) : 0, 
+                total: a1, branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Caja', isB2B: false,
+                itemsJSON: JSON.stringify(cart)
+            };
+
+            // VENTA 2: Lleva un ítem genérico para no duplicar descuento de stock
+            const sale2 = {
+                id: sale2Id, date: todayISO(), createdAt: new Date().toISOString(),
+                clientId: clientId, client: clientName || 'Consumidor Final',
+                method: m2, cupon: c2,
+                subtotal: a2, promoDiscount: discountVal > 0 ? (discountVal / 2) : 0, 
+                total: a2, branch: terminalActiva, seller: localStorage.getItem('activeUser') || 'Caja', isB2B: false,
+                itemsJSON: JSON.stringify([{id: 'pago_mixto', code: 'MIXTO', name: `Pago Mixto (Parte 2) - Ref: ${sale1Id}`, price: a2, cost: 0, qty: 1}])
+            };
+
+            if (m1 === 'CC' && a1 > 0) {
+                await apiFetch('/api/cc_movements', { method: 'POST', body: JSON.stringify({
+                    id: 'cc_' + Date.now() + '_1', company_id: localStorage.getItem('company_id'),
+                    client_id: clientId, date: todayISO(), type: 'debit',
+                    amount: a1, description: 'Compra Mixta 1 (Ticket: ' + sale1Id + ')', createdAt: new Date().toISOString()
+                })});
+            }
+            if (m2 === 'CC' && a2 > 0) {
+                await apiFetch('/api/cc_movements', { method: 'POST', body: JSON.stringify({
+                    id: 'cc_' + Date.now() + '_2', company_id: localStorage.getItem('company_id'),
+                    client_id: clientId, date: todayISO(), type: 'debit',
+                    amount: a2, description: 'Compra Mixta 2 (Ticket: ' + sale2Id + ')', createdAt: new Date().toISOString()
+                })});
+            }
+
+            if(a1 > 0) await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(sale1) });
+            if(a2 > 0) await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(sale2) });
+
+            // Inyectamos datos auxiliares en sale1 para que el ticket se imprima unificado
+            sale1.mixedMethod2 = m2;
+            sale1.mixedAmount2 = a2;
+            sale1.totalOriginalSubtotal = cartTotal;
+            sale1.totalOriginal = cartTotalAfterDiscount;
+            sale1.promoDiscountOriginal = discountVal;
+
+            printTicket(sale1);
         }
-      }
-
-      // 2. GUARDADO DE VENTA NORMAL
-      document.getElementById('loadingOverlay').textContent = "Sincronizando con la nube...";
-      const resV = await apiFetch(`${API_URL}/sales`, {
-        method: 'POST',
-        body: JSON.stringify(venta)
-      });
-
-      if (!resV.ok) throw new Error(await resV.text());
-      
-      // 3. CUENTA CORRIENTE (Si es B2B)
-      if (isB2B && cid) {
-        const mov = {
-          id: 'cc_' + Date.now(),
-          clientId: cid,
-          date: dateStr,
-          type: 'debit',
-          amount: total,
-          concept: `Venta Ticket #${venta.id.split('_')[1]}`,
-          reference_type: 'sale',
-          reference_id: venta.id,
-          branch: terminalActiva,
-          seller: localStorage.getItem('activeUser') || 'Admin'
-        };
-
-        const resCC = await apiFetch(`${API_URL}/cc_movements`, {
-          method: 'POST',
-          body: JSON.stringify(mov)
-        });
-
-        if (!resCC.ok) throw new Error("Cta Cte Error: " + await resCC.text());
-      }
-
-      // 4. LIMPIEZA FINAL E IMPRESIÓN
-      alert(isB2B ? "📓 Guardado en Cta. Cte." : "✅ Venta finalizada.");
-      localStorage.setItem('last_sale_to_print', JSON.stringify(venta));
-
-      cart = [];
-      document.getElementById('clientName').value = 'Consumidor Final';
-      document.getElementById('clientId').value = '';
-      if (currentPaymentMethod === 'Crédito') document.getElementById('cuponNumber').value = '';
-      const ventaFueB2B = isB2B;
-      activarModoB2C();
-      renderCart();
-      
-      if (!ventaFueB2B) window.open('imprimir_ticket.html', '_blank');
-
-    } catch (e) {
-      alert("❌ Error: " + e.message);
+        
+    } catch(err) {
+        alert("Error al procesar la venta. Verifique la conexión.");
     } finally {
-      mostrarCarga(false);
-      document.getElementById('loadingOverlay').textContent = "Sincronizando con la nube..."; // Reset label
+        mostrarCarga(false);
     }
-  };
+  }
+
+  function printTicket(saleObj) {
+      document.getElementById('ticketDate').textContent = new Date(saleObj.createdAt).toLocaleString('es-AR');
+      document.getElementById('ticketId').textContent = saleObj.id.split('_')[1] || saleObj.id;
+      document.getElementById('ticketSeller').textContent = saleObj.seller;
+      document.getElementById('ticketClient').textContent = saleObj.client || 'Consumidor Final';
+      
+      const tbody = document.getElementById('ticketItems');
+      const items = JSON.parse(saleObj.itemsJSON || '[]');
+      
+      tbody.innerHTML = items.map(i => `
+        <tr>
+          <td>${i.qty}</td>
+          <td>${escapeHtml(i.name)}</td>
+          <td style="text-align:right;">${currency(i.price * i.qty)}</td>
+        </tr>
+      `).join('');
+
+      if (saleObj.mixedMethod2) {
+          // Es un pago mixto
+          document.getElementById('ticketSubtotal').textContent = currency(saleObj.totalOriginalSubtotal);
+          if (saleObj.promoDiscountOriginal > 0) {
+              document.getElementById('ticketDescRow').style.display = 'table-row';
+              document.getElementById('ticketDiscount').textContent = '- ' + currency(saleObj.promoDiscountOriginal);
+          } else {
+              document.getElementById('ticketDescRow').style.display = 'none';
+          }
+          document.getElementById('ticketTotal').textContent = currency(saleObj.totalOriginal);
+          
+          let method1Text = `${saleObj.method}: ${currency(saleObj.total)}`;
+          let method2Text = `${saleObj.mixedMethod2}: ${currency(saleObj.mixedAmount2)}`;
+          document.getElementById('ticketMethod').innerHTML = `${method1Text}<br>${method2Text}`;
+      } else {
+          // Pago simple
+          document.getElementById('ticketSubtotal').textContent = currency(saleObj.subtotal);
+          if (saleObj.promoDiscount > 0) {
+              document.getElementById('ticketDescRow').style.display = 'table-row';
+              document.getElementById('ticketDiscount').textContent = '- ' + currency(saleObj.promoDiscount);
+          } else {
+              document.getElementById('ticketDescRow').style.display = 'none';
+          }
+          document.getElementById('ticketTotal').textContent = currency(saleObj.total);
+          document.getElementById('ticketMethod').textContent = saleObj.method;
+      }
+      
+      window.print();
+
+      // Limpiar carrito post impresión
+      setTimeout(() => {
+        cart = [];
+        document.getElementById('clientName').value = '';
+        document.getElementById('clientId').value = '';
+        document.getElementById('promoDiscount').value = '';
+        document.getElementById('paymentCupon').value = '';
+        document.getElementById('isMixedPayment').checked = false;
+        toggleMixedPayment();
+        renderCart();
+        initPOS(); // Refresca el stock visual
+      }, 1000);
+  }
 
   initPOS();
 </script>
