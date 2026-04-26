@@ -3,56 +3,77 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Clientes y Fichas Clínicas | Micro SaaS</title>
+  <title>Pacientes y Clientes | Micro SaaS</title>
   
   <style>
     html, body { background-color: #f0f2f7 !important; }
     body { animation: fadeIn 0.15s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   </style>
-
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
-    /* FIX RESPONSIVE: Sin !important en la grilla principal */
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
-    .layout-2col { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
-    
-    /* Clase para grillas de 2 columnas que se apilan en móvil */
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .action-buttons { display: flex; gap: 10px; }
-
+    .layout-1col { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
     
-    table { width: 100%; border-collapse: collapse; text-align: left; }
-    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--panel-2);}
-    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
-
+    table { width: 100%; border-collapse: collapse; text-align: left; background: #fff; }
+    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: var(--panel-2); white-space: nowrap; }
+    td { padding: 10px 15px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: middle; }
+    tbody tr:hover { background-color: #f8fafc; cursor: pointer; }
+    
     dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
+    .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
     
-    #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
-
-    /* Estilos para la Ficha Clínica */
-    .ficha-card { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
-    .ficha-header { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--line); padding-bottom: 10px; margin-bottom: 15px; font-size: 13px; align-items: center;}
-    .ficha-receta { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: center; font-size: 12px; }
-    .ficha-receta th { background: #f8fafc; padding: 6px; border: 1px solid var(--line); color: var(--muted); }
-    .ficha-receta td { padding: 6px; border: 1px solid var(--line); font-weight: bold; color: var(--text); }
-    .btn-ficha { background: #f3e8ff; color: #4338ca; border: 1px solid #c7d2fe; border-radius: 6px; padding: 4px 8px; cursor: pointer; font-weight: bold; transition: 0.2s;}
-    .btn-ficha:hover { background: #e0e7ff; }
-
-    /* REGLAS OBLIGATORIAS PARA CELULARES */
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
-    
-    @media (max-width: 1000px) { 
-        .layout-2col { grid-template-columns: 1fr; } 
-        /* FIX CRÍTICO: Evita que la tabla estire la tarjeta fuera de la pantalla */
-        .layout-2col > * { min-width: 0; }
+
+    /* ESTILOS DEL ASISTENTE IA Y FICHA CLÍNICA */
+    .ai-summary-box {
+      background: linear-gradient(135deg, #f3e8ff 0%, #e0e7ff 100%);
+      border: 1px solid #c084fc;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(126, 34, 206, 0.1);
+      position: relative;
     }
+    .ai-icon {
+      position: absolute;
+      top: -12px;
+      left: -12px;
+      background: #9333ea;
+      color: #fff;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 2px 10px rgba(147, 51, 234, 0.4);
+    }
+    .ai-text {
+      color: #4c1d95;
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .rx-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 15px; }
+    .rx-table th { background: #f1f5f9; padding: 6px; text-align: center; border: 1px solid var(--line); color: var(--muted); }
+    .rx-table td { padding: 6px; text-align: center; border: 1px solid var(--line); font-weight: bold; }
+    
+    .history-card { border: 1px solid var(--line); border-radius: 8px; margin-bottom: 15px; overflow: hidden; }
+    .history-header { background: var(--panel-2); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); }
+    .history-body { padding: 15px; }
 
     @media (max-width: 900px) {
       .app { display: flex !important; flex-direction: column !important; }
@@ -60,131 +81,82 @@
       .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
       .sidebar.open { left: 0 !important; }
       .sidebar-overlay.open { display: block; }
-      
-      .topbar { padding: 15px; display: flex; align-items: center; justify-content: flex-start; }
+      .topbar { flex-direction: column; align-items: flex-start; gap: 15px; padding: 15px; }
       .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
-      
-      /* Apilar columnas del formulario */
-      .form-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
-      .action-buttons { flex-direction: column; }
-      .action-buttons button { width: 100%; }
-      
-      /* Ajustes para la tabla y ficha clínica en celulares */
-      .table-responsive-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .ficha-receta { display: block; overflow-x: auto; white-space: nowrap; }
     }
   </style>
 </head>
 <body>
 
-<div id="loadingOverlay">Sincronizando con la nube...</div>
+<div id="loadingOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.8); z-index:9999; justify-content:center; align-items:center; font-weight:bold; color:var(--primary); font-size:18px;">Cargando...</div>
 
 <div class="app">
   <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
-  
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
+      <div class="brand-text"><strong id="sidebarUserName">Usuario: Admin</strong><small>Control del negocio</small></div>
     </div>
-      <nav class="nav">
-  <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
-  <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
-  <a href="clientes.html" data-module="clientes"><span class="active">🏢</span> Clientes</a>
-  <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
-  <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-  <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
-  <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
-  <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
-  <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
-  <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
-  <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
-</nav>
+     <nav class="nav">
+      <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html" data-module="clientes"><span class="active">🏢</span> Clientes</a>
+      <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html" data-module="cc"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
+      <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
+      <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
+    </nav>
   </aside>
 
   <main class="content">
     <header class="topbar">
-      <div style="display: flex; align-items: center;">
+      <div style="display: flex; align-items: center; width: 100%;">
         <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
         <div class="page-title">
-          <h1 style="margin:0; font-size: 26px;">Clientes B2B / B2C</h1>
-          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Directorio de clientes y Fichas Clínicas.</p>
+          <h1 style="margin:0; font-size: 26px;">Pacientes y Clientes</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Directorio comercial, fichas clínicas e historial.</p>
         </div>
+      </div>
+      <div class="topbar-actions" style="display: flex; gap: 8px;">
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarClientesExcel()">⬇ Exportar Excel</button>
+        <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo Paciente</button>
       </div>
     </header>
 
-    <div class="layout-2col">
+    <div class="kpi-grid">
       <article class="card card-pad">
-        <h2 style="margin: 0 0 5px 0; font-size: 18px;" id="formTitle">Alta de Cliente / Paciente</h2>
-        <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Datos fiscales y de contacto.</p>
-        
-        <form id="clientForm" onsubmit="guardarCliente(event)">
-          <input type="hidden" id="cliId">
-          <input type="hidden" id="cliStatus" value="Activo">
-          
-          <div style="margin-bottom: 15px;">
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Razón Social / Nombre *</label>
-            <input type="text" id="cliName" class="input-box" required placeholder="Ej: Juan Perez">
-          </div>
-          
-          <div class="form-grid" style="margin-bottom: 15px;">
-            <div>
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">CUIT / DNI</label>
-              <input type="text" id="cliCuil" class="input-box" placeholder="Sin guiones">
-            </div>
-            <div>
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Teléfono</label>
-              <input type="text" id="cliPhone" class="input-box" placeholder="Ej: 351...">
-            </div>
-          </div>
-
-          <div style="margin-bottom: 15px;">
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Dirección</label>
-            <input type="text" id="cliAddress" class="input-box" placeholder="Calle, Número, Ciudad">
-          </div>
-
-          <div class="form-grid" style="margin-bottom: 25px;">
-            <div>
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Condición IVA</label>
-              <select id="cliIvaCondition" class="input-box">
-                <option value="Consumidor Final">Consumidor Final</option>
-                <option value="Responsable Inscripto">Resp. Inscripto</option>
-                <option value="Monotributo">Monotributo</option>
-                <option value="Exento">Exento</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Tipo de Cliente</label>
-              <select id="cliType" class="input-box">
-                <option value="B2C">Minorista / Paciente</option>
-                <option value="B2B">Mayorista (Cta. Cte.)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="action-buttons">
-            <button type="button" class="btn btn-light" style="flex:1;" onclick="limpiarFormulario()">Cancelar</button>
-            <button type="submit" class="btn btn-primary" style="flex:2;" id="btnSave">Guardar Cliente</button>
-          </div>
-        </form>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Total Registrados</div>
+        <div id="kpiTotal" style="font-size:28px; font-weight:800; color:var(--primary);">0</div>
       </article>
-
       <article class="card card-pad">
-        <h2 style="margin: 0 0 20px 0; font-size: 18px;">Directorio Activo</h2>
-        <input type="text" id="searchTable" class="input-box" placeholder="🔍 Buscar por nombre o DNI..." onkeyup="renderTable()" style="margin-bottom: 20px;">
-        
-        <div class="table-responsive-wrapper">
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Con Compras Registradas</div>
+        <div id="kpiActivos" style="font-size:28px; font-weight:800; color:var(--success);">0</div>
+      </article>
+    </div>
+
+    <div class="layout-1col">
+      <article class="card card-pad">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+          <h2 style="margin:0; font-size:18px;">Directorio de Pacientes</h2>
+          <input type="text" id="searchClient" class="input-box" placeholder="🔍 Buscar por nombre, DNI, o teléfono..." style="max-width: 300px; margin:0;" onkeyup="renderClientes()">
+        </div>
+
+        <div style="overflow-x: auto;">
           <table>
             <thead>
               <tr>
                 <th>Paciente / Cliente</th>
                 <th>DNI / CUIT</th>
                 <th>Contacto</th>
-                <th>Tipo</th>
+                <th>Alta</th>
                 <th style="text-align: center;">Acciones</th>
               </tr>
             </thead>
-            <tbody id="tableBody"></tbody>
+            <tbody id="tableBodyClientes"></tbody>
           </table>
         </div>
       </article>
@@ -192,326 +164,315 @@
   </main>
 </div>
 
-<dialog id="modalFichaClinica" style="width: 100%; max-width: 800px; background: #f8fafc;">
-  <div class="modal-content" style="padding: 0; background: transparent;">
-    <div style="background: #fff; padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; border-radius: 12px 12px 0 0;">
-      <div>
-        <h2 style="margin: 0; font-size:22px; color: var(--primary);">📋 Ficha Clínica</h2>
-        <p id="fichaClientName" style="margin: 5px 0 0 0; font-weight: bold; font-size: 16px;"></p>
-      </div>
-      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalFichaClinica').close()">✕</button>
+<dialog id="modalCliente" style="width: 100%; max-width: 600px;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:20px;" id="modalTitle">Nuevo Paciente / Cliente</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalCliente').close()">✕</button>
     </div>
-    
-    <div style="padding: 24px; max-height: 70vh; overflow-y: auto;" id="fichaContent">
+    <form id="formCliente" onsubmit="guardarCliente(event)">
+      <input type="hidden" id="cliId">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Nombre Completo / Razón Social *</label>
+          <input type="text" id="cliName" class="input-box" required>
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">DNI / CUIT</label>
+          <input type="text" id="cliCuil" class="input-box">
+        </div>
       </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">WhatsApp / Teléfono</label>
+          <input type="text" id="cliPhone" class="input-box">
+        </div>
+        <div>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Email</label>
+          <input type="email" id="cliEmail" class="input-box">
+        </div>
+      </div>
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Dirección (Opcional)</label>
+        <input type="text" id="cliAddress" class="input-box">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalCliente').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar Ficha</button>
+      </div>
+    </form>
   </div>
 </dialog>
 
-<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: var(--panel);">
-  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
-    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
-    <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
-  </div>
-  <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
-    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Se requiere PIN de administrador para <strong id="authActionText"></strong>.</p>
-    <input type="password" id="adminAuthPin" required placeholder="Ingresá el PIN" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none; margin-bottom: 24px;">
-    <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
-      <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
+<dialog id="modalHistorial" style="width: 100%; max-width: 900px; background: #f8fafc;">
+  <div class="modal-content" style="background: transparent; padding: 0;">
+    
+    <div style="background: #fff; padding: 20px 24px; border-bottom: 1px solid var(--line); border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h2 style="margin: 0; font-size:22px; color: var(--text);" id="histName">Juan Pérez</h2>
+        <p style="margin: 4px 0 0 0; font-size: 13px; color: var(--muted);" id="histData">DNI: 123456 | Tel: 351123456</p>
+      </div>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none; background:#f1f5f9;" onclick="document.getElementById('modalHistorial').close()">✕</button>
     </div>
-  </form>
+
+    <div style="padding: 24px;">
+      <div class="ai-summary-box">
+        <div class="ai-icon">✨</div>
+        <p class="ai-text" id="aiSummaryText">Analizando historial clínico del paciente...</p>
+      </div>
+
+      <h3 style="margin: 0 0 15px 0; font-size: 16px; color: var(--text);">📋 Órdenes y Recetas Históricas</h3>
+      
+      <div id="historialContainer" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+        </div>
+    </div>
+    
+  </div>
 </dialog>
 
 <script src="core.js"></script>
-
 <script>
-  const API_URL = "/api"; 
+  const API_URL = "/api";
   let dbClients = [];
-  let dbOrders = []; // Almacenará el historial de la óptica
-  const PIN_ADMIN = "1234";
-  let pendingAdminAction = null;
-  let pendingAdminParam = null;
+  let dbOrders = [];
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function mostrarCarga(mostrar) { document.getElementById('loadingOverlay').style.display = mostrar ? 'flex' : 'none'; }
+  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
+  function todayISO() { return new Date().toISOString().split('T')[0]; }
+  function currency(n) { return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n || 0); }
+  function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
 
-  // --- CARGAR CLIENTES Y ÓRDENES DESDE LA NUBE ---
-  async function initClients() {
+  async function initClientes() {
     mostrarCarga(true);
     try {
       const nocache = '?v=' + Date.now();
-      // Usamos apiFetch puro para que core.js inyecte el company_id
       const [resC, resO] = await Promise.all([
-          apiFetch(`${API_URL}/business_clients` + nocache),
-          apiFetch(`${API_URL}/orders` + nocache)
+        apiFetch(`${API_URL}/business_clients${nocache}`),
+        apiFetch(`${API_URL}/orders${nocache}`)
       ]);
       
       if (resC.ok) dbClients = await resC.json();
       if (resO.ok) dbOrders = await resO.json();
-      
     } catch (error) {
-      console.error("Error de conexión:", error);
+      console.error("Error cargando datos:", error);
     } finally {
       mostrarCarga(false);
-      renderTable();
+      renderClientes();
     }
   }
 
-  // --- GUARDAR CLIENTE EN LA NUBE ---
-  async function guardarCliente(e) {
-    e.preventDefault();
+  function renderClientes() {
+    const term = document.getElementById('searchClient').value.toLowerCase();
+    const tbody = document.getElementById('tableBodyClientes');
     
-    const id = document.getElementById('cliId').value || 'cli_' + Date.now();
+    // Mapeamos para saber si tienen compras
+    const clientIdsWithOrders = new Set(dbOrders.map(o => o.clientId));
     
-    const client = {
-      id: id,
-      name: document.getElementById('cliName').value.trim(),
-      cuil: document.getElementById('cliCuil').value.trim(),
-      phone: document.getElementById('cliPhone').value.trim(),
-      address: document.getElementById('cliAddress').value.trim(),
-      type: document.getElementById('cliType').value,
-      ivaCondition: document.getElementById('cliIvaCondition').value,
-      status: document.getElementById('cliStatus').value || 'Activo',
-      createdAt: new Date().toISOString()
-    };
+    const filtrados = dbClients.filter(c =>
+      (c.name || '').toLowerCase().includes(term) ||
+      (c.cuil || '').includes(term) ||
+      (c.phone || '').includes(term)
+    );
 
-    mostrarCarga(true);
-    try {
-      // Le devolvemos el Content-Type para que el backend no explote
-      const response = await apiFetch(`${API_URL}/business_clients`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(client)
-      });
+    let kpiActivos = 0;
+
+    tbody.innerHTML = filtrados.map(c => {
+      const hasPurchases = clientIdsWithOrders.has(c.id);
+      if (hasPurchases) kpiActivos++;
+
+      const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-AR') : '-';
+      const whatsAppLink = c.phone ? `<a href="https://wa.me/${c.phone.replace(/\D/g,'')}" target="_blank" style="color:#16a34a; font-weight:bold; text-decoration:none;">💬 ${escapeHtml(c.phone)}</a>` : '-';
+
+      return `
+      <tr onclick="abrirHistorialClinico('${c.id}')" title="Clic para ver historial y análisis">
+        <td><strong>${escapeHtml(c.name)}</strong></td>
+        <td><span style="font-family:monospace; color:var(--muted);">${escapeHtml(c.cuil || '-')}</span></td>
+        <td>${whatsAppLink}<br><small style="color:var(--muted)">${escapeHtml(c.email || '')}</small></td>
+        <td>${dateStr}</td>
+        <td style="text-align: center;">
+          <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="event.stopPropagation(); editarCliente('${c.id}')">✏️ Editar</button>
+        </td>
+      </tr>`;
+    }).join('');
+
+    document.getElementById('kpiTotal').textContent = dbClients.length;
+    document.getElementById('kpiActivos').textContent = kpiActivos;
+    
+    if (filtrados.length === 0) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No se encontraron pacientes.</td></tr>`;
+  }
+
+  // --- MOTOR IA Y FICHA CLÍNICA ---
+  function analizarEvolucion(actual, anterior) {
+      let a = parseFloat(actual) || 0;
+      let p = parseFloat(anterior) || 0;
+      let diff = a - p;
+      if(diff > 0) return `<strong style="color:#ef4444;">ha aumentado (+${diff.toFixed(2)})</strong>`;
+      if(diff < 0) return `<strong style="color:#10b981;">ha disminuido (${diff.toFixed(2)})</strong>`;
+      return `se ha mantenido estable`;
+  }
+
+  function generarResumenIA(client, orders) {
+      if(orders.length === 0) return `El paciente <strong>${client.name.split(' ')[0]}</strong> acaba de ser registrado en el sistema. Aún no posee historial clínico ni recetas oftalmológicas previas.`;
+
+      let lastOrder = orders[0];
+      let prevOrder = orders[1]; // Puede ser undefined si solo hay 1
       
-      if(response.ok) {
-        const idx = dbClients.findIndex(c => c.id === id);
-        if (idx >= 0) dbClients[idx] = client; else dbClients.unshift(client);
-        limpiarFormulario();
-        renderTable();
+      let meses = Math.round((new Date() - new Date(lastOrder.date || lastOrder.createdAt)) / (1000 * 60 * 60 * 24 * 30));
+      let tiempoTexto = meses === 0 ? 'este mes' : `hace ${meses} meses`;
+
+      let text = `<strong>Análisis de Evolución Asistido:</strong><br>`;
+      text += `La última visita de <strong>${client.name.split(' ')[0]}</strong> fue ${tiempoTexto} <em>(${new Date(lastOrder.date || lastOrder.createdAt).toLocaleDateString('es-AR')})</em>. `;
+
+      if(prevOrder) {
+          let evoOD = analizarEvolucion(lastOrder.od_esf, prevOrder.od_esf);
+          let evoOI = analizarEvolucion(lastOrder.oi_esf, prevOrder.oi_esf);
+          
+          text += `Comparado con su receta anterior, su corrección esférica en el <strong>Ojo Derecho ${evoOD}</strong> y en el <strong>Ojo Izquierdo ${evoOI}</strong>. `;
       } else {
-        const errData = await response.json();
-        alert("Error del servidor: " + (errData.error || "No se pudo guardar"));
+          text += `Es su primera receta registrada en nuestra base. Se le prescribió corrección esférica OD: <strong>${lastOrder.od_esf || '0.00'}</strong> y OI: <strong>${lastOrder.oi_esf || '0.00'}</strong>. `;
       }
-    } catch(error) {
-      console.error("Error guardando:", error);
-      alert("Error de conexión. Intentá de nuevo.");
-    } finally {
-      mostrarCarga(false);
-    }
+
+      text += `<br>👓 Preferencias: El paciente tiene un total de ${orders.length} compra(s). Su última elección fue cristal <strong>${escapeHtml(lastOrder.dp || 'Monofocal')}</strong> en material <strong>${escapeHtml(lastOrder.material || 'Orgánico')}</strong>.`;
+      
+      return text;
+  }
+
+  function abrirHistorialClinico(clientId) {
+      const client = dbClients.find(c => c.id === clientId);
+      if(!client) return;
+
+      // Filtrar y ordenar órdenes (las más nuevas primero)
+      const clientOrders = dbOrders.filter(o => o.clientId === clientId).sort((a,b) => {
+          let da = new Date(a.date || a.createdAt);
+          let db = new Date(b.date || b.createdAt);
+          return db - da;
+      });
+
+      document.getElementById('histName').textContent = client.name;
+      document.getElementById('histData').textContent = `DNI: ${client.cuil || '-'} | Tel: ${client.phone || '-'}`;
+
+      // Inyectar el resumen IA
+      document.getElementById('aiSummaryText').innerHTML = generarResumenIA(client, clientOrders);
+
+      // Generar tarjetas de historial
+      const container = document.getElementById('historialContainer');
+      if (clientOrders.length === 0) {
+          container.innerHTML = `<div style="text-align:center; padding: 20px; color: var(--muted); border: 1px dashed var(--line); border-radius:8px;">No hay órdenes registradas para este paciente.</div>`;
+      } else {
+          container.innerHTML = clientOrders.map(o => {
+              const fechaStr = new Date(o.date || o.createdAt).toLocaleDateString('es-AR');
+              const statusBadge = o.status === 'Entregado' ? `<span style="color:#16a34a; background:#dcfce7; padding:2px 6px; border-radius:4px; font-size:10px;">✔ Entregado</span>` : `<span style="color:#d97706; background:#fef3c7; padding:2px 6px; border-radius:4px; font-size:10px;">⏳ ${o.status}</span>`;
+              
+              return `
+              <div class="history-card">
+                  <div class="history-header">
+                      <div>
+                          <strong style="color:var(--primary);">Orden N° ${o.id}</strong> | <small style="color:var(--muted);">${fechaStr}</small>
+                      </div>
+                      <div>${statusBadge}</div>
+                  </div>
+                  <div class="history-body">
+                      <div style="margin-bottom: 10px; font-size:13px;">
+                          <strong>Doctor:</strong> ${escapeHtml(o.doctor || '-')} | <strong>Armazón:</strong> ${escapeHtml(o.frameName || o.frameCode || '-')}
+                      </div>
+                      <table class="rx-table">
+                          <tr><th>OJO</th><th>ESF</th><th>CIL</th><th>EJE</th><th>BASE</th><th>ADD</th><th>DNP/DI</th><th>ALT</th></tr>
+                          <tr><td style="background:#f8fafc; color:var(--muted);">O.D.</td><td>${o.od_esf||'-'}</td><td>${o.od_cil||'-'}</td><td>${o.od_eje||'-'}</td><td>${o.od_base||'-'}</td><td>${o.od_add||'-'}</td><td>${o.od_di||'-'}</td><td>${o.od_alt||'-'}</td></tr>
+                          <tr><td style="background:#f8fafc; color:var(--muted);">O.I.</td><td>${o.oi_esf||'-'}</td><td>${o.oi_cil||'-'}</td><td>${o.oi_eje||'-'}</td><td>${o.oi_base||'-'}</td><td>${o.oi_add||'-'}</td><td>${o.oi_di||'-'}</td><td>${o.oi_alt||'-'}</td></tr>
+                      </table>
+                      <div style="font-size:11px; color:var(--muted); font-style:italic;">
+                          <strong>Cristales:</strong> ${escapeHtml(o.glassType || '-')} (${escapeHtml(o.dp||'-')} / ${escapeHtml(o.material||'-')} / ${escapeHtml(o.antirreflex||'-')})<br>
+                          <strong>Notas:</strong> ${escapeHtml(o.notes || 'Ninguna')}
+                      </div>
+                  </div>
+              </div>`;
+          }).join('');
+      }
+
+      document.getElementById('modalHistorial').showModal();
+  }
+  // --------------------------------
+
+  function abrirModalCliente() {
+    document.getElementById('formCliente').reset();
+    document.getElementById('cliId').value = '';
+    document.getElementById('modalTitle').textContent = "Nuevo Paciente / Cliente";
+    document.getElementById('modalCliente').showModal();
   }
 
   function editarCliente(id) {
     const c = dbClients.find(x => x.id === id);
     if (!c) return;
-    document.getElementById('formTitle').textContent = "Editar Cliente / Paciente";
+
     document.getElementById('cliId').value = c.id;
-    document.getElementById('cliName').value = c.name;
+    document.getElementById('cliName').value = c.name || '';
     document.getElementById('cliCuil').value = c.cuil || '';
     document.getElementById('cliPhone').value = c.phone || '';
+    document.getElementById('cliEmail').value = c.email || '';
     document.getElementById('cliAddress').value = c.address || '';
-    document.getElementById('cliType').value = c.type || 'B2C';
-    document.getElementById('cliIvaCondition').value = c.ivaCondition || 'Consumidor Final';
-    document.getElementById('cliStatus').value = c.status || 'Activo';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function limpiarFormulario() {
-    document.getElementById('formTitle').textContent = "Alta de Cliente / Paciente";
-    document.getElementById('clientForm').reset();
-    document.getElementById('cliId').value = '';
-    document.getElementById('cliStatus').value = 'Activo';
-    document.getElementById('cliType').value = 'B2C';
-    document.getElementById('cliIvaCondition').value = 'Consumidor Final';
-  }
-
-  // --- LÓGICA DE LA FICHA CLÍNICA ---
-  function abrirFichaClinica(id) {
-    const c = dbClients.find(x => x.id === id);
-    if (!c) return;
-
-    document.getElementById('fichaClientName').textContent = `${c.name} ${c.cuil ? `(DNI: ${c.cuil})` : ''}`;
     
-    const historial = dbOrders.filter(o => o.clientId === c.id || o.clientName.toLowerCase() === c.name.toLowerCase());
-    historial.sort((a,b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+    document.getElementById('modalTitle').textContent = "Editar Paciente";
+    document.getElementById('modalCliente').showModal();
+  }
 
-    const fichaContent = document.getElementById('fichaContent');
+  async function guardarCliente(e) {
+    e.preventDefault();
+    const id = document.getElementById('cliId').value || 'cli_' + Date.now();
     
-    if (historial.length === 0) {
-        fichaContent.innerHTML = `<div style="text-align:center; padding: 40px; color: var(--muted);">No hay trabajos ópticos registrados para este paciente.</div>`;
-    } else {
-        fichaContent.innerHTML = historial.map(o => {
-            const fechaD = new Date(o.createdAt || o.date);
-            const fechaStr = fechaD.toLocaleDateString('es-AR');
-            const colorEstado = o.status === 'Entregado' ? 'var(--muted)' : (o.status === 'Pendiente' ? 'var(--danger)' : 'var(--success)');
-            
-            return `
-            <div class="ficha-card">
-              <div class="ficha-header">
-                <div>
-                  <span style="font-weight:900; font-size:15px; color:var(--text);">📅 ${fechaStr}</span>
-                  <span style="margin-left:10px; color:var(--muted);">Orden: ${o.id.split('_')[1] || o.id}</span>
-                </div>
-                <div style="font-weight:bold; color:${colorEstado}; text-transform:uppercase;">${o.status}</div>
-              </div>
-              
-              <div class="form-grid" style="margin-bottom: 15px; font-size: 13px;">
-                <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid var(--line);">
-                  <strong style="color:var(--primary); display:block; margin-bottom:4px;">Armazón y Calibrado:</strong> 
-                  ${escapeHtml(o.frameName || o.frameCode || '-')} <br><small style="color:var(--muted)">Calibrado: ${escapeHtml(o.calibrado || '-')}</small>
-                </div>
-                <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid var(--line);">
-                  <strong style="color:var(--primary); display:block; margin-bottom:4px;">Cristales:</strong> 
-                  ${escapeHtml(o.glassType || '-')} <br><small style="color:var(--muted)">Material: ${escapeHtml(o.material || '-')}</small>
-                </div>
-              </div>
-
-              <div style="overflow-x: auto; margin-bottom: 15px;">
-                <table class="ficha-receta">
-                  <tr><th>Ojo</th><th>Diám</th><th>Esf</th><th>Cil</th><th>Eje</th><th>Base</th><th>Add</th><th>DNP</th><th>Alt</th></tr>
-                  <tr>
-                    <td style="color:var(--muted);">O.D. (Der)</td>
-                    <td>${escapeHtml(o.od_diam || '-')}</td>
-                    <td>${escapeHtml(o.od_esf || '-')}</td>
-                    <td>${escapeHtml(o.od_cil || '-')}</td>
-                    <td>${escapeHtml(o.od_eje || '-')}</td>
-                    <td>${escapeHtml(o.od_base || '-')}</td>
-                    <td>${escapeHtml(o.od_add || '-')}</td>
-                    <td>${escapeHtml(o.od_di || '-')}</td>
-                    <td>${escapeHtml(o.od_alt || '-')}</td>
-                  </tr>
-                  <tr>
-                    <td style="color:var(--muted);">O.I. (Izq)</td>
-                    <td>${escapeHtml(o.oi_diam || '-')}</td>
-                    <td>${escapeHtml(o.oi_esf || '-')}</td>
-                    <td>${escapeHtml(o.oi_cil || '-')}</td>
-                    <td>${escapeHtml(o.oi_eje || '-')}</td>
-                    <td>${escapeHtml(o.oi_base || '-')}</td>
-                    <td>${escapeHtml(o.oi_add || '-')}</td>
-                    <td>${escapeHtml(o.oi_di || '-')}</td>
-                    <td>${escapeHtml(o.oi_alt || '-')}</td>
-                  </tr>
-                </table>
-              </div>
-              
-              <div style="background: #fff8f1; border: 1px solid #fed7aa; padding: 10px; border-radius: 6px; font-size: 12px; color: var(--text); margin-bottom: 10px;">
-                <div style="margin-bottom: 6px;"><strong>Lente:</strong> ${escapeHtml(o.dp || '-')} | <strong>Diseño/Deg:</strong> ${escapeHtml(o.diseno || '-')} | <strong>Color/Filtro:</strong> ${escapeHtml(o.color_lente || '-')} | <strong>AR:</strong> ${escapeHtml(o.antirreflex || '-')}</div>
-                <div><strong>Tratamientos Extra:</strong> ${escapeHtml(o.tratamientos || '-')} ${o.tinte ? `| <strong>Tinte:</strong> ${escapeHtml(o.tinte)}` : ''}</div>
-              </div>
-
-              <div style="font-size: 11px; color: var(--muted); text-align: center;">
-                <strong>Médico:</strong> ${escapeHtml(o.doctor || '-')} | <strong>Obs / O.S.:</strong> ${escapeHtml(o.notes || '-')}
-              </div>
-            </div>`;
-        }).join('');
-    }
-
-    document.getElementById('modalFichaClinica').showModal();
-  }
-
-  // --- CAMBIAR ESTADO (ACTIVAR / INACTIVAR) CON PIN ---
-  function toggleEstadoClientePrompt(id) {
-    const c = dbClients.find(x => x.id === id);
-    if (!c) return;
-    const accion = c.status === 'Inactivo' ? 'reactivar' : 'inhabilitar';
-    pedirAuthAdmin(`${accion} a este cliente`, ejecutarToggleEstadoCliente, id);
-  }
-
-  // --- CAMBIAR ESTADO (ACTIVAR / INACTIVAR) ---
-  async function ejecutarToggleEstadoCliente(id) {
-    const c = dbClients.find(x => x.id === id);
-    if (!c) return;
-    c.status = c.status === 'Inactivo' ? 'Activo' : 'Inactivo';
+    const clientData = {
+      id,
+      name: document.getElementById('cliName').value.trim(),
+      cuil: document.getElementById('cliCuil').value.trim(),
+      phone: document.getElementById('cliPhone').value.trim(),
+      email: document.getElementById('cliEmail').value.trim(),
+      address: document.getElementById('cliAddress').value.trim(),
+      status: 'Activo',
+      createdAt: new Date().toISOString()
+    };
 
     mostrarCarga(true);
     try {
-      const response = await apiFetch(`${API_URL}/business_clients`, {
+      const res = await apiFetch(`${API_URL}/business_clients`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(c)
+        body: JSON.stringify(clientData)
       });
-      if (response.ok) {
-        renderTable();
+
+      if (res.ok) {
+        const idx = dbClients.findIndex(c => c.id === id);
+        if (idx >= 0) dbClients[idx] = clientData;
+        else dbClients.unshift(clientData);
+        
+        document.getElementById('modalCliente').close();
+        renderClientes();
       } else {
-        c.status = c.status === 'Inactivo' ? 'Activo' : 'Inactivo';
-        const errData = await response.json();
-        alert("Error al actualizar el estado: " + (errData.error || "Falla en DB"));
+        alert("Error al guardar el paciente.");
       }
-    } catch(error) {
-      c.status = c.status === 'Inactivo' ? 'Activo' : 'Inactivo';
+    } catch (err) {
       alert("Error de conexión.");
     } finally {
       mostrarCarga(false);
     }
   }
 
-  function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
-    document.getElementById('authActionText').textContent = accionTexto;
-    pendingAdminAction = funcionExito; 
-    pendingAdminParam = param;
-    document.getElementById('adminAuthPin').value = '';
-    document.getElementById('adminAuthDialog').showModal();
-    setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
-  }
-
-  function cerrarAdminAuth() {
-    document.getElementById('adminAuthDialog').close();
-    pendingAdminAction = null; pendingAdminParam = null;
-  }
-
-  function validarAdminAuth(e) {
-    e.preventDefault();
-    if (document.getElementById('adminAuthPin').value === PIN_ADMIN) {
-      const accion = pendingAdminAction; const param = pendingAdminParam;
-      cerrarAdminAuth(); if (accion) accion(param);
-    } else {
-      alert("❌ PIN de administrador incorrecto.");
-      document.getElementById('adminAuthPin').value = ''; 
-      document.getElementById('adminAuthPin').focus();
-    }
-  }
-
-  function renderTable() {
-    const term = document.getElementById('searchTable').value.toLowerCase();
-    const filtrados = dbClients.filter(c => c.name.toLowerCase().includes(term) || (c.cuil && c.cuil.toLowerCase().includes(term)));
+  function exportarClientesExcel() {
+    if (dbClients.length === 0) return alert("No hay datos para exportar.");
     
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = filtrados.map(c => {
-      const isInactive = c.status === 'Inactivo';
-      
-      const badgeTipo = (c.type === 'mayorista' || c.type === 'B2B') 
-        ? `<span style="background:#e0e7ff; color:#1d4ed8; padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; text-transform:uppercase;">Mayorista</span>`
-        : `<span style="background:var(--panel-2); color:var(--text); padding:4px 8px; border-radius:6px; font-size:11px; font-weight:bold; text-transform:uppercase; border:1px solid var(--line);">Paciente</span>`;
+    const dataExport = dbClients.map(c => ({
+      "Nombre y Apellido": c.name || '',
+      "DNI / CUIT": c.cuil || '',
+      "Teléfono (WhatsApp)": c.phone || '',
+      "Email": c.email || '',
+      "Dirección": c.address || '',
+      "Fecha Alta": c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-AR') : ''
+    }));
 
-      const txtBtnEstado = isInactive ? 'Reactivar' : 'Inactivar';
-      const colorBtnEstado = isInactive ? 'var(--success)' : 'var(--danger)';
-
-      return `
-      <tr style="${isInactive ? 'opacity:0.5;' : ''}">
-        <td style="${isInactive ? 'text-decoration:line-through;' : ''}">
-           <strong>${escapeHtml(c.name)}</strong>
-           ${isInactive ? '<br><small style="color:var(--danger); font-weight:bold;">(INACTIVO)</small>' : ''}
-        </td>
-        <td><span style="color:var(--muted);">${escapeHtml(c.cuil || '-')}</span></td>
-        <td>
-          <div style="font-size:12px; font-weight:bold;">${escapeHtml(c.phone || '-')}</div>
-          <small style="color:var(--muted);">${escapeHtml(c.ivaCondition || 'Consumidor Final')}</small>
-        </td>
-        <td>${badgeTipo}</td>
-        <td style="text-align: center; display:flex; justify-content:center; gap:5px;">
-          <button class="btn-ficha" onclick="abrirFichaClinica('${c.id}')">📋 Ficha</button>
-          <button onclick="editarCliente('${c.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer;">Editar</button>
-          <button onclick="toggleEstadoClientePrompt('${c.id}')" style="background:transparent; border:1px solid ${isInactive ? '#dcfce7' : '#fee2e2'}; color:${colorBtnEstado}; border-radius:6px; padding:4px 8px; cursor:pointer;">${txtBtnEstado}</button>
-        </td>
-      </tr>`
-    }).join('');
-    
-    if (filtrados.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--muted);">No hay clientes registrados.</td></tr>';
-    }
+    const ws = XLSX.utils.json_to_sheet(dataExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pacientes");
+    XLSX.writeFile(wb, `Pacientes_Optica_${todayISO()}.xlsx`);
   }
 
-  initClients();
+  initClientes();
 </script>
 </body>
 </html>
