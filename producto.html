@@ -47,6 +47,10 @@
     .thumb-list { width: 50px; height: 50px; border-radius: 8px; object-fit: contain; background: #f1f5f9; border: 1px solid var(--line); cursor: zoom-in; transition: 0.2s; }
     .thumb-list:hover { transform: scale(1.15); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
 
+    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
+    .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
+
     #zoomModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; justify-content: center; align-items: center; cursor: zoom-out; }
     #zoomImg { max-width: 90%; max-height: 90%; border-radius: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.5); border: 2px solid #fff; }
 
@@ -66,7 +70,7 @@
 </head>
 <body>
 
-<div id="loadingOverlay" class="loading-overlay">⌛ Conectando con Cloudflare D1...</div>
+<div id="loadingOverlay" class="loading-overlay">⌛ Procesando...</div>
 
 <div id="zoomModal" onclick="this.style.display='none'">
     <img id="zoomImg" src="">
@@ -88,8 +92,9 @@
   <main class="content">
     <header class="topbar">
       <h1 style="margin:0; font-size: 24px;">Maestro de Artículos</h1>
-      <div style="display:flex; gap:10px;">
-        <button class="btn btn-outline" onclick="exportarCatalogoExcel()">⬇ Exportar Excel</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="exportarCatalogoExcel()">⬇ Exportar/Plantilla</button>
+        <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalImportar()">⬆ Importar Lote (Excel)</button>
         <button class="btn btn-primary" onclick="limpiarFormulario()">+ Nuevo Producto</button>
       </div>
     </header>
@@ -119,7 +124,7 @@
 
             <div class="col-5">
               <label style="font-size:11px; font-weight:bold; color:var(--muted);">Descripción Técnica Completa</label>
-              <textarea id="prodDescription" class="input-box" rows="3" placeholder="Detalles de materiales, bisagras, plaquetas..."></textarea>
+              <textarea id="prodDescription" class="input-box" rows="2" placeholder="Detalles de materiales, bisagras, plaquetas..."></textarea>
             </div>
 
             <div class="col-5">
@@ -131,7 +136,7 @@
                     <div><label>Lente (mm)</label><input type="text" id="optLente" class="input-box" placeholder="Ej: 52"></div>
                     <div><label>Puente / Talle</label><input type="text" id="optTalle" class="input-box" placeholder="Ej: 18"></div>
                     <div><label>Peso (gr)</label><input type="text" id="optPeso" class="input-box" placeholder="Ej: 24"></div>
-                    <div><label>Colores (separados por coma)</label><input type="text" id="prodColor" class="input-box" placeholder="Ej: Negro Mate, Oro"></div>
+                    <div><label>Colores</label><input type="text" id="prodColor" class="input-box" placeholder="Ej: Negro Mate, Oro"></div>
                 </div>
               </div>
             </div>
@@ -146,27 +151,9 @@
             <div class="col-5">
                 <p style="margin:15px 0 5px 0; font-size:11px; font-weight:bold; color:var(--muted);">IMÁGENES DEL PRODUCTO (Prioridad Archivo > Link)</p>
                 <div class="img-container">
-                    <div class="img-card">
-                        <button type="button" class="btn-clear-img" onclick="clearImage(1)">🗑️</button>
-                        <img id="prev1" class="img-preview" onclick="zoom(this.src)">
-                        <input type="hidden" id="img1B64">
-                        <input type="text" id="img1Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link de Imagen..." oninput="syncPreview(1, 'link')">
-                        <input type="file" id="img1File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 1)">
-                    </div>
-                    <div class="img-card">
-                        <button type="button" class="btn-clear-img" onclick="clearImage(2)">🗑️</button>
-                        <img id="prev2" class="img-preview" onclick="zoom(this.src)">
-                        <input type="hidden" id="img2B64">
-                        <input type="text" id="img2Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link de Imagen..." oninput="syncPreview(2, 'link')">
-                        <input type="file" id="img2File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 2)">
-                    </div>
-                    <div class="img-card">
-                        <button type="button" class="btn-clear-img" onclick="clearImage(3)">🗑️</button>
-                        <img id="prev3" class="img-preview" onclick="zoom(this.src)">
-                        <input type="hidden" id="img3B64">
-                        <input type="text" id="img3Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link de Imagen..." oninput="syncPreview(3, 'link')">
-                        <input type="file" id="img3File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 3)">
-                    </div>
+                    <div class="img-card"><button type="button" class="btn-clear-img" onclick="clearImage(1)">🗑️</button><img id="prev1" class="img-preview" onclick="zoom(this.src)"><input type="hidden" id="img1B64"><input type="text" id="img1Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link URL..." oninput="syncPreview(1, 'link')"><input type="file" id="img1File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 1)"></div>
+                    <div class="img-card"><button type="button" class="btn-clear-img" onclick="clearImage(2)">🗑️</button><img id="prev2" class="img-preview" onclick="zoom(this.src)"><input type="hidden" id="img2B64"><input type="text" id="img2Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link URL..." oninput="syncPreview(2, 'link')"><input type="file" id="img2File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 2)"></div>
+                    <div class="img-card"><button type="button" class="btn-clear-img" onclick="clearImage(3)">🗑️</button><img id="prev3" class="img-preview" onclick="zoom(this.src)"><input type="hidden" id="img3B64"><input type="text" id="img3Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link URL..." oninput="syncPreview(3, 'link')"><input type="file" id="img3File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 3)"></div>
                 </div>
             </div>
 
@@ -205,6 +192,37 @@
   </div>
 </dialog>
 
+<dialog id="modalImportarProductos" style="max-width: 700px; width: 90%;">
+  <div class="modal-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+      <h2 style="margin:0; font-size:18px;">Importar Productos en Lote</h2>
+      <button class="btn btn-light" style="padding:6px 12px; border:none;" onclick="document.getElementById('modalImportarProductos').close()">✕</button>
+    </div>
+    
+    <div style="background:#fff8f1; padding:15px; border-radius:8px; border:1px dashed #f59e0b; margin-bottom:20px; font-size:12px; color:#b45309; line-height:1.6;">
+      <strong style="font-size:13px;">Instrucciones de Subida:</strong><br>
+      Sube un archivo .xlsx o .csv. Los únicos campos <strong>OBLIGATORIOS</strong> son:<br>
+      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">NOMBRE</span>, 
+      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">CATEGORIA</span>, 
+      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">COSTO</span> y 
+      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">PRECIO</span>.<br><br>
+      Campos opcionales permitidos: <span style="font-family:monospace;">SKU, GASTOS, DESCRIPCION, COLOR, FRENTE, PATILLA, LENTE, TALLE, PESO, IMAGEN_1, IMAGEN_2, IMAGEN_3</span>.<br>
+      <em>* Si el campo SKU viene vacío, el sistema le asignará un código único automáticamente.</em>
+    </div>
+    
+    <form onsubmit="procesarImportacionMasiva(event)">
+      <div style="margin-bottom:20px;">
+        <label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Seleccionar Archivo *</label>
+        <input type="file" id="importFile" accept=".xlsx, .xls, .csv" required class="input-box" style="padding:8px;">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalImportarProductos').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="background:#0f766e; border-color:#0f766e;">Procesar Catálogo</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
 <script src="core.js"></script>
 <script>
   let dbProducts = [];
@@ -216,19 +234,16 @@
   function zoom(src) { document.getElementById('zoomImg').src = src; document.getElementById('zoomModal').style.display = 'flex'; }
   function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 }).format(n || 0); }
 
-  // --- GESTIÓN DE IMÁGENES (LINK + FILE) RESTAURADA ---
   function syncPreview(idx, mode) {
       const img = document.getElementById(`prev${idx}`);
       const b64 = document.getElementById(`img${idx}B64`).value;
       const url = document.getElementById(`img${idx}Url`).value.trim();
       
       if (mode === 'link') {
-          // Si escriben link, borramos el b64 (archivo subido)
           document.getElementById(`img${idx}B64`).value = '';
           document.getElementById(`img${idx}File`).value = '';
           if (url) { img.src = url; img.style.display = 'block'; } else { img.style.display = 'none'; }
       } else if (mode === 'file') {
-          // Si suben archivo, borramos el link
           document.getElementById(`img${idx}Url`).value = '';
           if (b64) { img.src = b64; img.style.display = 'block'; } else { img.style.display = 'none'; }
       }
@@ -254,7 +269,6 @@
       document.getElementById(`prev${idx}`).style.display = 'none';
   }
 
-  // --- INICIO ---
   async function init() {
     mostrarCarga(true);
     try {
@@ -279,7 +293,6 @@
     s.innerHTML = '<option value="">Seleccione Categoría...</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
   }
 
-  // CREADOR DE CATEGORÍAS RESTAURADO
   function abrirModalCategoria() { document.getElementById('catName').value = ''; document.getElementById('modalCategoria').showModal(); }
   async function guardarCategoria() {
       const name = document.getElementById('catName').value.trim();
@@ -290,7 +303,6 @@
       await init();
   }
 
-  // CALCULADORA CFO RESTAURADA
   function calcularCFO() {
       const c = parseFloat(document.getElementById('prodCost').value) || 0;
       const g = parseFloat(document.getElementById('prodExpenses').value) || 0;
@@ -308,7 +320,6 @@
     
     const id = document.getElementById('prodId').value || 'prod_' + Date.now();
     
-    // Prioridad Imágenes: Archivo (Base64) > Link
     const img1 = document.getElementById('img1B64').value || document.getElementById('img1Url').value.trim();
     const img2 = document.getElementById('img2B64').value || document.getElementById('img2Url').value.trim();
     const img3 = document.getElementById('img3B64').value || document.getElementById('img3Url').value.trim();
@@ -317,20 +328,19 @@
         id,
         name: document.getElementById('prodName').value.trim(),
         category: document.getElementById('prodCategory').value,
-        code: document.getElementById('prodCode').value.trim(), // Server assigns AUTO- if empty
+        code: document.getElementById('prodCode').value.trim(),
         description: document.getElementById('prodDescription').value.trim(),
         cost: parseFloat(document.getElementById('prodCost').value) || 0,
         expenses: parseFloat(document.getElementById('prodExpenses').value) || 0,
         price: parseFloat(document.getElementById('prodPrice').value) || 0,
         status: 'Activo',
         
-        // Ficha Técnica RESTAURADA
         frente: document.getElementById('optFrente').value.trim(),
         patilla: document.getElementById('optPatilla').value.trim(),
         lente: document.getElementById('optLente').value.trim(),
         talle: document.getElementById('optTalle').value.trim(),
         peso: document.getElementById('optPeso').value.trim(),
-        color: document.getElementById('prodColor').value.trim(), // Acepta múltiples separados por coma
+        color: document.getElementById('prodColor').value.trim(),
 
         image1: img1, image2: img2, image3: img3,
         createdAt: dbProducts.find(x=>x.id===id)?.createdAt || new Date().toISOString()
@@ -347,23 +357,20 @@
     finally { mostrarCarga(false); }
   }
 
-  // MINIATURA EN LISTA RESTAURADA
   function renderTable() {
     const term = document.getElementById('search').value.toLowerCase();
     const tbody = document.getElementById('tableBody');
     const filtrados = dbProducts.filter(p => (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term));
     
     tbody.innerHTML = filtrados.map(p => {
-      // Usamos la IMG 1 como miniatura principal
       const img = p.image1 || 'https://via.placeholder.com/50?text=No+Foto';
       return `
       <tr>
         <td><img src="${img}" class="thumb-list" onclick="zoom(this.src)" onerror="this.src='https://via.placeholder.com/50?text=Error'"></td>
         <td><small class="badge" style="background:#e2e8f0; color:#1e293b;">${p.code || 'AUTO'}</small></td>
         <td><strong>${escapeHtml(p.name)}</strong><br><small style="color:#64748b">${escapeHtml(p.category || '-')}</small></td>
-        <td style="text-align:right;">$ ${p.cost.toFixed(2)}</td>
         <td style="text-align:right; color:var(--primary); font-weight:800; font-size:15px;">$ ${p.price.toFixed(2)}</td>
-        <td style="text-align:center;"><span class="badge ${p.stock > 5 ? 'success' : 'danger'}">${p.stock}</span></td>
+        <td style="text-align:center;"><span class="badge ${p.stock > 5 ? 'success' : 'danger'}">${p.stock || 0}</span></td>
         <td><button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="editarProducto('${p.id}')">Editar</button></td>
       </tr>`;
     }).join('');
@@ -373,7 +380,7 @@
     const p = dbProducts.find(x => x.id === id);
     if (!p) return;
     
-    limpiarFormulario(); // Reset visual antes de cargar
+    limpiarFormulario();
     
     document.getElementById('prodId').value = p.id;
     document.getElementById('prodName').value = p.name;
@@ -381,7 +388,7 @@
     document.getElementById('prodCode').value = p.code || '';
     document.getElementById('prodDescription').value = p.description || '';
     document.getElementById('prodCost').value = p.cost;
-    document.getElementById('prodExpenses').value = p.expenses;
+    document.getElementById('prodExpenses').value = p.expenses || 0;
     document.getElementById('prodPrice').value = p.price;
 
     document.getElementById('optFrente').value = p.frente || '';
@@ -391,17 +398,11 @@
     document.getElementById('optPeso').value = p.peso || '';
     document.getElementById('prodColor').value = p.color || '';
 
-    // Cargar Imágenes (detectar si es b64 o link)
     for(let i=1; i<=3; i++) {
         const val = p[`image${i}`];
         if (val) {
-            if (val.startsWith('data:')) {
-                document.getElementById(`img${i}B64`).value = val;
-                syncPreview(i, 'file');
-            } else {
-                document.getElementById(`img${i}Url`).value = val;
-                syncPreview(i, 'link');
-            }
+            if (val.startsWith('data:')) { document.getElementById(`img${i}B64`).value = val; syncPreview(i, 'file'); } 
+            else { document.getElementById(`img${i}Url`).value = val; syncPreview(i, 'link'); }
         }
     }
 
@@ -418,6 +419,107 @@
       document.getElementById('formTitle').style.color = "var(--text)";
       for(let i=1; i<=3; i++) clearImage(i);
       calcularCFO();
+  }
+
+  // --- CARGA MASIVA Y EXPORTACIÓN ---
+  function abrirModalImportar() {
+    document.getElementById('importFile').value = '';
+    document.getElementById('modalImportarProductos').showModal();
+  }
+
+  function exportarCatalogoExcel() {
+    let dataExport = [];
+    if (dbProducts.length === 0) {
+      dataExport.push({ "NOMBRE": "", "CATEGORIA": "", "SKU": "", "COSTO": 0, "GASTOS": 0, "PRECIO": 0, "DESCRIPCION": "", "COLOR": "", "FRENTE": "", "PATILLA": "", "LENTE": "", "TALLE": "", "PESO": "", "IMAGEN_1": "", "IMAGEN_2": "", "IMAGEN_3": "" });
+    } else {
+      dataExport = dbProducts.map(p => ({
+        "NOMBRE": p.name || "", "CATEGORIA": p.category || "", "SKU": p.code || "",
+        "COSTO": p.cost || 0, "GASTOS": p.expenses || 0, "PRECIO": p.price || 0,
+        "DESCRIPCION": p.description || "", "COLOR": p.color || "", "FRENTE": p.frente || "",
+        "PATILLA": p.patilla || "", "LENTE": p.lente || "", "TALLE": p.talle || "", "PESO": p.peso || "",
+        "IMAGEN_1": p.image1 && !p.image1.startsWith('data:') ? p.image1 : (p.image1 ? '[Archivo]' : ''),
+        "IMAGEN_2": p.image2 && !p.image2.startsWith('data:') ? p.image2 : (p.image2 ? '[Archivo]' : ''),
+        "IMAGEN_3": p.image3 && !p.image3.startsWith('data:') ? p.image3 : (p.image3 ? '[Archivo]' : '')
+      }));
+    }
+    const ws = XLSX.utils.json_to_sheet(dataExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Productos");
+    XLSX.writeFile(wb, `Catalogo_Productos_${new Date().toISOString().split('T')[0]}.xlsx`);
+  }
+
+  async function procesarImportacionMasiva(e) {
+    e.preventDefault();
+    const fileInput = document.getElementById('importFile');
+    if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo.");
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async function(evt) {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+      if (rows.length === 0) return alert("El archivo está vacío.");
+
+      let prodUpdates = []; let errores = [];
+
+      rows.forEach((row, index) => {
+        const findVal = (names) => {
+          const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase()));
+          return key ? row[key] : null;
+        };
+
+        const name = String(findVal(['nombre', 'name']) || '').trim();
+        const category = String(findVal(['categoria', 'categoría', 'category']) || '').trim();
+        const cost = parseFloat(findVal(['costo', 'cost']));
+        const price = parseFloat(findVal(['precio', 'price', 'venta']));
+              
+        if (!name || !category || isNaN(cost) || isNaN(price)) { 
+            errores.push(`Fila ${index + 2}: Faltan campos obligatorios.`); return; 
+        }
+
+        const code = String(findVal(['sku', 'codigo', 'código']) || '').trim();
+        
+        let existingProd = code ? dbProducts.find(p => p.code === code) : null;
+        const id = existingProd ? existingProd.id : ('prod_' + Math.random().toString(36).slice(2, 9) + Date.now());
+
+        let img1 = String(findVal(['imagen_1', 'image1']) || '').trim();
+        if(img1 === '[Archivo]') img1 = existingProd ? existingProd.image1 : '';
+
+        prodUpdates.push({
+          id, name, category, code, cost, price,
+          expenses: parseFloat(findVal(['gastos', 'expenses'])) || 0,
+          description: String(findVal(['descripcion', 'descripción']) || '').trim(),
+          color: String(findVal(['color']) || '').trim(),
+          frente: String(findVal(['frente']) || '').trim(),
+          patilla: String(findVal(['patilla']) || '').trim(),
+          lente: String(findVal(['lente']) || '').trim(),
+          talle: String(findVal(['talle', 'medidas']) || '').trim(),
+          peso: String(findVal(['peso']) || '').trim(),
+          image1: img1,
+          status: 'Activo',
+          stock: existingProd ? existingProd.stock : 0,
+          stock_branches: existingProd ? existingProd.stock_branches : '{}',
+          createdAt: existingProd ? existingProd.createdAt : new Date().toISOString()
+        });
+      });
+
+      if (prodUpdates.length === 0) return alert("Errores:\n" + errores.slice(0,5).join('\n'));
+
+      if (!confirm(`Se procesarán ${prodUpdates.length} artículos.\n¿Confirmás?`)) return;
+
+      mostrarCarga(true);
+      try {
+        await Promise.all(prodUpdates.map(p => apiFetch(`/api/products`, { method: 'POST', body: JSON.stringify(p) })));
+        document.getElementById('modalImportarProductos').close();
+        alert("✅ Importación completada.");
+        await init();
+      } catch(err) { alert("Error en la subida masiva."); } 
+      finally { mostrarCarga(false); }
+    };
+    reader.readAsArrayBuffer(file);
   }
 
   init();
