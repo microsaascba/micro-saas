@@ -54,10 +54,11 @@ export async function onRequestPost(context) {
 
         const data = await context.request.json();
         
-        // Si el código viene vacío, generamos uno automático
+        // REGLA ACTUALIZADA: Código automático de 4 cifras exactas
         let finalCode = (data.code || '').trim();
         if (!finalCode) {
-            finalCode = 'AUTO-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+            // Genera un número aleatorio entre 1000 y 9999
+            finalCode = String(Math.floor(1000 + Math.random() * 9000));
         }
 
         await context.env.DB.prepare(`
@@ -98,7 +99,6 @@ export async function onRequestPost(context) {
         return Response.json({ error: error.message }, { status: 500 });
     }
 }
-
 export async function onRequestDelete(context) {
     try {
         const companyId = getCompanyIdFromRequest(context.request);
