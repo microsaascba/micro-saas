@@ -430,4 +430,68 @@ document.addEventListener('DOMContentLoaded', () => {
     .sidebar::-webkit-scrollbar-track { background: transparent; }
   `;
   document.head.appendChild(globalCss);
+
+
+   // --- ALERTAS DE CASH FLOW (POP-UP SOLO PARA ADMIN AL INICIAR) ---
+    if (role === 'admin' && !sessionStorage.getItem('cashFlowAlertShown') && isLogged && !isLoginPage) {
+        setTimeout(async () => {
+            try {
+                const res = await fetch('/api/alerts', { headers: { 'x-company-id': localStorage.getItem('company_id') || '' } });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                if ((data.payables && data.payables.length > 0) || (data.receivables && data.receivables.length > 0)) {
+                    const modalHtml = `
+                    <dialog id="modalCashFlow" style="width: 90%; max-width: 450px; padding: 0; border: none; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); background: #fff;">
+                        <div style="padding: 24px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px;">
+                                <h2 style="margin: 0; color: #dc2626; font-size: 18px; display: flex; align-items: center; gap: 8px;"><span>⚠️</span> Alertas de Cash Flow</h2>
+                                <button onclick="document.getElementById('modalCashFlow').close()" style="background: none; border: none; cursor: pointer; font-size: 16px; color: #64748b;">✕</button>
+                            </div>
+
+                            ${data.payables.length > 0 ? `
+                            <div style="margin-bottom: 20px;">
+                                <h3 style="font-size: 11px; text-transform: uppercase; color: #b45309; margin: 0 0 10px 0; font-weight: 800;">🔴 Cuentas por Pagar (Por vencer)</h3>
+                                <ul style="margin:0; padding:0; list-style:none;">
+                                    ${data.payables.map(p => `
+                                    <li style="padding: 10px; background: #fffbeb; border-left: 3px solid #f59e0b; border-radius: 4px; margin-bottom: 8px; font-size: 13px;">
+                                        <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+                                            <strong>${escapeHtml(p.supplierName)}</strong>
+                                            <strong style="color: #b45309;">$${p.amount.toLocaleString('es-AR')}</strong>
+                                        </div>
+                                        <div style="color: #78350f; font-size: 11px;">${escapeHtml(p.concept)} (Vence: ${new Date(p.dueDate).toLocaleDateString('es-AR')})</div>
+                                    </li>`).join('')}
+                                </ul>
+                            </div>` : ''}
+
+                            ${data.receivables.length > 0 ? `
+                            <div>
+                                <h3 style="font-size: 11px; text-transform: uppercase; color: #0369a1; margin: 0 0 10px 0; font-weight: 800;">🔵 Cuentas por Cobrar (> 30 días)</h3>
+                                <ul style="margin:0; padding:0; list-style:none;">
+                                    ${data.receivables.map(r => `
+                                    <li style="padding: 10px; background: #f0f9ff; border-left: 3px solid #3b82f6; border-radius: 4px; margin-bottom: 8px; font-size: 13px;">
+                                        <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+                                            <strong>${escapeHtml(r.name)}</strong>
+                                            <strong style="color: #0369a1;">$${r.balance.toLocaleString('es-AR')}</strong>
+                                        </div>
+                                        <div style="color: #0c4a6e; font-size: 11px;">Último movimiento: ${new Date(r.last_movement).toLocaleDateString('es-AR')}</div>
+                                    </li>`).join('')}
+                                </ul>
+                            </div>` : ''}
+
+                            <div style="text-align: right; margin-top: 25px;">
+                                <button class="btn btn-primary" onclick="document.getElementById('modalCashFlow').close()" style="background: #0f172a; border-color: #0f172a; width: 100%;">Entendido</button>
+                            </div>
+                        </div>
+                    </dialog>`;
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    document.getElementById('modalCashFlow').showModal();
+                    sessionStorage.setItem('cashFlowAlertShown', 'true'); // Solo se muestra una vez por sesión
+                }
+            } catch(e) { console.error(e); }
+        }, 1500); // 1.5 segundos de delay para que no pise la carga inicial de las pantallas
+    }
+
+   
 });
+
