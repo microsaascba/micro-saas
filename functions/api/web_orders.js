@@ -2,7 +2,9 @@
 export async function onRequestPost(context) {
     try {
         const data = await context.request.json();
-        const companyId = request.headers.get('x-company-id') || data.companyId;
+        
+        // CORRECCIÓN QUIRÚRGICA: 'context.request' en lugar de 'request'
+        const companyId = context.request.headers.get('x-company-id') || data.companyId;
 
         if (!companyId || !data.cart || data.cart.length === 0) {
             return Response.json({ error: 'Datos incompletos para procesar la orden.' }, { status: 400 });
@@ -57,7 +59,7 @@ export async function onRequestPost(context) {
             0 // Queda abierta (no cerrada) para que el administrador la vea en sus métricas
         ).run();
 
-        // 3. DESCUENTO DE STOCK (Si quisieras descontarlo automáticamente. Por seguridad, muchos SaaS prefieren que el admin apruebe el pedido antes de tocar el stock físico. Por ahora lo descontamos del stock global).
+        // 3. DESCUENTO DE STOCK (Del stock global para la venta web)
         for (const item of data.cart) {
              await db.prepare("UPDATE products SET stock = stock - ? WHERE id = ? AND company_id = ?").bind(item.qty, item.id, companyId).run();
         }
