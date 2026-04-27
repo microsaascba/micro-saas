@@ -232,7 +232,11 @@
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
   function zoom(src) { document.getElementById('zoomImg').src = src; document.getElementById('zoomModal').style.display = 'flex'; }
-  function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 }).format(n || 0); }
+  
+  // FUNCION MONEDA ACTUALIZADA (Puntos en miles, comas en decimales)
+  function currency(n) { 
+      return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0); 
+  }
 
   function syncPreview(idx, mode) {
       const img = document.getElementById(`prev${idx}`);
@@ -310,8 +314,8 @@
       const utilidad = p - (c + g);
       const margen = p > 0 ? (utilidad / p) * 100 : 0;
       
-      document.getElementById('prodProfit').value = '$ ' + utilidad.toFixed(2);
-      document.getElementById('prodMargin').value = margen.toFixed(1) + '%';
+      document.getElementById('prodProfit').value = currency(utilidad);
+      document.getElementById('prodMargin').value = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(margen) + '%';
   }
 
   async function guardarProducto(e) {
@@ -369,7 +373,7 @@
         <td><img src="${img}" class="thumb-list" onclick="zoom(this.src)" onerror="this.src='https://via.placeholder.com/50?text=Error'"></td>
         <td><small class="badge" style="background:#e2e8f0; color:#1e293b;">${p.code || 'AUTO'}</small></td>
         <td><strong>${escapeHtml(p.name)}</strong><br><small style="color:#64748b">${escapeHtml(p.category || '-')}</small></td>
-        <td style="text-align:right; color:var(--primary); font-weight:800; font-size:15px;">$ ${p.price.toFixed(2)}</td>
+        <td style="text-align:right; color:var(--primary); font-weight:800; font-size:15px;">${currency(p.price)}</td>
         <td style="text-align:center;"><span class="badge ${p.stock > 5 ? 'success' : 'danger'}">${p.stock || 0}</span></td>
         <td><button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="editarProducto('${p.id}')">Editar</button></td>
       </tr>`;
@@ -421,7 +425,6 @@
       calcularCFO();
   }
 
-  // --- CARGA MASIVA Y EXPORTACIÓN ---
   function abrirModalImportar() {
     document.getElementById('importFile').value = '';
     document.getElementById('modalImportarProductos').showModal();
