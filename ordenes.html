@@ -47,7 +47,7 @@
     /* --- ESTILOS DE IMPRESIÓN --- */
     .print-wrapper { display: none; }
     
-    @media print {
+  @media print {
       @page { margin: 8mm; size: A4 portrait; }
       body * { visibility: hidden !important; }
       .print-wrapper, .print-wrapper * { visibility: visible !important; }
@@ -111,7 +111,7 @@
       <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
       <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
       <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
-      <a href="cc.html" data-module="cc"><span class="active">📓</span> Cuentas Corrientes</a>
+      <a href="cc.html" data-module="cc"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
       <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
       <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
       <a href="ordenes.html" data-module="ordenes"><span class="active">📋</span> Órdenes</a>
@@ -805,11 +805,10 @@
       const p1 = parseCurrency(document.getElementById(type + 'MixedAmount1').value);
       
       let p2 = total - p1;
-      if (p2 < 0) p2 = 0; // Evitar negativos visuales
+      if (p2 < 0) p2 = 0; 
       
       document.getElementById(type + 'MixedAmount2').value = currency(p2);
   }
-  // ------------------------------
 
   function formatCurrencyInput(input) {
     let val = input.value.replace(/[^\d,]/g, '');
@@ -828,13 +827,13 @@
   }
 
   // --- WHATSAPP ---
-  function enviarWhatsAppAviso(clientName, orderId) {
+  window.enviarWhatsAppAviso = function(clientName, orderId) {
       const companyName = localStorage.getItem('company_name') || 'nuestro local';
       const numOrden = orderId.split('_')[1] || orderId; 
-      const msg = `¡Hola ${clientName}, tu orden N° ${numOrden} ya esta lista para ser retirada! Te esperamos en ${companyName}!`;
+      const msg = `Hola ${clientName}, tu orden N° ${numOrden} ya esta lista para ser retirada! Te esperamos en ${companyName}!`;
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
       window.open(whatsappUrl, '_blank');
-  }
+  };
 
   async function initOrdenes() {
     mostrarCarga(true);
@@ -1376,9 +1375,6 @@
     
     let kPend = 0, kListos = 0, kSaldo = 0;
     let htmlPend = '', htmlHist = '';
-
-    // Compatibilidad inversa con órdenes viejas
-    const isLegacy = (status) => ['Pendiente', 'En Taller', 'Control Calidad', 'Garantía / Rehacer'].includes(status);
 
     const enProcesoStates = ['No enviado', 'Pedido a lab', 'Garantía/demorado', 'Pendiente', 'En Taller', 'Control Calidad', 'Garantía / Rehacer'];
 
