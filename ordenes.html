@@ -1376,12 +1376,20 @@
     let kPend = 0, kListos = 0, kSaldo = 0;
     let htmlPend = '', htmlHist = '';
 
-    const enProcesoStates = ['No enviado', 'Pedido a lab', 'Garantía/demorado', 'Pendiente', 'En Taller', 'Control Calidad', 'Garantía / Rehacer'];
+    // Usamos minúsculas absolutas para evitar problemas de compatibilidad con órdenes viejas
+    const enProcesoStates = ['no enviado', 'pedido a lab', 'garantía/demorado', 'pendiente', 'en taller', 'control calidad', 'garantía / rehacer'];
+
+    // Aseguramos capturar el rol de Administrador sea cual sea la variable activa
+    const currentRole = localStorage.getItem('userRole') || localStorage.getItem('saas_role') || '';
+    const isAdmin = currentRole === 'admin';
 
     dbOrders.forEach(o => {
-      const enProceso = enProcesoStates.includes(o.status);
-      const isListo = o.status === 'Recibido' || o.status === 'Recibido - Listo';
-      const isAnulado = o.status === 'Anulado';
+      // Forzamos el estado de la base de datos a minúsculas para compararlo sin fallos
+      const currentStatus = (o.status || '').toLowerCase();
+      
+      const enProceso = enProcesoStates.includes(currentStatus);
+      const isListo = currentStatus === 'recibido' || currentStatus === 'recibido - listo';
+      const isAnulado = currentStatus === 'anulado';
       
       if (enProceso) kPend++;
       if (isListo) kListos++;
@@ -1390,9 +1398,9 @@
       let badge = '';
       if (isAnulado) badge = `<span style="background:var(--line); color:var(--muted); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Anulado</span>`;
       else if (isListo) badge = `<span style="background:#dcfce7; color:#16a34a; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Recibido (Listo)</span>`;
-      else if (o.status === 'Entregado') badge = `<span style="background:#e0e7ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Entregado</span>`;
-      else if (o.status === 'Garantía/demorado' || o.status === 'Garantía / Rehacer') badge = `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Garantía/demorado</span>`;
-      else if (o.status === 'Pedido a lab' || o.status === 'En Taller' || o.status === 'Control Calidad') badge = `<span style="background:#dbeafe; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Pedido a lab</span>`;
+      else if (currentStatus === 'entregado') badge = `<span style="background:#e0e7ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Entregado</span>`;
+      else if (currentStatus === 'garantía/demorado' || currentStatus === 'garantía / rehacer') badge = `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Garantía/demorado</span>`;
+      else if (currentStatus === 'pedido a lab' || currentStatus === 'en taller' || currentStatus === 'control calidad') badge = `<span style="background:#dbeafe; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Pedido a lab</span>`;
       else badge = `<span style="background:#ffedd5; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">No enviado</span>`;
 
       const osTag = o.os_name ? `<br><small style="color:var(--primary); font-weight:bold;">O.S: ${escapeHtml(o.os_name)}</small>` : '';
@@ -1402,9 +1410,9 @@
           actionsHtml = `
             <div style="margin-bottom: 5px;">
               <select class="input-box" style="padding:2px 4px; font-size:11px; width:auto; border-color:var(--line); font-weight:bold; color:var(--text);" onchange="actualizarEstadoOrden('${o.id}', this.value)">
-                  <option value="No enviado" ${o.status === 'No enviado' || o.status === 'Pendiente' ? 'selected' : ''}>No enviado</option>
-                  <option value="Pedido a lab" ${o.status === 'Pedido a lab' || o.status === 'En Taller' || o.status === 'Control Calidad' ? 'selected' : ''}>Pedido a lab</option>
-                  <option value="Garantía/demorado" ${o.status === 'Garantía/demorado' || o.status === 'Garantía / Rehacer' ? 'selected' : ''}>Garantía/demorado</option>
+                  <option value="No enviado" ${currentStatus === 'no enviado' || currentStatus === 'pendiente' ? 'selected' : ''}>No enviado</option>
+                  <option value="Pedido a lab" ${currentStatus === 'pedido a lab' || currentStatus === 'en taller' || currentStatus === 'control calidad' ? 'selected' : ''}>Pedido a lab</option>
+                  <option value="Garantía/demorado" ${currentStatus === 'garantía/demorado' || currentStatus === 'garantía / rehacer' ? 'selected' : ''}>Garantía/demorado</option>
                   <option value="Recibido">➡ Marcar Recibido</option>
               </select>
             </div>
@@ -1429,12 +1437,12 @@
           ${enProceso || isListo ? `<td style="color:var(--danger); font-weight:bold;">${currency(o.balance)}</td>` : `<td>${currency(o.total)}</td>`}
           <td style="text-align:center; min-width:180px;">
             ${actionsHtml}
-            ${(enProceso || isListo) && localStorage.getItem('userRole') === 'admin' ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#ef4444; border-color:#ef4444; margin-top:4px;" onclick="promptAnularOrden('${o.id}')">Anular</button>` : ''}
+            ${(enProceso || isListo) && isAdmin ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#ef4444; border-color:#ef4444; margin-top:4px;" onclick="promptAnularOrden('${o.id}')">Anular</button>` : ''}
             ${!isAnulado ? `<button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️</button>` : ''}
           </td>
         </tr>`;
         
-      if (o.status === 'Entregado' || isAnulado) {
+      if (currentStatus === 'entregado' || isAnulado) {
           if (o.id.toLowerCase().includes(termHist) || o.clientName.toLowerCase().includes(termHist)) htmlHist += tr;
       } else {
           if (o.id.toLowerCase().includes(termPend) || o.clientName.toLowerCase().includes(termPend)) htmlPend += tr;
