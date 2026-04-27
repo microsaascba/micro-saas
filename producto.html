@@ -9,51 +9,228 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
-    html, body { background-color: #f0f2f7 !important; }
-    body { animation: fadeIn 0.15s ease-in-out; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+    html, body { 
+        background-color: #f0f2f7 !important; 
+    }
+    body { 
+        animation: fadeIn 0.15s ease-in-out; 
+        font-family: 'Inter', sans-serif; 
+        margin: 0; 
+        padding: 0; 
+    }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
-    .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; z-index: 100; }
+    .app { 
+        display: grid; 
+        grid-template-columns: 260px 1fr; 
+        min-height: 100vh; 
+        width: 100vw; 
+        overflow-x: hidden; 
+    }
+    .sidebar { 
+        width: 260px; 
+        height: 100vh; 
+        position: sticky; 
+        top: 0; 
+        background: #0f172a; 
+        z-index: 100; 
+    }
     
-    .layout-stacked { display: flex; flex-direction: column; gap: 24px; max-width: 1300px; margin: 0 auto; width: 100%; padding: 20px; box-sizing: border-box; }
+    .layout-stacked { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 24px; 
+        max-width: 1300px; 
+        margin: 0 auto; 
+        width: 100%; 
+        padding: 20px; 
+        box-sizing: border-box; 
+    }
     
-    .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; transition: 0.2s; }
-    .input-box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+    .input-box { 
+        background: #fff; 
+        border: 1px solid var(--line); 
+        border-radius: 8px; 
+        padding: 10px; 
+        width: 100%; 
+        font-family: inherit; 
+        font-size: 14px; 
+        outline: none; 
+        box-sizing: border-box; 
+        transition: 0.2s; 
+    }
+    .input-box:focus { 
+        border-color: var(--primary); 
+        box-shadow: 0 0 0 3px var(--primary-soft); 
+    }
     
-    .form-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; align-items: end; }
+    .form-grid { 
+        display: grid; 
+        grid-template-columns: repeat(5, 1fr); 
+        gap: 16px; 
+        align-items: end; 
+    }
     .col-2 { grid-column: span 2; }
     .col-3 { grid-column: span 3; }
     .col-5 { grid-column: span 5; }
 
-    .specs-box { background: #f8fafc; padding: 18px; border-radius: 12px; border: 1px solid var(--line); margin-top: 10px; }
-    .specs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
-    .specs-box label { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 5px; }
+    /* ESTILOS ÓPTICOS Y VARIACIONES */
+    .specs-box { 
+        background: #f8fafc; 
+        padding: 18px; 
+        border-radius: 12px; 
+        border: 1px solid var(--line); 
+        margin-top: 10px; 
+    }
+    .specs-grid { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); 
+        gap: 12px; 
+    }
+    .specs-box label { 
+        font-size: 10px; 
+        font-weight: 800; 
+        color: var(--muted); 
+        text-transform: uppercase; 
+        display: block; 
+        margin-bottom: 5px; 
+    }
 
-    .img-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px; }
-    .img-card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px; text-align: center; position: relative; }
-    .img-preview { width: 100%; height: 110px; object-fit: contain; background: #f1f5f9; border-radius: 6px; margin-bottom: 10px; border: 1px solid var(--line); display: none; cursor: zoom-in; }
-    .btn-clear-img { position: absolute; top: 15px; right: 15px; background: rgba(255,255,255,0.8); border:none; border-radius: 50%; padding: 5px; cursor: pointer; display:none;}
-    .img-card:hover .btn-clear-img { display:block; }
+    /* GESTIÓN DE IMÁGENES */
+    .img-container { 
+        display: grid; 
+        grid-template-columns: repeat(3, 1fr); 
+        gap: 15px; 
+        margin-top: 15px; 
+    }
+    .img-card { 
+        background: #fff; 
+        border: 1px solid var(--line); 
+        border-radius: 10px; 
+        padding: 12px; 
+        text-align: center; 
+        position: relative; 
+    }
+    .img-preview { 
+        width: 100%; 
+        height: 110px; 
+        object-fit: contain; 
+        background: #f1f5f9; 
+        border-radius: 6px; 
+        margin-bottom: 10px; 
+        border: 1px solid var(--line); 
+        display: none; 
+        cursor: zoom-in; 
+    }
+    .btn-clear-img { 
+        position: absolute; 
+        top: 15px; 
+        right: 15px; 
+        background: rgba(255,255,255,0.8); 
+        border: none; 
+        border-radius: 50%; 
+        padding: 5px; 
+        cursor: pointer; 
+        display: none;
+    }
+    .img-card:hover .btn-clear-img { display: block; }
     
-    table { width: 100%; border-collapse: collapse; text-align: left; }
-    th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); background: #f8fafc; }
-    td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
+    /* TABLA Y ZOOM */
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        text-align: left; 
+    }
+    th { 
+        padding: 12px 15px; 
+        font-size: 11px; 
+        text-transform: uppercase; 
+        color: var(--muted); 
+        border-bottom: 1px solid var(--line); 
+        background: #f8fafc; 
+    }
+    td { 
+        padding: 12px 15px; 
+        border-bottom: 1px solid var(--line); 
+        font-size: 14px; 
+        vertical-align: middle; 
+    }
     tr:hover td { background-color: #fbfdff; }
     
-    .thumb-list { width: 50px; height: 50px; border-radius: 8px; object-fit: contain; background: #f1f5f9; border: 1px solid var(--line); cursor: zoom-in; transition: 0.2s; }
-    .thumb-list:hover { transform: scale(1.15); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .thumb-list { 
+        width: 50px; 
+        height: 50px; 
+        border-radius: 8px; 
+        object-fit: contain; 
+        background: #f1f5f9; 
+        border: 1px solid var(--line); 
+        cursor: zoom-in; 
+        transition: 0.2s; 
+    }
+    .thumb-list:hover { 
+        transform: scale(1.15); 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+    }
 
-    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
-    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
-    .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
+    /* MODALES */
+    dialog { 
+        border: none; 
+        border-radius: 12px; 
+        box-shadow: var(--shadow-lg); 
+        padding: 0; 
+        margin: auto; 
+    }
+    dialog::backdrop { 
+        background: rgba(0, 0, 0, 0.5); 
+        backdrop-filter: blur(3px); 
+    }
+    .modal-content { 
+        padding: 24px; 
+        background: #fff; 
+        width: 100%; 
+        box-sizing: border-box; 
+    }
 
-    #zoomModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; justify-content: center; align-items: center; cursor: zoom-out; }
-    #zoomImg { max-width: 90%; max-height: 90%; border-radius: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.5); border: 2px solid #fff; }
+    #zoomModal { 
+        display: none; 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: rgba(0,0,0,0.85); 
+        z-index: 99999; 
+        justify-content: center; 
+        align-items: center; 
+        cursor: zoom-out; 
+    }
+    #zoomImg { 
+        max-width: 90%; 
+        max-height: 90%; 
+        border-radius: 10px; 
+        box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+        border: 2px solid #fff; 
+    }
 
-    .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 999999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); }
+    .loading-overlay { 
+        display: none; 
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: rgba(255,255,255,0.7); 
+        z-index: 999999; 
+        justify-content: center; 
+        align-items: center; 
+        font-weight: bold; 
+        color: var(--primary); 
+    }
 
-    .calc-box-cfo { background: #fffbeb; border: 1px solid #fde68a; }
+    .calc-box-cfo { 
+        background: #fffbeb; 
+        border: 1px solid #fde68a; 
+    }
     .calc-box-cfo label { color: #b45309; }
 
     @media (max-width: 1000px) {
@@ -75,12 +252,16 @@
 
 <div class="app">
   <aside class="sidebar">
-    <div class="brand"><div class="brand-logo">M</div><div class="brand-text"><strong>Micro SaaS</strong><small>Optical Business</small></div></div>
+    <div class="brand">
+        <div class="brand-logo">M</div>
+        <div class="brand-text"><strong>Micro SaaS</strong><small>Optical Business</small></div>
+    </div>
     <nav class="nav">
       <a href="dashboard.html">📊 Dashboard</a>
       <a href="producto.html" class="active">📦 Productos</a>
       <a href="facturacion.html">🛒 Facturación</a>
       <a href="ventas.html">🧾 Ventas</a>
+      <a href="contable.html">💸 Contable</a>
       <a href="stock.html">📚 Stock</a>
       <a href="ordenes.html">📋 Órdenes</a>
     </nav>
@@ -99,6 +280,7 @@
     <div class="layout-stacked">
       <article class="card card-pad" style="border-top: 3px solid var(--primary);">
         <h2 id="formTitle" style="margin-top:0; color:var(--text); font-size:18px;">Alta / Edición de Producto</h2>
+        
         <form id="productForm" onsubmit="guardarProducto(event)">
           <input type="hidden" id="prodId">
           
@@ -107,6 +289,7 @@
               <label style="font-size:11px; font-weight:bold; color:var(--muted);">Nombre / Modelo del Armazón *</label>
               <input type="text" id="prodName" class="input-box" required placeholder="Ej: Ray-Ban Aviador RB3025 Gold">
             </div>
+            
             <div>
               <label style="font-size:11px; font-weight:bold; color:var(--muted);">Categoría *</label>
               <div style="display:flex; gap:5px;">
@@ -114,9 +297,10 @@
                   <button type="button" class="btn btn-primary" style="padding:10px;" onclick="abrirModalCategoria()">+</button>
               </div>
             </div>
+            
             <div>
               <label style="font-size:11px; font-weight:bold; color:var(--muted);">Código / SKU / Barras</label>
-              <input type="text" id="prodCode" class="input-box" placeholder="Dejar vacío para AUTO">
+              <input type="text" id="prodCode" class="input-box" placeholder="Dejar vacío (4 Cifras Auto)">
             </div>
 
             <div class="col-5">
@@ -138,19 +322,54 @@
               </div>
             </div>
 
-            <div><label>Costo Net ($) *</label><input type="number" id="prodCost" class="input-box" required step="0.01" oninput="calcularCFO()"></div>
-            <div><label>Gastos / Envío ($)</label><input type="number" id="prodExpenses" class="input-box" step="0.01" value="0" oninput="calcularCFO()"></div>
-            <div style="border-right: 1px solid var(--line); padding-right: 15px;"><label>P. Venta ($) *</label><input type="number" id="prodPrice" class="input-box" required step="0.01" oninput="calcularCFO()"></div>
+            <div>
+                <label>Costo Net ($) *</label>
+                <input type="text" id="prodCost" class="input-box" required placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcularCFO()">
+            </div>
+            <div>
+                <label>Gastos / Envío ($)</label>
+                <input type="text" id="prodExpenses" class="input-box" placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcularCFO()">
+            </div>
+            <div style="border-right: 1px solid var(--line); padding-right: 15px;">
+                <label>P. Venta ($) *</label>
+                <input type="text" id="prodPrice" class="input-box" required placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcularCFO()">
+            </div>
             
-            <div class="calc-box-cfo specs-box" style="margin:0; padding:10px;"><label>Utilidad Bruta ($)</label><input type="text" id="prodProfit" class="input-box" disabled style="background:transparent; border:none; padding:0; color:green; font-weight:bold; font-size:16px;"></div>
-            <div class="calc-box-cfo specs-box" style="margin:0; padding:10px;"><label>Margen Venta (%)</label><input type="text" id="prodMargin" class="input-box" disabled style="background:transparent; border:none; padding:0; color:var(--primary); font-weight:bold; font-size:16px;"></div>
+            <div class="calc-box-cfo specs-box" style="margin:0; padding:10px;">
+                <label>Utilidad Bruta ($)</label>
+                <input type="text" id="prodProfit" class="input-box" disabled style="background:transparent; border:none; padding:0; color:green; font-weight:bold; font-size:16px;" value="$ 0,00">
+            </div>
+            <div class="calc-box-cfo specs-box" style="margin:0; padding:10px;">
+                <label>Margen Venta (%)</label>
+                <input type="text" id="prodMargin" class="input-box" disabled style="background:transparent; border:none; padding:0; color:var(--primary); font-weight:bold; font-size:16px;" value="0,0%">
+            </div>
 
             <div class="col-5">
                 <p style="margin:15px 0 5px 0; font-size:11px; font-weight:bold; color:var(--muted);">IMÁGENES DEL PRODUCTO (Prioridad Archivo > Link)</p>
                 <div class="img-container">
-                    <div class="img-card"><button type="button" class="btn-clear-img" onclick="clearImage(1)">🗑️</button><img id="prev1" class="img-preview" onclick="zoom(this.src)"><input type="hidden" id="img1B64"><input type="text" id="img1Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link URL..." oninput="syncPreview(1, 'link')"><input type="file" id="img1File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 1)"></div>
-                    <div class="img-card"><button type="button" class="btn-clear-img" onclick="clearImage(2)">🗑️</button><img id="prev2" class="img-preview" onclick="zoom(this.src)"><input type="hidden" id="img2B64"><input type="text" id="img2Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link URL..." oninput="syncPreview(2, 'link')"><input type="file" id="img2File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 2)"></div>
-                    <div class="img-card"><button type="button" class="btn-clear-img" onclick="clearImage(3)">🗑️</button><img id="prev3" class="img-preview" onclick="zoom(this.src)"><input type="hidden" id="img3B64"><input type="text" id="img3Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link URL..." oninput="syncPreview(3, 'link')"><input type="file" id="img3File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 3)"></div>
+                    <div class="img-card">
+                        <button type="button" class="btn-clear-img" onclick="clearImage(1)">🗑️</button>
+                        <img id="prev1" class="img-preview" onclick="zoom(this.src)">
+                        <input type="hidden" id="img1B64">
+                        <input type="text" id="img1Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link URL..." oninput="syncPreview(1, 'link')">
+                        <input type="file" id="img1File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 1)">
+                    </div>
+                    
+                    <div class="img-card">
+                        <button type="button" class="btn-clear-img" onclick="clearImage(2)">🗑️</button>
+                        <img id="prev2" class="img-preview" onclick="zoom(this.src)">
+                        <input type="hidden" id="img2B64">
+                        <input type="text" id="img2Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link URL..." oninput="syncPreview(2, 'link')">
+                        <input type="file" id="img2File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 2)">
+                    </div>
+                    
+                    <div class="img-card">
+                        <button type="button" class="btn-clear-img" onclick="clearImage(3)">🗑️</button>
+                        <img id="prev3" class="img-preview" onclick="zoom(this.src)">
+                        <input type="hidden" id="img3B64">
+                        <input type="text" id="img3Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link URL..." oninput="syncPreview(3, 'link')">
+                        <input type="file" id="img3File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 3)">
+                    </div>
                 </div>
             </div>
 
@@ -169,7 +388,16 @@
         </div>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>Foto</th><th>SKU</th><th>Modelo / Categoría</th><th style="text-align:right;">P. Venta</th><th style="text-align:center;">Stock</th><th>Acciones</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Foto</th>
+                    <th>SKU</th>
+                    <th>Modelo / Categoría</th>
+                    <th style="text-align:right;">P. Venta</th>
+                    <th style="text-align:center;">Stock</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
             <tbody id="tableBody"></tbody>
           </table>
         </div>
@@ -187,21 +415,6 @@
         <button class="btn btn-primary" onclick="guardarCategoria()">Crear</button>
     </div>
   </div>
-</dialog>
-
-<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: #fff; text-align: left;">
-  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
-    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
-    <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
-  </div>
-  <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
-    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Ingresá tu contraseña de administrador para autorizar la baja.</p>
-    <input type="password" id="adminAuthPin" required placeholder="Contraseña de Seguridad" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none; margin-bottom: 20px;">
-    <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
-      <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
-    </div>
-  </form>
 </dialog>
 
 <dialog id="modalImportarProductos" style="max-width: 700px; width: 90%;">
@@ -239,18 +452,51 @@
 <script>
   let dbProducts = [];
   let dbCategories = [];
-  let pendingAdminAction = null;
-  let pendingAdminParam = null;
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
 
-  function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-  function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
-  function zoom(src) { document.getElementById('zoomImg').src = src; document.getElementById('zoomModal').style.display = 'flex'; }
+  function escapeHtml(v) { 
+      return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); 
+  }
   
+  function mostrarCarga(s) { 
+      document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; 
+  }
+  
+  function zoom(src) { 
+      document.getElementById('zoomImg').src = src; 
+      document.getElementById('zoomModal').style.display = 'flex'; 
+  }
+  
+  // FUNCIÓN MONEDA OFICIAL ARGENTINA ($ 1.500,00)
   function currency(n) { 
       return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0); 
   }
 
+  // ENMASCARADOR DE INPUTS EN TIEMPO REAL
+  function formatCurrencyInput(input) {
+      let val = input.value.replace(/[^\d,]/g, ''); // Solo permite números y comas
+      const parts = val.split(',');
+      if (parts.length > 2) { 
+          val = parts[0] + ',' + parts.slice(1).join(''); 
+      }
+      if (val === '') { 
+          input.value = ''; 
+          return; 
+      }
+      
+      let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Puntos en los miles
+      let decPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : ''; // Solo 2 decimales
+      input.value = '$ ' + intPart + decPart;
+  }
+
+  // FUNCIÓN PARA RECONVERTIR EL TEXTO "$ 1.500,00" a FLOAT 1500.00 PARA GUARDAR EN DB
+  function parseCurrency(val) {
+      if (!val) return 0;
+      let str = String(val).replace(/[$\s.]/g, '').replace(',', '.');
+      return parseFloat(str) || 0;
+  }
+
+  // GESTIÓN DE IMÁGENES
   function syncPreview(idx, mode) {
       const img = document.getElementById(`prev${idx}`);
       const b64 = document.getElementById(`img${idx}B64`).value;
@@ -286,6 +532,7 @@
       document.getElementById(`prev${idx}`).style.display = 'none';
   }
 
+  // INICIO DE LA APLICACIÓN
   async function init() {
     mostrarCarga(true);
     try {
@@ -296,8 +543,9 @@
       ]);
       dbProducts = resP.ok ? await resP.json() : [];
       dbCategories = resC.ok ? await resC.json() : [];
-    } catch (e) {}
-    finally { 
+    } catch (e) {
+        console.error("Error cargando base de datos", e);
+    } finally { 
         mostrarCarga(false); 
         actualizarSelectCats(); 
         renderTable(); 
@@ -310,7 +558,11 @@
     s.innerHTML = '<option value="">Seleccione Categoría...</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
   }
 
-  function abrirModalCategoria() { document.getElementById('catName').value = ''; document.getElementById('modalCategoria').showModal(); }
+  function abrirModalCategoria() { 
+      document.getElementById('catName').value = ''; 
+      document.getElementById('modalCategoria').showModal(); 
+  }
+  
   async function guardarCategoria() {
       const name = document.getElementById('catName').value.trim();
       if(!name) return;
@@ -320,10 +572,12 @@
       await init();
   }
 
+  // CALCULADORA CFO (Convierte el texto tipeado para hacer la cuenta y devuelve texto en pesos)
   function calcularCFO() {
-      const c = parseFloat(document.getElementById('prodCost').value) || 0;
-      const g = parseFloat(document.getElementById('prodExpenses').value) || 0;
-      const p = parseFloat(document.getElementById('prodPrice').value) || 0;
+      const c = parseCurrency(document.getElementById('prodCost').value);
+      const g = parseCurrency(document.getElementById('prodExpenses').value);
+      const p = parseCurrency(document.getElementById('prodPrice').value);
+      
       const utilidad = p - (c + g);
       const margen = p > 0 ? (utilidad / p) * 100 : 0;
       
@@ -331,6 +585,7 @@
       document.getElementById('prodMargin').value = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(margen) + '%';
   }
 
+  // GUARDAR EL PRODUCTO
   async function guardarProducto(e) {
     e.preventDefault();
     mostrarCarga(true);
@@ -347,9 +602,12 @@
         category: document.getElementById('prodCategory').value,
         code: document.getElementById('prodCode').value.trim(),
         description: document.getElementById('prodDescription').value.trim(),
-        cost: parseFloat(document.getElementById('prodCost').value) || 0,
-        expenses: parseFloat(document.getElementById('prodExpenses').value) || 0,
-        price: parseFloat(document.getElementById('prodPrice').value) || 0,
+        
+        // Parseamos los valores monetarios antes de mandarlos a la Base de Datos
+        cost: parseCurrency(document.getElementById('prodCost').value),
+        expenses: parseCurrency(document.getElementById('prodExpenses').value),
+        price: parseCurrency(document.getElementById('prodPrice').value),
+        
         status: 'Activo',
         
         frente: document.getElementById('optFrente').value.trim(),
@@ -359,24 +617,29 @@
         peso: document.getElementById('optPeso').value.trim(),
         color: document.getElementById('prodColor').value.trim(),
 
-        image1: img1, image2: img2, image3: img3,
+        image1: img1, 
+        image2: img2, 
+        image3: img3,
         createdAt: dbProducts.find(x=>x.id===id)?.createdAt || new Date().toISOString()
     };
 
     try {
         const res = await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
         if (res.ok) {
-            alert("✅ Producto guardado y sincronizado.");
+            alert("✅ Producto guardado exitosamente.");
             limpiarFormulario();
             await init();
         } else {
-            const errorMsg = await res.json();
-            alert("Error al guardar: " + (errorMsg.error || "Datos incompletos"));
+            alert("Error del servidor al intentar guardar.");
         }
-    } catch (err) { alert("Error de red/conexión."); }
-    finally { mostrarCarga(false); }
+    } catch (err) { 
+        alert("Error de conexión con la base de datos."); 
+    } finally { 
+        mostrarCarga(false); 
+    }
   }
 
+  // RENDERIZAR TABLA DE CATÁLOGO
   function renderTable() {
     const term = document.getElementById('search').value.toLowerCase();
     const tbody = document.getElementById('tableBody');
@@ -384,26 +647,19 @@
     
     tbody.innerHTML = filtrados.map(p => {
       const img = p.image1 || 'https://via.placeholder.com/50?text=No+Foto';
-      const isInactive = p.status === 'Inactivo';
       return `
-      <tr style="${isInactive ? 'opacity: 0.5;' : ''}">
+      <tr>
         <td><img src="${img}" class="thumb-list" onclick="zoom(this.src)" onerror="this.src='https://via.placeholder.com/50?text=Error'"></td>
         <td><small class="badge" style="background:#e2e8f0; color:#1e293b;">${p.code || 'AUTO'}</small></td>
-        <td>
-          <strong>${escapeHtml(p.name)}</strong>
-          ${isInactive ? '<br><small style="color:var(--danger); font-weight:bold;">(INACTIVO)</small>' : ''}
-          <br><small style="color:#64748b">${escapeHtml(p.category || '-')}</small>
-        </td>
+        <td><strong>${escapeHtml(p.name)}</strong><br><small style="color:#64748b">${escapeHtml(p.category || '-')}</small></td>
         <td style="text-align:right; color:var(--primary); font-weight:800; font-size:15px;">${currency(p.price)}</td>
         <td style="text-align:center;"><span class="badge ${p.stock > 5 ? 'success' : 'danger'}">${p.stock || 0}</span></td>
-        <td>
-          <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="editarProducto('${p.id}')">Editar</button>
-          <button class="btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--danger); color:var(--danger);" onclick="eliminarProductoPrompt('${p.id}')">Bajar</button>
-        </td>
+        <td><button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="editarProducto('${p.id}')">Editar</button></td>
       </tr>`;
     }).join('');
   }
 
+  // CARGAR PRODUCTO PARA EDITAR (Poniéndole el signo $ a los inputs)
   function editarProducto(id) {
     const p = dbProducts.find(x => x.id === id);
     if (!p) return;
@@ -415,9 +671,12 @@
     document.getElementById('prodCategory').value = p.category;
     document.getElementById('prodCode').value = p.code || '';
     document.getElementById('prodDescription').value = p.description || '';
-    document.getElementById('prodCost').value = p.cost;
-    document.getElementById('prodExpenses').value = p.expenses || 0;
-    document.getElementById('prodPrice').value = p.price;
+    
+    // Le asignamos el formato de pesos y bloqueamos el costo
+    document.getElementById('prodCost').value = currency(p.cost);
+    document.getElementById('prodCost').disabled = true; 
+    document.getElementById('prodExpenses').value = currency(p.expenses);
+    document.getElementById('prodPrice').value = currency(p.price);
 
     document.getElementById('optFrente').value = p.frente || '';
     document.getElementById('optPatilla').value = p.patilla || '';
@@ -426,11 +685,17 @@
     document.getElementById('optPeso').value = p.peso || '';
     document.getElementById('prodColor').value = p.color || '';
 
+    // Renderiza las imágenes previas
     for(let i=1; i<=3; i++) {
         const val = p[`image${i}`];
         if (val) {
-            if (val.startsWith('data:')) { document.getElementById(`img${i}B64`).value = val; syncPreview(i, 'file'); } 
-            else { document.getElementById(`img${i}Url`).value = val; syncPreview(i, 'link'); }
+            if (val.startsWith('data:')) { 
+                document.getElementById(`img${i}B64`).value = val; 
+                syncPreview(i, 'file'); 
+            } else { 
+                document.getElementById(`img${i}Url`).value = val; 
+                syncPreview(i, 'link'); 
+            }
         }
     }
 
@@ -440,81 +705,26 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // LIMPIAR FORMULARIO
   function limpiarFormulario() {
       document.getElementById('productForm').reset();
       document.getElementById('prodId').value = '';
+      
+      // Desbloquear Costo para producto nuevo
+      document.getElementById('prodCost').disabled = false;
+      
       document.getElementById('formTitle').textContent = "Alta de producto";
       document.getElementById('formTitle').style.color = "var(--text)";
-      for(let i=1; i<=3; i++) clearImage(i);
-      calcularCFO();
-  }
-
-  // --- GESTIÓN DE SEGURIDAD (BAJA DE PRODUCTOS) ---
-  function eliminarProductoPrompt(id) {
-    pendingAdminAction = ejecutarDesactivacionProducto;
-    pendingAdminParam = id;
-    document.getElementById('adminAuthPin').value = '';
-    document.getElementById('adminAuthDialog').showModal();
-    setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
-  }
-
-  function cerrarAdminAuth() {
-    document.getElementById('adminAuthDialog').close();
-    pendingAdminAction = null;
-    pendingAdminParam = null;
-  }
-
-  async function validarAdminAuth(e) {
-    e.preventDefault();
-    const passwordInput = document.getElementById('adminAuthPin').value;
-    const adminUser = localStorage.getItem('saas_username') || localStorage.getItem('activeUser') || 'admin';
-
-    mostrarCarga(true);
-    try {
-        const res = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-company-id': localStorage.getItem('company_id') || '' },
-            body: JSON.stringify({ username: adminUser, password: passwordInput })
-        });
-        const data = await res.json();
-
-        if (data.success && data.user.role === 'admin') {
-            const accion = pendingAdminAction;
-            const param = pendingAdminParam;
-            cerrarAdminAuth();
-            if (accion) accion(param);
-        } else {
-            alert("❌ Contraseña de administrador incorrecta.");
-            document.getElementById('adminAuthPin').value = '';
-            document.getElementById('adminAuthPin').focus();
-        }
-    } catch (error) {
-        alert("Error de conexión al verificar credenciales.");
-    } finally {
-        mostrarCarga(false);
-    }
-  }
-
-  async function ejecutarDesactivacionProducto(id) {
-    mostrarCarga(true);
-    try {
-      const response = await apiFetch(`${API_URL}/products?id=${id}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        await init();
-      } else {
-        alert("Error al desactivar el producto.");
+      
+      for(let i=1; i<=3; i++) {
+          clearImage(i);
       }
-    } catch(error) {
-      alert("Error de conexión.");
-    } finally {
-      mostrarCarga(false);
-    }
+      
+      document.getElementById('prodProfit').value = '$ 0,00';
+      document.getElementById('prodMargin').value = '0,0%';
   }
 
-  // --- CARGA MASIVA Y EXPORTACIÓN ---
+  // --- MÓDULO EXCEL (MASIVO) ---
   function abrirModalImportar() {
     document.getElementById('importFile').value = '';
     document.getElementById('modalImportarProductos').showModal();
@@ -526,10 +736,19 @@
       dataExport.push({ "NOMBRE": "", "CATEGORIA": "", "SKU": "", "COSTO": 0, "GASTOS": 0, "PRECIO": 0, "DESCRIPCION": "", "COLOR": "", "FRENTE": "", "PATILLA": "", "LENTE": "", "TALLE": "", "PESO": "", "IMAGEN_1": "", "IMAGEN_2": "", "IMAGEN_3": "" });
     } else {
       dataExport = dbProducts.map(p => ({
-        "NOMBRE": p.name || "", "CATEGORIA": p.category || "", "SKU": p.code || "",
-        "COSTO": p.cost || 0, "GASTOS": p.expenses || 0, "PRECIO": p.price || 0,
-        "DESCRIPCION": p.description || "", "COLOR": p.color || "", "FRENTE": p.frente || "",
-        "PATILLA": p.patilla || "", "LENTE": p.lente || "", "TALLE": p.talle || "", "PESO": p.peso || "",
+        "NOMBRE": p.name || "", 
+        "CATEGORIA": p.category || "", 
+        "SKU": p.code || "",
+        "COSTO": p.cost || 0, 
+        "GASTOS": p.expenses || 0, 
+        "PRECIO": p.price || 0,
+        "DESCRIPCION": p.description || "", 
+        "COLOR": p.color || "", 
+        "FRENTE": p.frente || "",
+        "PATILLA": p.patilla || "", 
+        "LENTE": p.lente || "", 
+        "TALLE": p.talle || "", 
+        "PESO": p.peso || "",
         "IMAGEN_1": p.image1 && !p.image1.startsWith('data:') ? p.image1 : (p.image1 ? '[Archivo]' : ''),
         "IMAGEN_2": p.image2 && !p.image2.startsWith('data:') ? p.image2 : (p.image2 ? '[Archivo]' : ''),
         "IMAGEN_3": p.image3 && !p.image3.startsWith('data:') ? p.image3 : (p.image3 ? '[Archivo]' : '')
@@ -615,6 +834,7 @@
     reader.readAsArrayBuffer(file);
   }
 
+  // DISPARO DE INICIO
   init();
 </script>
 </body>
