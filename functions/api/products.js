@@ -26,8 +26,15 @@ async function ensureColumns(db) {
 export async function onRequestGet(context) {
     try {
         await ensureColumns(context.env.DB);
-        const companyId = getCompanyIdFromRequest(context.request);
         const url = new URL(context.request.url);
+        
+        // MAGIA E-COMMERCE: Busca el ID en el header (Panel SaaS) o en la URL (?store=... para la tienda)
+        const companyId = getCompanyIdFromRequest(context.request) || url.searchParams.get('store') || '';
+
+        if (!companyId) {
+            return Response.json({ error: 'Falta company_id o store en la petición.' }, { status: 400 });
+        }
+
         const status = url.searchParams.get('status') || 'Activo';
 
         let query = "SELECT * FROM products WHERE company_id = ?";
@@ -40,7 +47,15 @@ export async function onRequestGet(context) {
         query += " ORDER BY name ASC";
         
         const { results } = await context.env.DB.prepare(query).bind(...params).all();
-        return Response.json(results);
+        
+        // CABECERAS CORS: Permite que el frontend del e-commerce lea desde cualquier dominio sin bloqueos
+        const headers = {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET",
+        };
+
+        return new Response(JSON.stringify(results), { headers, status: 200 });
     } catch (error) {
         return Response.json({ error: error.message }, { status: 500 });
     }
