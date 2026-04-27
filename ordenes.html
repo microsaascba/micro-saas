@@ -1384,7 +1384,6 @@
     const isAdmin = currentRole === 'admin';
 
     dbOrders.forEach(o => {
-      // Forzamos el estado de la base de datos a minúsculas para compararlo sin fallos
       const currentStatus = (o.status || '').toLowerCase();
       
       const enProceso = enProcesoStates.includes(currentStatus);
@@ -1406,25 +1405,34 @@
       const osTag = o.os_name ? `<br><small style="color:var(--primary); font-weight:bold;">O.S: ${escapeHtml(o.os_name)}</small>` : '';
 
       let actionsHtml = '';
-      if (enProceso) {
+      
+      // Acá la magia: El selector de estado ahora SIEMPRE aparece si la orden está activa
+      if (enProceso || isListo) {
           actionsHtml = `
             <div style="margin-bottom: 5px;">
-              <select class="input-box" style="padding:2px 4px; font-size:11px; width:auto; border-color:var(--line); font-weight:bold; color:var(--text);" onchange="actualizarEstadoOrden('${o.id}', this.value)">
+              <select class="input-box" style="padding:2px 4px; font-size:11px; width:100%; border-color:var(--line); font-weight:bold; color:var(--text);" onchange="actualizarEstadoOrden('${o.id}', this.value)">
                   <option value="No enviado" ${currentStatus === 'no enviado' || currentStatus === 'pendiente' ? 'selected' : ''}>No enviado</option>
                   <option value="Pedido a lab" ${currentStatus === 'pedido a lab' || currentStatus === 'en taller' || currentStatus === 'control calidad' ? 'selected' : ''}>Pedido a lab</option>
                   <option value="Garantía/demorado" ${currentStatus === 'garantía/demorado' || currentStatus === 'garantía / rehacer' ? 'selected' : ''}>Garantía/demorado</option>
-                  <option value="Recibido">➡ Marcar Recibido</option>
+                  <option value="Recibido" ${isListo ? 'selected' : ''}>Recibido (Listo)</option>
               </select>
             </div>
-            <button class="btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--primary); color:var(--primary);" onclick="editarOrden('${o.id}')">✏️ Editar</button>
           `;
-      } else if (isListo) {
-          actionsHtml = `
-            <div style="display:flex; flex-direction:column; gap:5px;">
-              <button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>
-              <button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#16a34a; border-color:#16a34a; display:flex; align-items:center; justify-content:center; gap:4px;" onclick="enviarWhatsAppAviso('${escapeHtml(o.clientName)}', '${o.id}')">💬 Avisar por WP</button>
-            </div>
-          `;
+
+          if (isListo) {
+              // Si está "Recibido", muestra además los botones verdes de entrega
+              actionsHtml += `
+                <div style="display:flex; flex-direction:column; gap:5px;">
+                  <button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>
+                  <button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#16a34a; border-color:#16a34a; display:flex; align-items:center; justify-content:center; gap:4px;" onclick="enviarWhatsAppAviso('${escapeHtml(o.clientName)}', '${o.id}')">💬 Avisar por WP</button>
+                </div>
+              `;
+          } else {
+              // Si no está lista, muestra el botón de Editar abajo del selector
+              actionsHtml += `
+                <button class="btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--primary); color:var(--primary); width:100%;" onclick="editarOrden('${o.id}')">✏️ Editar</button>
+              `;
+          }
       }
 
       const tr = `
@@ -1437,8 +1445,8 @@
           ${enProceso || isListo ? `<td style="color:var(--danger); font-weight:bold;">${currency(o.balance)}</td>` : `<td>${currency(o.total)}</td>`}
           <td style="text-align:center; min-width:180px;">
             ${actionsHtml}
-            ${(enProceso || isListo) && isAdmin ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#ef4444; border-color:#ef4444; margin-top:4px;" onclick="promptAnularOrden('${o.id}')">Anular</button>` : ''}
-            ${!isAnulado ? `<button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️</button>` : ''}
+            ${(enProceso || isListo) && isAdmin ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#ef4444; border-color:#ef4444; margin-top:4px; width:100%;" onclick="promptAnularOrden('${o.id}')">Anular</button>` : ''}
+            ${!isAnulado ? `<button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px; width:100%;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️ Imprimir Ticket</button>` : ''}
           </td>
         </tr>`;
         
