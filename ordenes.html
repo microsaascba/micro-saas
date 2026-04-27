@@ -1446,7 +1446,7 @@
           <td style="text-align:center; min-width:180px;">
             ${actionsHtml}
             ${(enProceso || isListo) && isAdmin ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#ef4444; border-color:#ef4444; margin-top:4px; width:100%;" onclick="promptAnularOrden('${o.id}')">Anular</button>` : ''}
-            ${!isAnulado ? `<button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px; width:100%;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️ Imprimir Ticket</button>` : ''}
+            ${!isAnulado ? `<button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px; width:100%;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️ Imprimir Órden</button>` : ''}
           </td>
         </tr>`;
         
