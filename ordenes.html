@@ -47,7 +47,7 @@
     /* --- ESTILOS DE IMPRESIÓN --- */
     .print-wrapper { display: none; }
     
-  @media print {
+    @media print {
       @page { margin: 8mm; size: A4 portrait; }
       body * { visibility: hidden !important; }
       .print-wrapper, .print-wrapper * { visibility: visible !important; }
@@ -141,7 +141,7 @@
         <div id="kpiPendientes" style="font-size:28px; font-weight:800; color:var(--primary);">0</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--success);">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Listos para Entregar</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Recibidos (Listos)</div>
         <div id="kpiListos" style="font-size:28px; font-weight:800; color:var(--success);">0</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--warning);">
@@ -259,8 +259,8 @@
         <label style="font-size: 11px; font-weight: bold; color: var(--muted);">Estado de la Orden:</label>
         <select id="expEstado" class="input-box">
           <option value="ALL">Todos los estados</option>
-          <option value="En Proceso">En Proceso (Lab/Taller)</option>
-          <option value="Recibido - Listo">Solo Listos para Entregar</option>
+          <option value="En Proceso">En Proceso (Taller / Lab)</option>
+          <option value="Recibido">Solo Recibidos (Listos para Entregar)</option>
           <option value="Entregado">Solo Entregados (Historial)</option>
         </select>
       </div>
@@ -395,7 +395,7 @@
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 15px; border-top: 1px dashed #fed7aa; padding-top: 15px;">
           <div>
-            <label class="receta-header" style="display: block; margin-bottom: 4px;">Tipo de Lente</label>
+            <label class="receta-header" style="display: block; margin-bottom: 4px;">Tipo de cristal</label>
             <select id="ordDp" class="input-box">
               <option value="Monofocal">Monofocal</option>
               <option value="Bifocal">Bifocal</option>
@@ -449,12 +449,14 @@
         </div>
 
         <div>
-          <label class="receta-header" style="display: block; margin-bottom: 4px;">Tratamientos de Coloración</label>
+          <label class="receta-header" style="display: block; margin-bottom: 4px;">Tratamientos</label>
           <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 13px; background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 8px; align-items: center;">
-             <label style="cursor: pointer;"><input type="checkbox" name="ordTrat" value="Compacto"> Compacto</label>
-             <label style="cursor: pointer;"><input type="checkbox" name="ordTrat" value="Degrade"> Degrade</label>
-             <label style="cursor: pointer;"><input type="checkbox" name="ordTrat" value="Según Muestra"> Según Muestra</label>
-             <div style="display: flex; align-items: center; gap: 8px;">
+             <label style="cursor: pointer;"><input type="checkbox" name="ordTrat" value="Coloración compacta"> Coloración compacta</label>
+             <label style="cursor: pointer;"><input type="checkbox" name="ordTrat" value="Coloración degradee"> Coloración degradee</label>
+             <label style="cursor: pointer;"><input type="checkbox" name="ordTrat" value="Coloración igual muestra"> Coloración igual muestra</label>
+             <label style="cursor: pointer;"><input type="checkbox" name="ordTrat" value="Anti reflejo básico"> Anti reflejo básico</label>
+             <label style="cursor: pointer;"><input type="checkbox" name="ordTrat" value="Anti reflejo premium"> Anti reflejo premium</label>
+             <div style="display: flex; align-items: center; gap: 8px; margin-left: auto;">
                <strong>Tinte:</strong>
                <input type="text" id="ordTinte" class="input-box" style="width: 150px; padding: 4px 8px; margin: 0;" placeholder="Color ej: Gris">
              </div>
@@ -502,7 +504,7 @@
           <div>
             <div style="display:flex; justify-content:space-between; margin-bottom: 10px;">
               <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Valor Total General</label>
-              <input type="text" id="ordTotal" class="input-box" style="width: 150px; padding: 4px 8px; font-size: 13px; font-weight: bold; color: var(--text); background: #e2e8f0; cursor: not-allowed; text-align: right;" placeholder="$ 0,00" required readonly>
+              <input type="text" id="ordTotal" class="input-box" style="width: 150px; padding: 4px 8px; font-size: 15px; font-weight: bold; color: var(--muted); background: transparent; border: none; text-align: right;" placeholder="$ 0,00" required readonly>
             </div>
             
             <div style="display:flex; justify-content:space-between; margin-bottom: 10px; align-items: center;">
@@ -825,6 +827,15 @@
     return parseFloat(str) || 0;
   }
 
+  // --- WHATSAPP ---
+  function enviarWhatsAppAviso(clientName, orderId) {
+      const companyName = localStorage.getItem('company_name') || 'nuestro local';
+      const numOrden = orderId.split('_')[1] || orderId; 
+      const msg = `¡Hola ${clientName}, tu orden N° ${numOrden} ya esta lista para ser retirada! Te esperamos en ${companyName}!`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(msg)}`;
+      window.open(whatsappUrl, '_blank');
+  }
+
   async function initOrdenes() {
     mostrarCarga(true);
     try {
@@ -1087,7 +1098,6 @@
     
     document.getElementById('ordBalance').value = currency(balance);
 
-    // Si pago mixto está activado, recalcular el split de Seña
     if(document.getElementById('ordIsMixed').checked) {
         calcMixed('ord');
     }
@@ -1104,7 +1114,6 @@
     document.querySelectorAll('input[name="ordTrat"]').forEach(cb => cb.checked = false);
     ['ordDp','ordDiseno','ordCalibrado','ordMaterial','ordColor','ordAntirreflex','ordTinte'].forEach(id => document.getElementById(id).value = (document.getElementById(id).tagName === 'SELECT' ? document.getElementById(id).options[0].value : ''));
 
-    // Reset pagos y mixtos
     document.getElementById('ordIsMixed').checked = false;
     toggleMixed('ord');
     document.getElementById('ordPaymentMethod').value = 'Efectivo';
@@ -1202,17 +1211,16 @@
     
     calcSaldo();
     
-    // Reset mixed payment UI
     document.getElementById('ordIsMixed').checked = false;
     toggleMixed('ord');
     
     if (o.cupon && !o.cupon.includes('/')) {
         document.getElementById('ordPaymentMethod').value = 'Crédito';
-        document.getElementById('divCuponOrden').style.display = 'block';
+        document.getElementById('ordCuponDiv').style.display = 'block';
         document.getElementById('ordCupon').value = o.cupon;
     } else {
         document.getElementById('ordPaymentMethod').value = 'Efectivo';
-        document.getElementById('divCuponOrden').style.display = 'none';
+        document.getElementById('ordCuponDiv').style.display = 'none';
         document.getElementById('ordCupon').value = '';
     }
 
@@ -1266,11 +1274,11 @@
       deposit: depositFloat, 
       balance: balanceFloat,
       
-      status: document.getElementById('ordId').value ? dbOrders.find(x=>x.id===id).status : 'Pedido a Lab', 
+      status: document.getElementById('ordId').value ? dbOrders.find(x=>x.id===id).status : 'No enviado', 
       seller: localStorage.getItem('activeUser') || 'Admin', 
       branch: terminalActiva,
       notes: document.getElementById('ordNotas').value.trim(),
-      cupon: '', // We update this below if simple
+      cupon: '', 
       createdAt: new Date().toISOString()
     };
 
@@ -1288,15 +1296,13 @@
         }
       }
 
-      // --- LOGICA DE PAGOS: REGISTRO DE VENTA EN CAJA ---
       const isMixed = document.getElementById('ordIsMixed').checked;
       
       if (isNew && depositFloat > 0) {
         if (!isMixed) {
-            // Pago Simple
             const method = document.getElementById('ordPaymentMethod').value;
             const cuponVal = document.getElementById('ordCupon').value.trim();
-            ord.cupon = cuponVal; // Guardar en orden para historial
+            ord.cupon = cuponVal; 
             
             const ventaSena = {
               id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
@@ -1305,7 +1311,6 @@
             };
             await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSena) });
         } else {
-            // Pago Mixto: Mandamos 2 transacciones a la API para que Cierre de Caja no se rompa
             const m1 = document.getElementById('ordMixedMethod1').value;
             const a1 = parseCurrency(document.getElementById('ordMixedAmount1').value);
             const c1 = document.getElementById('ordMixedCupon1').value.trim();
@@ -1372,11 +1377,14 @@
     let kPend = 0, kListos = 0, kSaldo = 0;
     let htmlPend = '', htmlHist = '';
 
-    const enProcesoStates = ['Pendiente', 'Pedido a Lab', 'En Taller', 'Control Calidad', 'Garantía / Rehacer'];
+    // Compatibilidad inversa con órdenes viejas
+    const isLegacy = (status) => ['Pendiente', 'En Taller', 'Control Calidad', 'Garantía / Rehacer'].includes(status);
+
+    const enProcesoStates = ['No enviado', 'Pedido a lab', 'Garantía/demorado', 'Pendiente', 'En Taller', 'Control Calidad', 'Garantía / Rehacer'];
 
     dbOrders.forEach(o => {
       const enProceso = enProcesoStates.includes(o.status);
-      const isListo = o.status === 'Recibido - Listo';
+      const isListo = o.status === 'Recibido' || o.status === 'Recibido - Listo';
       const isAnulado = o.status === 'Anulado';
       
       if (enProceso) kPend++;
@@ -1385,12 +1393,11 @@
 
       let badge = '';
       if (isAnulado) badge = `<span style="background:var(--line); color:var(--muted); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Anulado</span>`;
-      else if (isListo) badge = `<span style="background:#dcfce7; color:#16a34a; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Listo para Entregar</span>`;
+      else if (isListo) badge = `<span style="background:#dcfce7; color:#16a34a; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Recibido (Listo)</span>`;
       else if (o.status === 'Entregado') badge = `<span style="background:#e0e7ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Entregado</span>`;
-      else if (o.status === 'Garantía / Rehacer') badge = `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Garantía / Rehacer</span>`;
-      else if (o.status === 'En Taller') badge = `<span style="background:#dbeafe; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">En Taller</span>`;
-      else if (o.status === 'Control Calidad') badge = `<span style="background:#f3e8ff; color:#7e22ce; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Control Calidad</span>`;
-      else badge = `<span style="background:#ffedd5; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Pedido a Lab.</span>`;
+      else if (o.status === 'Garantía/demorado' || o.status === 'Garantía / Rehacer') badge = `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Garantía/demorado</span>`;
+      else if (o.status === 'Pedido a lab' || o.status === 'En Taller' || o.status === 'Control Calidad') badge = `<span style="background:#dbeafe; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Pedido a lab</span>`;
+      else badge = `<span style="background:#ffedd5; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">No enviado</span>`;
 
       const osTag = o.os_name ? `<br><small style="color:var(--primary); font-weight:bold;">O.S: ${escapeHtml(o.os_name)}</small>` : '';
 
@@ -1399,17 +1406,21 @@
           actionsHtml = `
             <div style="margin-bottom: 5px;">
               <select class="input-box" style="padding:2px 4px; font-size:11px; width:auto; border-color:var(--line); font-weight:bold; color:var(--text);" onchange="actualizarEstadoOrden('${o.id}', this.value)">
-                  <option value="Pedido a Lab" ${o.status === 'Pedido a Lab' || o.status === 'Pendiente' ? 'selected' : ''}>Pedido a Lab</option>
-                  <option value="En Taller" ${o.status === 'En Taller' ? 'selected' : ''}>En Taller</option>
-                  <option value="Control Calidad" ${o.status === 'Control Calidad' ? 'selected' : ''}>Control Calidad</option>
-                  <option value="Garantía / Rehacer" ${o.status === 'Garantía / Rehacer' ? 'selected' : ''}>Garantía / Rehacer</option>
-                  <option value="Recibido - Listo">➡ Marcar Listo</option>
+                  <option value="No enviado" ${o.status === 'No enviado' || o.status === 'Pendiente' ? 'selected' : ''}>No enviado</option>
+                  <option value="Pedido a lab" ${o.status === 'Pedido a lab' || o.status === 'En Taller' || o.status === 'Control Calidad' ? 'selected' : ''}>Pedido a lab</option>
+                  <option value="Garantía/demorado" ${o.status === 'Garantía/demorado' || o.status === 'Garantía / Rehacer' ? 'selected' : ''}>Garantía/demorado</option>
+                  <option value="Recibido">➡ Marcar Recibido</option>
               </select>
             </div>
             <button class="btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--primary); color:var(--primary);" onclick="editarOrden('${o.id}')">✏️ Editar</button>
           `;
       } else if (isListo) {
-          actionsHtml = `<button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>`;
+          actionsHtml = `
+            <div style="display:flex; flex-direction:column; gap:5px;">
+              <button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>
+              <button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#16a34a; border-color:#16a34a; display:flex; align-items:center; justify-content:center; gap:4px;" onclick="enviarWhatsAppAviso('${escapeHtml(o.clientName)}', '${o.id}')">💬 Avisar por WP</button>
+            </div>
+          `;
       }
 
       const tr = `
@@ -1681,7 +1692,10 @@
           
           if (estado === 'ALL') return matchFechas;
           if (estado === 'En Proceso') {
-              return matchFechas && ['Pendiente', 'Pedido a Lab', 'En Taller', 'Control Calidad', 'Garantía / Rehacer'].includes(o.status);
+              return matchFechas && ['No enviado', 'Pedido a lab', 'Garantía/demorado', 'Pendiente', 'En Taller', 'Control Calidad', 'Garantía / Rehacer'].includes(o.status);
+          }
+          if (estado === 'Recibido') {
+              return matchFechas && ['Recibido', 'Recibido - Listo'].includes(o.status);
           }
           return matchFechas && o.status === estado;
       });
@@ -1755,14 +1769,12 @@
     document.getElementById('plFrame').textContent = o.frameCode + ' - ' + o.frameName;
     document.getElementById('plGlass').textContent = o.glassType;
 
-    // --- MAGIA PARA EL NOMBRE DEL ARCHIVO PDF ---
     const tituloOriginal = document.title;
     const numOrden = o.id.split('_')[1] || o.id; 
     document.title = `${o.clientName} - Orden N°${numOrden}`;
 
     window.print();
 
-    // Restauramos el título para que la pestaña no quede cambiada
     document.title = tituloOriginal;
   }
 
