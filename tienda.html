@@ -514,12 +514,50 @@
             document.getElementById('cartTotal').textContent = currency(total);
         }
 
-        function iniciarCheckout() {
+        async function iniciarCheckout() {
             if(cart.length === 0) {
                 alert("Tu carrito está vacío.");
                 return;
             }
-            alert("En el próximo paso conectaremos este botón con el Checkout Final de tu API Serverless para inyectar la venta en D1.");
+
+            const customerName = prompt("Por favor, ingresa tu nombre completo para el pedido:");
+            if (!customerName) return;
+
+            const btn = document.querySelector('.btn-checkout');
+            btn.textContent = "Procesando...";
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/web_orders', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-company-id': storeId 
+                    },
+                    body: JSON.stringify({
+                        companyId: storeId,
+                        customerName: customerName,
+                        cart: cart
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) throw new Error(data.error || 'Error al procesar el pedido');
+
+                alert(`¡Pedido confirmado! Tu número de orden es: ${data.orderId}`);
+                
+                // Vaciamos el carrito
+                cart = [];
+                saveCart();
+                toggleCart();
+
+            } catch (error) {
+                alert("Error: " + error.message);
+            } finally {
+                btn.textContent = "Finalizar Compra";
+                btn.disabled = false;
+            }
         }
 
         // ---------------- CARRUSEL AUTOMÁTICO ----------------
