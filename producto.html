@@ -5,61 +5,53 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Productos | Micro SaaS</title>
   
-  <style>
-    html, body { background-color: #f0f2f7 !important; }
-    body { animation: fadeIn 0.15s ease-in-out; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  </style>
-  
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
+    html, body { background-color: #f0f2f7 !important; }
+    body { animation: fadeIn 0.15s ease-in-out; font-family: 'Inter', sans-serif; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
-    .layout-stacked { display: flex; flex-direction: column; gap: 24px; max-width: 1200px; margin: 0 auto; width: 100%; }
-    
-    .form-grid-horizontal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: end; }
-    .col-span-2 { grid-column: span 2; }
-    .col-span-4 { grid-column: span 4; }
+    .layout-stacked { display: flex; flex-direction: column; gap: 24px; max-width: 1200px; margin: 0 auto; width: 100%; padding: 20px; box-sizing: border-box; }
     
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
-    .input-box:focus { border-color: var(--primary); }
-    .input-box:disabled { background: transparent; border: none; padding: 0; font-size: 16px; font-weight: 800; cursor: default; }
+    .input-box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
     
-    .calc-box { background: var(--panel-2); padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); }
-    .calc-box label { font-size: 11px; font-weight: bold; color: var(--muted); display: block; margin-bottom: 4px; }
+    .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: end; }
+    .col-2 { grid-column: span 2; }
+    .col-4 { grid-column: span 4; }
+
+    /* ESTILOS ÓPTICOS */
+    .specs-box { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid var(--line); margin-top: 10px; }
+    .specs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+    .specs-box label { font-size: 10px; font-weight: 800; color: var(--muted); text-transform: uppercase; display: block; margin-bottom: 4px; }
+
+    /* GESTIÓN DE IMÁGENES */
+    .img-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 15px; }
+    .img-card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px; text-align: center; }
+    .img-preview { width: 100%; height: 100px; object-fit: contain; background: #f1f5f9; border-radius: 6px; margin-bottom: 10px; border: 1px solid var(--line); display: none; cursor: pointer; }
     
-    .promo-box { background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px dashed var(--primary-soft); height: 100%; box-sizing: border-box;}
-    .variations-box { background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line); height: 100%; box-sizing: border-box;}
-    
+    /* TABLA Y ZOOM */
     table { width: 100%; border-collapse: collapse; text-align: left; }
     th { padding: 12px 15px; font-size: 11px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
     td { padding: 12px 15px; border-bottom: 1px solid var(--line); font-size: 14px; vertical-align: middle; }
-
-    dialog::backdrop { background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(3px); }
-    dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     
-    .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); font-size: 18px; }
+    .thumb-list { width: 45px; height: 45px; border-radius: 6px; object-fit: cover; border: 1px solid var(--line); cursor: zoom-in; transition: 0.2s; }
+    .thumb-list:hover { transform: scale(1.1); }
 
-    .img-upload-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-    .img-upload-box { border: 1px dashed var(--muted); padding: 10px; border-radius: 8px; background: #fff; text-align: center; position: relative; }
+    #zoomModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 99999; justify-content: center; align-items: center; cursor: zoom-out; }
+    #zoomImg { max-width: 90%; max-height: 90%; border-radius: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
 
-    .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
-    .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
+    .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); z-index: 9999; justify-content: center; align-items: center; font-weight: bold; color: var(--primary); }
 
     @media (max-width: 900px) {
-      .app { display: flex !important; flex-direction: column !important; }
-      .mobile-toggle { display: block; }
-      .sidebar { position: fixed !important; left: -300px; top: 0; height: 100vh !important; width: 260px !important; z-index: 999; flex-direction: column !important; transition: left 0.3s ease; box-shadow: 4px 0 25px rgba(0,0,0,0.5); }
-      .sidebar.open { left: 0 !important; }
-      .sidebar-overlay.open { display: block; }
-      .topbar { padding: 15px; flex-direction: column; align-items: flex-start; gap: 15px; }
-      .content { padding: 15px !important; width: 100%; box-sizing: border-box; }
-      .form-grid-horizontal { grid-template-columns: 1fr 1fr; }
-      .col-span-2, .col-span-4 { grid-column: span 2; }
-      .img-upload-grid { grid-template-columns: 1fr; }
+      .app { display: flex; flex-direction: column; }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+      .img-container { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -67,17 +59,18 @@
 
 <div id="loadingOverlay" class="loading-overlay">Procesando...</div>
 
+<div id="zoomModal" onclick="this.style.display='none'">
+    <img id="zoomImg" src="">
+</div>
+
 <div class="app">
-  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
   <aside class="sidebar">
-    <div class="brand"><div class="brand-logo">M</div><div class="brand-text"><strong>Micro SaaS</strong><small>Control Pro</small></div></div>
+    <div class="brand"><div class="brand-logo">M</div><div class="brand-text"><strong>Micro SaaS</strong><small>Control Optometría</small></div></div>
     <nav class="nav">
       <a href="dashboard.html">📊 Dashboard</a>
       <a href="producto.html" class="active">📦 Productos</a>
-      <a href="clientes.html">🏢 Clientes</a>
       <a href="facturacion.html">🛒 Facturación</a>
       <a href="ventas.html">🧾 Ventas</a>
-      <a href="contable.html">💸 Contable</a>
       <a href="stock.html">📚 Stock</a>
       <a href="ordenes.html">📋 Órdenes</a>
     </nav>
@@ -85,107 +78,96 @@
 
   <main class="content">
     <header class="topbar">
-      <div style="display: flex; align-items: center; width: 100%;">
-        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
-        <div class="page-title">
-          <h1 style="margin:0; font-size: 26px;">Gestión de Productos</h1>
-          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Maestro de artículos con codificación automática.</p>
-        </div>
-      </div>
-      <div class="topbar-actions" style="display: flex; gap: 8px;">
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarCatalogoExcel()">⬇ Exportar</button>
-        <button class="btn btn-primary" onclick="abrirModalImportar()">⬆ Importar Lote</button>
+      <h1 style="margin:0; font-size: 24px;">Maestro de Artículos</h1>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-outline" onclick="exportarCatalogoExcel()">⬇ Exportar</button>
+        <button class="btn btn-primary" onclick="limpiarFormulario()">+ Nuevo</button>
       </div>
     </header>
 
     <div class="layout-stacked">
       <article class="card card-pad">
-        <div style="margin-bottom: 20px;"><h2 style="margin: 0;" id="formTitle">Alta de producto</h2></div>
-        
+        <h2 id="formTitle" style="margin-top:0;">Alta de producto</h2>
         <form id="productForm" onsubmit="guardarProducto(event)">
           <input type="hidden" id="prodId">
           
-          <div class="form-grid-horizontal">
-            <div class="col-span-2">
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Nombre del producto *</label>
-              <input type="text" id="prodName" class="input-box" required placeholder="Ej: Anteojo Aviador Ray-Ban">
+          <div class="form-grid">
+            <div class="col-2">
+              <label style="font-size:11px; font-weight:bold; color:var(--muted);">Nombre / Modelo *</label>
+              <input type="text" id="prodName" class="input-box" required placeholder="Ej: Ray-Ban Aviador RB3025">
             </div>
-            
             <div>
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Categoría *</label>
-              <div style="display: flex; gap: 5px;">
-                <select id="prodCategory" class="input-box" required></select>
-                <button type="button" class="btn btn-primary" style="padding: 10px; flex-shrink: 0;" onclick="abrirModalCategoria()">+</button>
-              </div>
+              <label style="font-size:11px; font-weight:bold; color:var(--muted);">Categoría *</label>
+              <select id="prodCategory" class="input-box" required></select>
             </div>
-            
             <div>
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Código / SKU</label>
-              <input type="text" id="prodCode" class="input-box" placeholder="Dejar en blanco para AUTO">
+              <label style="font-size:11px; font-weight:bold; color:var(--muted);">Código / SKU</label>
+              <input type="text" id="prodCode" class="input-box" placeholder="Dejar vacío para AUTO">
             </div>
 
-            <div class="col-span-4">
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Descripción Detallada / Características</label>
-              <textarea id="prodDescription" class="input-box" rows="2" placeholder="Material, especificaciones técnicas, cuidados..."></textarea>
+            <div class="col-4">
+              <label style="font-size:11px; font-weight:bold; color:var(--muted);">Descripción Corta</label>
+              <input type="text" id="prodDescription" class="input-box" placeholder="Detalles rápidos...">
             </div>
 
-            <div>
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Costo unitario *</label>
-              <input type="number" id="prodCost" class="input-box" required min="0" step="0.01" oninput="calcularRentabilidad()">
-            </div>
-            <div>
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Gastos asociados</label>
-              <input type="number" id="prodExpenses" class="input-box" min="0" step="0.01" value="0" oninput="calcularRentabilidad()">
-            </div>
-            <div>
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Precio de Venta *</label>
-              <input type="number" id="prodPrice" class="input-box" required min="0" step="0.01" oninput="calcularRentabilidad()">
-            </div>
-            <div>
-              <label style="font-size: 11px; font-weight: bold; color: var(--muted); display:block; margin-bottom:6px;">Estado</label>
-              <select id="prodStatus" class="input-box">
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
-              </select>
-            </div>
-
-            <div class="calc-box"><label>Utilidad Bruta ($)</label><input type="text" id="prodProfit" disabled value="$0.00" style="color:var(--success); width:100%;"></div>
-            <div class="calc-box"><label>Margen (venta)</label><input type="text" id="prodMargin" disabled value="0.0%" style="color:var(--primary); width:100%;"></div>
-            
-            <div class="col-span-2">
-              <div class="variations-box">
-                <h3 style="margin: 0 0 10px 0; font-size: 13px;">🎨 Variaciones</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                  <div><label style="font-size: 10px; font-weight: bold; color: var(--muted);">Color</label><input type="text" id="prodColor" class="input-box" placeholder="Ej: Negro"></div>
-                  <div><label style="font-size: 10px; font-weight: bold; color: var(--muted);">Talle / Medida</label><input type="text" id="prodSize" class="input-box" placeholder="Ej: XL / 52mm"></div>
+            <div class="col-4">
+              <div class="specs-box">
+                <p style="margin:0 0 10px 0; font-size:12px; font-weight:bold; color:var(--primary);">👓 Ficha Técnica del Armazón</p>
+                <div class="specs-grid">
+                    <div><label>Frente</label><input type="text" id="optFrente" class="input-box" placeholder="Ej: 140mm"></div>
+                    <div><label>Patilla</label><input type="text" id="optPatilla" class="input-box" placeholder="Ej: 145mm"></div>
+                    <div><label>Lente</label><input type="text" id="optLente" class="input-box" placeholder="Ej: 52mm"></div>
+                    <div><label>Puente/Talle</label><input type="text" id="optTalle" class="input-box" placeholder="Ej: 18"></div>
+                    <div><label>Peso</label><input type="text" id="optPeso" class="input-box" placeholder="Ej: 24g"></div>
+                    <div><label>Color</label><input type="text" id="prodColor" class="input-box" placeholder="Ej: Negro Mate"></div>
                 </div>
               </div>
             </div>
 
-            <div class="col-span-4" style="margin-top: 10px;">
-              <div class="img-upload-grid">
-                <div class="img-upload-box"><img id="previewImg1" style="display:none; width:100%; height:100px; object-fit:contain;"><input type="hidden" id="prodImg1Base64"><input type="file" accept="image/*" class="input-box" onchange="processFile(event, 1)"><button type="button" onclick="clearImage(1)" class="btn-light">🗑️</button></div>
-                <div class="img-upload-box"><img id="previewImg2" style="display:none; width:100%; height:100px; object-fit:contain;"><input type="hidden" id="prodImg2Base64"><input type="file" accept="image/*" class="input-box" onchange="processFile(event, 2)"><button type="button" onclick="clearImage(2)" class="btn-light">🗑️</button></div>
-                <div class="img-upload-box"><img id="previewImg3" style="display:none; width:100%; height:100px; object-fit:contain;"><input type="hidden" id="prodImg3Base64"><input type="file" accept="image/*" class="input-box" onchange="processFile(event, 3)"><button type="button" onclick="clearImage(3)" class="btn-light">🗑️</button></div>
-              </div>
+            <div><label>Costo ($)</label><input type="number" id="prodCost" class="input-box" required step="0.01" oninput="calcularCalculos()"></div>
+            <div><label>Gastos ($)</label><input type="number" id="prodExpenses" class="input-box" step="0.01" value="0" oninput="calcularCalculos()"></div>
+            <div><label>Precio Venta ($)</label><input type="number" id="prodPrice" class="input-box" required step="0.01" oninput="calcularCalculos()"></div>
+            <div><label>Utilidad</label><input type="text" id="prodProfit" class="input-box" disabled style="color:green; font-weight:bold;"></div>
+
+            <div class="col-4">
+                <div class="img-container">
+                    <div class="img-card">
+                        <img id="prev1" class="img-preview" onclick="zoom(this.src)">
+                        <input type="hidden" id="img1B64">
+                        <input type="text" id="img1Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link..." oninput="updatePreview(1)">
+                        <input type="file" id="img1File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 1)">
+                    </div>
+                    <div class="img-card">
+                        <img id="prev2" class="img-preview" onclick="zoom(this.src)">
+                        <input type="hidden" id="img2B64">
+                        <input type="text" id="img2Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link..." oninput="updatePreview(2)">
+                        <input type="file" id="img2File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 2)">
+                    </div>
+                    <div class="img-card">
+                        <img id="prev3" class="img-preview" onclick="zoom(this.src)">
+                        <input type="hidden" id="img3B64">
+                        <input type="text" id="img3Url" class="input-box" style="font-size:10px; margin-bottom:5px;" placeholder="Pegar Link..." oninput="updatePreview(3)">
+                        <input type="file" id="img3File" accept="image/*" style="font-size:10px;" onchange="handleFile(event, 3)">
+                    </div>
+                </div>
             </div>
 
-            <div class="col-span-4" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line);">
+            <div class="col-4" style="text-align:right; margin-top:10px;">
               <button type="button" class="btn btn-light" onclick="limpiarFormulario()">Cancelar</button>
-              <button type="submit" class="btn btn-primary" style="padding: 12px 30px;" id="btnSave">Guardar Producto</button>
+              <button type="submit" class="btn btn-primary" style="padding:10px 40px;">Guardar Cambios</button>
             </div>
           </div>
         </form>
       </article>
 
       <article class="card card-pad">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <h2 style="margin: 0; font-size: 18px;">Catálogo Actual</h2>
-          <input type="text" id="searchTable" class="input-box" placeholder="Buscar por nombre o código..." onkeyup="renderTable()" style="max-width: 350px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+          <h2 style="margin:0;">Catálogo</h2>
+          <input type="text" id="search" class="input-box" style="max-width:300px;" placeholder="🔍 Buscar por nombre o SKU..." onkeyup="renderTable()">
         </div>
-        <div style="overflow-x: auto;">
+        <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>Código</th><th>Producto</th><th>Precio</th><th>Stock</th><th>Acciones</th></tr></thead>
+            <thead><tr><th>Foto</th><th>Código</th><th>Producto</th><th>Costo</th><th>P. Venta</th><th>Stock</th><th>Acciones</th></tr></thead>
             <tbody id="tableBody"></tbody>
           </table>
         </div>
@@ -194,70 +176,69 @@
   </main>
 </div>
 
-<dialog id="modalCategoria" style="width: 400px; padding: 25px;">
-    <h2 style="margin-top:0">Nueva Categoría</h2>
-    <input type="text" id="catName" class="input-box" placeholder="Nombre..." style="margin-bottom:20px">
-    <div style="display:flex; gap:10px; justify-content:flex-end">
-        <button class="btn btn-light" onclick="document.getElementById('modalCategoria').close()">Cerrar</button>
-        <button class="btn btn-primary" onclick="guardarCategoria()">Crear</button>
-    </div>
-</dialog>
-
 <script src="core.js"></script>
 <script>
   let dbProducts = [];
   let dbCategories = [];
 
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
-  function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
-  function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR').format(n || 0); }
+  function zoom(src) { document.getElementById('zoomImg').src = src; document.getElementById('zoomModal').style.display = 'flex'; }
 
-  async function initProducts() {
-    mostrarCarga(true);
-    try {
-      const [resP, resC] = await Promise.all([
-        apiFetch('/api/products?status=Todos&v=' + Date.now()),
-        apiFetch('/api/categories')
-      ]);
-      if (resP.ok) dbProducts = await resP.json();
-      if (resC.ok) dbCategories = await resC.json();
-    } catch (e) { console.error(e); }
-    finally { mostrarCarga(false); actualizarCategorias(); renderTable(); }
+  // --- GESTIÓN DE IMÁGENES (LINK + FILE) ---
+  function updatePreview(idx) {
+      const url = document.getElementById(`img${idx}Url`).value.trim();
+      const b64 = document.getElementById(`img${idx}B64`).value;
+      const img = document.getElementById(`prev${idx}`);
+      
+      if (b64) { img.src = b64; img.style.display = 'block'; }
+      else if (url) { img.src = url; img.style.display = 'block'; }
+      else { img.style.display = 'none'; }
   }
 
-  function actualizarCategorias() {
+  function handleFile(e, idx) {
+      const file = e.target.files[0];
+      if (!file) return;
+      mostrarCarga(true);
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+          document.getElementById(`img${idx}B64`).value = evt.target.result;
+          document.getElementById(`img${idx}Url`).value = ''; // Prioridad al archivo
+          updatePreview(idx);
+          mostrarCarga(false);
+      };
+      reader.readAsDataURL(file);
+  }
+
+  // --- INICIO ---
+  async function init() {
+    mostrarCarga(true);
+    try {
+      const ts = Date.now();
+      const [resP, resC] = await Promise.all([
+        apiFetch(`/api/products?status=Todos&v=${ts}`),
+        apiFetch('/api/categories')
+      ]);
+      dbProducts = resP.ok ? await resP.json() : [];
+      dbCategories = resC.ok ? await resC.json() : [];
+    } catch (e) {}
+    finally { 
+        mostrarCarga(false); 
+        actualizarSelectCats(); 
+        renderTable(); 
+    }
+  }
+
+  function actualizarSelectCats() {
     const s = document.getElementById('prodCategory');
     const cats = [...new Set([...dbCategories.map(c=>c.name), ...dbProducts.map(p=>p.category)])].filter(c=>c).sort();
     s.innerHTML = '<option value="">Seleccione...</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
   }
 
-  async function processFile(e, idx) {
-    const file = e.target.files[0];
-    if (!file) return;
-    mostrarCarga(true);
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-        document.getElementById(`prodImg${idx}Base64`).value = evt.target.result;
-        const img = document.getElementById(`previewImg${idx}`);
-        img.src = evt.target.result;
-        img.style.display = 'block';
-        mostrarCarga(false);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function clearImage(idx) {
-      document.getElementById(`prodImg${idx}Base64`).value = '';
-      document.getElementById(`previewImg${idx}`).style.display = 'none';
-  }
-
-  function calcularRentabilidad() {
+  function calcularCalculos() {
       const c = parseFloat(document.getElementById('prodCost').value) || 0;
       const g = parseFloat(document.getElementById('prodExpenses').value) || 0;
       const p = parseFloat(document.getElementById('prodPrice').value) || 0;
-      const u = p - (c + g);
-      document.getElementById('prodProfit').value = currency(u);
-      document.getElementById('prodMargin').value = p > 0 ? ((u / p) * 100).toFixed(1) + '%' : '0%';
+      document.getElementById('prodProfit').value = '$ ' + (p - (c + g)).toFixed(2);
   }
 
   async function guardarProducto(e) {
@@ -265,73 +246,94 @@
     mostrarCarga(true);
     
     const id = document.getElementById('prodId').value || 'prod_' + Date.now();
-    const prod = {
+    const data = {
         id,
         name: document.getElementById('prodName').value.trim(),
-        description: document.getElementById('prodDescription').value.trim(),
         category: document.getElementById('prodCategory').value,
-        code: document.getElementById('prodCode').value.trim(), // Si va vacío, el servidor asigna AUTO-
+        code: document.getElementById('prodCode').value.trim(),
+        description: document.getElementById('prodDescription').value.trim(),
         cost: parseFloat(document.getElementById('prodCost').value) || 0,
         expenses: parseFloat(document.getElementById('prodExpenses').value) || 0,
         price: parseFloat(document.getElementById('prodPrice').value) || 0,
-        status: document.getElementById('prodStatus').value,
-        color: document.getElementById('prodColor').value.trim(),
-        size: document.getElementById('prodSize').value.trim(),
-        image1: document.getElementById('prodImg1Base64').value,
-        image2: document.getElementById('prodImg2Base64').value,
-        image3: document.getElementById('prodImg3Base64').value,
+        status: 'Activo',
+        
+        // Ficha Técnica
+        frente: document.getElementById('optFrente').value,
+        patilla: document.getElementById('optPatilla').value,
+        lente: document.getElementById('optLente').value,
+        talle: document.getElementById('optTalle').value,
+        peso: document.getElementById('optPeso').value,
+        color: document.getElementById('prodColor').value,
+
+        // Imágenes (Link o Base64)
+        image1: document.getElementById('img1B64').value || document.getElementById('img1Url').value.trim(),
+        image2: document.getElementById('img2B64').value || document.getElementById('img2Url').value.trim(),
+        image3: document.getElementById('img3B64').value || document.getElementById('img3Url').value.trim(),
+        
         createdAt: dbProducts.find(x=>x.id===id)?.createdAt || new Date().toISOString()
     };
 
     try {
-        const res = await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(prod) });
+        const res = await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(data) });
         if (res.ok) {
-            alert("✅ Producto guardado correctamente.");
+            alert("✅ Guardado correctamente.");
             limpiarFormulario();
-            await initProducts();
+            await init();
         }
-    } catch (err) { alert("Error al guardar."); }
+    } catch (err) { alert("Error al conectar."); }
     finally { mostrarCarga(false); }
   }
 
   function renderTable() {
-    const term = document.getElementById('searchTable').value.toLowerCase();
+    const term = document.getElementById('search').value.toLowerCase();
     const tbody = document.getElementById('tableBody');
     const filtrados = dbProducts.filter(p => (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term));
     
-    tbody.innerHTML = filtrados.map(p => `
-      <tr style="${p.status==='Inactivo'?'opacity:0.5':''}">
-        <td><small class="badge" style="background:#e2e8f0; color:#475569;">${p.code || 'S/N'}</small></td>
-        <td><strong>${p.name}</strong><br><small style="color:var(--muted)">${p.category || '-'}</small></td>
-        <td><strong>${currency(p.price)}</strong></td>
-        <td><span class="badge" style="background:${p.stock>5?'#dcfce7':'#fee2e2'}; color:${p.stock>5?'#16a34a':'#dc2626'};">${p.stock}</span></td>
-        <td>
-          <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="editarProducto('${p.id}')">Editar</button>
-        </td>
-      </tr>`).join('');
+    tbody.innerHTML = filtrados.map(p => {
+      const img = p.image1 || 'https://via.placeholder.com/50?text=No+Foto';
+      return `
+      <tr>
+        <td><img src="${img}" class="thumb-list" onclick="zoom(this.src)"></td>
+        <td><small class="badge">${p.code || 'AUTO'}</small></td>
+        <td><strong>${p.name}</strong><br><small style="color:#888">${p.category || '-'}</small></td>
+        <td>$ ${p.cost}</td>
+        <td style="color:var(--primary); font-weight:800;">$ ${p.price}</td>
+        <td><span class="badge ${p.stock > 5 ? 'success' : 'danger'}">${p.stock}</span></td>
+        <td><button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="editarProducto('${p.id}')">Editar</button></td>
+      </tr>`;
+    }).join('');
   }
 
   function editarProducto(id) {
     const p = dbProducts.find(x => x.id === id);
     if (!p) return;
+    
     document.getElementById('prodId').value = p.id;
     document.getElementById('prodName').value = p.name;
-    document.getElementById('prodDescription').value = p.description || '';
     document.getElementById('prodCategory').value = p.category;
-    document.getElementById('prodCode').value = p.code;
+    document.getElementById('prodCode').value = p.code || '';
+    document.getElementById('prodDescription').value = p.description || '';
     document.getElementById('prodCost').value = p.cost;
     document.getElementById('prodExpenses').value = p.expenses;
     document.getElementById('prodPrice').value = p.price;
-    document.getElementById('prodStatus').value = p.status || 'Activo';
+
+    document.getElementById('optFrente').value = p.frente || '';
+    document.getElementById('optPatilla').value = p.patilla || '';
+    document.getElementById('optLente').value = p.lente || '';
+    document.getElementById('optTalle').value = p.talle || '';
+    document.getElementById('optPeso').value = p.peso || '';
     document.getElementById('prodColor').value = p.color || '';
-    document.getElementById('prodSize').value = p.size || '';
-    
-    if(p.image1) { document.getElementById('previewImg1').src = p.image1; document.getElementById('previewImg1').style.display='block'; document.getElementById('prodImg1Base64').value = p.image1; }
-    if(p.image2) { document.getElementById('previewImg2').src = p.image2; document.getElementById('previewImg2').style.display='block'; document.getElementById('prodImg2Base64').value = p.image2; }
-    if(p.image3) { document.getElementById('previewImg3').src = p.image3; document.getElementById('previewImg3').style.display='block'; document.getElementById('prodImg3Base64').value = p.image3; }
+
+    // Cargar Imágenes
+    for(let i=1; i<=3; i++) {
+        const val = p[`image${i}`];
+        document.getElementById(`img${i}B64`).value = (val && val.startsWith('data:')) ? val : '';
+        document.getElementById(`img${i}Url`).value = (val && !val.startsWith('data:')) ? val : '';
+        updatePreview(i);
+    }
 
     document.getElementById('formTitle').textContent = "Editando: " + p.name;
-    calcularRentabilidad();
+    calcularCalculos();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -339,18 +341,14 @@
       document.getElementById('productForm').reset();
       document.getElementById('prodId').value = '';
       document.getElementById('formTitle').textContent = "Alta de producto";
-      clearImage(1); clearImage(2); clearImage(3);
+      for(let i=1; i<=3; i++) {
+          document.getElementById(`img${i}B64`).value = '';
+          document.getElementById(`img${i}Url`).value = '';
+          updatePreview(i);
+      }
   }
 
-  async function guardarCategoria() {
-      const name = document.getElementById('catName').value.trim();
-      if(!name) return;
-      await apiFetch('/api/categories', { method: 'POST', body: JSON.stringify({ id: 'cat_'+Date.now(), name }) });
-      document.getElementById('modalCategoria').close();
-      await initProducts();
-  }
-
-  initProducts();
+  init();
 </script>
 </body>
 </html>
