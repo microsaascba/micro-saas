@@ -1755,7 +1755,15 @@
     document.getElementById('plFrame').textContent = o.frameCode + ' - ' + o.frameName;
     document.getElementById('plGlass').textContent = o.glassType;
 
+    // --- MAGIA PARA EL NOMBRE DEL ARCHIVO PDF ---
+    const tituloOriginal = document.title;
+    const numOrden = o.id.split('_')[1] || o.id; 
+    document.title = `${o.clientName} - Orden N°${numOrden}`;
+
     window.print();
+
+    // Restauramos el título para que la pestaña no quede cambiada
+    document.title = tituloOriginal;
   }
 
   initOrdenes();
