@@ -338,26 +338,32 @@
               </div>
             </div>
 
-            <div>
-                <label>Costo Net ($) *</label>
-                <input type="text" id="prodCost" class="input-box" required placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcularCFO()">
-            </div>
-            <div>
-                <label>Gastos / Envío ($)</label>
-                <input type="text" id="prodExpenses" class="input-box" placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcularCFO()">
-            </div>
-            <div style="border-right: 1px solid var(--line); padding-right: 15px;">
-                <label>P. Venta ($) *</label>
-                <input type="text" id="prodPrice" class="input-box" required placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcularCFO()">
-            </div>
-            
-            <div class="calc-box-cfo specs-box" style="margin:0; padding:10px;">
-                <label>Utilidad Bruta ($)</label>
-                <input type="text" id="prodProfit" class="input-box" disabled style="background:transparent; border:none; padding:0; color:green; font-weight:bold; font-size:16px;" value="$ 0,00">
-            </div>
-            <div class="calc-box-cfo specs-box" style="margin:0; padding:10px;">
-                <label>Margen Venta (%)</label>
-                <input type="text" id="prodMargin" class="input-box" disabled style="background:transparent; border:none; padding:0; color:var(--primary); font-weight:bold; font-size:16px;" value="0,0%">
+            <div class="col-5" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 15px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed var(--primary); align-items: end;">
+                <div>
+                    <label style="font-size:11px; font-weight:bold; color:var(--muted);">Costo Net ($) *</label>
+                    <input type="text" id="prodCost" class="input-box" required placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcularCFO('costo')">
+                </div>
+                <div>
+                    <label style="font-size:11px; font-weight:bold; color:var(--muted);">Gastos / Envío ($)</label>
+                    <input type="text" id="prodExpenses" class="input-box" placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcularCFO('costo')">
+                </div>
+                <div>
+                    <label style="font-size:11px; font-weight:900; color:var(--primary);">Mark up (%) ✍️</label>
+                    <input type="text" id="prodMarkup" class="input-box" placeholder="Ej: 50" oninput="calcularCFO('markup')" style="border-color: var(--primary); background: #f0f9ff; font-weight: bold; color: var(--primary);">
+                </div>
+                <div style="border-right: 1px solid var(--line); padding-right: 15px;">
+                    <label style="font-size:11px; font-weight:bold; color:var(--muted);">P. Venta ($) *</label>
+                    <input type="text" id="prodPrice" class="input-box" required placeholder="$ 0,00" oninput="formatCurrencyInput(this); calcularCFO('price')">
+                </div>
+                
+                <div class="calc-box-cfo specs-box" style="margin:0; padding:10px;">
+                    <label>Utilidad Bruta ($)</label>
+                    <input type="text" id="prodProfit" class="input-box" disabled style="background:transparent; border:none; padding:0; color:green; font-weight:bold; font-size:16px;" value="$ 0,00">
+                </div>
+                <div class="calc-box-cfo specs-box" style="margin:0; padding:10px;">
+                    <label>Margen Venta (%)</label>
+                    <input type="text" id="prodMargin" class="input-box" disabled style="background:transparent; border:none; padding:0; color:var(--primary); font-weight:bold; font-size:16px;" value="0,0%">
+                </div>
             </div>
 
             <div class="col-5">
@@ -658,8 +664,6 @@
       const oldName = document.getElementById('editCatOldName').value;
 
       if(!name) return;
-      
-      // Cerramos la ventana de categorías INMEDIATAMENTE para dar feedback de acción
       document.getElementById('modalGestorCategorias').close();
       mostrarCarga(true);
       
@@ -671,11 +675,9 @@
           await init(); // Recargar todo para actualizar productos y categorías
           renderCategoriasTable();
           limpiarCatForm();
-          
-          // Feedback de éxito
           setTimeout(() => alert("✅ Categoría guardada exitosamente."), 300);
       } catch (e) {
-          alert("❌ Error guardando categoría.");
+          alert("Error guardando categoría.");
       } finally {
           mostrarCarga(false);
       }
@@ -683,6 +685,7 @@
 
   async function eliminarCategoria(id, name) {
       if(!confirm(`¿Estás seguro de eliminar la categoría "${name}"?\nLos productos asociados quedarán "Sin Categoría".`)) return;
+      document.getElementById('modalGestorCategorias').close();
       mostrarCarga(true);
       try {
           await apiFetch(`/api/categories?id=${id}&name=${encodeURIComponent(name)}`, { method: 'DELETE' });
@@ -694,15 +697,41 @@
           mostrarCarga(false);
       }
   }
-
   // --- FIN GESTOR DE CATEGORÍAS ---
 
-  function calcularCFO() {
+  // --- MOTOR FINANCIERO BIDIRECCIONAL (MARK UP / PRECIO) ---
+  function calcularCFO(origen = 'price') {
       const c = parseCurrency(document.getElementById('prodCost').value);
       const g = parseCurrency(document.getElementById('prodExpenses').value);
-      const p = parseCurrency(document.getElementById('prodPrice').value);
+      const costoTotal = c + g;
+
+      let p = parseCurrency(document.getElementById('prodPrice').value);
       
-      const utilidad = p - (c + g);
+      // Permitimos que el Mark Up tenga decimales (ej: 45.5%)
+      let markupStr = document.getElementById('prodMarkup').value.replace(/[^0-9.,\-]/g, '').replace(',', '.');
+      let markup = parseFloat(markupStr) || 0;
+
+      if (origen === 'markup') {
+          // Si el usuario edita el Markup, calculamos el Precio
+          if (costoTotal > 0) {
+              p = costoTotal * (1 + (markup / 100));
+              document.getElementById('prodPrice').value = currency(p);
+          } else {
+              document.getElementById('prodPrice').value = currency(0);
+              p = 0;
+          }
+      } else {
+          // Si el usuario edita Costo o Precio, calculamos el Markup
+          if (costoTotal > 0 && p > 0) {
+              markup = ((p - costoTotal) / costoTotal) * 100;
+              document.getElementById('prodMarkup').value = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(markup);
+          } else {
+              document.getElementById('prodMarkup').value = '';
+          }
+      }
+
+      // Cálculos Finales
+      const utilidad = p - costoTotal;
       const margen = p > 0 ? (utilidad / p) * 100 : 0;
       
       document.getElementById('prodProfit').value = currency(utilidad);
@@ -750,8 +779,10 @@
 
     document.getElementById('formTitle').textContent = "Editando Modelo: " + p.name;
     document.getElementById('formTitle').style.color = "var(--primary)";
-    document.getElementById('btnDeleteProd').style.display = 'block'; // Mostrar botón borrar
-    calcularCFO();
+    document.getElementById('btnDeleteProd').style.display = 'block';
+    
+    // Forzamos el cálculo basado en el precio para que rellene el Mark up automático al abrir
+    calcularCFO('price');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -761,7 +792,8 @@
       
       document.getElementById('prodCost').disabled = false;
       document.getElementById('prodStatus').value = 'Activo';
-      document.getElementById('btnDeleteProd').style.display = 'none'; // Ocultar botón borrar
+      document.getElementById('prodMarkup').value = '';
+      document.getElementById('btnDeleteProd').style.display = 'none';
       
       document.getElementById('formTitle').textContent = "Alta de producto";
       document.getElementById('formTitle').style.color = "var(--text)";
@@ -890,17 +922,14 @@
   }
   // --- FIN SEGURIDAD ---
 
-  // RENDERIZAR TABLA DE CATÁLOGO (Con Placeholder Nativo y Anti-Bucles)
   function renderTable() {
     const term = document.getElementById('search').value.toLowerCase();
     const tbody = document.getElementById('tableBody');
     const filtrados = dbProducts.filter(p => (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term));
     
-    // Generamos un placeholder de imagen 100% offline para evitar errores de red
     const noFotoSvg = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='50' height='50' viewBox='0 0 50 50'%3E%3Crect width='50' height='50' fill='%23e2e8f0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='10' fill='%2364748b'%3ENo Foto%3C/text%3E%3C/svg%3E";
 
     tbody.innerHTML = filtrados.map(p => {
-      // Usamos el SVG nativo si no hay imagen en la DB
       const img = p.image1 || noFotoSvg;
       const isInactive = p.status === 'Inactivo';
       return `
@@ -967,7 +996,6 @@
       if (rows.length === 0) return alert("El archivo está vacío.");
 
       let prodUpdates = []; let errores = [];
-      // 1. Iniciamos los contadores para el reporte final
       let creados = 0; 
       let actualizados = 0;
       
@@ -1000,7 +1028,6 @@
         const code = String(findVal(['sku', 'codigo', 'código']) || '').trim();
         let existingProd = code ? dbProducts.find(p => p.code === code) : null;
         
-        // 2. Lógica de conteo: Si existe sumamos a actualizados, sino a creados
         if (existingProd) {
             actualizados++;
         } else {
@@ -1055,7 +1082,6 @@
       try {
         await Promise.all(prodUpdates.map(p => apiFetch(`/api/products`, { method: 'POST', body: JSON.stringify(p) })));
         
-        // 3. Imprimimos el reporte final con los contadores exactos
         setTimeout(() => alert(`✅ Importación masiva completada.\nProductos Actualizados: ${actualizados} | Productos Creados: ${creados}`), 300);
         await init();
       } catch(err) { 
