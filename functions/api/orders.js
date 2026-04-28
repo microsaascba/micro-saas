@@ -24,6 +24,23 @@ export async function onRequestPost(context) {
 
         const data = await context.request.json();
         
+        // --- LÓGICA DE HISTORIAL DE FECHAS (statusDates) ---
+        let currentStatusDates = {};
+        try {
+            if (data.statusDates) {
+                currentStatusDates = typeof data.statusDates === 'string' ? JSON.parse(data.statusDates) : data.statusDates;
+            }
+        } catch(e) {}
+        
+        // Si el estado actual no tiene fecha, se la asignamos hoy en formato ISO
+        const currentStatus = data.status || 'No enviado';
+        if (!currentStatusDates[currentStatus]) {
+            currentStatusDates[currentStatus] = new Date().toISOString();
+        }
+        
+        const statusDatesJSON = JSON.stringify(currentStatusDates);
+        // ---------------------------------------------------
+
         await context.env.DB.prepare(`
             INSERT INTO optical_orders (
                 id, company_id, date, clientId, clientName, 
@@ -33,8 +50,8 @@ export async function onRequestPost(context) {
                 frameCode, frameName, glassType, 
                 deliveryDate, total, deposit, balance, 
                 status, seller, branch, notes, cupon, createdAt,
-                os_name, os_amount
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                os_name, os_amount, statusDates
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET 
                 status = excluded.status,
                 balance = excluded.balance,
@@ -49,7 +66,8 @@ export async function onRequestPost(context) {
                 dp = excluded.dp, diseno = excluded.diseno, calibrado = excluded.calibrado, material = excluded.material,
                 color_lente = excluded.color_lente, antirreflex = excluded.antirreflex, tinte = excluded.tinte, tratamientos = excluded.tratamientos,
                 doctor = excluded.doctor, frameCode = excluded.frameCode, frameName = excluded.frameName, glassType = excluded.glassType,
-                total = excluded.total, os_name = excluded.os_name, os_amount = excluded.os_amount, branch = excluded.branch
+                total = excluded.total, os_name = excluded.os_name, os_amount = excluded.os_amount, branch = excluded.branch,
+                statusDates = excluded.statusDates
         `).bind(
             data.id, companyId, data.date, data.clientId, data.clientName,
             data.od_esf || '', data.od_cil || '', data.od_eje || '', data.od_base || '', data.od_add || '', data.od_diam || '', data.od_di || '', data.od_alt || '',
@@ -57,8 +75,8 @@ export async function onRequestPost(context) {
             data.dp || '', data.diseno || '', data.calibrado || '', data.material || '', data.color_lente || '', data.antirreflex || '', data.tinte || '', data.tratamientos || '', data.doctor || '',
             data.frameCode || '', data.frameName || '', data.glassType || '',
             data.deliveryDate || '', data.total || 0, data.deposit || 0, data.balance || 0,
-            data.status || 'Pendiente', data.seller || 'Admin', data.branch || 'Central', data.notes || '', data.cupon || '', data.createdAt,
-            data.os_name || '', data.os_amount || 0
+            currentStatus, data.seller || 'Admin', data.branch || 'Central', data.notes || '', data.cupon || '', data.createdAt,
+            data.os_name || '', data.os_amount || 0, statusDatesJSON
         ).run();
 
         return Response.json({ success: true });
