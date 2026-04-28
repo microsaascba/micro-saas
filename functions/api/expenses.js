@@ -1,132 +1,122 @@
 function getCompanyIdFromRequest(request) {
-  return request.headers.get('x-company-id') || '';
-}
-
-function safeNumber(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function safeString(value) {
-  return String(value || '').trim();
+    return request.headers.get('x-company-id') || '';
 }
 
 export async function onRequestGet(context) {
-  try {
-    const companyId = getCompanyIdFromRequest(context.request);
+    try {
+        const companyId = getCompanyIdFromRequest(context.request);
+        if (!companyId) return Response.json({ error: 'Falta company_id' }, { status: 400 });
 
-    if (!companyId) {
-      return Response.json({ error: 'Falta company_id.' }, { status: 400 });
+        const url = new URL(context.request.url);
+        const status = url.searchParams.get('status') || 'Todos';
+
+        let query = "SELECT * FROM expenses WHERE company_id = ?";
+        let params = [companyId];
+
+        if (status !== 'Todos') {
+            query += " AND status = ?";
+            params.push(status);
+        }
+        query += " ORDER BY date DESC, createdAt DESC";
+
+        const { results } = await context.env.DB.prepare(query).bind(...params).all();
+        return Response.json(results);
+    } catch (error) {
+        return Response.json({ error: error.message }, { status: 500 });
     }
-
-    const url = new URL(context.request.url);
-    const status = url.searchParams.get('status') || 'Todos';
-    const branch = url.searchParams.get('branch') || 'Todos';
-    const supplierId = url.searchParams.get('supplierId') || '';
-
-    let query = `
-      SELECT *
-      FROM expenses
-      WHERE company_id = ?1
-    `;
-    const binds = [companyId];
-    let bindIndex = 2;
-
-    if (status !== 'Todos') {
-      query += ` AND COALESCE(status, 'Pagado') = ?${bindIndex++}`;
-      binds.push(status);
-    }
-
-    if (branch !== 'Todos') {
-      query += ` AND COALESCE(branch, 'Global') = ?${bindIndex++}`;
-      binds.push(branch);
-    }
-
-    if (supplierId) {
-      query += ` AND COALESCE(supplierId, '') = ?${bindIndex++}`;
-      binds.push(supplierId);
-    }
-
-    query += ` ORDER BY date DESC, createdAt DESC`;
-
-    const { results } = await context.env.DB.prepare(query).bind(...binds).all();
-
-    const formatted = results.map(row => ({
-      ...row,
-      amount: safeNumber(row.amount),
-      ivaAmount: safeNumber(row.ivaAmount),
-      nonTaxedAmount: safeNumber(row.nonTaxedAmount),
-      dueDate: row.dueDate || '',
-      branch: row.branch || 'Global',
-      status: row.status || 'Pagado'
-    }));
-
-    return Response.json(formatted);
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  }
 }
 
 export async function onRequestPost(context) {
-  try {
-    const companyId = getCompanyIdFromRequest(context.request);
+    try {
+        const companyId = getCompanyIdFromRequest(context.request);
+        if (!companyId) return Response.json({ error: 'Falta company_id' }, { status: 400 });
 
-    if (!companyId) {
-      return Response.json({ error: 'Falta company_id.' }, { status: 400 });
+        const data = await context.request.json();
+        const id = data.id || 'exp_' + Date.now();
+        const isMueveStock = data.mueveStock ? 1 : 0;
+        const itemsJSON = data.itemsJSON || '[]';
+
+        // 1. Guardar el Gasto en Contabilidad
+        await context.env.DB.prepare(`
+            INSERT INTO expenses (
+                id, company_id, date, amount, concept, category, status, method, dueDate, notes,
+                supplierId, invoiceType, invoiceNum, ivaAmount, nonTaxedAmount, branch, loadedBy, canceledBy, createdAt,
+                itemsJSON, mueveStock
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(id) DO UPDATE SET
+                date = excluded.date, amount = excluded.amount, concept = excluded.concept, category = excluded.category,
+                status = excluded.status, method = excluded.method, dueDate = excluded.dueDate, notes = excluded.notes,
+                supplierId = excluded.supplierId, invoiceType = excluded.invoiceType, invoiceNum = excluded.invoiceNum,
+                ivaAmount = excluded.ivaAmount, nonTaxedAmount = excluded.nonTaxedAmount, branch = excluded.branch,
+                itemsJSON = excluded.itemsJSON, mueveStock = excluded.mueveStock
+        `).bind(
+            id, companyId, data.date, data.amount || 0, data.concept, data.category, data.status, data.method,
+            data.dueDate || '', data.notes || '', data.supplierId || 'Varios/Consumidor Final', data.invoiceType || '',
+            data.invoiceNum || '', data.ivaAmount || 0, data.nonTaxedAmount || 0, data.branch || 'Global',
+            data.loadedBy || 'Admin', data.canceledBy || '', data.createdAt || new Date().toISOString(),
+            itemsJSON, isMueveStock
+        ).run();
+
+        // 2. Lógica Logística (Mueve Stock y CPP)
+        if (isMueveStock === 1 && data.status !== 'Anulado') {
+            const items = JSON.parse(itemsJSON);
+            for (let item of items) {
+                // Traer producto actual
+                const prod = await context.env.DB.prepare("SELECT * FROM products WHERE id = ? AND company_id = ?").bind(item.id, companyId).first();
+                if (prod) {
+                    let stockBranches = {};
+                    try { stockBranches = JSON.parse(prod.stock_branches); } catch(e) { stockBranches = { "Central": prod.stock || 0 }; }
+                    
+                    const qty = Number(item.qty) || 0;
+                    const unitCost = Number(item.cost) || 0;
+                    
+                    // Cálculo de Costo Promedio Ponderado (CPP)
+                    const currentTotalStock = Number(prod.stock) || 0;
+                    const currentUnitCost = Number(prod.cost) || 0;
+                    
+                    let newUnitCost = currentUnitCost;
+                    const newTotalStock = currentTotalStock + qty;
+                    
+                    if (newTotalStock > 0) {
+                        const totalValueBefore = currentTotalStock * currentUnitCost;
+                        const incomingValue = qty * unitCost;
+                        newUnitCost = (totalValueBefore + incomingValue) / newTotalStock;
+                    }
+
+                    // Sumar stock a la sucursal de destino
+                    const targetBranch = data.branch === 'Global' ? 'Central' : data.branch;
+                    stockBranches[targetBranch] = (stockBranches[targetBranch] || 0) + qty;
+
+                    // Actualizar Producto
+                    await context.env.DB.prepare(`
+                        UPDATE products 
+                        SET cost = ?, stock = ?, stock_branches = ? 
+                        WHERE id = ? AND company_id = ?
+                    `).bind(newUnitCost, newTotalStock, JSON.stringify(stockBranches), item.id, companyId).run();
+                }
+            }
+        }
+
+        return Response.json({ success: true, id: id });
+    } catch (error) {
+        return Response.json({ error: error.message }, { status: 500 });
     }
-
-    const data = await context.request.json();
-
-    const id = data.id || `gas_${Date.now()}`;
-    const createdAt = data.createdAt || new Date().toISOString();
-
-    const stmt = context.env.DB.prepare(`
-      INSERT INTO expenses (
-        id, company_id, date, amount, concept, category, status, method, createdAt,
-        supplierId, invoiceType, invoiceNum, ivaAmount, nonTaxedAmount, dueDate, branch, loadedBy, canceledBy
-      ) VALUES (
-        ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18
-      )
-      ON CONFLICT(id) DO UPDATE SET
-        date = excluded.date, amount = excluded.amount, concept = excluded.concept,
-        category = excluded.category, status = excluded.status, method = excluded.method,
-        supplierId = excluded.supplierId, invoiceType = excluded.invoiceType, invoiceNum = excluded.invoiceNum,
-        ivaAmount = excluded.ivaAmount, nonTaxedAmount = excluded.nonTaxedAmount, dueDate = excluded.dueDate,
-        branch = excluded.branch, loadedBy = excluded.loadedBy, canceledBy = excluded.canceledBy
-    `);
-
-    await stmt.bind(
-      id, companyId, data.date || new Date().toISOString().split('T')[0],
-      safeNumber(data.amount), safeString(data.concept), safeString(data.category),
-      safeString(data.status || 'Pagado'), safeString(data.method || 'Efectivo'), createdAt,
-      safeString(data.supplierId), safeString(data.invoiceType), safeString(data.invoiceNum),
-      safeNumber(data.ivaAmount), safeNumber(data.nonTaxedAmount), safeString(data.dueDate),
-      safeString(data.branch || 'Global'), safeString(data.loadedBy || 'Admin'), safeString(data.canceledBy || '')
-    ).run();
-
-    return Response.json({ success: true, id });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  }
 }
 
 export async function onRequestDelete(context) {
-  try {
-    const companyId = getCompanyIdFromRequest(context.request);
-    if (!companyId) return Response.json({ error: 'Falta company_id.' }, { status: 400 });
+    try {
+        const companyId = getCompanyIdFromRequest(context.request);
+        const url = new URL(context.request.url);
+        const id = url.searchParams.get('id');
+        const canceledBy = url.searchParams.get('canceledBy') || 'Admin';
 
-    const url = new URL(context.request.url);
-    const id = url.searchParams.get('id');
-    const canceledBy = url.searchParams.get('canceledBy') || 'Admin';
+        // Anulación suave (El stock se debe ajustar manualmente por el encargado si es necesario)
+        await context.env.DB.prepare(
+            "UPDATE expenses SET status = 'Anulado', canceledBy = ? WHERE id = ? AND company_id = ?"
+        ).bind(canceledBy, id, companyId).run();
 
-    if (!id) return Response.json({ error: 'Falta id.' }, { status: 400 });
-
-    await context.env.DB.prepare(`
-      UPDATE expenses SET status = 'Anulado', canceledBy = ?1 WHERE id = ?2 AND company_id = ?3
-    `).bind(canceledBy, id, companyId).run();
-
-    return Response.json({ success: true, message: 'Gasto anulado correctamente.' });
-  } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
-  }
+        return Response.json({ success: true });
+    } catch (error) {
+        return Response.json({ error: error.message }, { status: 500 });
+    }
 }
