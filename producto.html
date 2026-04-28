@@ -310,6 +310,7 @@
               <label style="font-size:11px; font-weight:bold; color:var(--muted);">Código / SKU</label>
               <input type="text" id="prodCode" class="input-box" placeholder="Vacío = Auto">
             </div>
+
             <div class="col-5">
               <label style="font-size:11px; font-weight:bold; color:var(--muted);">Descripción Técnica Completa</label>
               <textarea id="prodDescription" class="input-box" rows="2" placeholder="Detalles de materiales, bisagras, plaquetas..."></textarea>
@@ -437,9 +438,12 @@
       <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">NOMBRE</span>, 
       <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">CATEGORIA</span> y 
       <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">COSTO</span>.<br><br>
-      Campos opcionales permitidos: <span style="font-family:monospace;">PRECIO, SKU, GASTOS, DESCRIPCION, COLOR, FRENTE, PATILLA, LENTE, TALLE, PESO, IMAGEN_1, IMAGEN_2, IMAGEN_3</span>.<br>
-      <em>* Si el campo PRECIO está vacío, se guardará en $0 (o mantendrá el precio anterior si el SKU ya existe).</em><br>
-      <em>* Si el campo SKU viene vacío, el sistema le asignará un código único automáticamente.</em>
+      Campos opcionales permitidos: <span style="font-family:monospace;">PRECIO, SKU, ESTADO, GASTOS, DESCRIPCION, COLOR, FRENTE, PATILLA, LENTE, TALLE, PESO, IMAGEN_1, IMAGEN_2, IMAGEN_3</span>.<br><br>
+      <ul style="margin: 5px 0 0 15px; padding: 0;">
+        <li><em>Si el campo PRECIO está vacío, se guardará en $0 (o mantendrá el precio viejo si el SKU ya existe).</em></li>
+        <li><em>Si el campo SKU viene vacío, el sistema le asignará un código único automáticamente.</em></li>
+        <li><strong style="color:red;">ATENCIÓN:</strong> <em>La <strong>CATEGORIA</strong> debe existir previamente en el sistema. No se crearán categorías nuevas desde el Excel para evitar errores de tipeo.</em></li>
+      </ul>
     </div>
     
     <form onsubmit="procesarImportacionMasiva(event)">
@@ -481,7 +485,7 @@
 
   // ENMASCARADOR DE INPUTS EN TIEMPO REAL
   function formatCurrencyInput(input) {
-      let val = input.value.replace(/[^\d,]/g, ''); // Solo permite números y comas
+      let val = input.value.replace(/[^\d,]/g, ''); 
       const parts = val.split(',');
       if (parts.length > 2) { 
           val = parts[0] + ',' + parts.slice(1).join(''); 
@@ -491,8 +495,8 @@
           return; 
       }
       
-      let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); // Puntos en los miles
-      let decPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : ''; // Solo 2 decimales
+      let intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); 
+      let decPart = parts.length > 1 ? ',' + parts[1].substring(0, 2) : ''; 
       input.value = '$ ' + intPart + decPart;
   }
 
@@ -507,7 +511,13 @@
   function syncPreview(idx, mode) {
       const img = document.getElementById(`prev${idx}`);
       const b64 = document.getElementById(`img${idx}B64`).value;
-      const url = document.getElementById(`img${idx}Url`).value.trim();
+      let url = document.getElementById(`img${idx}Url`).value.trim();
+      
+      // Auto-reparador de Google Drive en tiempo real
+      if (url && url.includes("drive.google.com/file/d/")) {
+          const fileId = url.split("/d/")[1].split("/")[0];
+          url = `https://drive.google.com/uc?export=view&id=${fileId}`;
+      }
       
       if (mode === 'link') {
           document.getElementById(`img${idx}B64`).value = '';
@@ -579,7 +589,7 @@
       await init();
   }
 
-  // CALCULADORA CFO (Convierte el texto tipeado para hacer la cuenta y devuelve texto en pesos)
+  // CALCULADORA CFO
   function calcularCFO() {
       const c = parseCurrency(document.getElementById('prodCost').value);
       const g = parseCurrency(document.getElementById('prodExpenses').value);
@@ -592,6 +602,71 @@
       document.getElementById('prodMargin').value = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(margen) + '%';
   }
 
+  // CARGAR PRODUCTO PARA EDITAR
+  window.editarProducto = function(id) {
+    const p = dbProducts.find(x => x.id === id);
+    if (!p) return;
+    
+    limpiarFormulario();
+    
+    document.getElementById('prodId').value = p.id;
+    document.getElementById('prodName').value = p.name;
+    document.getElementById('prodCategory').value = p.category;
+    document.getElementById('prodCode').value = p.code || '';
+    document.getElementById('prodDescription').value = p.description || '';
+    
+    document.getElementById('prodCost').value = currency(p.cost);
+    document.getElementById('prodCost').disabled = true; 
+    document.getElementById('prodExpenses').value = currency(p.expenses);
+    document.getElementById('prodPrice').value = currency(p.price);
+
+    document.getElementById('optFrente').value = p.frente || '';
+    document.getElementById('optPatilla').value = p.patilla || '';
+    document.getElementById('optLente').value = p.lente || '';
+    document.getElementById('optTalle').value = p.talle || '';
+    document.getElementById('optPeso').value = p.peso || '';
+    document.getElementById('prodColor').value = p.color || '';
+    
+    document.getElementById('prodStatus').value = p.status || 'Activo';
+
+    for(let i=1; i<=3; i++) {
+        let val = p[`image${i}`];
+        if (val) {
+            if (val.startsWith('data:')) { 
+                document.getElementById(`img${i}B64`).value = val; 
+                syncPreview(i, 'file'); 
+            } else { 
+                document.getElementById(`img${i}Url`).value = val; 
+                syncPreview(i, 'link'); 
+            }
+        }
+    }
+
+    document.getElementById('formTitle').textContent = "Editando Modelo: " + p.name;
+    document.getElementById('formTitle').style.color = "var(--primary)";
+    calcularCFO();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // LIMPIAR FORMULARIO
+  window.limpiarFormulario = function() {
+      document.getElementById('productForm').reset();
+      document.getElementById('prodId').value = '';
+      
+      document.getElementById('prodCost').disabled = false;
+      document.getElementById('prodStatus').value = 'Activo';
+      
+      document.getElementById('formTitle').textContent = "Alta de producto";
+      document.getElementById('formTitle').style.color = "var(--text)";
+      
+      for(let i=1; i<=3; i++) {
+          clearImage(i);
+      }
+      
+      document.getElementById('prodProfit').value = '$ 0,00';
+      document.getElementById('prodMargin').value = '0,0%';
+  };
+
   // GUARDAR EL PRODUCTO
   async function guardarProducto(e) {
     e.preventDefault();
@@ -599,9 +674,21 @@
     
     const id = document.getElementById('prodId').value || 'prod_' + Date.now();
     
-    const img1 = document.getElementById('img1B64').value || document.getElementById('img1Url').value.trim();
-    const img2 = document.getElementById('img2B64').value || document.getElementById('img2Url').value.trim();
-    const img3 = document.getElementById('img3B64').value || document.getElementById('img3Url').value.trim();
+    let img1 = document.getElementById('img1B64').value || document.getElementById('img1Url').value.trim();
+    let img2 = document.getElementById('img2B64').value || document.getElementById('img2Url').value.trim();
+    let img3 = document.getElementById('img3B64').value || document.getElementById('img3Url').value.trim();
+
+    const fixDriveLink = (url) => {
+        if (url && url.includes("drive.google.com/file/d/")) {
+            const fileId = url.split("/d/")[1].split("/")[0];
+            return `https://drive.google.com/uc?export=view&id=${fileId}`;
+        }
+        return url;
+    };
+
+    img1 = fixDriveLink(img1);
+    img2 = fixDriveLink(img2);
+    img3 = fixDriveLink(img3);
 
     const data = {
         id,
@@ -610,12 +697,11 @@
         code: document.getElementById('prodCode').value.trim(),
         description: document.getElementById('prodDescription').value.trim(),
         
-        // Parseamos los valores monetarios antes de mandarlos a la Base de Datos
         cost: parseCurrency(document.getElementById('prodCost').value),
         expenses: parseCurrency(document.getElementById('prodExpenses').value),
         price: parseCurrency(document.getElementById('prodPrice').value),
         
-        status: 'Activo',
+        status: document.getElementById('prodStatus').value,
         
         frente: document.getElementById('optFrente').value.trim(),
         patilla: document.getElementById('optPatilla').value.trim(),
@@ -654,81 +740,17 @@
     
     tbody.innerHTML = filtrados.map(p => {
       const img = p.image1 || 'https://via.placeholder.com/50?text=No+Foto';
+      const isInactive = p.status === 'Inactivo';
       return `
-      <tr>
+      <tr style="${isInactive ? 'opacity: 0.5;' : ''}">
         <td><img src="${img}" class="thumb-list" onclick="zoom(this.src)" onerror="this.src='https://via.placeholder.com/50?text=Error'"></td>
-        <td><small class="badge" style="background:#e2e8f0; color:#1e293b;">${p.code || 'AUTO'}</small></td>
-        <td><strong>${escapeHtml(p.name)}</strong><br><small style="color:#64748b">${escapeHtml(p.category || '-')}</small></td>
+        <td><small class="badge" style="background:#e2e8f0; color:#1e293b;">${p.code || 'AUTO'}</small>${isInactive ? '<br><span style="color:red; font-size:10px; font-weight:bold;">INACTIVO</span>' : ''}</td>
+        <td style="${isInactive ? 'text-decoration: line-through;' : ''}"><strong>${escapeHtml(p.name)}</strong><br><small style="color:#64748b">${escapeHtml(p.category || '-')}</small></td>
         <td style="text-align:right; color:var(--primary); font-weight:800; font-size:15px;">${currency(p.price)}</td>
         <td style="text-align:center;"><span class="badge ${p.stock > 5 ? 'success' : 'danger'}">${p.stock || 0}</span></td>
         <td><button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="editarProducto('${p.id}')">Editar</button></td>
       </tr>`;
     }).join('');
-  }
-
-  // CARGAR PRODUCTO PARA EDITAR (Poniéndole el signo $ a los inputs)
-  function editarProducto(id) {
-    const p = dbProducts.find(x => x.id === id);
-    if (!p) return;
-    
-    limpiarFormulario();
-    
-    document.getElementById('prodId').value = p.id;
-    document.getElementById('prodName').value = p.name;
-    document.getElementById('prodCategory').value = p.category;
-    document.getElementById('prodCode').value = p.code || '';
-    document.getElementById('prodDescription').value = p.description || '';
-    
-    // Le asignamos el formato de pesos y bloqueamos el costo
-    document.getElementById('prodCost').value = currency(p.cost);
-    document.getElementById('prodCost').disabled = true; 
-    document.getElementById('prodExpenses').value = currency(p.expenses);
-    document.getElementById('prodPrice').value = currency(p.price);
-
-    document.getElementById('optFrente').value = p.frente || '';
-    document.getElementById('optPatilla').value = p.patilla || '';
-    document.getElementById('optLente').value = p.lente || '';
-    document.getElementById('optTalle').value = p.talle || '';
-    document.getElementById('optPeso').value = p.peso || '';
-    document.getElementById('prodColor').value = p.color || '';
-
-    // Renderiza las imágenes previas
-    for(let i=1; i<=3; i++) {
-        const val = p[`image${i}`];
-        if (val) {
-            if (val.startsWith('data:')) { 
-                document.getElementById(`img${i}B64`).value = val; 
-                syncPreview(i, 'file'); 
-            } else { 
-                document.getElementById(`img${i}Url`).value = val; 
-                syncPreview(i, 'link'); 
-            }
-        }
-    }
-
-    document.getElementById('formTitle').textContent = "Editando Modelo: " + p.name;
-    document.getElementById('formTitle').style.color = "var(--primary)";
-    calcularCFO();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  // LIMPIAR FORMULARIO
-  function limpiarFormulario() {
-      document.getElementById('productForm').reset();
-      document.getElementById('prodId').value = '';
-      
-      // Desbloquear Costo para producto nuevo
-      document.getElementById('prodCost').disabled = false;
-      
-      document.getElementById('formTitle').textContent = "Alta de producto";
-      document.getElementById('formTitle').style.color = "var(--text)";
-      
-      for(let i=1; i<=3; i++) {
-          clearImage(i);
-      }
-      
-      document.getElementById('prodProfit').value = '$ 0,00';
-      document.getElementById('prodMargin').value = '0,0%';
   }
 
   // --- MÓDULO EXCEL (MASIVO) ---
@@ -740,12 +762,13 @@
   function exportarCatalogoExcel() {
     let dataExport = [];
     if (dbProducts.length === 0) {
-      dataExport.push({ "NOMBRE": "", "CATEGORIA": "", "SKU": "", "COSTO": 0, "GASTOS": 0, "PRECIO": 0, "DESCRIPCION": "", "COLOR": "", "FRENTE": "", "PATILLA": "", "LENTE": "", "TALLE": "", "PESO": "", "IMAGEN_1": "", "IMAGEN_2": "", "IMAGEN_3": "" });
+      dataExport.push({ "NOMBRE": "", "CATEGORIA": "", "SKU": "", "ESTADO": "Activo", "COSTO": 0, "GASTOS": 0, "PRECIO": 0, "DESCRIPCION": "", "COLOR": "", "FRENTE": "", "PATILLA": "", "LENTE": "", "TALLE": "", "PESO": "", "IMAGEN_1": "", "IMAGEN_2": "", "IMAGEN_3": "" });
     } else {
       dataExport = dbProducts.map(p => ({
         "NOMBRE": p.name || "", 
         "CATEGORIA": p.category || "", 
         "SKU": p.code || "",
+        "ESTADO": p.status || "Activo",
         "COSTO": p.cost || 0, 
         "GASTOS": p.expenses || 0, 
         "PRECIO": p.price || 0,
@@ -783,6 +806,10 @@
       if (rows.length === 0) return alert("El archivo está vacío.");
 
       let prodUpdates = []; let errores = [];
+      
+      // Obtener lista estricta de categorías existentes (En minúsculas para comparar)
+      const categoriasExistentes = [...new Set([...dbCategories.map(c=>c.name), ...dbProducts.map(p=>p.category)])].filter(c=>c);
+      const categoriasLower = categoriasExistentes.map(c => c.toLowerCase());
 
       rows.forEach((row, index) => {
         const findVal = (names) => {
@@ -791,27 +818,40 @@
         };
 
         const name = String(findVal(['nombre', 'name']) || '').trim();
-        const category = String(findVal(['categoria', 'categoría', 'category']) || '').trim();
+        const categoryRaw = String(findVal(['categoria', 'categoría', 'category']) || '').trim();
         const cost = parseFloat(findVal(['costo', 'cost']));
         
-        // Validación: Solo Nombre, Categoría y Costo son obligatorios
-        if (!name || !category || isNaN(cost)) { 
-            errores.push(`Fila ${index + 2}: Faltan campos obligatorios (Nombre, Categoría o Costo).`); return; 
+        // Validación 1: Campos obligatorios
+        if (!name || !categoryRaw || isNaN(cost)) { 
+            errores.push(`Fila ${index + 2}: Faltan campos obligatorios (Nombre, Categoría o Costo).`); 
+            return; 
         }
 
-        const code = String(findVal(['sku', 'codigo', 'código']) || '').trim();
+        // Validación 2: Control estricto de Categoría
+        const catIndex = categoriasLower.indexOf(categoryRaw.toLowerCase());
+        if (catIndex === -1) {
+            errores.push(`Fila ${index + 2}: La categoría "${categoryRaw}" NO EXISTE en el sistema. Debes crearla previamente o usar una existente.`);
+            return;
+        }
         
-        // Buscamos si el SKU ya existe para actualizar en lugar de duplicar
+        // Usamos el nombre real de la categoría con sus mayúsculas originales
+        const category = categoriasExistentes[catIndex];
+
+        const code = String(findVal(['sku', 'codigo', 'código']) || '').trim();
         let existingProd = code ? dbProducts.find(p => p.code === code) : null;
         const id = existingProd ? existingProd.id : ('prod_' + Math.random().toString(36).slice(2, 9) + Date.now());
 
-        // LÓGICA INTELIGENTE DE PRECIO Y GASTOS
         let rawPrice = parseFloat(findVal(['precio', 'price', 'venta']));
-        // Si no mandan precio en el excel, y el producto ya existía, conservamos su precio viejo. Si es nuevo, va 0.
         const price = !isNaN(rawPrice) ? rawPrice : (existingProd ? (existingProd.price || 0) : 0);
         
         let rawExpenses = parseFloat(findVal(['gastos', 'expenses']));
         const expenses = !isNaN(rawExpenses) ? rawExpenses : (existingProd ? (existingProd.expenses || 0) : 0);
+
+        let statusExcel = String(findVal(['estado', 'status']) || '').trim();
+        let statusFinal = existingProd ? existingProd.status : 'Activo';
+        if (statusExcel.toLowerCase() === 'inactivo' || statusExcel.toLowerCase() === 'activo') {
+            statusFinal = statusExcel.charAt(0).toUpperCase() + statusExcel.slice(1).toLowerCase();
+        }
 
         let img1 = String(findVal(['imagen_1', 'image1']) || '').trim();
         if(img1 === '[Archivo]') img1 = existingProd ? existingProd.image1 : '';
@@ -826,25 +866,32 @@
           talle: String(findVal(['talle', 'medidas']) || '').trim(),
           peso: String(findVal(['peso']) || '').trim(),
           image1: img1,
-          status: 'Activo',
+          status: statusFinal,
           stock: existingProd ? existingProd.stock : 0,
           stock_branches: existingProd ? existingProd.stock_branches : '{}',
           createdAt: existingProd ? existingProd.createdAt : new Date().toISOString()
         });
       });
 
-      if (prodUpdates.length === 0) return alert("Errores:\n" + errores.slice(0,5).join('\n'));
+      if (errores.length > 0) {
+          return alert("IMPORTACIÓN RECHAZADA. Corrija los siguientes errores en el Excel:\n\n" + errores.slice(0, 8).join('\n') + (errores.length > 8 ? `\n... y ${errores.length - 8} errores más.` : ''));
+      }
 
-      if (!confirm(`Se procesarán ${prodUpdates.length} artículos.\n¿Confirmás?`)) return;
+      if (prodUpdates.length === 0) return alert("No se encontraron datos procesables en el Excel.");
+
+      if (!confirm(`Se procesarán y guardarán ${prodUpdates.length} artículos.\n¿Confirmás?`)) return;
 
       mostrarCarga(true);
       try {
         await Promise.all(prodUpdates.map(p => apiFetch(`/api/products`, { method: 'POST', body: JSON.stringify(p) })));
         document.getElementById('modalImportarProductos').close();
-        alert("✅ Importación completada.");
+        alert("✅ Importación masiva completada exitosamente.");
         await init();
-      } catch(err) { alert("Error en la subida masiva."); } 
-      finally { mostrarCarga(false); }
+      } catch(err) { 
+          alert("Error en la subida masiva. Compruebe la conexión."); 
+      } finally { 
+          mostrarCarga(false); 
+      }
     };
     reader.readAsArrayBuffer(file);
   }
