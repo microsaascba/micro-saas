@@ -658,7 +658,11 @@
       const oldName = document.getElementById('editCatOldName').value;
 
       if(!name) return;
+      
+      // Cerramos la ventana de categorías INMEDIATAMENTE para dar feedback de acción
+      document.getElementById('modalGestorCategorias').close();
       mostrarCarga(true);
+      
       try {
           const payload = { id: id || 'cat_'+Date.now(), name: name };
           if (id) payload.oldName = oldName;
@@ -667,8 +671,11 @@
           await init(); // Recargar todo para actualizar productos y categorías
           renderCategoriasTable();
           limpiarCatForm();
+          
+          // Feedback de éxito
+          setTimeout(() => alert("✅ Categoría guardada exitosamente."), 300);
       } catch (e) {
-          alert("Error guardando categoría.");
+          alert("❌ Error guardando categoría.");
       } finally {
           mostrarCarga(false);
       }
@@ -1026,14 +1033,18 @@
 
       if (!confirm(`Se procesarán y guardarán ${prodUpdates.length} artículos.\n¿Confirmás?`)) return;
 
+      // Cerramos la ventana del Excel INMEDIATAMENTE para que se vea la capa de "Procesando..."
+      document.getElementById('modalImportarProductos').close();
       mostrarCarga(true);
+      
       try {
         await Promise.all(prodUpdates.map(p => apiFetch(`/api/products`, { method: 'POST', body: JSON.stringify(p) })));
-        document.getElementById('modalImportarProductos').close();
-        alert("✅ Importación masiva completada exitosamente.");
+        
+        // Timeout ligero para que el mensaje no pise el render
+        setTimeout(() => alert("✅ Importación masiva completada exitosamente."), 300);
         await init();
       } catch(err) { 
-          alert("Error en la subida masiva. Compruebe la conexión."); 
+          alert("❌ Error en la subida masiva. Compruebe la conexión."); 
       } finally { 
           mostrarCarga(false); 
       }
