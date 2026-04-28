@@ -623,19 +623,28 @@
 
 // --- MOTOR PREDICTIVO DE COMPRAS E IA LOGÍSTICA ---
   let asisSalesHistory = [];
+// --- MOTOR PREDICTIVO DE COMPRAS E IA LOGÍSTICA ---
+  let asisSalesHistory = [];
+  let asisSuppliers = []; // Nueva variable para guardar los proveedores en esta pantalla
 
   async function abrirAsistenteCompras() {
       mostrarCarga(true);
       try {
-          // Si no tenemos el historial de ventas cargado en Stock, lo vamos a buscar a la nube
+          // 1. Si no tenemos el historial de ventas, lo vamos a buscar a la nube
           if (asisSalesHistory.length === 0) {
               const resS = await apiFetch('/api/sales?status=Todos');
               if (resS.ok) asisSalesHistory = await resS.json();
           }
 
-          // Armamos el selector con los laboratorios / proveedores que ya tenés en dbSuppliers
+          // 2. Si no tenemos los proveedores en el módulo de Stock, los traemos
+          if (asisSuppliers.length === 0) {
+              const resSup = await apiFetch('/api/suppliers');
+              if (resSup.ok) asisSuppliers = await resSup.json();
+          }
+
+          // Armamos el selector con los laboratorios / proveedores
           const suppOpts = '<option value="">Seleccione un Proveedor...</option>' + 
-              dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+              asisSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
           document.getElementById('asistenteSupplier').innerHTML = suppOpts;
 
           document.getElementById('tbodyAsistenteCompras').innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted); font-size: 14px;">👆 Seleccione un proveedor arriba para ejecutar el análisis predictivo.</td></tr>';
@@ -643,6 +652,7 @@
 
           document.getElementById('modalAsistenteCompras').showModal();
       } catch(e) {
+          console.error("Detalle del error del Asistente:", e);
           alert("Error al cargar datos históricos para el asistente.");
       } finally {
           mostrarCarga(false);
