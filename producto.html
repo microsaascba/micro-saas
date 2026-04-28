@@ -299,10 +299,17 @@
             </div>
             
             <div>
-              <label style="font-size:11px; font-weight:bold; color:var(--muted);">Código / SKU / Barras</label>
-              <input type="text" id="prodCode" class="input-box" placeholder="Dejar vacío (4 Cifras Auto)">
+              <label style="font-size:11px; font-weight:bold; color:var(--muted);">Estado *</label>
+              <select id="prodStatus" class="input-box" required>
+                  <option value="Activo" style="color: green; font-weight: bold;">Activo</option>
+                  <option value="Inactivo" style="color: red; font-weight: bold;">Inactivo</option>
+              </select>
             </div>
-
+            
+            <div>
+              <label style="font-size:11px; font-weight:bold; color:var(--muted);">Código / SKU</label>
+              <input type="text" id="prodCode" class="input-box" placeholder="Vacío = Auto">
+            </div>
             <div class="col-5">
               <label style="font-size:11px; font-weight:bold; color:var(--muted);">Descripción Técnica Completa</label>
               <textarea id="prodDescription" class="input-box" rows="2" placeholder="Detalles de materiales, bisagras, plaquetas..."></textarea>
