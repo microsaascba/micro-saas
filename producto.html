@@ -251,25 +251,33 @@
 </div>
 
 <div class="app">
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
   <aside class="sidebar">
     <div class="brand">
-        <div class="brand-logo">M</div>
-        <div class="brand-text"><strong>Micro SaaS</strong><small>Optical Business</small></div>
+        <div class="brand-logo" id="companyLogo">M</div>
+        <div class="brand-text"><strong id="companyBrandText">Micro SaaS</strong><small>Optical Business</small></div>
     </div>
     <nav class="nav">
-      <a href="dashboard.html">📊 Dashboard</a>
-      <a href="producto.html" class="active">📦 Productos</a>
-      <a href="facturacion.html">🛒 Facturación</a>
-      <a href="ventas.html">🧾 Ventas</a>
-      <a href="contable.html">💸 Contable</a>
-      <a href="stock.html">📚 Stock</a>
-      <a href="ordenes.html">📋 Órdenes</a>
+      <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html" data-module="producto"><span class="active">📦</span> Productos</a>
+      <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html" data-module="cc"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html" data-module="stock"><span class="nav-icon">📚</span> Stock</a>
+      <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
+      <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
   </aside>
 
   <main class="content">
     <header class="topbar">
-      <h1 style="margin:0; font-size: 24px;">Maestro de Artículos</h1>
+      <div style="display: flex; align-items: center; width: 100%;">
+        <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
+        <h1 style="margin:0; font-size: 24px;">Maestro de Artículos</h1>
+      </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-outline" onclick="exportarCatalogoExcel()">⬇ Exportar/Plantilla</button>
         <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="abrirModalImportar()">⬆ Importar Lote (Excel)</button>
@@ -294,7 +302,7 @@
               <label style="font-size:11px; font-weight:bold; color:var(--muted);">Categoría *</label>
               <div style="display:flex; gap:5px;">
                   <select id="prodCategory" class="input-box" required></select>
-                  <button type="button" class="btn btn-primary" style="padding:10px;" onclick="abrirModalCategoria()">+</button>
+                  <button type="button" class="btn btn-primary" style="padding:10px;" onclick="abrirGestorCategorias()">⚙️</button>
               </div>
             </div>
             
@@ -381,9 +389,12 @@
                 </div>
             </div>
 
-            <div class="col-5" style="text-align:right; margin-top:20px; padding-top:20px; border-top: 1px dashed var(--line);">
-              <button type="button" class="btn btn-light" onclick="limpiarFormulario()">Cancelar</button>
-              <button type="submit" class="btn btn-primary" style="padding:10px 40px;">Guardar Cambios</button>
+            <div class="col-5" style="text-align:right; margin-top:20px; padding-top:20px; border-top: 1px dashed var(--line); display:flex; justify-content: space-between; align-items: center;">
+              <button type="button" id="btnDeleteProd" class="btn btn-outline" style="border-color: var(--danger); color: var(--danger); display:none;" onclick="eliminarProductoPrompt()">🗑️ Borrar</button>
+              <div style="margin-left: auto;">
+                  <button type="button" class="btn btn-light" onclick="limpiarFormulario()">Cancelar</button>
+                  <button type="submit" class="btn btn-primary" style="padding:10px 40px;">Guardar Cambios</button>
+              </div>
             </div>
           </div>
         </form>
@@ -414,13 +425,31 @@
   </main>
 </div>
 
-<dialog id="modalCategoria">
-  <div class="modal-content" style="width:350px; padding:25px;">
-    <h3 style="margin-top:0">Añadir Categoría</h3>
-    <input type="text" id="catName" class="input-box" placeholder="Ej: Armazones de Sol">
-    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
-        <button class="btn btn-light" onclick="document.getElementById('modalCategoria').close()">Cerrar</button>
-        <button class="btn btn-primary" onclick="guardarCategoria()">Crear</button>
+<dialog id="modalGestorCategorias" style="width: 100%; max-width: 500px;">
+  <div class="modal-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+      <h2 style="margin:0; font-size:18px;">Gestor de Categorías</h2>
+      <button class="btn btn-light" style="padding:6px 12px; border:none;" onclick="document.getElementById('modalGestorCategorias').close()">✕</button>
+    </div>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <input type="hidden" id="editCatId">
+        <input type="hidden" id="editCatOldName">
+        <input type="text" id="catName" class="input-box" placeholder="Nombre de la nueva categoría...">
+        <button class="btn btn-primary" id="btnSaveCat" onclick="guardarCategoria()">Añadir</button>
+        <button class="btn btn-light" id="btnCancelCatEdit" style="display:none;" onclick="limpiarCatForm()">Cancelar</button>
+    </div>
+
+    <div style="overflow-y: auto; max-height: 300px; border: 1px solid var(--line); border-radius: 8px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead style="background: var(--panel-2); position: sticky; top: 0;">
+                <tr>
+                    <th style="padding: 10px;">Categoría</th>
+                    <th style="padding: 10px; text-align:center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyCategorias"></tbody>
+        </table>
     </div>
   </div>
 </dialog>
@@ -459,11 +488,29 @@
   </div>
 </dialog>
 
+<dialog id="adminAuthDialog" style="border: 1px solid var(--line); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; background: var(--panel);">
+  <div style="padding: 18px 22px; border-bottom: 1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+    <h3 style="color: var(--danger); margin:0; font-size:16px;">Autorización Requerida</h3>
+    <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
+  </div>
+  <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
+    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Se requiere PIN de administrador para <strong id="authActionText"></strong>.</p>
+    <input type="password" id="adminAuthPin" required placeholder="Ingresá el PIN" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
+      <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
+    </div>
+  </form>
+</dialog>
+
 <script src="core.js"></script>
 <script>
   let dbProducts = [];
   let dbCategories = [];
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
+
+  let pendingAdminAction = null;
+  let pendingAdminParam = null;
 
   function escapeHtml(v) { 
       return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); 
@@ -478,12 +525,10 @@
       document.getElementById('zoomModal').style.display = 'flex'; 
   }
   
-  // FUNCIÓN MONEDA OFICIAL ARGENTINA ($ 1.500,00)
   function currency(n) { 
       return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0); 
   }
 
-  // ENMASCARADOR DE INPUTS EN TIEMPO REAL
   function formatCurrencyInput(input) {
       let val = input.value.replace(/[^\d,]/g, ''); 
       const parts = val.split(',');
@@ -500,20 +545,17 @@
       input.value = '$ ' + intPart + decPart;
   }
 
-  // FUNCIÓN PARA RECONVERTIR EL TEXTO "$ 1.500,00" a FLOAT 1500.00 PARA GUARDAR EN DB
   function parseCurrency(val) {
       if (!val) return 0;
       let str = String(val).replace(/[$\s.]/g, '').replace(',', '.');
       return parseFloat(str) || 0;
   }
 
-  // GESTIÓN DE IMÁGENES
   function syncPreview(idx, mode) {
       const img = document.getElementById(`prev${idx}`);
       const b64 = document.getElementById(`img${idx}B64`).value;
       let url = document.getElementById(`img${idx}Url`).value.trim();
       
-      // Auto-reparador de Google Drive en tiempo real
       if (url && url.includes("drive.google.com/file/d/")) {
           const fileId = url.split("/d/")[1].split("/")[0];
           url = `https://drive.google.com/uc?export=view&id=${fileId}`;
@@ -549,7 +591,6 @@
       document.getElementById(`prev${idx}`).style.display = 'none';
   }
 
-  // INICIO DE LA APLICACIÓN
   async function init() {
     mostrarCarga(true);
     try {
@@ -571,25 +612,84 @@
 
   function actualizarSelectCats() {
     const s = document.getElementById('prodCategory');
-    const cats = [...new Set([...dbCategories.map(c=>c.name), ...dbProducts.map(p=>p.category)])].filter(c=>c).sort();
-    s.innerHTML = '<option value="">Seleccione Categoría...</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+    const catList = dbCategories.map(c => c.name);
+    s.innerHTML = '<option value="">Seleccione Categoría...</option>' + catList.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   }
 
-  function abrirModalCategoria() { 
-      document.getElementById('catName').value = ''; 
-      document.getElementById('modalCategoria').showModal(); 
+  // --- NUEVO GESTOR DE CATEGORÍAS ---
+  function abrirGestorCategorias() { 
+      limpiarCatForm();
+      renderCategoriasTable();
+      document.getElementById('modalGestorCategorias').showModal(); 
+  }
+
+  function limpiarCatForm() {
+      document.getElementById('editCatId').value = '';
+      document.getElementById('editCatOldName').value = '';
+      document.getElementById('catName').value = '';
+      document.getElementById('btnSaveCat').textContent = 'Añadir';
+      document.getElementById('btnCancelCatEdit').style.display = 'none';
+  }
+
+  function editarCategoriaUI(id, name) {
+      document.getElementById('editCatId').value = id;
+      document.getElementById('editCatOldName').value = name;
+      document.getElementById('catName').value = name;
+      document.getElementById('btnSaveCat').textContent = 'Actualizar';
+      document.getElementById('btnCancelCatEdit').style.display = 'block';
+  }
+
+  function renderCategoriasTable() {
+      const tbody = document.getElementById('tbodyCategorias');
+      tbody.innerHTML = dbCategories.map(c => `
+          <tr>
+              <td style="padding: 10px; border-bottom: 1px solid var(--line); font-weight: bold;">${escapeHtml(c.name)}</td>
+              <td style="padding: 10px; border-bottom: 1px solid var(--line); text-align:center;">
+                  <button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="editarCategoriaUI('${c.id}', '${escapeHtml(c.name)}')">✏️ Editar</button>
+                  <button class="btn-outline" style="padding:4px 8px; font-size:11px; color: var(--danger); border-color: var(--danger);" onclick="eliminarCategoria('${c.id}', '${escapeHtml(c.name)}')">🗑️</button>
+              </td>
+          </tr>
+      `).join('');
   }
   
   async function guardarCategoria() {
       const name = document.getElementById('catName').value.trim();
+      const id = document.getElementById('editCatId').value;
+      const oldName = document.getElementById('editCatOldName').value;
+
       if(!name) return;
       mostrarCarga(true);
-      await apiFetch('/api/categories', { method: 'POST', body: JSON.stringify({ id: 'cat_'+Date.now(), name }) });
-      document.getElementById('modalCategoria').close();
-      await init();
+      try {
+          const payload = { id: id || 'cat_'+Date.now(), name: name };
+          if (id) payload.oldName = oldName;
+
+          await apiFetch('/api/categories', { method: 'POST', body: JSON.stringify(payload) });
+          await init(); // Recargar todo para actualizar productos y categorías
+          renderCategoriasTable();
+          limpiarCatForm();
+      } catch (e) {
+          alert("Error guardando categoría.");
+      } finally {
+          mostrarCarga(false);
+      }
   }
 
-  // CALCULADORA CFO
+  async function eliminarCategoria(id, name) {
+      if(!confirm(`¿Estás seguro de eliminar la categoría "${name}"?\nLos productos asociados quedarán "Sin Categoría".`)) return;
+      mostrarCarga(true);
+      try {
+          await apiFetch(`/api/categories?id=${id}&name=${encodeURIComponent(name)}`, { method: 'DELETE' });
+          await init();
+          renderCategoriasTable();
+      } catch(e) {
+          alert("Error eliminando categoría.");
+      } finally {
+          mostrarCarga(false);
+      }
+  }
+
+  // --- FIN GESTOR DE CATEGORÍAS ---
+
   function calcularCFO() {
       const c = parseCurrency(document.getElementById('prodCost').value);
       const g = parseCurrency(document.getElementById('prodExpenses').value);
@@ -602,7 +702,6 @@
       document.getElementById('prodMargin').value = new Intl.NumberFormat('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(margen) + '%';
   }
 
-  // CARGAR PRODUCTO PARA EDITAR
   window.editarProducto = function(id) {
     const p = dbProducts.find(x => x.id === id);
     if (!p) return;
@@ -644,17 +743,18 @@
 
     document.getElementById('formTitle').textContent = "Editando Modelo: " + p.name;
     document.getElementById('formTitle').style.color = "var(--primary)";
+    document.getElementById('btnDeleteProd').style.display = 'block'; // Mostrar botón borrar
     calcularCFO();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // LIMPIAR FORMULARIO
   window.limpiarFormulario = function() {
       document.getElementById('productForm').reset();
       document.getElementById('prodId').value = '';
       
       document.getElementById('prodCost').disabled = false;
       document.getElementById('prodStatus').value = 'Activo';
+      document.getElementById('btnDeleteProd').style.display = 'none'; // Ocultar botón borrar
       
       document.getElementById('formTitle').textContent = "Alta de producto";
       document.getElementById('formTitle').style.color = "var(--text)";
@@ -667,7 +767,6 @@
       document.getElementById('prodMargin').value = '0,0%';
   };
 
-  // GUARDAR EL PRODUCTO
   async function guardarProducto(e) {
     e.preventDefault();
     mostrarCarga(true);
@@ -732,7 +831,58 @@
     }
   }
 
-  // RENDERIZAR TABLA DE CATÁLOGO
+  // --- SEGURIDAD Y BORRADO ---
+  function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
+      document.getElementById('authActionText').textContent = accionTexto;
+      pendingAdminAction = funcionExito;
+      pendingAdminParam = param;
+      document.getElementById('adminAuthPin').value = '';
+      document.getElementById('adminAuthDialog').showModal();
+      setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
+  }
+
+  function cerrarAdminAuth() {
+      document.getElementById('adminAuthDialog').close();
+      setTimeout(() => { pendingAdminAction = null; pendingAdminParam = null; }, 100);
+  }
+
+  function validarAdminAuth(e) {
+      e.preventDefault();
+      const pinInput = document.getElementById('adminAuthPin').value;
+      if (pinInput === '1234') { 
+          const accion = pendingAdminAction; 
+          const param = pendingAdminParam; 
+          cerrarAdminAuth();
+          if (accion) accion(param);
+      } else { 
+          alert("❌ PIN de administrador incorrecto."); 
+          document.getElementById('adminAuthPin').value = ''; 
+          document.getElementById('adminAuthPin').focus(); 
+      }
+  }
+
+  function eliminarProductoPrompt() {
+      const id = document.getElementById('prodId').value;
+      if (!id) return;
+      pedirAuthAdmin("borrar este producto permanentemente", ejecutarEliminacionProducto, id);
+  }
+
+  async function ejecutarEliminacionProducto(id) {
+      mostrarCarga(true);
+      try {
+          const res = await apiFetch(`/api/products?id=${id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error("Error borrando en D1");
+          limpiarFormulario();
+          await init();
+          alert("🗑️ Producto borrado exitosamente.");
+      } catch (e) {
+          alert("Error al intentar borrar el producto.");
+      } finally {
+          mostrarCarga(false);
+      }
+  }
+  // --- FIN SEGURIDAD ---
+
   function renderTable() {
     const term = document.getElementById('search').value.toLowerCase();
     const tbody = document.getElementById('tableBody');
@@ -753,7 +903,6 @@
     }).join('');
   }
 
-  // --- MÓDULO EXCEL (MASIVO) ---
   function abrirModalImportar() {
     document.getElementById('importFile').value = '';
     document.getElementById('modalImportarProductos').showModal();
@@ -807,7 +956,6 @@
 
       let prodUpdates = []; let errores = [];
       
-      // Obtener lista estricta de categorías existentes (En minúsculas para comparar)
       const categoriasExistentes = [...new Set([...dbCategories.map(c=>c.name), ...dbProducts.map(p=>p.category)])].filter(c=>c);
       const categoriasLower = categoriasExistentes.map(c => c.toLowerCase());
 
@@ -821,20 +969,17 @@
         const categoryRaw = String(findVal(['categoria', 'categoría', 'category']) || '').trim();
         const cost = parseFloat(findVal(['costo', 'cost']));
         
-        // Validación 1: Campos obligatorios
         if (!name || !categoryRaw || isNaN(cost)) { 
             errores.push(`Fila ${index + 2}: Faltan campos obligatorios (Nombre, Categoría o Costo).`); 
             return; 
         }
 
-        // Validación 2: Control estricto de Categoría
         const catIndex = categoriasLower.indexOf(categoryRaw.toLowerCase());
         if (catIndex === -1) {
             errores.push(`Fila ${index + 2}: La categoría "${categoryRaw}" NO EXISTE en el sistema. Debes crearla previamente o usar una existente.`);
             return;
         }
         
-        // Usamos el nombre real de la categoría con sus mayúsculas originales
         const category = categoriasExistentes[catIndex];
 
         const code = String(findVal(['sku', 'codigo', 'código']) || '').trim();
