@@ -1778,8 +1778,10 @@
   }
 
   function imprimirComprobantes(o) {
+    const cleanId = String(o.id).replace('ORD-', '');
+      
     document.getElementById('pcDate').textContent = new Date().toLocaleDateString('es-AR');
-    document.getElementById('pcId').textContent = 'N° ' + o.id;
+    document.getElementById('pcId').textContent = 'N° ' + cleanId;
     document.getElementById('pcName').textContent = o.clientName;
     document.getElementById('pcOsName').textContent = o.os_name || 'Particular / Sin cobertura';
     document.getElementById('pcDelivery').textContent = o.deliveryDate;
@@ -1793,7 +1795,7 @@
     document.getElementById('pcBalance').textContent = currency(o.balance);
 
     document.getElementById('plDate').textContent = new Date().toLocaleDateString('es-AR');
-    document.getElementById('plId').textContent = 'ORDEN LAB N° ' + o.id;
+    document.getElementById('plId').textContent = 'ORDEN LAB N° ' + cleanId;
     document.getElementById('plName').textContent = o.clientName;
     document.getElementById('plDoc').textContent = o.doctor || '-';
     document.getElementById('plOS').textContent = o.os_name || '-';
@@ -1817,7 +1819,7 @@
     document.getElementById('plGlass').textContent = o.glassType;
 
     const tituloOriginal = document.title;
-    const numOrden = o.id.split('_')[1] || o.id; 
+    const numOrden = cleanId.split('_')[1] || cleanId; 
     document.title = `${o.clientName} - Orden N°${numOrden}`;
 
     window.print();
