@@ -962,6 +962,9 @@
       if (rows.length === 0) return alert("El archivo está vacío.");
 
       let prodUpdates = []; let errores = [];
+      // 1. Iniciamos los contadores para el reporte final
+      let creados = 0; 
+      let actualizados = 0;
       
       const categoriasExistentes = [...new Set([...dbCategories.map(c=>c.name), ...dbProducts.map(p=>p.category)])].filter(c=>c);
       const categoriasLower = categoriasExistentes.map(c => c.toLowerCase());
@@ -991,6 +994,14 @@
 
         const code = String(findVal(['sku', 'codigo', 'código']) || '').trim();
         let existingProd = code ? dbProducts.find(p => p.code === code) : null;
+        
+        // 2. Lógica de conteo: Si existe sumamos a actualizados, sino a creados
+        if (existingProd) {
+            actualizados++;
+        } else {
+            creados++;
+        }
+
         const id = existingProd ? existingProd.id : ('prod_' + Math.random().toString(36).slice(2, 9) + Date.now());
 
         let rawPrice = parseFloat(findVal(['precio', 'price', 'venta']));
@@ -1033,15 +1044,14 @@
 
       if (!confirm(`Se procesarán y guardarán ${prodUpdates.length} artículos.\n¿Confirmás?`)) return;
 
-      // Cerramos la ventana del Excel INMEDIATAMENTE para que se vea la capa de "Procesando..."
       document.getElementById('modalImportarProductos').close();
       mostrarCarga(true);
       
       try {
         await Promise.all(prodUpdates.map(p => apiFetch(`/api/products`, { method: 'POST', body: JSON.stringify(p) })));
         
-        // Timeout ligero para que el mensaje no pise el render
-        setTimeout(() => alert("✅ Importación masiva completada exitosamente."), 300);
+        // 3. Imprimimos el reporte final con los contadores exactos
+        setTimeout(() => alert(`✅ Importación masiva completada.\nProductos Actualizados: ${actualizados} | Productos Creados: ${creados}`), 300);
         await init();
       } catch(err) { 
           alert("❌ Error en la subida masiva. Compruebe la conexión."); 
