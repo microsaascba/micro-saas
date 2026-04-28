@@ -265,9 +265,12 @@
       <div id="gridMercaderia" style="display: none; background: #f0fdf4; padding: 15px; border-radius: 8px; border: 1px solid #22c55e; margin-bottom: 15px;">
          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
              <h3 style="margin: 0; font-size: 14px; color: #16a34a;">📦 Detalle de Mercadería (Logística)</h3>
-             <label style="font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; background: #16a34a; color: white; padding: 4px 10px; border-radius: 6px;">
-                 <input type="checkbox" id="expMueveStock" onchange="togglePanelItems()" checked> ✔ Ingresar Automáticamente a Stock
-             </label>
+             <div style="display: flex; gap: 10px; align-items: center;">
+                 <button type="button" class="btn btn-outline" style="font-size: 11px; padding: 4px 10px; border-color: #16a34a; color: #16a34a;" onclick="abrirModalPegadoExcel()">📋 Pegar desde Excel</button>
+                 <label style="font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; background: #16a34a; color: white; padding: 4px 10px; border-radius: 6px;">
+                     <input type="checkbox" id="expMueveStock" onchange="togglePanelItems()" checked> ✔ Ingresar Automáticamente a Stock
+                 </label>
+             </div>
          </div>
          
          <div id="panelCargaItems">
@@ -290,7 +293,7 @@
              </div>
              
              <table style="width: 100%; font-size: 12px; margin-bottom: 10px; background: #fff;">
-                 <thead><tr><th>Producto</th><th style="text-align:center;">Cant</th><th style="text-align:right;">Costo U.</th><th style="text-align:right;">Subtotal</th><th style="text-align:center;">X</th></tr></thead>
+                 <thead><tr><th>Producto / Código</th><th style="text-align:center;">Cant</th><th style="text-align:right;">Costo U.</th><th style="text-align:right;">Subtotal</th><th style="text-align:center;">X</th></tr></thead>
                  <tbody id="tbodyCompraItems"></tbody>
              </table>
              <div style="text-align: right; font-weight: bold; font-size: 13px; color: var(--text);">
@@ -352,6 +355,18 @@
         </div>
       </div>
     </form>
+  </div>
+</dialog>
+
+<dialog id="modalPegadoExcel" style="width: 100%; max-width: 500px; z-index: 10005;">
+  <div class="modal-content">
+    <h2 style="margin: 0 0 10px 0; font-size:18px;">📋 Pegar desde Excel</h2>
+    <p style="font-size: 12px; color: var(--muted); margin-bottom: 15px;">Seleccioná las celdas en tu Excel, copialas (Ctrl+C) y pegalas en este cuadro (Ctrl+V). El formato debe ser estrictamente:<br><strong>Código (SKU) | Cantidad | Costo Unitario</strong></p>
+    <textarea id="excelPasteArea" class="input-box" rows="8" placeholder="Ejemplo:\nSOL-001&#9;10&#9;15000\nARM-002&#9;5&#9;8000" style="font-family: monospace; white-space: pre; resize: vertical;"></textarea>
+    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top:20px;">
+      <button type="button" class="btn btn-light" onclick="document.getElementById('modalPegadoExcel').close()">Cancelar</button>
+      <button type="button" class="btn btn-primary" style="background:#16a34a; border:none;" onclick="procesarPegadoExcel()">Procesar Datos</button>
+    </div>
   </div>
 </dialog>
 
@@ -536,7 +551,7 @@
     }
   }
 
-  // --- LÓGICA DE DETALLE DE MERCADERÍA ---
+  // --- LÓGICA DE DETALLE DE MERCADERÍA Y PEGADO EXCEL ---
   function toggleMercaderiaGrid() {
       const cat = document.getElementById('expCategory').value;
       const grid = document.getElementById('gridMercaderia');
@@ -557,6 +572,65 @@
       }
   }
 
+  function abrirModalPegadoExcel() {
+      document.getElementById('excelPasteArea').value = '';
+      document.getElementById('modalPegadoExcel').showModal();
+  }
+
+  function procesarPegadoExcel() {
+      const text = document.getElementById('excelPasteArea').value.trim();
+      if (!text) {
+          alert("Pegá los datos antes de procesar.");
+          return;
+      }
+
+      const rows = text.split('\n');
+      let agregados = 0;
+      let noEncontrados = [];
+
+      rows.forEach(row => {
+          // El pegado desde Excel usa tabulaciones (\t) para separar columnas
+          const cols = row.split('\t'); 
+          
+          if (cols.length >= 2) {
+              const code = cols[0].trim().toLowerCase();
+              const qty = parseInt(cols[1].trim()) || 0;
+              // Reemplazamos coma por punto para evitar problemas al parsear a float
+              const costStr = cols.length >= 3 ? cols[2].trim().replace(',', '.') : null;
+              const cost = costStr ? parseFloat(costStr) : null;
+
+              if (code && qty > 0) {
+                  // Buscamos el producto en el catálogo por su código (ignorando mayúsculas)
+                  const prod = dbProducts.find(p => (p.code || '').toLowerCase() === code);
+                  
+                  if (prod) {
+                      const finalCost = (cost !== null && !isNaN(cost)) ? cost : (prod.cost || 0);
+                      const existingIndex = compraItems.findIndex(i => i.id === prod.id);
+                      
+                      if (existingIndex >= 0) {
+                          compraItems[existingIndex].qty += qty;
+                          compraItems[existingIndex].cost = finalCost;
+                      } else {
+                          compraItems.push({ id: prod.id, name: prod.name, code: prod.code, qty: qty, cost: finalCost });
+                      }
+                      agregados++;
+                  } else {
+                      noEncontrados.push(cols[0].trim());
+                  }
+              }
+          }
+      });
+
+      renderCompraItems();
+      document.getElementById('modalPegadoExcel').close();
+
+      if (noEncontrados.length > 0) {
+          alert(`Se procesaron ${agregados} artículos.\n\nATENCIÓN: No se encontraron los siguientes códigos (SKU) en la base de datos:\n${noEncontrados.join(', ')}`);
+      } else {
+          alert(`✅ Pegado exitoso. Se agregaron ${agregados} artículos a la grilla.`);
+      }
+  }
+
   function buscarProductoCompra() {
       const term = document.getElementById('itemProdName').value.toLowerCase().trim();
       const list = document.getElementById('compraProdResults');
@@ -571,16 +645,17 @@
       const filtrados = dbProducts.filter(p => p.category !== 'Cristal' && ((p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term))).slice(0, 10);
       
       list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">No encontrado.</div>' : filtrados.map(p => `
-        <div class="autocomplete-item" onclick="selProductoCompra('${p.id}', '${escapeHtml(p.name)}', ${p.cost || 0})">
+        <div class="autocomplete-item" onclick="selProductoCompra('${p.id}', '${escapeHtml(p.name)}', '${escapeHtml(p.code||'')}', ${p.cost || 0})">
           <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code||'S/N'}</small></div>
           <div style="font-weight:bold; color:var(--muted);">Costo Ref: ${currency(p.cost)}</div>
         </div>`).join('');
       list.classList.add('active');
   }
 
-  function selProductoCompra(id, name, cost) {
+  function selProductoCompra(id, name, code, cost) {
       document.getElementById('itemProdId').value = id;
       document.getElementById('itemProdName').value = name;
+      // Guardamos temporalmente el codigo en un data-set si es necesario, o lo buscamos en el array global
       document.getElementById('itemCost').value = cost;
       document.getElementById('itemQty').value = 1;
       document.getElementById('compraProdResults').classList.remove('active');
@@ -595,12 +670,16 @@
 
       if (!id || qty <= 0 || cost < 0) return alert("Seleccione un producto, cantidad y costo válido.");
 
+      // Buscamos el código original para que aparezca bonito en la tabla
+      const prodRef = dbProducts.find(p => p.id === id);
+      const code = prodRef ? (prodRef.code || 'S/N') : 'S/N';
+
       const existingIndex = compraItems.findIndex(i => i.id === id);
       if (existingIndex >= 0) {
           compraItems[existingIndex].qty += qty;
           compraItems[existingIndex].cost = cost; // Actualiza al último costo ingresado
       } else {
-          compraItems.push({ id, name, qty, cost });
+          compraItems.push({ id, name, code, qty, cost });
       }
 
       document.getElementById('itemProdId').value = '';
@@ -625,7 +704,7 @@
           total += sub;
           return `
           <tr>
-            <td><strong>${escapeHtml(item.name)}</strong></td>
+            <td><strong>${escapeHtml(item.name)}</strong><br><small style="color:var(--muted);">${escapeHtml(item.code || '')}</small></td>
             <td style="text-align:center;">${item.qty}</td>
             <td style="text-align:right;">${currency(item.cost)}</td>
             <td style="text-align:right; font-weight:bold;">${currency(sub)}</td>
