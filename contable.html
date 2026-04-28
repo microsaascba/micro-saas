@@ -12,6 +12,7 @@
   </style>
 
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
@@ -37,6 +38,12 @@
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
     
+    /* Buscador Autocomplete */
+    .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow-lg); z-index: 999; max-height: 200px; overflow-y: auto; display: none; }
+    .autocomplete-list.active { display: block; }
+    .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .autocomplete-item:hover { background: var(--primary-soft); }
+
     @media (max-width: 900px) {
       .app { display: flex !important; flex-direction: column !important; }
       .mobile-toggle { display: block; }
@@ -101,10 +108,6 @@
         <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Egresos del día</div>
         <div id="kpiGastosDia" style="font-size:28px; font-weight:800;">$0</div>
         <div style="font-size:12px; color:var(--muted); margin-top:5px;" id="kpiCountDia">0 comprobantes procesados</div>
-      </article>
-      <article class="card card-pad" style="margin-top: 20px; border-top: 4px solid var(--danger);">
-        <h2 style="margin: 0 0 15px 0; font-size: 16px; display:flex; align-items:center; gap:8px;">⚠️ Alertas y Vencimientos</h2>
-        <div id="contableAlertsContainer" style="font-size: 13px; color: var(--muted);">Cargando alertas de Cash Flow...</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--text);">
         <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Compras Mes (Devengado)</div>
@@ -185,12 +188,17 @@
           <span style="font-weight:bold; font-size:16px;">Flujo Neto de Caja</span>
           <strong id="resNeto" style="font-size:18px;">$0</strong>
         </div>
+
+        <article class="card card-pad" style="margin-top: 20px; border-top: 4px solid var(--danger);">
+            <h2 style="margin: 0 0 15px 0; font-size: 16px; display:flex; align-items:center; gap:8px;">⚠️ Alertas y Vencimientos</h2>
+            <div id="contableAlertsContainer" style="font-size: 13px; color: var(--muted);">Cargando alertas de Cash Flow...</div>
+        </article>
       </article>
     </div>
   </main>
 </div>
 
-<dialog id="modalGasto" style="width: 100%; max-width: 700px;">
+<dialog id="modalGasto" style="width: 100%; max-width: 800px;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
       <h2 id="gastoModalTitle" style="margin: 0; font-size:20px;">Carga de Comprobante / Gasto</h2>
@@ -242,9 +250,9 @@
         </div>
         <div>
           <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Imputación Contable</label>
-          <select id="expCategory" class="input-box">
-            <option value="Mercadería">Compra Mercadería</option>
+          <select id="expCategory" class="input-box" onchange="toggleMercaderiaGrid()">
             <option value="Servicios">Servicios Básicos</option>
+            <option value="Mercadería">Compra Mercadería</option>
             <option value="Honorarios">Honorarios Profesionales</option>
             <option value="Sueldos">Sueldos y Cargas</option>
             <option value="Impuestos">Impuestos y Tasas</option>
@@ -253,19 +261,57 @@
           </select>
         </div>
       </div>
+
+      <div id="gridMercaderia" style="display: none; background: #f0fdf4; padding: 15px; border-radius: 8px; border: 1px solid #22c55e; margin-bottom: 15px;">
+         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+             <h3 style="margin: 0; font-size: 14px; color: #16a34a;">📦 Detalle de Mercadería (Logística)</h3>
+             <label style="font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; background: #16a34a; color: white; padding: 4px 10px; border-radius: 6px;">
+                 <input type="checkbox" id="expMueveStock" onchange="togglePanelItems()" checked> ✔ Ingresar Automáticamente a Stock
+             </label>
+         </div>
+         
+         <div id="panelCargaItems">
+             <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 15px;">
+                 <div style="position: relative;">
+                     <label style="font-size: 10px; font-weight: bold; color: var(--muted);">Buscar Artículo en Catálogo</label>
+                     <input type="hidden" id="itemProdId">
+                     <input type="text" id="itemProdName" class="input-box" placeholder="Buscar por nombre o código..." oninput="buscarProductoCompra()" autocomplete="off">
+                     <div id="compraProdResults" class="autocomplete-list"></div>
+                 </div>
+                 <div>
+                     <label style="font-size: 10px; font-weight: bold; color: var(--muted);">Cant.</label>
+                     <input type="number" id="itemQty" class="input-box" min="1" step="1">
+                 </div>
+                 <div>
+                     <label style="font-size: 10px; font-weight: bold; color: var(--muted);">Costo Unit. ($)</label>
+                     <input type="number" id="itemCost" class="input-box" min="0" step="0.01">
+                 </div>
+                 <button type="button" class="btn btn-primary" style="padding: 10px; background: #16a34a; border: none;" onclick="agregarItemCompra()">Añadir</button>
+             </div>
+             
+             <table style="width: 100%; font-size: 12px; margin-bottom: 10px; background: #fff;">
+                 <thead><tr><th>Producto</th><th style="text-align:center;">Cant</th><th style="text-align:right;">Costo U.</th><th style="text-align:right;">Subtotal</th><th style="text-align:center;">X</th></tr></thead>
+                 <tbody id="tbodyCompraItems"></tbody>
+             </table>
+             <div style="text-align: right; font-weight: bold; font-size: 13px; color: var(--text);">
+                 Suma Mercadería: <span id="lblTotalItems" style="color: var(--primary);">$ 0,00</span>
+             </div>
+             <small style="color: var(--danger); font-size: 10px; display: block; text-align: right; margin-top: 5px;">* Recordá colocar este total en el "Neto Gravado" de abajo.</small>
+         </div>
+      </div>
       
       <div style="background: var(--panel-2); padding: 15px; border-radius: 8px; border: 1px dashed var(--line); margin-bottom: 15px;">
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
           <div>
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Neto Gravado</label>
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Neto Gravado ($)</label>
             <input type="text" id="expNeto" class="input-box" placeholder="$ 0,00" oninput="formatCurrencyInput(this); sumarTotalGasto()" autocomplete="off">
           </div>
           <div>
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">IVA Discriminado</label>
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">IVA Discriminado ($)</label>
             <input type="text" id="expIva" class="input-box" placeholder="$ 0,00" oninput="formatCurrencyInput(this); sumarTotalGasto()" autocomplete="off">
           </div>
           <div>
-            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Otros / Percep.</label>
+            <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Otros / Percep. ($)</label>
             <input type="text" id="expOtros" class="input-box" placeholder="$ 0,00" oninput="formatCurrencyInput(this); sumarTotalGasto()" autocomplete="off">
           </div>
         </div>
@@ -425,6 +471,8 @@
   let dbSales = [];
   let dbSuppliers = [];
   let branches = [];
+  let dbProducts = []; // Agregado para el stock
+  let compraItems = []; // Array temporal para los items de la compra
   
   const PIN_ADMIN = "1234";
   let pendingAdminAction = null;
@@ -454,61 +502,24 @@
     document.getElementById('sidebarOverlay').classList.toggle('open');
   }
 
-  async function cargarAlertasContables() {
-      const container = document.getElementById('contableAlertsContainer');
-      if (!container) return;
-      try {
-          const res = await fetch('/api/alerts', { headers: { 'x-company-id': localStorage.getItem('company_id') || '' } });
-          if (!res.ok) throw new Error();
-          const data = await res.json();
-
-          let html = '';
-          if (data.payables && data.payables.length > 0) {
-              html += `<h4 style="margin: 0 0 8px 0; font-size: 11px; color: var(--danger); text-transform: uppercase;">🔴 Cuentas por Pagar (Próximas)</h4>`;
-              data.payables.forEach(p => {
-                  html += `<div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; border-bottom:1px solid var(--line); padding-bottom:6px;">
-                      <span>${escapeHtml(p.supplierName)} <small style="color:var(--muted); display:block;">Vence: ${new Date(p.dueDate).toLocaleDateString('es-AR')}</small></span>
-                      <strong style="color:var(--danger)">$${p.amount.toLocaleString('es-AR')}</strong>
-                  </div>`;
-              });
-          }
-          if (data.receivables && data.receivables.length > 0) {
-              html += `<h4 style="margin: 15px 0 8px 0; font-size: 11px; color: var(--primary); text-transform: uppercase;">🔵 Cobranzas Morosas (>30 días)</h4>`;
-              data.receivables.forEach(r => {
-                  html += `<div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; border-bottom:1px solid var(--line); padding-bottom:6px;">
-                      <span>${escapeHtml(r.name)} <small style="color:var(--muted); display:block;">Últ. mov: ${new Date(r.last_movement).toLocaleDateString('es-AR')}</small></span>
-                      <strong style="color:var(--primary)">$${r.balance.toLocaleString('es-AR')}</strong>
-                  </div>`;
-              });
-          }
-
-          if(html === '') {
-              html = '<div style="text-align:center; padding: 15px; color:var(--success); font-weight:bold;">✅ Finanzas sanas. No hay alertas críticas.</div>';
-          }
-
-          container.innerHTML = html;
-      } catch(e) {
-          container.innerHTML = '<div style="color:var(--danger); font-size:12px;">Error al cargar alertas del servidor.</div>';
-      }
-  }
-  
-
   async function initContable() {
     mostrarCarga(true);
     try {
       applyCompanyBranding();
 
-      const [resE, resS, resSup, resB] = await Promise.all([ 
+      const [resE, resS, resSup, resB, resP] = await Promise.all([ 
         apiFetch(`${API_URL}/expenses?status=Todos`), 
         apiFetch(`${API_URL}/sales?status=Todos`), 
         apiFetch(`${API_URL}/suppliers`),
-        apiFetch(`${API_URL}/branches`)
+        apiFetch(`${API_URL}/branches`),
+        apiFetch(`${API_URL}/products?status=Activo`)
       ]);
       
       if (resE.ok) dbExpenses = await resE.json();
       if (resS.ok) dbSales = await resS.json();
       if (resSup.ok) dbSuppliers = await resSup.json();
       if (resB.ok) branches = await resB.json();
+      if (resP.ok) dbProducts = await resP.json();
       
       const branchOptions = '<option value="Global">Gasto Global / Empresa</option>' +
         branches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
@@ -525,6 +536,110 @@
     }
   }
 
+  // --- LÓGICA DE DETALLE DE MERCADERÍA ---
+  function toggleMercaderiaGrid() {
+      const cat = document.getElementById('expCategory').value;
+      const grid = document.getElementById('gridMercaderia');
+      if (cat === 'Mercadería') {
+          grid.style.display = 'block';
+          togglePanelItems();
+      } else {
+          grid.style.display = 'none';
+      }
+  }
+
+  function togglePanelItems() {
+      const isChecked = document.getElementById('expMueveStock').checked;
+      document.getElementById('panelCargaItems').style.display = isChecked ? 'block' : 'none';
+      if(!isChecked) {
+          compraItems = [];
+          renderCompraItems();
+      }
+  }
+
+  function buscarProductoCompra() {
+      const term = document.getElementById('itemProdName').value.toLowerCase().trim();
+      const list = document.getElementById('compraProdResults');
+      
+      if (term.length < 2) { 
+          list.classList.remove('active'); 
+          document.getElementById('itemProdId').value = ''; 
+          document.getElementById('itemCost').value = ''; 
+          return; 
+      }
+
+      const filtrados = dbProducts.filter(p => p.category !== 'Cristal' && ((p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term))).slice(0, 10);
+      
+      list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">No encontrado.</div>' : filtrados.map(p => `
+        <div class="autocomplete-item" onclick="selProductoCompra('${p.id}', '${escapeHtml(p.name)}', ${p.cost || 0})">
+          <div><strong>${escapeHtml(p.name)}</strong><br><small>${p.code||'S/N'}</small></div>
+          <div style="font-weight:bold; color:var(--muted);">Costo Ref: ${currency(p.cost)}</div>
+        </div>`).join('');
+      list.classList.add('active');
+  }
+
+  function selProductoCompra(id, name, cost) {
+      document.getElementById('itemProdId').value = id;
+      document.getElementById('itemProdName').value = name;
+      document.getElementById('itemCost').value = cost;
+      document.getElementById('itemQty').value = 1;
+      document.getElementById('compraProdResults').classList.remove('active');
+      document.getElementById('itemQty').focus();
+  }
+
+  function agregarItemCompra() {
+      const id = document.getElementById('itemProdId').value;
+      const name = document.getElementById('itemProdName').value;
+      const qty = parseInt(document.getElementById('itemQty').value) || 0;
+      const cost = parseFloat(document.getElementById('itemCost').value) || 0;
+
+      if (!id || qty <= 0 || cost < 0) return alert("Seleccione un producto, cantidad y costo válido.");
+
+      const existingIndex = compraItems.findIndex(i => i.id === id);
+      if (existingIndex >= 0) {
+          compraItems[existingIndex].qty += qty;
+          compraItems[existingIndex].cost = cost; // Actualiza al último costo ingresado
+      } else {
+          compraItems.push({ id, name, qty, cost });
+      }
+
+      document.getElementById('itemProdId').value = '';
+      document.getElementById('itemProdName').value = '';
+      document.getElementById('itemQty').value = '';
+      document.getElementById('itemCost').value = '';
+      
+      renderCompraItems();
+  }
+
+  function eliminarItemCompra(index) {
+      compraItems.splice(index, 1);
+      renderCompraItems();
+  }
+
+  function renderCompraItems() {
+      const tbody = document.getElementById('tbodyCompraItems');
+      let total = 0;
+      
+      tbody.innerHTML = compraItems.map((item, i) => {
+          const sub = item.qty * item.cost;
+          total += sub;
+          return `
+          <tr>
+            <td><strong>${escapeHtml(item.name)}</strong></td>
+            <td style="text-align:center;">${item.qty}</td>
+            <td style="text-align:right;">${currency(item.cost)}</td>
+            <td style="text-align:right; font-weight:bold;">${currency(sub)}</td>
+            <td style="text-align:center;"><button type="button" onclick="eliminarItemCompra(${i})" style="color:var(--danger); background:none; border:none; cursor:pointer;">❌</button></td>
+          </tr>`;
+      }).join('');
+      
+      if(compraItems.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:10px; color:var(--muted);">Sin artículos ingresados.</td></tr>';
+      }
+
+      document.getElementById('lblTotalItems').textContent = currency(total);
+  }
+
   function actualizarSelectProveedores() {
     const sel = document.getElementById('expSupplier');
     sel.innerHTML =
@@ -532,7 +647,6 @@
       dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
   }
 
-  // --- FORMATEO DE MONEDA ARGENTINA ---
   function formatCurrencyInput(input) {
     let val = input.value.replace(/[^\d,]/g, '');
     const parts = val.split(',');
@@ -653,22 +767,12 @@
         return;
       }
     }
-
-    const duplicadoNombre = dbSuppliers.find(s => (s.name || '').toLowerCase() === name.toLowerCase() && s.id !== id);
-    if (duplicadoNombre) {
-      if (!confirm(`⚠️ Ya existe un proveedor llamado "${duplicadoNombre.name}". ¿Querés guardarlo igual?`)) return;
-    }
     
     const sup = {
-      id,
-      name,
-      cuit,
-      ivaCondition: document.getElementById('suppIva').value,
+      id, name, cuit, ivaCondition: document.getElementById('suppIva').value,
       contactPerson: document.getElementById('suppContact').value.trim(),
-      phone: document.getElementById('suppPhone').value.trim(),
-      email: document.getElementById('suppEmail').value.trim(),
-      address: document.getElementById('suppAddress').value.trim(),
-      notes: document.getElementById('suppNotes').value.trim(),
+      phone: document.getElementById('suppPhone').value.trim(), email: document.getElementById('suppEmail').value.trim(),
+      address: document.getElementById('suppAddress').value.trim(), notes: document.getElementById('suppNotes').value.trim(),
       createdAt: new Date().toISOString()
     };
     
@@ -687,32 +791,20 @@
         document.getElementById('expSupplier').value = sup.id;
       }
       document.getElementById('modalProveedor').close();
-    } catch(err) {
-      alert("Error guardando proveedor.");
-    } finally {
-      mostrarCarga(false);
-    }
+    } catch(err) { alert("Error guardando proveedor."); } finally { mostrarCarga(false); }
   }
 
-  function eliminarProveedorPrompt(id) {
-    pedirAuthAdmin('eliminar permanentemente este proveedor.', ejecutarEliminacionProveedor, id);
-  }
+  function eliminarProveedorPrompt(id) { pedirAuthAdmin('eliminar permanentemente este proveedor.', ejecutarEliminacionProveedor, id); }
 
   async function ejecutarEliminacionProveedor(id) {
     mostrarCarga(true);
     try {
-      const res = await apiFetch(`${API_URL}/suppliers?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(await res.text());
-
+      await apiFetch(`${API_URL}/suppliers?id=${id}`, { method: 'DELETE' });
       dbSuppliers = dbSuppliers.filter(s => s.id !== id);
       actualizarSelectProveedores();
       if (document.getElementById('modalListaProveedores').open) renderDirectorioProveedores();
       renderContable();
-    } catch(err) {
-      alert("Error al intentar eliminar el proveedor.");
-    } finally {
-      mostrarCarga(false);
-    }
+    } catch(err) { alert("Error al intentar eliminar el proveedor."); } finally { mostrarCarga(false); }
   }
 
   function abrirModalGasto(id = null) {
@@ -721,6 +813,8 @@
     const title = document.getElementById('gastoModalTitle');
     
     form.reset();
+    compraItems = [];
+    renderCompraItems();
     
     if (id) {
       const exp = dbExpenses.find(e => e.id === id);
@@ -743,6 +837,16 @@
       
       document.getElementById('expConcept').value = exp.concept;
       document.getElementById('expCategory').value = exp.category;
+      
+      if (exp.category === 'Mercadería') {
+          document.getElementById('gridMercaderia').style.display = 'block';
+          try { compraItems = JSON.parse(exp.itemsJSON || '[]'); } catch(e) {}
+          renderCompraItems();
+          document.getElementById('expMueveStock').checked = exp.mueveStock === 1;
+          togglePanelItems();
+      } else {
+          document.getElementById('gridMercaderia').style.display = 'none';
+      }
 
       if (exp.status !== 'Anulado' && exp.status !== 'Pagado' && exp.status !== 'Pendiente') exp.status = 'Pagado';
       
@@ -773,6 +877,10 @@
       const expBranchEl = document.getElementById('expBranch');
       if (expBranchEl) expBranchEl.value = 'Global';
 
+      document.getElementById('expCategory').value = 'Servicios';
+      document.getElementById('gridMercaderia').style.display = 'none';
+      document.getElementById('expMueveStock').checked = true;
+
       btnDel.style.display = 'none';
       document.getElementById('btnSaveExpense').style.display = 'block';
       
@@ -786,16 +894,19 @@
     document.getElementById('modalGasto').showModal();
   }
 
-  function cerrarModalGasto() {
-    document.getElementById('modalGasto').close();
-  }
+  function cerrarModalGasto() { document.getElementById('modalGasto').close(); }
 
   async function guardarGasto(e) {
     e.preventDefault();
     const id = document.getElementById('expId').value || 'exp_' + Date.now();
     const expBranchEl = document.getElementById('expBranch');
-
     const existing = dbExpenses.find(x => x.id === id);
+
+    const isMueveStock = document.getElementById('expCategory').value === 'Mercadería' && document.getElementById('expMueveStock').checked;
+
+    if (isMueveStock && compraItems.length === 0) {
+        if(!confirm("Marcó Mueve Stock pero no ingresó ningún artículo en el detalle. ¿Desea guardar igual?")) return;
+    }
 
     const exp = {
       id,
@@ -814,7 +925,9 @@
       status: document.getElementById('expStatus').value,
       method: document.getElementById('expMethod').value,
       canceledBy: existing?.canceledBy || '',
-      createdAt: existing?.createdAt || new Date().toISOString()
+      createdAt: existing?.createdAt || new Date().toISOString(),
+      itemsJSON: JSON.stringify(compraItems),
+      mueveStock: isMueveStock ? 1 : 0
     };
 
     mostrarCarga(true);
@@ -827,14 +940,15 @@
 
       cerrarModalGasto();
       renderContable();
-    } catch(err) {
-      alert("Error guardando comprobante.");
-    } finally {
-      mostrarCarga(false);
-    }
+      
+      if (isMueveStock) {
+          // Recargar productos silenciosamente si se movió stock
+          apiFetch(`${API_URL}/products?status=Activo`).then(r => r.json()).then(data => dbProducts = data).catch(()=>{});
+      }
+      
+    } catch(err) { alert("Error guardando comprobante."); } finally { mostrarCarga(false); }
   }
 
-  // --- LÓGICA DE AUTORIZACIÓN CON PIN ---
   function pedirAuthAdmin(accionTexto, funcionExito, param = null) {
     document.getElementById('authActionText').textContent = accionTexto;
     pendingAdminAction = funcionExito;
@@ -846,81 +960,46 @@
 
   function cerrarAdminAuth() {
     document.getElementById('adminAuthDialog').close();
-    setTimeout(() => {
-      pendingAdminAction = null;
-      pendingAdminParam = null;
-    }, 100);
+    setTimeout(() => { pendingAdminAction = null; pendingAdminParam = null; }, 100);
   }
 
   async function validarAdminAuth(e) {
     e.preventDefault();
     const pinInput = document.getElementById('adminAuthPin').value;
-    
-    if (pinInput === '1234') { // PIN de Administrador
-      const accion = pendingAdminAction;
-      const param = pendingAdminParam;
-      
-      cerrarAdminAuth();
-      
-      if (accion) {
-        await accion(param);
-      }
-    } else {
-      alert("❌ PIN de administrador incorrecto.");
-      document.getElementById('adminAuthPin').value = '';
-      document.getElementById('adminAuthPin').focus();
-    }
+    if (pinInput === '1234') { 
+      const accion = pendingAdminAction; const param = pendingAdminParam; cerrarAdminAuth();
+      if (accion) await accion(param);
+    } else { alert("❌ PIN incorrecto."); document.getElementById('adminAuthPin').value = ''; document.getElementById('adminAuthPin').focus(); }
   }
 
-  // --- LÓGICA DE ANULACIÓN DE COMPROBANTES ---
   async function ejecutarEliminacionGasto(id) {
       const gasto = dbExpenses.find(x => x.id === id);
       if (!gasto) return;
-
-      gasto.status = 'Anulado';
-      gasto.canceledBy = localStorage.getItem('activeUser') || 'Admin';
-
+      gasto.status = 'Anulado'; gasto.canceledBy = localStorage.getItem('activeUser') || 'Admin';
       mostrarCarga(true);
       try {
           await apiFetch('/api/expenses?id=' + id + '&canceledBy=' + encodeURIComponent(gasto.canceledBy), { method: 'DELETE' });
-          
           const modalGasto = document.getElementById('modalGasto');
-          if (modalGasto && modalGasto.open) {
-              modalGasto.close();
-          }
-          
+          if (modalGasto && modalGasto.open) modalGasto.close();
           renderContable(); 
-      } catch(err) {
-          alert("Error de conexión al intentar anular el comprobante.");
-      } finally {
-          mostrarCarga(false);
-      }
+      } catch(err) { alert("Error al anular el comprobante."); } finally { mostrarCarga(false); }
   }
 
   function eliminarGastoPrompt(id) {
       const gasto = dbExpenses.find(x => x.id === id);
       if (!gasto) return;
-      
-      if (gasto.status === 'Anulado') {
-          alert("Este comprobante ya se encuentra anulado.");
-          return;
-      }
-      
-      pedirAuthAdmin("anular este comprobante", ejecutarEliminacionGasto, id);
+      if (gasto.status === 'Anulado') return alert("Este comprobante ya se encuentra anulado.");
+      pedirAuthAdmin("anular este comprobante (Si movió stock, ajustarlo manualmente)", ejecutarEliminacionGasto, id);
   }
 
   function renderContable() {
     const today = todayISO();
     const currentMonth = getMonthPrefix();
-    
     const searchTerm = document.getElementById('searchExpense').value.toLowerCase();
     const filterStatus = document.getElementById('filterStatus').value;
     const filterCategory = document.getElementById('filterCategory').value;
 
-    let gastosDia = 0, countDia = 0;
-    let comprasDevengadasMes = 0, pendientesMes = 0, pagosMes = 0;
-    let ingresosMes = 0;
-    
+    let gastosDia = 0, countDia = 0, comprasDevengadasMes = 0, pendientesMes = 0, pagosMes = 0, ingresosMes = 0;
     const tbody = document.getElementById('tableBodyGastos');
     let rowsHtml = '';
 
@@ -928,28 +1007,16 @@
     
     const filteredExpenses = sortedExpenses.filter(exp => {
       let supName = exp.supplierId;
-      if (supName !== 'Varios/Consumidor Final') {
-        const pObj = dbSuppliers.find(s => s.id === exp.supplierId);
-        if (pObj) supName = pObj.name;
-      }
-
-      const matchSearch =
-        (exp.concept || '').toLowerCase().includes(searchTerm) || 
-        String(supName || '').toLowerCase().includes(searchTerm) || 
-        ((exp.invoiceNum || '').toLowerCase().includes(searchTerm));
-
+      if (supName !== 'Varios/Consumidor Final') { const pObj = dbSuppliers.find(s => s.id === exp.supplierId); if (pObj) supName = pObj.name; }
+      const matchSearch = (exp.concept || '').toLowerCase().includes(searchTerm) || String(supName || '').toLowerCase().includes(searchTerm) || ((exp.invoiceNum || '').toLowerCase().includes(searchTerm));
       const matchStatus = filterStatus === 'ALL' || exp.status === filterStatus;
       const matchCategory = filterCategory === 'ALL' || exp.category === filterCategory;
-
       return matchSearch && matchStatus && matchCategory;
     });
 
     filteredExpenses.forEach(exp => {
       let supName = exp.supplierId;
-      if (supName !== 'Varios/Consumidor Final') {
-        const pObj = dbSuppliers.find(s => s.id === exp.supplierId);
-        if (pObj) supName = pObj.name;
-      }
+      if (supName !== 'Varios/Consumidor Final') { const pObj = dbSuppliers.find(s => s.id === exp.supplierId); if (pObj) supName = pObj.name; }
 
       let statusBadge = '';
       if (exp.status === 'Pagado') statusBadge = `<span style="color:#16a34a; font-weight:bold;">Pagado</span>`;
@@ -957,54 +1024,35 @@
       else statusBadge = `<span style="color:var(--danger); font-weight:bold;">Anulado</span>`;
 
       const isAnul = exp.status === 'Anulado';
-      const badgeInv = exp.invoiceType === 'Gasto Interno' 
-        ? `<span style="background:var(--line); padding:2px 6px; border-radius:4px; font-size:10px;">INTERNO</span>`
-        : `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">${exp.invoiceType}</span>`;
-      
+      const badgeInv = exp.invoiceType === 'Gasto Interno' ? `<span style="background:var(--line); padding:2px 6px; border-radius:4px; font-size:10px;">INTERNO</span>` : `<span style="background:var(--primary-soft); color:var(--primary); padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">${exp.invoiceType}</span>`;
       const fechaParts = exp.date.split('-');
       const fechaLocal = fechaParts.length === 3 ? `${fechaParts[2]}/${fechaParts[1]}/${fechaParts[0]}` : exp.date;
-      const branchNameTag = exp.branch && exp.branch !== 'Global'
-        ? `<br><small style="color:var(--primary); font-weight:bold;">📍 ${escapeHtml(exp.branch)}</small>`
-        : '';
+      const branchNameTag = exp.branch && exp.branch !== 'Global' ? `<br><small style="color:var(--primary); font-weight:bold;">📍 ${escapeHtml(exp.branch)}</small>` : '';
 
       rowsHtml += `
       <tr style="${isAnul ? 'opacity:0.5;' : ''}">
         <td style="color:var(--muted); font-size:12px;">${fechaLocal}</td>
         <td>${badgeInv}<br><small style="color:var(--muted)">${escapeHtml(exp.invoiceNum || 'S/N')}</small></td>
-        <td style="${isAnul ? 'text-decoration:line-through;' : ''}">
-           <strong>${escapeHtml(supName)}</strong>
-           <br><small style="color:var(--muted)">Cargó: ${escapeHtml(exp.loadedBy || 'Admin')}</small>
-           ${isAnul ? `<br><small style="color:var(--danger); font-weight:bold;">Anuló: ${escapeHtml(exp.canceledBy || 'Admin')}</small>` : ''}
-        </td>
+        <td style="${isAnul ? 'text-decoration:line-through;' : ''}"><strong>${escapeHtml(supName)}</strong><br><small style="color:var(--muted)">Cargó: ${escapeHtml(exp.loadedBy || 'Admin')}</small>${isAnul ? `<br><small style="color:var(--danger); font-weight:bold;">Anuló: ${escapeHtml(exp.canceledBy || 'Admin')}</small>` : ''}</td>
         <td style="${isAnul ? 'text-decoration:line-through;' : ''}">${escapeHtml(exp.concept)}${branchNameTag}<br><small style="color:var(--muted)">${escapeHtml(exp.category)}</small></td>
         <td>${statusBadge}</td>
         <td style="text-align:right; font-weight:bold; color:var(--text); ${isAnul ? 'text-decoration:line-through;' : ''}">${currency(exp.amount)}</td>
-        <td style="text-align:center;">
-          <button onclick="abrirModalGasto('${exp.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:11px;">Revisar</button>
-        </td>
+        <td style="text-align:center;"><button onclick="abrirModalGasto('${exp.id}')" style="background:transparent; border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; font-size:11px;">Revisar</button></td>
       </tr>`;
     });
 
-    if (filteredExpenses.length === 0) {
-      rowsHtml = '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No se encontraron comprobantes.</td></tr>';
-    }
-    tbody.innerHTML = rowsHtml;
+    tbody.innerHTML = filteredExpenses.length === 0 ? '<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No se encontraron comprobantes.</td></tr>' : rowsHtml;
 
     sortedExpenses.forEach(exp => {
       if (exp.status === 'Anulado') return;
       if (exp.date === today) { gastosDia += Number(exp.amount || 0); countDia++; }
       if ((exp.date || '').startsWith(currentMonth)) {
         comprasDevengadasMes += Number(exp.amount || 0);
-        if (exp.status === 'Pagado') pagosMes += Number(exp.amount || 0);
-        else pendientesMes += Number(exp.amount || 0);
+        if (exp.status === 'Pagado') pagosMes += Number(exp.amount || 0); else pendientesMes += Number(exp.amount || 0);
       }
     });
 
-    dbSales.forEach(venta => {
-      if ((venta.date || '').startsWith(currentMonth) && venta.status !== 'Anulada') {
-        ingresosMes += Number(venta.total || 0);
-      }
-    });
+    dbSales.forEach(venta => { if ((venta.date || '').startsWith(currentMonth) && venta.status !== 'Anulada') ingresosMes += Number(venta.total || 0); });
 
     document.getElementById('kpiGastosDia').textContent = currency(gastosDia);
     document.getElementById('kpiCountDia').textContent = `${countDia} comprobantes procesados`;
@@ -1022,29 +1070,21 @@
   }
 
   function abrirModalCierreMes() {
-    const d = new Date();
-    document.getElementById('cierreMesInput').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    calcularCierreMes();
-    document.getElementById('modalCierreMes').showModal();
+    const d = new Date(); document.getElementById('cierreMesInput').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    calcularCierreMes(); document.getElementById('modalCierreMes').showModal();
   }
 
   function calcularCierreMes() {
-    const periodo = document.getElementById('cierreMesInput').value;
-    if (!periodo) return;
-
+    const periodo = document.getElementById('cierreMesInput').value; if (!periodo) return;
     const esMonotributista = true;
-
     const ventasMes = dbSales.filter(s => (s.date || '').startsWith(periodo) && s.status !== 'Anulada');
     const gastosMes = dbExpenses.filter(e => (e.date || '').startsWith(periodo) && e.status !== 'Anulado');
 
-    let ventasBrutas = 0, cmvTotal = 0, ivaDebito = 0;
-    let gastosBrutos = 0, ivaCreditoTotal = 0;
+    let ventasBrutas = 0, cmvTotal = 0, ivaDebito = 0, gastosBrutos = 0, ivaCreditoTotal = 0;
 
     ventasMes.forEach(v => {
       ventasBrutas += Number(v.total || 0);
-      const items = typeof v.items === 'string'
-        ? JSON.parse(v.items)
-        : (typeof v.itemsJSON === 'string' ? JSON.parse(v.itemsJSON) : (v.items || []));
+      const items = typeof v.items === 'string' ? JSON.parse(v.items) : (typeof v.itemsJSON === 'string' ? JSON.parse(v.itemsJSON) : (v.items || []));
       items.forEach(i => { cmvTotal += ((Number(i.qty || 0) || 0) * (Number(i.cost || 0) || 0)); });
       if (!esMonotributista) ivaDebito += (Number(v.total || 0) - (Number(v.total || 0) / 1.21));
     });
@@ -1087,31 +1127,36 @@
     if (dbExpenses.length === 0) return alert("No hay movimientos para exportar.");
     const csvData = dbExpenses.map(e => {
       let supName = e.supplierId;
-      if (supName !== 'Varios/Consumidor Final') {
-        const pObj = dbSuppliers.find(s => s.id === e.supplierId);
-        if (pObj) supName = pObj.name;
-      }
+      if (supName !== 'Varios/Consumidor Final') { const pObj = dbSuppliers.find(s => s.id === e.supplierId); if (pObj) supName = pObj.name; }
       return {
-        "Fecha": e.date,
-        "Vencimiento": e.dueDate || '-',
-        "Comprobante": e.invoiceType,
-        "Numero": e.invoiceNum || '-',
-        "Proveedor": supName,
-        "Concepto": e.concept,
-        "Sucursal": e.branch || 'Global',
-        "Total": e.amount,
-        "IVA": e.ivaAmount || 0,
-        "Estado": e.status,
-        "Cargado Por": e.loadedBy || '',
-        "Anulado Por": e.canceledBy || ''
+        "Fecha": e.date, "Vencimiento": e.dueDate || '-', "Comprobante": e.invoiceType, "Numero": e.invoiceNum || '-',
+        "Proveedor": supName, "Concepto": e.concept, "Sucursal": e.branch || 'Global', "Total": e.amount,
+        "IVA": e.ivaAmount || 0, "Estado": e.status, "Cargado Por": e.loadedBy || '', "Anulado Por": e.canceledBy || ''
       };
     });
     const headers = Object.keys(csvData[0]);
     const csvContent = [headers.join(';'), ...csvData.map(row => headers.map(h => `"${String(row[h] ?? '').replace(/"/g, '""')}"`).join(';'))].join('\n');
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
-    link.download = `Libro_Contable_${todayISO()}.csv`;
-    link.click();
+    const link = document.createElement('a'); link.href = URL.createObjectURL(new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }));
+    link.download = `Libro_Contable_${todayISO()}.csv`; link.click();
+  }
+
+  async function cargarAlertasContables() {
+      const container = document.getElementById('contableAlertsContainer'); if (!container) return;
+      try {
+          const res = await fetch('/api/alerts', { headers: { 'x-company-id': localStorage.getItem('company_id') || '' } });
+          if (!res.ok) throw new Error();
+          const data = await res.json(); let html = '';
+          if (data.payables && data.payables.length > 0) {
+              html += `<h4 style="margin: 0 0 8px 0; font-size: 11px; color: var(--danger); text-transform: uppercase;">🔴 Cuentas por Pagar (Próximas)</h4>`;
+              data.payables.forEach(p => { html += `<div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; border-bottom:1px solid var(--line); padding-bottom:6px;"><span>${escapeHtml(p.supplierName)} <small style="color:var(--muted); display:block;">Vence: ${new Date(p.dueDate).toLocaleDateString('es-AR')}</small></span><strong style="color:var(--danger)">$${p.amount.toLocaleString('es-AR')}</strong></div>`; });
+          }
+          if (data.receivables && data.receivables.length > 0) {
+              html += `<h4 style="margin: 15px 0 8px 0; font-size: 11px; color: var(--primary); text-transform: uppercase;">🔵 Cobranzas Morosas (>30 días)</h4>`;
+              data.receivables.forEach(r => { html += `<div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; border-bottom:1px solid var(--line); padding-bottom:6px;"><span>${escapeHtml(r.name)} <small style="color:var(--muted); display:block;">Últ. mov: ${new Date(r.last_movement).toLocaleDateString('es-AR')}</small></span><strong style="color:var(--primary)">$${r.balance.toLocaleString('es-AR')}</strong></div>`; });
+          }
+          if(html === '') html = '<div style="text-align:center; padding: 15px; color:var(--success); font-weight:bold;">✅ Finanzas sanas. No hay alertas críticas.</div>';
+          container.innerHTML = html;
+      } catch(e) { container.innerHTML = '<div style="color:var(--danger); font-size:12px;">Error al cargar alertas.</div>'; }
   }
 
   initContable();
