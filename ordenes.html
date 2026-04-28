@@ -9,6 +9,15 @@
     html, body { background-color: #f0f2f7 !important; }
     body { animation: fadeIn 0.15s ease-in-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .btn-outline, .btn-primary, .btn-light {
+        border-radius: 20px !important; /* Bordes bien redondeados tipo píldora */
+        padding: 4px 10px !important;   /* Menos altura, más compactos */
+        font-size: 11px !important;     /* Letra pequeña pero legible */
+        line-height: 1.2;
+    }
+
+    
   </style>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -1394,6 +1403,19 @@
       if (isListo) kListos++;
       if (enProceso || isListo) kSaldo += o.balance; 
 
+      // --- RECUPERAR EL HISTORIAL DE FECHAS (statusDates) ---
+      let statusDates = {};
+      try {
+          statusDates = typeof o.statusDates === 'string' ? JSON.parse(o.statusDates) : (o.statusDates || {});
+      } catch(e) {}
+      
+      // Formatear la fecha del estado actual si existe
+      let dateText = '';
+      if (statusDates[o.status]) {
+          const dObj = new Date(statusDates[o.status]);
+          dateText = `<br><small style="color:var(--muted); font-size:9px;">Act: ${dObj.toLocaleDateString('es-AR')} ${dObj.getHours().toString().padStart(2, '0')}:${dObj.getMinutes().toString().padStart(2, '0')}</small>`;
+      }
+
       let badge = '';
       if (isAnulado) badge = `<span style="background:var(--line); color:var(--muted); padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Anulado</span>`;
       else if (isListo) badge = `<span style="background:#dcfce7; color:#16a34a; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Recibido (Listo)</span>`;
@@ -1401,6 +1423,9 @@
       else if (currentStatus === 'garantía/demorado' || currentStatus === 'garantía / rehacer') badge = `<span style="background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Garantía/demorado</span>`;
       else if (currentStatus === 'pedido a lab' || currentStatus === 'en taller' || currentStatus === 'control calidad') badge = `<span style="background:#dbeafe; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Pedido a lab</span>`;
       else badge = `<span style="background:#ffedd5; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">No enviado</span>`;
+
+      // Le pegamos la fecha debajo de la etiqueta de color
+      badge += dateText; 
 
       const osTag = o.os_name ? `<br><small style="color:var(--primary); font-weight:bold;">O.S: ${escapeHtml(o.os_name)}</small>` : '';
 
@@ -1410,7 +1435,7 @@
       if (enProceso || isListo) {
           actionsHtml = `
             <div style="margin-bottom: 5px;">
-              <select class="input-box" style="padding:2px 4px; font-size:11px; width:100%; border-color:var(--line); font-weight:bold; color:var(--text);" onchange="actualizarEstadoOrden('${o.id}', this.value)">
+              <select class="input-box" style="padding:2px 4px; font-size:11px; width:100%; border-color:var(--line); font-weight:bold; color:var(--text); border-radius: 20px;" onchange="actualizarEstadoOrden('${o.id}', this.value)">
                   <option value="No enviado" ${currentStatus === 'no enviado' || currentStatus === 'pendiente' ? 'selected' : ''}>No enviado</option>
                   <option value="Pedido a lab" ${currentStatus === 'pedido a lab' || currentStatus === 'en taller' || currentStatus === 'control calidad' ? 'selected' : ''}>Pedido a lab</option>
                   <option value="Garantía/demorado" ${currentStatus === 'garantía/demorado' || currentStatus === 'garantía / rehacer' ? 'selected' : ''}>Garantía/demorado</option>
@@ -1423,14 +1448,14 @@
               // Si está "Recibido", muestra además los botones verdes de entrega
               actionsHtml += `
                 <div style="display:flex; flex-direction:column; gap:5px;">
-                  <button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>
-                  <button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#16a34a; border-color:#16a34a; display:flex; align-items:center; justify-content:center; gap:4px;" onclick="enviarWhatsAppAviso('${escapeHtml(o.clientName)}', '${o.id}')">💬 Avisar por WP</button>
+                  <button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none; border-radius: 20px;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>
+                  <button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#16a34a; border-color:#16a34a; display:flex; align-items:center; justify-content:center; gap:4px; border-radius: 20px;" onclick="enviarWhatsAppAviso('${escapeHtml(o.clientName)}', '${o.id}')">💬 Avisar por WP</button>
                 </div>
               `;
           } else {
               // Si no está lista, muestra el botón de Editar abajo del selector
               actionsHtml += `
-                <button class="btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--primary); color:var(--primary); width:100%;" onclick="editarOrden('${o.id}')">✏️ Editar</button>
+                <button class="btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--primary); color:var(--primary); width:100%; border-radius: 20px;" onclick="editarOrden('${o.id}')">✏️ Editar</button>
               `;
           }
       }
@@ -1445,8 +1470,8 @@
           ${enProceso || isListo ? `<td style="color:var(--danger); font-weight:bold;">${currency(o.balance)}</td>` : `<td>${currency(o.total)}</td>`}
           <td style="text-align:center; min-width:180px;">
             ${actionsHtml}
-            ${(enProceso || isListo) && isAdmin ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#ef4444; border-color:#ef4444; margin-top:4px; width:100%;" onclick="promptAnularOrden('${o.id}')">Anular</button>` : ''}
-            ${!isAnulado ? `<button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px; width:100%;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️ Imprimir Órden</button>` : ''}
+            ${(enProceso || isListo) && isAdmin ? `<button class="btn-outline" style="padding:4px 8px; font-size:11px; color:#ef4444; border-color:#ef4444; margin-top:4px; width:100%; border-radius: 20px;" onclick="promptAnularOrden('${o.id}')">Anular</button>` : ''}
+            ${!isAnulado ? `<button class="btn-light" style="padding:4px 8px; font-size:11px; margin-top:4px; width:100%; border-radius: 20px;" onclick='imprimirComprobantes(${JSON.stringify(o).replace(/'/g, "&apos;")})'>🖨️ Imprimir Órden</button>` : ''}
           </td>
         </tr>`;
         
