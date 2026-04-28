@@ -1399,8 +1399,10 @@
     let kPend = 0, kListos = 0, kSaldo = 0;
     let htmlPend = '', htmlHist = '';
 
+    // Usamos minúsculas absolutas para evitar problemas de compatibilidad con órdenes viejas
     const enProcesoStates = ['no enviado', 'pedido a lab', 'garantía/demorado', 'pendiente', 'en taller', 'control calidad', 'garantía / rehacer'];
 
+    // Aseguramos capturar el rol de Administrador sea cual sea la variable activa
     const currentRole = localStorage.getItem('userRole') || localStorage.getItem('saas_role') || '';
     const isAdmin = currentRole === 'admin';
 
@@ -1415,15 +1417,23 @@
       if (isListo) kListos++;
       if (enProceso || isListo) kSaldo += o.balance; 
 
+      // --- RECUPERAR EL HISTORIAL DE FECHAS (statusDates) ---
       let statusDates = {};
       try {
           statusDates = typeof o.statusDates === 'string' ? JSON.parse(o.statusDates) : (o.statusDates || {});
       } catch(e) {}
       
+      // LA MAGIA DE LA FECHA CON PLAN B (Fallback)
       let dateText = '';
-      if (statusDates[o.status]) {
-          const dObj = new Date(statusDates[o.status]);
-          dateText = `<br><small style="color:var(--muted); font-size:9px;">Act: ${dObj.toLocaleDateString('es-AR')} ${dObj.getHours().toString().padStart(2, '0')}:${dObj.getMinutes().toString().padStart(2, '0')}</small>`;
+      // Intenta buscar la fecha del estado actual. Si no existe, usa la de creación.
+      let rawDate = statusDates[o.status] || o.createdAt || o.date;
+      
+      if (rawDate) {
+          const dObj = new Date(rawDate);
+          if (!isNaN(dObj.getTime())) {
+              // Lo colocamos en un div para forzar que baje un renglón y se vea claro
+              dateText = `<div style="color:var(--muted); font-size:10px; margin-top:5px; font-weight:600;">Modif: ${dObj.toLocaleDateString('es-AR')} ${dObj.getHours().toString().padStart(2, '0')}:${dObj.getMinutes().toString().padStart(2, '0')}</div>`;
+          }
       }
 
       let badge = '';
@@ -1434,12 +1444,14 @@
       else if (currentStatus === 'pedido a lab' || currentStatus === 'en taller' || currentStatus === 'control calidad') badge = `<span style="background:#dbeafe; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Pedido a lab</span>`;
       else badge = `<span style="background:#ffedd5; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">No enviado</span>`;
 
+      // Le pegamos la fecha debajo de la etiqueta de color
       badge += dateText; 
 
       const osTag = o.os_name ? `<br><small style="color:var(--primary); font-weight:bold;">O.S: ${escapeHtml(o.os_name)}</small>` : '';
 
       let actionsHtml = '';
       
+      // Selector de estado
       if (enProceso || isListo) {
           actionsHtml = `
             <div style="margin-bottom: 5px;">
@@ -1453,6 +1465,7 @@
           `;
 
           if (isListo) {
+              // Botones verdes de entrega
               actionsHtml += `
                 <div style="display:flex; flex-direction:column; gap:5px;">
                   <button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none; border-radius: 20px;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>
@@ -1460,13 +1473,14 @@
                 </div>
               `;
           } else {
+              // Botón de Editar
               actionsHtml += `
                 <button class="btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--primary); color:var(--primary); width:100%; border-radius: 20px;" onclick="editarOrden('${o.id}')">✏️ Editar</button>
               `;
           }
       }
 
-      // Limpiamos la palabra "ORD-" visualmente para órdenes viejas
+      // Limpiamos la palabra "ORD-" visualmente
       const cleanId = String(o.id).replace('ORD-', '');
 
       const tr = `
@@ -1475,7 +1489,7 @@
           <td>${enProceso || isListo ? o.deliveryDate : (o.date || '-')}</td>
           <td style="${isAnulado ? 'text-decoration:line-through;' : ''}"><strong>${escapeHtml(o.clientName)}</strong>${osTag}</td>
           <td>${escapeHtml(o.frameName || o.frameCode)}<br><small style="color:var(--muted)">${escapeHtml(o.glassType)}</small></td>
-          <td>${badge}</td>
+          <td style="text-align:center;">${badge}</td>
           ${enProceso || isListo ? `<td style="color:var(--danger); font-weight:bold;">${currency(o.balance)}</td>` : `<td>${currency(o.total)}</td>`}
           <td style="text-align:center; min-width:180px;">
             ${actionsHtml}
@@ -1484,7 +1498,6 @@
           </td>
         </tr>`;
         
-      // También permite que el buscador encuentre tanto el número puro como con "ORD-"
       if (currentStatus === 'entregado' || isAnulado) {
           if (cleanId.toLowerCase().includes(termHist) || o.id.toLowerCase().includes(termHist) || o.clientName.toLowerCase().includes(termHist)) htmlHist += tr;
       } else {
