@@ -1240,8 +1240,22 @@
   async function guardarOrden(e) {
     e.preventDefault();
     const isNew = !document.getElementById('ordId').value;
-    const id = document.getElementById('ordId').value || 'ORD-' + Math.floor(Math.random()*90000 + 10000);
     
+    // --- LÓGICA DE NUMERACIÓN CONSECUTIVA DESDE 1000 ---
+    let id = document.getElementById('ordId').value;
+    if (isNew) {
+        let maxId = 999; // Base de inicio para que la primera sea 1000
+        dbOrders.forEach(o => {
+            // Extrae solo si es un número puro (ignora los viejos "ORD-...")
+            const num = parseInt(o.id);
+            if (!isNaN(num) && String(num) === String(o.id) && num > maxId) {
+                maxId = num;
+            }
+        });
+        id = (maxId + 1).toString(); // Asigna 1000, 1001, 1002...
+    }
+    // ---------------------------------------------------
+
     const totalFloat = parseCurrency(document.getElementById('ordTotal').value);
     const osAmountFloat = parseCurrency(document.getElementById('ordOsAmount').value);
     const depositFloat = parseCurrency(document.getElementById('ordDeposit').value);
@@ -1315,7 +1329,7 @@
             const ventaSena = {
               id: 'vta_' + Date.now(), createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
               clientId: ord.clientId, client: ord.clientName, method: method, cupon: cuponVal, subtotal: depositFloat, promoDiscount: 0, total: depositFloat, isB2B: false,
-              itemsJSON: JSON.stringify([{id: 'sena', code: 'SENA', name: `Seña Orden ${id} - Abono inicial`, price: depositFloat, cost: 0, qty: 1}])
+              itemsJSON: JSON.stringify([{id: 'sena', code: 'SENA', name: `Seña Orden N° ${id}`, price: depositFloat, cost: 0, qty: 1}])
             };
             await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(ventaSena) });
         } else {
@@ -1333,7 +1347,7 @@
                 const venta1 = {
                   id: 'vta_' + Date.now() + '_1', createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
                   clientId: ord.clientId, client: ord.clientName, method: m1, cupon: c1, subtotal: a1, promoDiscount: 0, total: a1, isB2B: false,
-                  itemsJSON: JSON.stringify([{id: 'sena1', code: 'SENA-1', name: `Seña Orden ${id} - Parte 1 (${m1})`, price: a1, cost: 0, qty: 1}])
+                  itemsJSON: JSON.stringify([{id: 'sena1', code: 'SENA-1', name: `Seña Orden N° ${id} - Parte 1 (${m1})`, price: a1, cost: 0, qty: 1}])
                 };
                 await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(venta1) });
             }
@@ -1341,7 +1355,7 @@
                 const venta2 = {
                   id: 'vta_' + Date.now() + '_2', createdAt: new Date().toISOString(), date: todayISO(), branch: terminalActiva, seller: ord.seller,
                   clientId: ord.clientId, client: ord.clientName, method: m2, cupon: c2, subtotal: a2, promoDiscount: 0, total: a2, isB2B: false,
-                  itemsJSON: JSON.stringify([{id: 'sena2', code: 'SENA-2', name: `Seña Orden ${id} - Parte 2 (${m2})`, price: a2, cost: 0, qty: 1}])
+                  itemsJSON: JSON.stringify([{id: 'sena2', code: 'SENA-2', name: `Seña Orden N° ${id} - Parte 2 (${m2})`, price: a2, cost: 0, qty: 1}])
                 };
                 await apiFetch('/api/sales', { method: 'POST', body: JSON.stringify(venta2) });
             }
@@ -1385,10 +1399,8 @@
     let kPend = 0, kListos = 0, kSaldo = 0;
     let htmlPend = '', htmlHist = '';
 
-    // Usamos minúsculas absolutas para evitar problemas de compatibilidad con órdenes viejas
     const enProcesoStates = ['no enviado', 'pedido a lab', 'garantía/demorado', 'pendiente', 'en taller', 'control calidad', 'garantía / rehacer'];
 
-    // Aseguramos capturar el rol de Administrador sea cual sea la variable activa
     const currentRole = localStorage.getItem('userRole') || localStorage.getItem('saas_role') || '';
     const isAdmin = currentRole === 'admin';
 
@@ -1403,13 +1415,11 @@
       if (isListo) kListos++;
       if (enProceso || isListo) kSaldo += o.balance; 
 
-      // --- RECUPERAR EL HISTORIAL DE FECHAS (statusDates) ---
       let statusDates = {};
       try {
           statusDates = typeof o.statusDates === 'string' ? JSON.parse(o.statusDates) : (o.statusDates || {});
       } catch(e) {}
       
-      // Formatear la fecha del estado actual si existe
       let dateText = '';
       if (statusDates[o.status]) {
           const dObj = new Date(statusDates[o.status]);
@@ -1424,14 +1434,12 @@
       else if (currentStatus === 'pedido a lab' || currentStatus === 'en taller' || currentStatus === 'control calidad') badge = `<span style="background:#dbeafe; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Pedido a lab</span>`;
       else badge = `<span style="background:#ffedd5; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">No enviado</span>`;
 
-      // Le pegamos la fecha debajo de la etiqueta de color
       badge += dateText; 
 
       const osTag = o.os_name ? `<br><small style="color:var(--primary); font-weight:bold;">O.S: ${escapeHtml(o.os_name)}</small>` : '';
 
       let actionsHtml = '';
       
-      // Acá la magia: El selector de estado ahora SIEMPRE aparece si la orden está activa
       if (enProceso || isListo) {
           actionsHtml = `
             <div style="margin-bottom: 5px;">
@@ -1445,7 +1453,6 @@
           `;
 
           if (isListo) {
-              // Si está "Recibido", muestra además los botones verdes de entrega
               actionsHtml += `
                 <div style="display:flex; flex-direction:column; gap:5px;">
                   <button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none; border-radius: 20px;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>
@@ -1453,16 +1460,18 @@
                 </div>
               `;
           } else {
-              // Si no está lista, muestra el botón de Editar abajo del selector
               actionsHtml += `
                 <button class="btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--primary); color:var(--primary); width:100%; border-radius: 20px;" onclick="editarOrden('${o.id}')">✏️ Editar</button>
               `;
           }
       }
 
+      // Limpiamos la palabra "ORD-" visualmente para órdenes viejas
+      const cleanId = String(o.id).replace('ORD-', '');
+
       const tr = `
         <tr style="${isAnulado ? 'opacity:0.6;' : ''}">
-          <td><strong>${o.id}</strong></td>
+          <td><strong>${cleanId}</strong></td>
           <td>${enProceso || isListo ? o.deliveryDate : (o.date || '-')}</td>
           <td style="${isAnulado ? 'text-decoration:line-through;' : ''}"><strong>${escapeHtml(o.clientName)}</strong>${osTag}</td>
           <td>${escapeHtml(o.frameName || o.frameCode)}<br><small style="color:var(--muted)">${escapeHtml(o.glassType)}</small></td>
@@ -1475,10 +1484,11 @@
           </td>
         </tr>`;
         
+      // También permite que el buscador encuentre tanto el número puro como con "ORD-"
       if (currentStatus === 'entregado' || isAnulado) {
-          if (o.id.toLowerCase().includes(termHist) || o.clientName.toLowerCase().includes(termHist)) htmlHist += tr;
+          if (cleanId.toLowerCase().includes(termHist) || o.id.toLowerCase().includes(termHist) || o.clientName.toLowerCase().includes(termHist)) htmlHist += tr;
       } else {
-          if (o.id.toLowerCase().includes(termPend) || o.clientName.toLowerCase().includes(termPend)) htmlPend += tr;
+          if (cleanId.toLowerCase().includes(termPend) || o.id.toLowerCase().includes(termPend) || o.clientName.toLowerCase().includes(termPend)) htmlPend += tr;
       }
     });
 
