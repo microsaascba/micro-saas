@@ -428,10 +428,10 @@
       <strong style="font-size:13px;">Instrucciones de Subida:</strong><br>
       Sube un archivo .xlsx o .csv. Los únicos campos <strong>OBLIGATORIOS</strong> son:<br>
       <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">NOMBRE</span>, 
-      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">CATEGORIA</span>, 
-      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">COSTO</span> y 
-      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">PRECIO</span>.<br><br>
-      Campos opcionales permitidos: <span style="font-family:monospace;">SKU, GASTOS, DESCRIPCION, COLOR, FRENTE, PATILLA, LENTE, TALLE, PESO, IMAGEN_1, IMAGEN_2, IMAGEN_3</span>.<br>
+      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">CATEGORIA</span> y 
+      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">COSTO</span>.<br><br>
+      Campos opcionales permitidos: <span style="font-family:monospace;">PRECIO, SKU, GASTOS, DESCRIPCION, COLOR, FRENTE, PATILLA, LENTE, TALLE, PESO, IMAGEN_1, IMAGEN_2, IMAGEN_3</span>.<br>
+      <em>* Si el campo PRECIO está vacío, se guardará en $0 (o mantendrá el precio anterior si el SKU ya existe).</em><br>
       <em>* Si el campo SKU viene vacío, el sistema le asignará un código único automáticamente.</em>
     </div>
     
@@ -786,23 +786,31 @@
         const name = String(findVal(['nombre', 'name']) || '').trim();
         const category = String(findVal(['categoria', 'categoría', 'category']) || '').trim();
         const cost = parseFloat(findVal(['costo', 'cost']));
-        const price = parseFloat(findVal(['precio', 'price', 'venta']));
-              
-        if (!name || !category || isNaN(cost) || isNaN(price)) { 
-            errores.push(`Fila ${index + 2}: Faltan campos obligatorios.`); return; 
+        
+        // Validación: Solo Nombre, Categoría y Costo son obligatorios
+        if (!name || !category || isNaN(cost)) { 
+            errores.push(`Fila ${index + 2}: Faltan campos obligatorios (Nombre, Categoría o Costo).`); return; 
         }
 
         const code = String(findVal(['sku', 'codigo', 'código']) || '').trim();
         
+        // Buscamos si el SKU ya existe para actualizar en lugar de duplicar
         let existingProd = code ? dbProducts.find(p => p.code === code) : null;
         const id = existingProd ? existingProd.id : ('prod_' + Math.random().toString(36).slice(2, 9) + Date.now());
+
+        // LÓGICA INTELIGENTE DE PRECIO Y GASTOS
+        let rawPrice = parseFloat(findVal(['precio', 'price', 'venta']));
+        // Si no mandan precio en el excel, y el producto ya existía, conservamos su precio viejo. Si es nuevo, va 0.
+        const price = !isNaN(rawPrice) ? rawPrice : (existingProd ? (existingProd.price || 0) : 0);
+        
+        let rawExpenses = parseFloat(findVal(['gastos', 'expenses']));
+        const expenses = !isNaN(rawExpenses) ? rawExpenses : (existingProd ? (existingProd.expenses || 0) : 0);
 
         let img1 = String(findVal(['imagen_1', 'image1']) || '').trim();
         if(img1 === '[Archivo]') img1 = existingProd ? existingProd.image1 : '';
 
         prodUpdates.push({
-          id, name, category, code, cost, price,
-          expenses: parseFloat(findVal(['gastos', 'expenses'])) || 0,
+          id, name, category, code, cost, price, expenses,
           description: String(findVal(['descripcion', 'descripción']) || '').trim(),
           color: String(findVal(['color']) || '').trim(),
           frente: String(findVal(['frente']) || '').trim(),
