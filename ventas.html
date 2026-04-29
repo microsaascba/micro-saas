@@ -92,24 +92,43 @@
 
     <div class="kpi-grid">
       <article class="card card-pad">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Efectivo en Caja (Actual)</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Efectivo (Filtro Actual)</div>
         <div id="kpiEfectivo" style="font-size:28px; font-weight:800; color:var(--success);">$ 0</div>
       </article>
       <article class="card card-pad">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Ventas con Tarjeta (Actual)</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Tarjeta/Déb. (Filtro Actual)</div>
         <div id="kpiTarjeta" style="font-size:28px; font-weight:800; color:var(--primary);">$ 0</div>
       </article>
       <article class="card card-pad">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Total Facturado (Turno Actual)</div>
+        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Total Facturado (Filtro Actual)</div>
         <div id="kpiTotal" style="font-size:28px; font-weight:800; color:var(--text);">$ 0</div>
       </article>
     </div>
 
     <div class="layout-1col">
       <article class="card card-pad">
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
-          <h2 style="margin:0; font-size:18px;">Historial de Operaciones</h2>
-          <input type="text" id="searchVenta" class="input-box" placeholder="🔍 Buscar por ticket, cliente o medio de pago..." style="max-width: 350px; margin:0;" onkeyup="renderSales()">
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center; flex-wrap:wrap; gap:15px;">
+          <h2 style="margin:0; font-size:18px; min-width:200px;">Historial de Operaciones</h2>
+          
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <div>
+                <label style="font-size:10px; color:var(--muted); font-weight:bold; display:block;">Desde:</label>
+                <input type="date" id="dateFrom" class="input-box" style="width:130px; margin:0; padding:6px;" onchange="renderSales()">
+            </div>
+            <div>
+                <label style="font-size:10px; color:var(--muted); font-weight:bold; display:block;">Hasta:</label>
+                <input type="date" id="dateTo" class="input-box" style="width:130px; margin:0; padding:6px;" onchange="renderSales()">
+            </div>
+            <div>
+                <label style="font-size:10px; color:var(--muted); font-weight:bold; display:block;">Sucursal:</label>
+                <select id="branchFilter" class="input-box" style="width:160px; margin:0; padding:6px;" onchange="renderSales()">
+                    </select>
+            </div>
+            <div>
+                <label style="font-size:10px; color:var(--muted); font-weight:bold; display:block;">Buscar:</label>
+                <input type="text" id="searchVenta" class="input-box" placeholder="🔍 Ticket o cliente..." style="width:200px; margin:0; padding:6px;" onkeyup="renderSales()">
+            </div>
+          </div>
         </div>
 
         <div style="overflow-x: auto;">
@@ -118,7 +137,7 @@
               <tr>
                 <th>Fecha / Hora</th>
                 <th>Ticket ID</th>
-                <th>Cliente</th>
+                <th>Cliente / Sucursal</th>
                 <th>Medio de Pago</th>
                 <th>N° Cupón / Ref.</th>
                 <th style="text-align: right;">Total</th>
@@ -136,7 +155,7 @@
 <dialog id="modalCierre" style="width: 100%; max-width: 450px;">
   <div class="modal-content">
     <h2 style="margin: 0 0 10px 0; font-size:22px; color: var(--danger);">Resumen de Cierre de Caja</h2>
-    <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Verificá los totales antes de finalizar el turno. Esta acción bloqueará las ventas actuales.</p>
+    <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Verificá los totales de TU SUCURSAL antes de finalizar el turno. Esta acción bloqueará las ventas actuales.</p>
     
     <div id="summaryContainer">
         <div class="summary-row"><span>Efectivo:</span><strong id="sumCash">$ 0,00</strong></div>
@@ -144,7 +163,7 @@
         <div class="summary-row"><span>Crédito:</span><strong id="sumCredit">$ 0,00</strong></div>
         <div class="summary-row"><span>Transferencia:</span><strong id="sumTransfer">$ 0,00</strong></div>
         <div class="summary-row"><span>Cta. Corriente (CC):</span><strong id="sumCC">$ 0,00</strong></div>
-        <div class="summary-total"><span>TOTAL GENERAL:</span><span id="sumTotal">$ 0,00</span></div>
+        <div class="summary-total"><span>TOTAL CAJA:</span><span id="sumTotal">$ 0,00</span></div>
     </div>
 
     <div style="display: flex; gap: 10px; margin-top: 20px;">
@@ -167,12 +186,41 @@
   async function initVentas() {
     mostrarCarga(true);
     try {
-      const res = await apiFetch('/api/sales');
-      if (res.ok) {
-          const allSales = await res.json();
-          // Solo mostramos las ventas de ESTA sucursal
-          dbSales = allSales.filter(s => s.branch === terminalActiva);
+      // 1. Setear Fechas Predeterminadas (Del 1 del mes actual a hoy)
+      const hoy = new Date();
+      const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
+      const diaHoy = hoy.toISOString().split('T')[0];
+      
+      document.getElementById('dateFrom').value = primerDiaMes;
+      document.getElementById('dateTo').value = diaHoy;
+
+      const ts = Date.now();
+      const [resSales, resBranches] = await Promise.all([
+          apiFetch(`/api/sales?v=${ts}`),
+          apiFetch(`/api/branches?v=${ts}`)
+      ]);
+
+      if (resSales.ok) {
+          dbSales = await resSales.json();
       }
+
+      // 2. Configurar Filtro de Sucursal según Rol
+      if (resBranches.ok) {
+          const branches = await resBranches.json();
+          const branchSelect = document.getElementById('branchFilter');
+          const role = localStorage.getItem('userRole') || localStorage.getItem('saas_role') || '';
+          
+          if (role === 'admin') {
+              branchSelect.innerHTML = '<option value="ALL">Todas las Sucursales</option>' + 
+                  branches.map(b => `<option value="${escapeHtml(b.name)}" ${b.name === terminalActiva ? 'selected' : ''}>${escapeHtml(b.name)}</option>`).join('');
+          } else {
+              // Si no es admin, queda bloqueado en su sucursal
+              branchSelect.innerHTML = `<option value="${escapeHtml(terminalActiva)}">${escapeHtml(terminalActiva)}</option>`;
+              branchSelect.setAttribute('disabled', 'true');
+              branchSelect.style.background = '#f1f5f9';
+          }
+      }
+
     } catch(e) { console.error(e); }
     finally {
       mostrarCarga(false);
@@ -182,21 +230,35 @@
 
   function renderSales() {
     const term = document.getElementById('searchVenta').value.toLowerCase();
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+    const branchFilter = document.getElementById('branchFilter').value;
     const tbody = document.getElementById('tbodyVentas');
-    
-    // Filtrar solo las que NO están cerradas para los KPIs
-    const currentSales = dbSales.filter(s => Number(s.closed || 0) === 0);
     
     let kCash = 0, kCards = 0, kTotal = 0;
     
-    tbody.innerHTML = dbSales.map(s => {
-      const isClosed = Number(s.closed || 0) === 1;
-      const match = s.id.toLowerCase().includes(term) || s.client.toLowerCase().includes(term) || s.method.toLowerCase().includes(term);
-      if (!match) return '';
+    // 3. Filtrar Ventas por Fecha y Sucursal
+    const filtradas = dbSales.filter(s => {
+        // Obtenemos la fecha (si viene solo Date o de createdAt)
+        const d = s.date || (s.createdAt ? s.createdAt.split('T')[0] : '');
+        
+        if (dateFrom && d < dateFrom) return false;
+        if (dateTo && d > dateTo) return false;
+        if (branchFilter !== 'ALL' && s.branch !== branchFilter) return false;
+        
+        const match = s.id.toLowerCase().includes(term) || (s.client||'').toLowerCase().includes(term) || (s.method||'').toLowerCase().includes(term);
+        if (!match) return false;
+        
+        return true;
+    });
 
+    tbody.innerHTML = filtradas.map(s => {
+      const isClosed = Number(s.closed || 0) === 1;
+
+      // Sumar KPIs SOLO si la venta no está cerrada (Caja Actual)
       if (!isClosed) {
           if (s.method === 'Efectivo') kCash += s.total;
-          if (s.method === 'Débito' || s.method === 'Crédito') kCards += s.total;
+          if (s.method === 'Débito' || s.method === 'Crédito' || s.method === 'Tarjeta') kCards += s.total;
           kTotal += s.total;
       }
 
@@ -206,9 +268,9 @@
 
       return `
       <tr style="${isClosed ? 'opacity:0.6; background:#f1f5f9;' : ''}">
-        <td>${dateStr} <small>${timeStr}</small></td>
+        <td>${dateStr} <small style="color:var(--muted);">${timeStr}</small></td>
         <td><strong>${s.id.split('_')[1] || s.id}</strong></td>
-        <td>${escapeHtml(s.client)}</td>
+        <td>${escapeHtml(s.client)}<br><small style="color:var(--primary); font-weight:bold;">${escapeHtml(s.branch || 'Central')}</small></td>
         <td>
             <span class="badge" style="background:${s.method === 'Efectivo' ? '#dcfce7' : '#e0e7ff'}; color:${s.method === 'Efectivo' ? '#16a34a' : '#1d4ed8'}; font-weight:bold;">
                 ${s.method}
@@ -222,17 +284,21 @@
       </tr>`;
     }).join('');
 
+    if(filtradas.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--muted);">No se encontraron operaciones para las fechas/sucursal seleccionadas.</td></tr>`;
+    }
+
     document.getElementById('kpiEfectivo').textContent = currency(kCash);
     document.getElementById('kpiTarjeta').textContent = currency(kCards);
     document.getElementById('kpiTotal').textContent = currency(kTotal);
   }
 
   function abrirModalCierre() {
-    // Calculamos el resumen SOLO de las ventas abiertas (closed = 0)
-    const openSales = dbSales.filter(s => Number(s.closed || 0) === 0);
+    // El Cierre Z siempre afecta SOLO a la terminal física donde está parada la cajera.
+    const openSales = dbSales.filter(s => Number(s.closed || 0) === 0 && s.branch === terminalActiva);
     
     if (openSales.length === 0) {
-        return alert("No hay ventas abiertas para cerrar en esta sucursal.");
+        return alert(`No hay ventas abiertas para cerrar hoy en la sucursal: ${terminalActiva}.`);
     }
 
     let cash = 0, debit = 0, credit = 0, transfer = 0, cc = 0;
@@ -240,8 +306,8 @@
     openSales.forEach(s => {
         if (s.method === 'Efectivo') cash += s.total;
         else if (s.method === 'Débito') debit += s.total;
-        else if (s.method === 'Crédito') credit += s.total;
-        else if (s.method === 'Transferencia') transfer += s.total;
+        else if (s.method === 'Crédito' || s.method === 'Tarjeta') credit += s.total;
+        else if (s.method === 'Transferencia' || s.method === 'Transf.') transfer += s.total;
         else if (s.method === 'CC') cc += s.total;
     });
 
@@ -258,13 +324,14 @@
   }
 
   async function confirmarCierre() {
-    const openSales = dbSales.filter(s => Number(s.closed || 0) === 0);
+    const openSales = dbSales.filter(s => Number(s.closed || 0) === 0 && s.branch === terminalActiva);
     let cash = 0, debit = 0, credit = 0, transfer = 0, cc = 0;
+    
     openSales.forEach(s => {
         if (s.method === 'Efectivo') cash += s.total;
         else if (s.method === 'Débito') debit += s.total;
-        else if (s.method === 'Crédito') credit += s.total;
-        else if (s.method === 'Transferencia') transfer += s.total;
+        else if (s.method === 'Crédito' || s.method === 'Tarjeta') credit += s.total;
+        else if (s.method === 'Transferencia' || s.method === 'Transf.') transfer += s.total;
         else if (s.method === 'CC') cc += s.total;
     });
     const total = cash + debit + credit + transfer + cc;
@@ -291,9 +358,9 @@
         });
 
         if (res.ok) {
-            alert("✅ Cierre de Caja realizado con éxito. Los totales han sido bloqueados.");
+            alert(`✅ Cierre Z de ${terminalActiva} realizado con éxito. Las ventas han sido bloqueadas.`);
             document.getElementById('modalCierre').close();
-            await initVentas(); // Recarga para ver el cambio de opacidad
+            await initVentas(); 
         } else {
             alert("Error al realizar el cierre.");
         }
@@ -305,10 +372,47 @@
   }
 
   function exportarExcel() {
-    const ws = XLSX.utils.json_to_sheet(dbSales);
+    const dateFrom = document.getElementById('dateFrom').value;
+    const dateTo = document.getElementById('dateTo').value;
+    const branchFilter = document.getElementById('branchFilter').value;
+
+    const filtradas = dbSales.filter(s => {
+        const d = s.date || (s.createdAt ? s.createdAt.split('T')[0] : '');
+        if (dateFrom && d < dateFrom) return false;
+        if (dateTo && d > dateTo) return false;
+        if (branchFilter !== 'ALL' && s.branch !== branchFilter) return false;
+        return true;
+    });
+
+    if(filtradas.length === 0) return alert("No hay datos para exportar con estos filtros.");
+
+    const dataExport = filtradas.map(s => {
+        const d = new Date(s.createdAt);
+        return {
+            "FECHA": d.toLocaleDateString('es-AR'),
+            "HORA": d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'}),
+            "TICKET ID": s.id.split('_')[1] || s.id,
+            "SUCURSAL": s.branch || 'Central',
+            "VENDEDOR": s.seller || '-',
+            "CLIENTE": s.client || 'Consumidor Final',
+            "MEDIO DE PAGO": s.method || '-',
+            "NRO CUPÓN / REF": s.cupon || '-',
+            "TOTAL ($)": s.total || 0,
+            "ESTADO CAJA": Number(s.closed||0) === 1 ? 'CERRADA' : 'ABIERTA'
+        };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(dataExport);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Ventas");
-    XLSX.writeFile(wb, `Historial_Ventas_${terminalActiva}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, "Historial Ventas");
+    XLSX.writeFile(wb, `Reporte_Ventas_${branchFilter}_${dateFrom}_al_${dateTo}.xlsx`);
+  }
+
+  function reimprimirTicket(id) {
+      const v = dbSales.find(s => s.id === id);
+      if(!v) return;
+      localStorage.setItem('last_sale_to_print', JSON.stringify(v));
+      window.open('factura.html', '_blank');
   }
 
   initVentas();
