@@ -502,7 +502,7 @@
     finally { 
         mostrarCarga(false);
       // Llenar el selector de Categorías
-      const categoriasUnicas = [...new Set(dbProducts.map(p => p.category))].filter(c => c && c !== 'Cristal').sort();
+      const categoriasUnicas = [...new Set(dbProducts.map(p => p.category))].filter(c => c && c !== 'Cristales').sort();
       document.getElementById('categoryFilter').innerHTML = '<option value="ALL">Todas las Categorías</option>' + categoriasUnicas.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
         renderStock(); 
     }
@@ -519,7 +519,7 @@
 
     // Filtramos los productos según la búsqueda y la categoría
     const filtrados = dbProducts.filter(p => {
-      if (p.category === 'Cristal') return false; 
+      if (p.category === 'Cristales') return false; 
       if (catFilter !== 'ALL' && p.category !== catFilter) return false;
       if (term && !(p.name||'').toLowerCase().includes(term) && !(p.code||'').toLowerCase().includes(term)) return false;
       return true;
