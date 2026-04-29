@@ -11,13 +11,11 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     .btn-outline, .btn-primary, .btn-light {
-        border-radius: 20px !important; /* Bordes bien redondeados tipo píldora */
-        padding: 4px 10px !important;   /* Menos altura, más compactos */
-        font-size: 11px !important;     /* Letra pequeña pero legible */
+        border-radius: 20px !important; 
+        padding: 4px 10px !important;   
+        font-size: 11px !important;     
         line-height: 1.2;
     }
-
-    
   </style>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -112,7 +110,7 @@
   <aside class="sidebar">
     <div class="brand">
       <div class="brand-logo">M</div>
-      <div class="brand-text"><strong>Usuario: Admin</strong><small>Control del negocio</small></div>
+      <div class="brand-text"><strong>Micro SaaS</strong><small>Control del negocio</small></div>
     </div>
      <nav class="nav">
       <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
@@ -957,7 +955,7 @@
   function renderLenses() {
       const suppFilter = document.getElementById('filterLensSupplier').value;
       const tbody = document.getElementById('tbodyCristales');
-      let cristales = dbProducts.filter(p => p.category === 'Cristal');
+      let cristales = dbProducts.filter(p => p.category === 'Cristales'); // CORREGIDO A PLURAL
       if (suppFilter !== 'ALL') cristales = cristales.filter(p => p.promoLinked === suppFilter);
 
       tbody.innerHTML = cristales.map(c => {
@@ -997,7 +995,8 @@
   async function guardarCristal(e) {
       e.preventDefault();
       const id = document.getElementById('lensId').value || 'prod_' + Date.now();
-      const lens = { id: id, name: document.getElementById('lensName').value.trim(), category: 'Cristal', promoLinked: document.getElementById('lensSupplier').value, cost: parseFloat(document.getElementById('lensCost').value) || 0, price: parseFloat(document.getElementById('lensPrice').value) || 0, stock: 9999, status: 'Activo' };
+      // CORREGIDO: category: 'Cristales'
+      const lens = { id: id, name: document.getElementById('lensName').value.trim(), category: 'Cristales', promoLinked: document.getElementById('lensSupplier').value, cost: parseFloat(document.getElementById('lensCost').value) || 0, price: parseFloat(document.getElementById('lensPrice').value) || 0, stock: 9999, status: 'Activo' };
 
       mostrarCarga(true);
       try {
@@ -1035,7 +1034,8 @@
         return; 
     }
 
-    const filtrados = dbProducts.filter(p => p.category !== 'Cristal' && ((p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term))).slice(0, 5);
+    // CORREGIDO A PLURAL
+    const filtrados = dbProducts.filter(p => p.category !== 'Cristales' && ((p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term))).slice(0, 5);
     list.innerHTML = filtrados.length === 0 ? '<div style="padding:10px; color:var(--muted); font-size:12px;">Armazón no encontrado en catálogo.</div>' : filtrados.map(p => {
       let stock = 0; try { stock = JSON.parse(p.stock_branches)[terminalActiva] || 0; } catch(e) { stock = p.stock || 0; }
       return `<div class="autocomplete-item" onclick="selFrame('${escapeHtml(p.code||'')}', '${escapeHtml(p.name)}', ${p.price||0})">
@@ -1055,6 +1055,7 @@
       recalcularTotalOrden();
   }
 
+  // --- CEREBRO MAGICO: Busca el cristal por laboratorio en ambos campos ---
   function cargarLentesPorLab() {
       const labId = document.getElementById('ordLensSupplier').value;
       const lensSelect = document.getElementById('ordLensId');
@@ -1067,8 +1068,14 @@
           return;
       }
       
-      const cristalesDelLab = dbProducts.filter(p => p.category === 'Cristal' && p.promoLinked === labId);
-      lensSelect.innerHTML = '<option value="">Seleccione Cristal...</option>' + cristalesDelLab.map(c => `<option value="${c.id}">${escapeHtml(c.name)} - ${currency(c.price)}</option>`).join('');
+      // CORREGIDO: category: 'Cristales' y busca en ambos identificadores de proveedor
+      const cristalesDelLab = dbProducts.filter(p => 
+          p.category === 'Cristales' && 
+          (p.supplierId === labId || p.promoLinked === labId)
+      );
+      
+      lensSelect.innerHTML = '<option value="">Seleccione Cristal...</option>' + 
+          cristalesDelLab.map(c => `<option value="${c.id}">${escapeHtml(c.name)} - ${currency(c.price)}</option>`).join('');
       
       selectedLensPrice = 0;
       document.getElementById('labelLensPrice').textContent = '$ 0,00';
@@ -1197,9 +1204,10 @@
     document.getElementById('ordFrameName').value = o.frameName || ''; 
 
     if (o.glassType) {
-        const cristalGuardado = dbProducts.find(p => p.category === 'Cristal' && p.name === o.glassType);
+        // CORREGIDO A PLURAL
+        const cristalGuardado = dbProducts.find(p => p.category === 'Cristales' && p.name === o.glassType);
         if (cristalGuardado) {
-            document.getElementById('ordLensSupplier').value = cristalGuardado.promoLinked || '';
+            document.getElementById('ordLensSupplier').value = cristalGuardado.promoLinked || cristalGuardado.supplierId || '';
             cargarLentesPorLab(); 
             document.getElementById('ordLensId').value = cristalGuardado.id; 
             recalcularTotalOrden(); 
@@ -1207,7 +1215,8 @@
     }
 
     if (o.frameCode) {
-        const frameGuardado = dbProducts.find(p => p.code === o.frameCode && p.category !== 'Cristal');
+        // CORREGIDO A PLURAL
+        const frameGuardado = dbProducts.find(p => p.code === o.frameCode && p.category !== 'Cristales');
         selectedFramePrice = frameGuardado ? (frameGuardado.price || 0) : 0;
         document.getElementById('labelFramePrice').textContent = currency(selectedFramePrice);
         recalcularTotalOrden();
@@ -1244,15 +1253,14 @@
     // --- LÓGICA DE NUMERACIÓN CONSECUTIVA DESDE 1000 ---
     let id = document.getElementById('ordId').value;
     if (isNew) {
-        let maxId = 999; // Base de inicio para que la primera sea 1000
+        let maxId = 999; 
         dbOrders.forEach(o => {
-            // Extrae solo si es un número puro (ignora los viejos "ORD-...")
             const num = parseInt(o.id);
             if (!isNaN(num) && String(num) === String(o.id) && num > maxId) {
                 maxId = num;
             }
         });
-        id = (maxId + 1).toString(); // Asigna 1000, 1001, 1002...
+        id = (maxId + 1).toString(); 
     }
     // ---------------------------------------------------
 
@@ -1307,7 +1315,8 @@
     mostrarCarga(true);
     try {
       if (isNew && frameCode) {
-        const prod = dbProducts.find(p => p.code === frameCode && p.category !== 'Cristal');
+        // CORREGIDO A PLURAL
+        const prod = dbProducts.find(p => p.code === frameCode && p.category !== 'Cristales');
         if (prod) {
           let branches = {}; try { branches = JSON.parse(prod.stock_branches); } catch(e) { branches = {"Central":prod.stock}; }
           if ((branches[terminalActiva]||0) < 1) { alert("Stock insuficiente del armazón en esta sucursal."); mostrarCarga(false); return; }
@@ -1399,10 +1408,8 @@
     let kPend = 0, kListos = 0, kSaldo = 0;
     let htmlPend = '', htmlHist = '';
 
-    // Usamos minúsculas absolutas para evitar problemas de compatibilidad con órdenes viejas
     const enProcesoStates = ['no enviado', 'pedido a lab', 'garantía/demorado', 'pendiente', 'en taller', 'control calidad', 'garantía / rehacer'];
 
-    // Aseguramos capturar el rol de Administrador sea cual sea la variable activa
     const currentRole = localStorage.getItem('userRole') || localStorage.getItem('saas_role') || '';
     const isAdmin = currentRole === 'admin';
 
@@ -1417,21 +1424,17 @@
       if (isListo) kListos++;
       if (enProceso || isListo) kSaldo += o.balance; 
 
-      // --- RECUPERAR EL HISTORIAL DE FECHAS (statusDates) ---
       let statusDates = {};
       try {
           statusDates = typeof o.statusDates === 'string' ? JSON.parse(o.statusDates) : (o.statusDates || {});
       } catch(e) {}
       
-      // LA MAGIA DE LA FECHA CON PLAN B (Fallback)
-      let dateText = '';
-      // Intenta buscar la fecha del estado actual. Si no existe, usa la de creación.
       let rawDate = statusDates[o.status] || o.createdAt || o.date;
       
+      let dateText = '';
       if (rawDate) {
           const dObj = new Date(rawDate);
           if (!isNaN(dObj.getTime())) {
-              // Lo colocamos en un div para forzar que baje un renglón y se vea claro
               dateText = `<div style="color:var(--muted); font-size:10px; margin-top:5px; font-weight:600;">Modif: ${dObj.toLocaleDateString('es-AR')} ${dObj.getHours().toString().padStart(2, '0')}:${dObj.getMinutes().toString().padStart(2, '0')}</div>`;
           }
       }
@@ -1444,14 +1447,12 @@
       else if (currentStatus === 'pedido a lab' || currentStatus === 'en taller' || currentStatus === 'control calidad') badge = `<span style="background:#dbeafe; color:#2563eb; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">Pedido a lab</span>`;
       else badge = `<span style="background:#ffedd5; color:#b45309; padding:2px 6px; border-radius:4px; font-weight:bold; font-size:11px;">No enviado</span>`;
 
-      // Le pegamos la fecha debajo de la etiqueta de color
       badge += dateText; 
 
       const osTag = o.os_name ? `<br><small style="color:var(--primary); font-weight:bold;">O.S: ${escapeHtml(o.os_name)}</small>` : '';
 
       let actionsHtml = '';
       
-      // Selector de estado
       if (enProceso || isListo) {
           actionsHtml = `
             <div style="margin-bottom: 5px;">
@@ -1465,7 +1466,6 @@
           `;
 
           if (isListo) {
-              // Botones verdes de entrega
               actionsHtml += `
                 <div style="display:flex; flex-direction:column; gap:5px;">
                   <button class="btn-primary" style="padding:4px 8px; font-size:11px; background:#16a34a; border:none; border-radius: 20px;" onclick="prepararEntrega('${o.id}')">Entregar y Cobrar</button>
@@ -1473,14 +1473,12 @@
                 </div>
               `;
           } else {
-              // Botón de Editar
               actionsHtml += `
                 <button class="btn-outline" style="padding:4px 8px; font-size:11px; border-color:var(--primary); color:var(--primary); width:100%; border-radius: 20px;" onclick="editarOrden('${o.id}')">✏️ Editar</button>
               `;
           }
       }
 
-      // Limpiamos la palabra "ORD-" visualmente
       const cleanId = String(o.id).replace('ORD-', '');
 
       const tr = `
@@ -1704,7 +1702,8 @@
       mostrarCarga(true);
       try {
           if (o.frameCode) {
-              const prod = dbProducts.find(p => p.code === o.frameCode && p.category !== 'Cristal');
+              // CORREGIDO A PLURAL
+              const prod = dbProducts.find(p => p.code === o.frameCode && p.category !== 'Cristales');
               if (prod) {
                   let branches = {}; try { branches = JSON.parse(prod.stock_branches); } catch(e) { branches = {"Central":prod.stock}; }
                   branches[terminalActiva] = (branches[terminalActiva] || 0) + 1;
