@@ -17,7 +17,7 @@
     .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; width: 100vw; overflow-x: hidden; }
     .sidebar { width: 260px; height: 100vh; position: sticky; top: 0; background: #0f172a; }
     
-    .layout-1col { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+    .layout-1col { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; padding: 20px; box-sizing: border-box; }
     .input-box { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; width: 100%; font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; }
     .input-box:focus { border-color: var(--primary); }
     .input-box:disabled { background: #f8fafc; color: var(--muted); font-weight: bold; cursor: not-allowed; }
@@ -36,7 +36,7 @@
     dialog { border: none; border-radius: 12px; box-shadow: var(--shadow-lg); padding: 0; margin: auto; }
     .modal-content { padding: 24px; background: #fff; width: 100%; box-sizing: border-box; }
     
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 20px; }
     
     .mobile-toggle { display: none; background: none; border: none; font-size: 26px; cursor: pointer; color: var(--text); padding: 0; margin-right: 15px; }
     .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 998; backdrop-filter: blur(2px); }
@@ -46,7 +46,7 @@
     .autocomplete-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; color: var(--text); }
     .autocomplete-item:hover { background: var(--primary-soft); }
 
-    .form-section { background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+    .form-section { background: #fff; padding: 25px; border-radius: 12px; border: 1px solid var(--line); box-shadow: var(--shadow-sm); position: relative;}
     
     @media (max-width: 900px) {
       .app { display: flex !important; flex-direction: column !important; }
@@ -67,33 +67,36 @@
   <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleMenu()"></div>
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-logo">M</div>
-      <div class="brand-text"><strong id="sidebarUserName">Usuario: Admin</strong><small>Control del negocio</small></div>
+      <div class="brand-logo" id="companyLogo">M</div>
+      <div class="brand-text"><strong id="companyBrandText">Micro SaaS</strong><small>Optical Business</small></div>
     </div>
      <nav class="nav">
-      <a href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
-      <a href="producto.html"><span class="nav-icon">📦</span> Productos</a>
-      <a href="clientes.html"><span class="nav-icon">🏢</span> Clientes</a>
-      <a href="facturacion.html"><span class="nav-icon">🛒</span> Facturación</a>
-      <a href="ventas.html"><span class="nav-icon">🧾</span> Ventas</a>
-      <a href="contable.html"><span class="nav-icon">💸</span> Contable</a>
-      <a href="stock.html" class="active"><span class="active">📚</span> Stock</a>
-      <a href="ordenes.html"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="dashboard.html" data-module="dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a href="producto.html" data-module="producto"><span class="nav-icon">📦</span> Productos</a>
+      <a href="clientes.html" data-module="clientes"><span class="nav-icon">🏢</span> Clientes</a>
+      <a href="facturacion.html" data-module="facturacion"><span class="nav-icon">🛒</span> Facturación</a>
+      <a href="ventas.html" data-module="ventas"><span class="nav-icon">🧾</span> Ventas - Cierre de Caja</a>
+      <a href="cc.html" data-module="cc"><span class="nav-icon">📓</span> Cuentas Corrientes</a>
+      <a href="contable.html" data-module="contable"><span class="nav-icon">💸</span> Contable</a>
+      <a href="stock.html" data-module="stock" class="active"><span class="active">📚</span> Stock</a>
+      <a href="ordenes.html" data-module="ordenes"><span class="nav-icon">📋</span> Órdenes</a>
+      <a href="sucursales.html" data-module="sucursales"><span class="nav-icon">🏪</span> Sucursales</a>
+      <a href="usuarios.html" data-module="usuarios"><span class="nav-icon">👥</span> Usuarios</a>
     </nav>
   </aside>
 
   <main class="content">
-    <header class="topbar">
+    <header class="topbar" style="display: flex; justify-content: space-between; align-items: center; padding: 20px;">
       <div style="display: flex; align-items: center; width: 100%;">
         <button class="mobile-toggle" onclick="toggleMenu()">☰</button>
         <div class="page-title">
-          <h1 style="margin:0; font-size: 26px;">Control de Inventario</h1>
-          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión de existencias, ingresos y auditoría.</p>
+          <h1 style="margin:0; font-size: 26px;">Logística e Inventario</h1>
+          <p style="margin:6px 0 0; color:var(--muted); font-size:14px;">Gestión de existencias, transferencias, ingresos y mermas.</p>
         </div>
       </div>
-      <div class="topbar-actions">
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Descargar Reporte</button>
-        <button class="btn btn-outline" style="border-color: #7e22ce; color: #7e22ce; font-weight: 800; background: #faf5ff;" onclick="abrirAsistenteCompras()">🤖 Asistente de Compras</button>
+      <div class="topbar-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Reporte Valorizado</button>
+        <button class="btn btn-outline" style="border-color: #7e22ce; color: #7e22ce; font-weight: 800; background: #faf5ff;" onclick="abrirAsistenteCompras()">🤖 Asistente Compras</button>
       </div>
     </header>
 
@@ -101,14 +104,17 @@
       <article class="card card-pad" style="border-top: 4px solid var(--primary);">
         <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Capital en Stock (Costo)</div>
         <div id="kpiCosto" style="font-size:28px; font-weight:800; color:var(--primary);">$ 0</div>
+        <div style="font-size:11px; color:var(--muted); margin-top: 5px;">Según sucursal seleccionada</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--success);">
         <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Valuación de Venta (PVP)</div>
         <div id="kpiVenta" style="font-size:28px; font-weight:800; color:var(--success);">$ 0</div>
+        <div style="font-size:11px; color:var(--muted); margin-top: 5px;">Retorno bruto esperado</div>
       </article>
       <article class="card card-pad" style="border-top: 4px solid var(--danger);">
         <div style="font-size:11px; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Productos Agotados</div>
         <div id="kpiAgotados" style="font-size:28px; font-weight:800; color:var(--danger);">0</div>
+        <div style="font-size:11px; color:var(--muted); margin-top: 5px;">SKUs sin stock en el local</div>
       </article>
     </div>
 
@@ -116,27 +122,28 @@
       <article class="card card-pad">
         <div class="tabs">
           <button class="tab-btn active" onclick="switchTab('tab-inventario', this)">📦 Inventario Actual</button>
-          <button class="tab-btn" onclick="switchTab('tab-ingreso', this)">📥 Ingreso de Mercadería</button>
-          <button class="tab-btn" style="color: var(--danger);" onclick="switchTab('tab-ajuste', this)">⚠️ Ajuste Manual / Bajas</button>
+          <button class="tab-btn" onclick="switchTab('tab-ingreso', this)">📥 Ingreso (Compras)</button>
+          <button class="tab-btn" onclick="switchTab('tab-transferencia', this)">🚚 Transferencias</button>
+          <button class="tab-btn" style="color: var(--danger);" onclick="switchTab('tab-bajas', this)">⚠️ Bajas (Mermas/Dañados)</button>
         </div>
 
         <div id="tab-inventario" class="tab-content active">
           <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center; flex-wrap:wrap; gap:10px;">
-            <input type="text" id="searchStock" class="input-box" placeholder="🔍 Buscar producto por nombre o código..." style="max-width: 400px; margin:0;" onkeyup="renderStock()">
-            <select id="branchFilter" class="input-box" style="max-width: 200px;" onchange="renderStock()">
-                <option value="ALL">Todas las Sucursales</option>
+            <input type="text" id="searchStock" class="input-box" placeholder="🔍 Buscar producto por nombre o código..." style="flex:1; max-width: 400px; margin:0;" onkeyup="renderStock()">
+            <select id="branchFilter" class="input-box" style="width: auto; font-weight: bold;" onchange="renderStock()">
+                <option value="ALL">Global (Todas las Sucursales)</option>
             </select>
           </div>
 
-          <div style="overflow-x: auto;">
+          <div style="overflow-x: auto; border: 1px solid var(--line); border-radius: 8px;">
             <table>
-              <thead>
+              <thead style="position: sticky; top: 0; z-index: 1;">
                 <tr>
-                  <th>Código</th>
+                  <th>Código (SKU)</th>
                   <th>Producto</th>
                   <th>Categoría</th>
                   <th style="text-align:right;">Costo (CPP)</th>
-                  <th style="text-align:right;">PVP</th>
+                  <th style="text-align:right;">P. Venta</th>
                   <th style="text-align:center;">Stock Global</th>
                   <th style="text-align:center;">Stock Local</th>
                 </tr>
@@ -147,37 +154,42 @@
         </div>
 
         <div id="tab-ingreso" class="tab-content">
-          <div class="form-section" style="max-width: 700px; margin: 0 auto;">
-            <h2 style="margin: 0 0 10px 0; font-size: 18px; color: var(--primary);">Registrar Compra / Ingreso</h2>
-            <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Suma unidades al inventario y actualiza automáticamente el Costo Promedio Ponderado (CPP).</p>
+          <div class="form-section" style="max-width: 800px; margin: 0 auto;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div>
+                    <h2 style="margin: 0 0 5px 0; font-size: 18px; color: var(--primary);">📥 Registrar Compra / Ingreso Físico</h2>
+                    <p style="font-size: 13px; color: var(--muted); margin: 0;">Suma unidades y recalcula el Costo Promedio Ponderado (CPP).</p>
+                </div>
+                <button type="button" class="btn btn-outline" style="border-color: #0f766e; color: #0f766e; background: #f0fdf4;" onclick="abrirModalIngresoMasivo()">📄 Ingreso Masivo (Excel)</button>
+            </div>
 
             <form onsubmit="ejecutarIngreso(event)">
                 <div style="position: relative; margin-bottom: 20px;">
-                  <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Buscar Producto *</label>
+                  <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Buscar Producto (SKU o Nombre) *</label>
                   <input type="hidden" id="ingProdId" required>
-                  <input type="text" id="ingSearch" class="input-box" placeholder="Nombre o código del producto..." onkeyup="buscarProducto('ing')" autocomplete="off" required>
+                  <input type="text" id="ingSearch" class="input-box" placeholder="Ej: Ray Ban Aviador..." onkeyup="buscarProducto('ing')" autocomplete="off" required>
                   <div id="ingResults" class="autocomplete-list"></div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                   <div>
-                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Cantidad a Ingresar *</label>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Cantidad Recibida *</label>
                     <input type="number" id="ingQty" class="input-box" required min="1" step="1" oninput="calcIngTotal()">
                   </div>
                   <div>
-                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Sucursal Destino *</label>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Sucursal / Depósito Destino *</label>
                     <select id="ingBranch" class="input-box" required></select>
                   </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--line);">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed var(--primary);">
                   <div>
-                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Costo Unitario de Compra ($) *</label>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Costo Unitario Facturado ($) *</label>
                     <input type="number" id="ingCost" class="input-box" required min="0" step="0.01" oninput="calcIngTotal()">
                   </div>
                   <div>
                     <label style="font-size: 11px; font-weight: bold; color: var(--text); text-transform: uppercase;">Costo Total Lote ($)</label>
-                    <input type="text" id="ingTotal" class="input-box" disabled value="$ 0.00" style="color: var(--primary); font-size: 16px;">
+                    <input type="text" id="ingTotal" class="input-box" disabled value="$ 0.00" style="color: var(--primary); font-size: 18px; font-weight: 900; background: transparent; border: none; padding: 0;">
                   </div>
                 </div>
 
@@ -186,45 +198,84 @@
           </div>
         </div>
 
-        <div id="tab-ajuste" class="tab-content">
-          <div class="form-section" style="max-width: 700px; margin: 0 auto; border-color: var(--danger-soft); background: #fffcfc;">
-            <h2 style="margin: 0 0 10px 0; font-size: 18px; color: var(--danger);">⚠️ Ajuste Manual de Inventario</h2>
-            <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Forzar la cantidad exacta de stock de un producto (pérdidas, robos, recuentos). Requiere PIN de administrador.</p>
+        <div id="tab-transferencia" class="tab-content">
+          <div class="form-section" style="max-width: 800px; margin: 0 auto; border-color: #3b82f6;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div>
+                    <h2 style="margin: 0 0 5px 0; font-size: 18px; color: #3b82f6;">🚚 Transferencia entre Sucursales</h2>
+                    <p style="font-size: 13px; color: var(--muted); margin: 0;">Mueve mercadería físicamente sin afectar el costo ni la rentabilidad.</p>
+                </div>
+                <button type="button" class="btn btn-outline" style="border-color: #1d4ed8; color: #1d4ed8; background: #eff6ff;" onclick="abrirModalTransferenciaMasiva()">📄 Transferencia Masiva (Excel)</button>
+            </div>
 
-            <form onsubmit="pedirAuthAjuste(event)">
+            <form onsubmit="ejecutarTransferencia(event)">
                 <div style="position: relative; margin-bottom: 20px;">
                   <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Buscar Producto *</label>
-                  <input type="hidden" id="ajuProdId" required>
-                  <input type="text" id="ajuSearch" class="input-box" placeholder="Nombre o código del producto..." onkeyup="buscarProducto('aju')" autocomplete="off" required>
-                  <div id="ajuResults" class="autocomplete-list"></div>
+                  <input type="hidden" id="transProdId" required>
+                  <input type="text" id="transSearch" class="input-box" placeholder="Nombre o código..." onkeyup="buscarProducto('trans')" autocomplete="off" required>
+                  <div id="transResults" class="autocomplete-list"></div>
                 </div>
 
-                <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 12px; display: none;" id="ajuCurrentInfo">
-                   <strong>Stock Actual del Sistema:</strong> <span id="ajuCurrentStock" style="color: var(--primary); font-size: 16px; font-weight: 900; margin-left: 5px;">0</span>
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: #f1f5f9; padding: 15px; border-radius: 8px;">
                   <div>
-                    <label style="font-size: 11px; font-weight: bold; color: var(--danger); text-transform: uppercase;">Nuevo Stock Real (Exacto) *</label>
-                    <input type="number" id="ajuQty" class="input-box" required min="0" step="1" style="border-color: var(--danger); font-size: 16px; font-weight: bold;">
+                    <label style="font-size: 11px; font-weight: bold; color: var(--danger); text-transform: uppercase;">📤 Depósito Origen (Quitar) *</label>
+                    <select id="transOrigen" class="input-box" required onchange="actualizarInfoStockTransferencia()"></select>
+                    <small id="transStockOrigenMsg" style="color:var(--danger); font-weight:bold; display:block; margin-top:5px;"></small>
                   </div>
                   <div>
-                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Sucursal *</label>
-                    <select id="ajuBranch" class="input-box" required onchange="actualizarInfoStockAjuste()"></select>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--success); text-transform: uppercase;">📥 Depósito Destino (Sumar) *</label>
+                    <select id="transDestino" class="input-box" required></select>
                   </div>
                 </div>
 
                 <div style="margin-bottom: 25px;">
-                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Motivo del Ajuste *</label>
-                    <select id="ajuReason" class="input-box" required>
-                        <option value="Recuento / Inventario">Recuento Físico / Inventario</option>
-                        <option value="Mercadería Dañada">Mercadería Dañada / Rota</option>
-                        <option value="Robo / Extravío">Robo / Extravío</option>
-                        <option value="Uso Interno / Muestra">Uso Interno / Muestra</option>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--text); text-transform: uppercase;">Cantidad a Transferir *</label>
+                    <input type="number" id="transQty" class="input-box" required min="1" step="1" style="font-size: 18px; font-weight: bold;">
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; background: #3b82f6; border: none;">🚚 Iniciar Transferencia</button>
+            </form>
+          </div>
+        </div>
+
+        <div id="tab-bajas" class="tab-content">
+          <div class="form-section" style="max-width: 800px; margin: 0 auto; border-color: var(--danger-soft); background: #fffcfc;">
+            <h2 style="margin: 0 0 5px 0; font-size: 18px; color: var(--danger);">⚠️ Baja de Mercadería (Mermas)</h2>
+            <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Descuenta stock físico por incidencias. Requiere PIN de administrador para auditar la pérdida.</p>
+
+            <form onsubmit="pedirAuth('baja', null)">
+                <div style="position: relative; margin-bottom: 20px;">
+                  <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Buscar Producto *</label>
+                  <input type="hidden" id="bajaProdId" required>
+                  <input type="text" id="bajaSearch" class="input-box" placeholder="Nombre o código del producto..." onkeyup="buscarProducto('baja')" autocomplete="off" required>
+                  <div id="bajaResults" class="autocomplete-list"></div>
+                </div>
+
+                <div style="background: #fef2f2; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 12px; display: none; border: 1px dashed var(--danger);" id="bajaCurrentInfo">
+                   <strong>Stock Disponible para dar de baja:</strong> <span id="bajaCurrentStock" style="color: var(--danger); font-size: 16px; font-weight: 900; margin-left: 5px;">0</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                  <div>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--danger); text-transform: uppercase;">Cantidad a Restar (-) *</label>
+                    <input type="number" id="bajaQty" class="input-box" required min="1" step="1" style="border-color: var(--danger); font-size: 16px; font-weight: bold; color: var(--danger);">
+                  </div>
+                  <div>
+                    <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Sucursal de Origen *</label>
+                    <select id="bajaBranch" class="input-box" required onchange="actualizarInfoStockBaja()"></select>
+                  </div>
+                </div>
+
+                <div style="margin-bottom: 25px;">
+                    <label style="font-size: 11px; font-weight: bold; color: var(--text); text-transform: uppercase;">Motivo de la Baja (Destino Contable) *</label>
+                    <select id="bajaReason" class="input-box" required style="font-weight: bold;">
+                        <option value="Mercadería Dañada">Mercadería Dañada / Rota (Pasa a depósito 'Fallados')</option>
+                        <option value="Robo / Extravío">Robo / Extravío (Merma Irrecuperable)</option>
+                        <option value="Uso Interno">Uso Interno / Muestra</option>
                     </select>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; background: var(--danger); border: none;">🔒 Aplicar Ajuste (Requiere PIN)</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 15px; font-size: 16px; background: var(--danger); border: none;">🔒 Registrar Baja (Requiere PIN)</button>
             </form>
           </div>
         </div>
@@ -240,7 +291,7 @@
     <button class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="cerrarAdminAuth()">✕</button>
   </div>
   <form onsubmit="validarAdminAuth(event)" style="padding: 22px;">
-    <p style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Ingresá el PIN de administrador para autorizar el ajuste manual de stock.</p>
+    <p id="authMessage" style="font-size: 14px; margin-top:0; margin-bottom: 20px; color:var(--text);">Ingresá el PIN de administrador para autorizar la operación de inventario.</p>
     <input type="password" id="adminAuthPin" required placeholder="PIN de Seguridad (Ej: 1234)" autocomplete="off" style="width:100%; padding:14px; border:1px solid var(--line); border-radius:8px; font-size: 16px; outline:none; margin-bottom: 20px;">
     <div style="display: flex; justify-content: flex-end; gap: 10px;">
       <button type="button" class="btn btn-light" onclick="cerrarAdminAuth()">Cancelar</button>
@@ -249,8 +300,7 @@
   </form>
 </dialog>
 
-
-  <dialog id="modalAsistenteCompras" style="width: 100%; max-width: 1000px; z-index: 10005;">
+<dialog id="modalAsistenteCompras" style="width: 100%; max-width: 1000px; z-index: 10005;">
   <div class="modal-content">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
       <h2 style="margin: 0; font-size:20px; display:flex; align-items:center; gap:8px;">🤖 Asistente Predictivo de Compras</h2>
@@ -259,20 +309,20 @@
     
     <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed var(--line);">
        <div style="flex: 1; min-width: 250px;">
-          <label style="font-size: 11px; font-weight: bold; color: var(--primary); text-transform: uppercase;">1. Seleccionar Proveedor (Catálogo)</label>
+          <label style="font-size: 11px; font-weight: bold; color: var(--primary); text-transform: uppercase;">1. Seleccionar Proveedor</label>
           <select id="asistenteSupplier" class="input-box" onchange="calcularSugerenciasCompra()"></select>
        </div>
        <div style="flex: 1; min-width: 150px;">
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">2. Analizar ventas de los últimos...</label>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">2. Ventas de los últimos...</label>
           <select id="asistenteDiasAnalisis" class="input-box" onchange="calcularSugerenciasCompra()">
               <option value="30">30 Días</option>
               <option value="60" selected>60 Días</option>
               <option value="90">90 Días</option>
-              <option value="180">180 Días (Semestre)</option>
+              <option value="180">180 Días</option>
           </select>
        </div>
        <div style="flex: 1; min-width: 150px;">
-          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">3. Quiero tener stock cubierto para...</label>
+          <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">3. Cubrir stock para...</label>
           <select id="asistenteMesesObjetivo" class="input-box" onchange="calcularSugerenciasCompra()">
               <option value="1">1 Mes</option>
               <option value="2" selected>2 Meses</option>
@@ -287,11 +337,11 @@
         <thead style="background: var(--panel-2); position: sticky; top: 0; z-index: 1;">
           <tr>
             <th style="padding: 12px 15px; border-bottom: 1px solid var(--line);">Código / Producto</th>
-            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Promedio Mensual (Salidas)</th>
+            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Prom. Mensual</th>
             <th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Stock Hoy</th>
             <th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Stock Ideal</th>
             <th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Diagnóstico</th>
-            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Sugerencia de Compra</th>
+            <th style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">Sugerencia Compra</th>
           </tr>
         </thead>
         <tbody id="tbodyAsistenteCompras"></tbody>
@@ -311,34 +361,104 @@
   </div>
 </dialog>
 
-  
+<dialog id="modalIngresoMasivo" style="max-width: 700px; width: 90%;">
+  <div class="modal-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+      <h2 style="margin:0; font-size:18px; color: var(--primary);">📥 Ingreso Masivo (Compras) por Excel</h2>
+      <button class="btn btn-light" style="padding:6px 12px; border:none;" onclick="document.getElementById('modalIngresoMasivo').close()">✕</button>
+    </div>
+    <div style="background:#f0fdf4; padding:15px; border-radius:8px; border:1px dashed #16a34a; margin-bottom:20px; font-size:12px; color:#166534; line-height:1.6;">
+      <strong style="font-size:13px;">Instrucciones:</strong><br>
+      Sube un archivo Excel (.xlsx o .csv). Los encabezados requeridos en la primera fila son:<br>
+      <span style="background:#dcfce7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">SKU</span> (o Código), 
+      <span style="background:#dcfce7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">CANTIDAD</span>, 
+      <span style="background:#dcfce7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">COSTO</span>.<br>
+      El sistema sumará las unidades al depósito elegido y recalculará automáticamente el CPP de todos los productos procesados.
+    </div>
+    <form onsubmit="pedirAuth('ingreso_masivo', event)">
+      <div style="margin-bottom:15px;">
+        <label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Sucursal / Depósito Destino *</label>
+        <select id="ingMasivoBranch" class="input-box" required></select>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Seleccionar Archivo *</label>
+        <input type="file" id="ingMasivoFile" accept=".xlsx, .xls, .csv" required class="input-box" style="padding:8px;">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalIngresoMasivo').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="background:#0f766e; border-color:#0f766e;">🔒 Procesar Excel (Requiere PIN)</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<dialog id="modalTransfMasiva" style="max-width: 700px; width: 90%;">
+  <div class="modal-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--line); padding-bottom:10px;">
+      <h2 style="margin:0; font-size:18px; color: #3b82f6;">🚚 Transferencia Masiva por Excel</h2>
+      <button class="btn btn-light" style="padding:6px 12px; border:none;" onclick="document.getElementById('modalTransfMasiva').close()">✕</button>
+    </div>
+    <div style="background:#eff6ff; padding:15px; border-radius:8px; border:1px dashed #3b82f6; margin-bottom:20px; font-size:12px; color:#1e40af; line-height:1.6;">
+      <strong style="font-size:13px;">Instrucciones:</strong><br>
+      Sube un archivo Excel (.xlsx o .csv). Los encabezados requeridos en la primera fila son:<br>
+      <span style="background:#dbeafe; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">SKU</span> (o Código), 
+      <span style="background:#dbeafe; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">CANTIDAD</span>.<br>
+      El sistema verificará que el Origen tenga stock suficiente antes de restar y sumar en el Destino.
+    </div>
+    <form onsubmit="pedirAuth('transf_masiva', event)">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+        <div>
+          <label style="font-size:11px; font-weight:bold; color:var(--danger); text-transform:uppercase;">📤 Depósito Origen *</label>
+          <select id="transMasivoOrigen" class="input-box" required></select>
+        </div>
+        <div>
+          <label style="font-size:11px; font-weight:bold; color:var(--success); text-transform:uppercase;">📥 Depósito Destino *</label>
+          <select id="transMasivoDestino" class="input-box" required></select>
+        </div>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="font-size:11px; font-weight:bold; color:var(--muted); text-transform:uppercase;">Seleccionar Archivo *</label>
+        <input type="file" id="transMasivoFile" accept=".xlsx, .xls, .csv" required class="input-box" style="padding:8px;">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalTransfMasiva').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="background:#1d4ed8; border-color:#1d4ed8;">🔒 Procesar Transferencia (Requiere PIN)</button>
+      </div>
+    </form>
+  </div>
+</dialog>
 
 <script src="core.js"></script>
 <script>
   const API_URL = "/api";
   let dbProducts = [];
   let dbBranches = [];
+  let dbSuppliers = [];
+  let asisSalesHistory = [];
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
-  const PIN_ADMIN = "1234"; 
+  const PIN_ADMIN = "1234"; // Conectaremos con DB en el futuro
+
+  // Sistema de Seguridad Multi-Acción
+  let pendingAdminAction = null;
+  let pendingAdminData = null;
 
   function escapeHtml(v) { return String(v ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   function currency(n) { return '$ ' + new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 }).format(n || 0); }
   function mostrarCarga(s) { document.getElementById('loadingOverlay').style.display = s ? 'flex' : 'none'; }
-  function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('open'); }
-  
+  function todayISO() { return new Date().toISOString().split('T')[0]; }
+
   function switchTab(tabId, btnElement) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     btnElement.classList.add('active'); document.getElementById(tabId).classList.add('active');
   }
 
-  // --- FUNCIÓN ESCUDO: Evita errores si la API falla y devuelve HTML ---
   async function fetchSeguro(url) {
       try {
           const res = await apiFetch(url);
           if (!res.ok) return [];
           const contentType = res.headers.get("content-type") || "";
-          if (contentType.includes("text/html")) return []; // Bloqueamos el HTML de error de Cloudflare
+          if (contentType.includes("text/html")) return [];
           return await res.json();
       } catch(e) { 
           console.error("FetchSeguro error:", e);
@@ -350,24 +470,27 @@
     mostrarCarga(true);
     try {
       const timestamp = Date.now();
-      
       const [resP, resB] = await Promise.all([
-        fetchSeguro(`${API_URL}/products?status=Activo&v=${timestamp}`), // & en vez de ?
+        fetchSeguro(`${API_URL}/products?status=Activo&v=${timestamp}`),
         fetchSeguro(`${API_URL}/branches?v=${timestamp}`)
       ]);
       
       dbProducts = Array.isArray(resP) ? resP : [];
       dbBranches = Array.isArray(resB) ? resB : [];
 
-      // Llenar selects de sucursales
-      const branchOptions = '<option value="ALL">Todas las Sucursales</option>' + dbBranches.map(b => `<option value="${escapeHtml(b.name)}">${escapeHtml(b.name)}</option>`).join('');
-      const inputBranchOptions = dbBranches.map(b => `<option value="${escapeHtml(b.name)}" ${b.name === terminalActiva ? 'selected' : ''}>${escapeHtml(b.name)}</option>`).join('');
+      const branchOptionsAll = '<option value="ALL">Global (Todas las Sucursales)</option>' + dbBranches.map(b => `<option value="${escapeHtml(b.name)}">${escapeHtml(b.name)}</option>`).join('');
+      const branchOptionsSingle = dbBranches.map(b => `<option value="${escapeHtml(b.name)}" ${b.name === terminalActiva ? 'selected' : ''}>${escapeHtml(b.name)}</option>`).join('');
       
-      document.getElementById('branchFilter').innerHTML = branchOptions;
-      document.getElementById('branchFilter').value = terminalActiva; // Filtro default
+      document.getElementById('branchFilter').innerHTML = branchOptionsAll;
+      document.getElementById('branchFilter').value = 'ALL'; 
       
-      document.getElementById('ingBranch').innerHTML = inputBranchOptions;
-      document.getElementById('ajuBranch').innerHTML = inputBranchOptions;
+      document.getElementById('ingBranch').innerHTML = branchOptionsSingle;
+      document.getElementById('ingMasivoBranch').innerHTML = branchOptionsSingle;
+      document.getElementById('transOrigen').innerHTML = branchOptionsSingle;
+      document.getElementById('transDestino').innerHTML = branchOptionsSingle;
+      document.getElementById('transMasivoOrigen').innerHTML = branchOptionsSingle;
+      document.getElementById('transMasivoDestino').innerHTML = branchOptionsSingle;
+      document.getElementById('bajaBranch').innerHTML = branchOptionsSingle;
 
     } catch (e) { console.error("Error cargando stock:", e); }
     finally { 
@@ -392,14 +515,18 @@
       let stockBranches = {};
       try { stockBranches = JSON.parse(p.stock_branches); } catch(e) { stockBranches = {"Central": p.stock || 0}; }
       
-      const stockGlobal = p.stock || 0;
+      let stockGlobal = 0;
+      for(let b in stockBranches) {
+          if(b !== 'Fallados') stockGlobal += stockBranches[b];
+      }
+      // Resguardo: si el cálculo global es distinto al almacenado, prima la sumatoria real de depósitos sanos.
+      
       let stockLocal = branchFilter === 'ALL' ? stockGlobal : (stockBranches[branchFilter] || 0);
       
       if (stockLocal <= 0) kAgotados++;
       
-      // Valuaciones basadas en stock local visible
-      kCosto += (p.cost * stockLocal);
-      kVenta += (p.price * stockLocal);
+      kCosto += ((p.cost || 0) * stockLocal);
+      kVenta += ((p.price || 0) * stockLocal);
 
       return `
       <tr>
@@ -424,13 +551,13 @@
     document.getElementById('kpiAgotados').textContent = kAgotados;
   }
 
-  // --- BUSCADOR REUTILIZABLE PARA INGRESOS Y AJUSTES ---
+  // --- BUSCADOR REUTILIZABLE ---
   function buscarProducto(prefix) {
     const term = document.getElementById(`${prefix}Search`).value.toLowerCase().trim();
     const list = document.getElementById(`${prefix}Results`);
     if (!term) { list.classList.remove('active'); return; }
 
-    const filtrados = dbProducts.filter(p => (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term)).slice(0, 6);
+    const filtrados = dbProducts.filter(p => (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term)).slice(0, 8);
     
     list.innerHTML = filtrados.map(p => `
       <div class="autocomplete-item" onclick="selProd('${prefix}', '${p.id}', '${escapeHtml(p.name).replace(/'/g, "\\'")}', ${p.cost})">
@@ -451,12 +578,14 @@
     if (prefix === 'ing') {
         document.getElementById('ingCost').value = cost;
         calcIngTotal();
-    } else if (prefix === 'aju') {
-        actualizarInfoStockAjuste();
+    } else if (prefix === 'trans') {
+        actualizarInfoStockTransferencia();
+    } else if (prefix === 'baja') {
+        actualizarInfoStockBaja();
     }
   }
 
-  // --- LÓGICA DE INGRESO (COMPRAS) ---
+  // --- LÓGICA DE INGRESO MANUAL ---
   function calcIngTotal() {
       const q = parseInt(document.getElementById('ingQty').value) || 0;
       const c = parseFloat(document.getElementById('ingCost').value) || 0;
@@ -466,7 +595,7 @@
   async function ejecutarIngreso(e) {
       e.preventDefault();
       const id = document.getElementById('ingProdId').value;
-      if(!id) return alert("Busque y seleccione un producto del catálogo.");
+      if(!id) return alert("Busque y seleccione un producto.");
       
       const qty = parseInt(document.getElementById('ingQty').value) || 0;
       const newCost = parseFloat(document.getElementById('ingCost').value) || 0;
@@ -477,7 +606,7 @@
 
       mostrarCarga(true);
       try {
-          // CÁLCULO DE COSTO PROMEDIO PONDERADO (CPP)
+          // CPP
           const stockActualTotal = p.stock || 0;
           const costoActual = p.cost || 0;
           const totalValorAntiguo = stockActualTotal * costoActual;
@@ -488,24 +617,22 @@
               nuevoCPP = (totalValorAntiguo + totalValorNuevo) / (stockActualTotal + qty);
           }
 
-          // ACTUALIZAR STOCK
           let branches = {}; try { branches = JSON.parse(p.stock_branches); } catch(err) { branches = {"Central": p.stock||0}; }
           branches[branch] = (branches[branch] || 0) + qty;
           
           p.stock = stockActualTotal + qty;
           p.stock_branches = JSON.stringify(branches);
-          p.cost = nuevoCPP; // Actualizamos el costo matemáticamente
+          p.cost = nuevoCPP;
 
           await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(p) });
           
-          alert(`✅ Ingreso registrado con éxito.\nNuevo Costo Promedio (CPP): ${currency(nuevoCPP)}`);
+          alert(`✅ Ingreso registrado con éxito.\nNuevo CPP: ${currency(nuevoCPP)}`);
           document.getElementById('ingProdId').value = '';
           document.getElementById('ingSearch').value = '';
           document.getElementById('ingQty').value = '';
           document.getElementById('ingCost').value = '';
           document.getElementById('ingTotal').value = '$ 0.00';
-          
-          await initStock(); // Recargar todo
+          await initStock();
       } catch (err) {
           alert("Error de conexión al registrar ingreso.");
       } finally {
@@ -513,10 +640,66 @@
       }
   }
 
-  // --- LÓGICA DE AJUSTE MANUAL CON SEGURIDAD PIN ---
-  function actualizarInfoStockAjuste() {
-      const id = document.getElementById('ajuProdId').value;
-      const branch = document.getElementById('ajuBranch').value;
+  // --- TRANSFERENCIAS MANUALES ---
+  function actualizarInfoStockTransferencia() {
+      const id = document.getElementById('transProdId').value;
+      const branchOrigen = document.getElementById('transOrigen').value;
+      if(!id || !branchOrigen) return;
+      
+      const p = dbProducts.find(x => x.id === id);
+      if(!p) return;
+
+      let branches = {}; try { branches = JSON.parse(p.stock_branches); } catch(err) { branches = {"Central": p.stock||0}; }
+      const currentStock = branches[branchOrigen] || 0;
+      document.getElementById('transStockOrigenMsg').textContent = `Stock disponible en origen: ${currentStock}`;
+  }
+
+  async function ejecutarTransferencia(e) {
+      e.preventDefault();
+      const id = document.getElementById('transProdId').value;
+      const origen = document.getElementById('transOrigen').value;
+      const destino = document.getElementById('transDestino').value;
+      const qty = parseInt(document.getElementById('transQty').value) || 0;
+
+      if(!id) return alert("Seleccione un producto.");
+      if(origen === destino) return alert("El depósito de origen y destino no pueden ser el mismo.");
+      if(qty <= 0) return alert("Cantidad inválida.");
+
+      const p = dbProducts.find(x => x.id === id);
+      if(!p) return;
+
+      let branches = {}; try { branches = JSON.parse(p.stock_branches); } catch(err) { branches = {"Central": p.stock||0}; }
+      const stockOrigen = branches[origen] || 0;
+
+      if (qty > stockOrigen) {
+          return alert(`Stock insuficiente en ${origen}. Disponibles: ${stockOrigen}`);
+      }
+
+      mostrarCarga(true);
+      try {
+          branches[origen] -= qty;
+          branches[destino] = (branches[destino] || 0) + qty;
+          p.stock_branches = JSON.stringify(branches);
+
+          await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(p) });
+          
+          alert(`🚚 Transferencia exitosa de ${qty} unid. a ${destino}.`);
+          document.getElementById('transProdId').value = '';
+          document.getElementById('transSearch').value = '';
+          document.getElementById('transQty').value = '';
+          document.getElementById('transStockOrigenMsg').textContent = '';
+          await initStock();
+      } catch (err) {
+          alert("Error de conexión al transferir.");
+      } finally {
+          mostrarCarga(false);
+      }
+  }
+
+  // --- BAJAS RELATIVAS (MERMA / DAÑADOS) ---
+  function actualizarInfoStockBaja() {
+      const id = document.getElementById('bajaProdId').value;
+      const branch = document.getElementById('bajaBranch').value;
       if(!id) return;
       
       const p = dbProducts.find(x => x.id === id);
@@ -525,18 +708,79 @@
       let branches = {}; try { branches = JSON.parse(p.stock_branches); } catch(err) { branches = {"Central": p.stock||0}; }
       const currentStock = branches[branch] || 0;
 
-      document.getElementById('ajuCurrentInfo').style.display = 'block';
-      document.getElementById('ajuCurrentStock').textContent = currentStock;
+      document.getElementById('bajaCurrentInfo').style.display = 'block';
+      document.getElementById('bajaCurrentStock').textContent = currentStock;
   }
 
-  function pedirAuthAjuste(e) {
-      e.preventDefault();
-      const id = document.getElementById('ajuProdId').value;
-      if(!id) return alert("Busque y seleccione un producto del catálogo.");
+  async function procesarBajaLogic(e) {
+      if(e) e.preventDefault();
+      const id = document.getElementById('bajaProdId').value;
+      const qty = parseInt(document.getElementById('bajaQty').value) || 0;
+      const branch = document.getElementById('bajaBranch').value;
+      const reason = document.getElementById('bajaReason').value;
+
+      const p = dbProducts.find(x => x.id === id);
+      if(!p) return;
+
+      let branches = {}; try { branches = JSON.parse(p.stock_branches); } catch(err) { branches = {"Central": p.stock||0}; }
+      const stockActual = branches[branch] || 0;
+
+      if(qty > stockActual) return alert(`Stock insuficiente. Solo puedes dar de baja hasta ${stockActual} unidades en ${branch}.`);
+
+      mostrarCarga(true);
+      try {
+          // Descontar del depósito origen
+          branches[branch] -= qty;
+
+          // Si es dañada, la aislamos en un depósito virtual "Fallados". Si es robo o uso interno, desaparece del físico.
+          if (reason === 'Mercadería Dañada') {
+              branches['Fallados'] = (branches['Fallados'] || 0) + qty;
+          }
+          
+          let newGlobal = 0;
+          for(let b in branches) {
+              if (b !== 'Fallados') newGlobal += branches[b]; // Fallados no suma al capital comercial
+          }
+          
+          p.stock = newGlobal;
+          p.stock_branches = JSON.stringify(branches);
+
+          await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(p) });
+          
+          alert(`⚠️ Baja registrada exitosamente.\nMotivo: ${reason}`);
+          document.getElementById('bajaProdId').value = '';
+          document.getElementById('bajaSearch').value = '';
+          document.getElementById('bajaQty').value = '';
+          document.getElementById('bajaCurrentInfo').style.display = 'none';
+          await initStock();
+      } catch (err) {
+          alert("Error de conexión al aplicar la baja.");
+      } finally {
+          mostrarCarga(false);
+      }
+  }
+
+
+  // --- SEGURIDAD MULTI-ACCIÓN ---
+  function pedirAuth(action, event) {
+      if(event) event.preventDefault();
+      
+      let msg = "";
+      if(action === 'baja') msg = "Ingresá el PIN de administrador para auditar y autorizar la BAJA de stock.";
+      else if(action === 'ingreso_masivo') msg = "Ingresá el PIN de administrador para autorizar el INGRESO MASIVO por Excel.";
+      else if(action === 'transf_masiva') msg = "Ingresá el PIN de administrador para autorizar la TRANSFERENCIA MASIVA por Excel.";
+      
+      document.getElementById('authMessage').textContent = msg;
+      pendingAdminAction = action;
       
       document.getElementById('adminAuthPin').value = '';
       document.getElementById('adminAuthDialog').showModal();
       setTimeout(() => document.getElementById('adminAuthPin').focus(), 50);
+  }
+
+  function cerrarAdminAuth() {
+      document.getElementById('adminAuthDialog').close();
+      pendingAdminAction = null;
   }
 
   function validarAdminAuth(e) {
@@ -544,259 +788,285 @@
       const pin = document.getElementById('adminAuthPin').value;
       
       if (pin === PIN_ADMIN) {
-          document.getElementById('adminAuthDialog').close();
-          ejecutarAjuste();
+          cerrarAdminAuth();
+          if(pendingAdminAction === 'baja') procesarBajaLogic();
+          else if(pendingAdminAction === 'ingreso_masivo') ejecutarIngresoMasivo();
+          else if(pendingAdminAction === 'transf_masiva') ejecutarTransfMasiva();
       } else {
-          alert("❌ PIN de administrador incorrecto.");
+          alert("❌ PIN incorrecto.");
           document.getElementById('adminAuthPin').value = '';
           document.getElementById('adminAuthPin').focus();
       }
   }
 
-  function cerrarAdminAuth() {
-      document.getElementById('adminAuthDialog').close();
+
+  // --- CARGAS MASIVAS EXCEL (INGRESOS Y TRANSFERENCIAS) ---
+  function abrirModalIngresoMasivo() {
+      document.getElementById('ingMasivoFile').value = '';
+      document.getElementById('modalIngresoMasivo').showModal();
   }
 
-  async function ejecutarAjuste() {
-      const id = document.getElementById('ajuProdId').value;
-      const newQty = parseInt(document.getElementById('ajuQty').value) || 0;
-      const branch = document.getElementById('ajuBranch').value;
+  function abrirModalTransferenciaMasiva() {
+      document.getElementById('transMasivoFile').value = '';
+      document.getElementById('modalTransfMasiva').showModal();
+  }
 
-      const p = dbProducts.find(x => x.id === id);
-      if(!p) return;
+  async function ejecutarIngresoMasivo() {
+    const fileInput = document.getElementById('ingMasivoFile');
+    if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo.");
+    const destino = document.getElementById('ingMasivoBranch').value;
 
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async function(evt) {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+      if (rows.length === 0) return alert("El archivo está vacío.");
+
+      let updates = [];
+      let errores = [];
+      let agregados = 0;
+
+      rows.forEach((row, index) => {
+        const findVal = (names) => { const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase())); return key ? row[key] : null; };
+        
+        const sku = String(findVal(['sku', 'codigo', 'código']) || '').trim().toLowerCase();
+        const qty = parseInt(findVal(['cantidad', 'cant', 'qty'])) || 0;
+        const costStr = findVal(['costo', 'cost']);
+        const cost = costStr ? parseFloat(String(costStr).replace(',','.')) : -1;
+
+        if (!sku || qty <= 0 || cost < 0) { 
+            errores.push(`Fila ${index + 2}: Faltan datos o son inválidos (SKU, Cantidad > 0, Costo >= 0).`); return; 
+        }
+
+        const p = dbProducts.find(x => (x.code||'').toLowerCase() === sku);
+        if (!p) {
+            errores.push(`Fila ${index + 2}: SKU "${sku}" no existe en el sistema.`); return;
+        }
+
+        // Calcular CPP
+        const stockActualTotal = p.stock || 0;
+        const costoActual = p.cost || 0;
+        const totalValorAntiguo = stockActualTotal * costoActual;
+        const totalValorNuevo = qty * cost;
+        let nuevoCPP = costoActual;
+        if ((stockActualTotal + qty) > 0) nuevoCPP = (totalValorAntiguo + totalValorNuevo) / (stockActualTotal + qty);
+
+        let branches = {}; try { branches = JSON.parse(p.stock_branches); } catch(err) { branches = {"Central": p.stock||0}; }
+        branches[destino] = (branches[destino] || 0) + qty;
+
+        updates.push({
+            ...p,
+            cost: nuevoCPP,
+            stock: stockActualTotal + qty,
+            stock_branches: JSON.stringify(branches)
+        });
+        agregados++;
+      });
+
+      if (errores.length > 0 && updates.length === 0) return alert("No se pudo procesar nada. Errores:\n" + errores.slice(0,8).join('\n'));
+      if (errores.length > 0) { if(!confirm(`Hay ${errores.length} errores, pero se procesarán ${agregados} válidos.\n¿Continuar?\n\n` + errores.slice(0,3).join('\n'))) return; }
+
+      document.getElementById('modalIngresoMasivo').close();
       mostrarCarga(true);
       try {
-          let branches = {}; try { branches = JSON.parse(p.stock_branches); } catch(err) { branches = {"Central": p.stock||0}; }
-          
-          // Reemplazo directo (Ajuste forzado)
-          branches[branch] = newQty;
-          
-          // Recalcular el stock total
-          let newTotal = 0;
-          for (let b in branches) newTotal += branches[b];
-          
-          p.stock = newTotal;
-          p.stock_branches = JSON.stringify(branches);
-
-          await apiFetch('/api/products', { method: 'POST', body: JSON.stringify(p) });
-          
-          alert("🔒 Ajuste Manual aplicado exitosamente.");
-          document.getElementById('ajuProdId').value = '';
-          document.getElementById('ajuSearch').value = '';
-          document.getElementById('ajuQty').value = '';
-          document.getElementById('ajuCurrentInfo').style.display = 'none';
-          
-          await initStock();
-      } catch (err) {
-          alert("Error de conexión al aplicar el ajuste.");
-      } finally {
-          mostrarCarga(false);
-      }
+        await Promise.all(updates.map(p => apiFetch(`/api/products`, { method: 'POST', body: JSON.stringify(p) })));
+        setTimeout(() => alert(`✅ Ingreso Masivo completado.\nProductos actualizados: ${agregados}`), 300);
+        await initStock();
+      } catch(err) { alert("Error en la subida masiva."); } finally { mostrarCarga(false); }
+    };
+    reader.readAsArrayBuffer(file);
   }
 
+  async function ejecutarTransfMasiva() {
+    const fileInput = document.getElementById('transMasivoFile');
+    if (!fileInput.files || fileInput.files.length === 0) return alert("Seleccioná un archivo.");
+    const origen = document.getElementById('transMasivoOrigen').value;
+    const destino = document.getElementById('transMasivoDestino').value;
+
+    if (origen === destino) return alert("El origen y el destino no pueden ser el mismo.");
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async function(evt) {
+      const data = new Uint8Array(evt.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+      if (rows.length === 0) return alert("El archivo está vacío.");
+
+      let updates = [];
+      let errores = [];
+      let transferidos = 0;
+
+      rows.forEach((row, index) => {
+        const findVal = (names) => { const key = Object.keys(row).find(k => names.includes(k.trim().toLowerCase())); return key ? row[key] : null; };
+        
+        const sku = String(findVal(['sku', 'codigo', 'código']) || '').trim().toLowerCase();
+        const qty = parseInt(findVal(['cantidad', 'cant', 'qty'])) || 0;
+
+        if (!sku || qty <= 0) { 
+            errores.push(`Fila ${index + 2}: SKU o Cantidad inválida.`); return; 
+        }
+
+        const p = dbProducts.find(x => (x.code||'').toLowerCase() === sku);
+        if (!p) {
+            errores.push(`Fila ${index + 2}: SKU "${sku}" no existe.`); return;
+        }
+
+        let branches = {}; try { branches = JSON.parse(p.stock_branches); } catch(err) { branches = {"Central": p.stock||0}; }
+        const stockOrigen = branches[origen] || 0;
+
+        if (qty > stockOrigen) {
+            errores.push(`Fila ${index + 2}: Sin stock de "${sku}" en ${origen} (Solicitado: ${qty}, Disponible: ${stockOrigen}).`); return;
+        }
+
+        branches[origen] -= qty;
+        branches[destino] = (branches[destino] || 0) + qty;
+
+        updates.push({
+            ...p,
+            stock_branches: JSON.stringify(branches)
+        });
+        transferidos++;
+      });
+
+      if (errores.length > 0 && updates.length === 0) return alert("No se pudo procesar nada. Errores:\n" + errores.slice(0,8).join('\n'));
+      if (errores.length > 0) { if(!confirm(`Hay ${errores.length} errores por falta de stock u otros, pero se procesarán ${transferidos} válidos.\n¿Continuar?\n\n` + errores.slice(0,3).join('\n'))) return; }
+
+      document.getElementById('modalTransfMasiva').close();
+      mostrarCarga(true);
+      try {
+        await Promise.all(updates.map(p => apiFetch(`/api/products`, { method: 'POST', body: JSON.stringify(p) })));
+        setTimeout(() => alert(`🚚 Transferencia Masiva completada.\nProductos movidos: ${transferidos}`), 300);
+        await initStock();
+      } catch(err) { alert("Error en la transferencia masiva."); } finally { mostrarCarga(false); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  // --- EXPORTAR EXCEL ---
   function exportarExcel() {
     if (dbProducts.length === 0) return alert("No hay datos para exportar.");
     const dataExport = dbProducts.map(p => {
         let sb = {}; try { sb = JSON.parse(p.stock_branches); } catch(e) {}
+        let stockGlobalM = 0;
+        for(let b in sb) if(b !== 'Fallados') stockGlobalM += sb[b];
+
         let row = {
-            "Código": p.code || '',
-            "Producto": p.name || '',
-            "Categoría": p.category || '',
-            "Costo (CPP)": p.cost || 0,
-            "Precio Venta": p.price || 0,
-            "Stock Global": p.stock || 0
+            "CÓDIGO (SKU)": p.code || '',
+            "PRODUCTO": p.name || '',
+            "CATEGORÍA": p.category || '',
+            "STOCK GLOBAL": stockGlobalM,
+            "COSTO UNITARIO": p.cost || 0,
+            "PVP": p.price || 0,
+            "CAPITAL TOTAL": stockGlobalM * (p.cost || 0)
         };
         dbBranches.forEach(b => {
             row[`Stock ${b.name}`] = sb[b.name] || 0;
         });
+        row[`Stock Fallados`] = sb['Fallados'] || 0;
         return row;
     });
 
     const ws = XLSX.utils.json_to_sheet(dataExport);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Inventario");
+    XLSX.utils.book_append_sheet(wb, ws, "Inventario Valorizado");
     XLSX.writeFile(wb, `Reporte_Inventario_${todayISO()}.xlsx`);
   }
 
-  function todayISO() { return new Date().toISOString().split('T')[0]; }
-
-// --- MOTOR PREDICTIVO DE COMPRAS E IA LOGÍSTICA ---
-  let asisSalesHistory = [];
-  let asisSuppliers = []; // Nueva variable para guardar los proveedores en esta pantalla
-
+  // --- ASISTENTE COMPRAS ---
   async function abrirAsistenteCompras() {
       mostrarCarga(true);
       try {
-          // 1. Si no tenemos el historial de ventas, lo vamos a buscar a la nube
           if (asisSalesHistory.length === 0) {
               const resS = await apiFetch('/api/sales?status=Todos');
               if (resS.ok) asisSalesHistory = await resS.json();
           }
-
-          // 2. Si no tenemos los proveedores en el módulo de Stock, los traemos
-          if (asisSuppliers.length === 0) {
+          if (dbSuppliers.length === 0) {
               const resSup = await apiFetch('/api/suppliers');
-              if (resSup.ok) asisSuppliers = await resSup.json();
+              if (resSup.ok) dbSuppliers = await resSup.json();
           }
-
-          // Armamos el selector con los laboratorios / proveedores
           const suppOpts = '<option value="">Seleccione un Proveedor...</option>' + 
-              asisSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+              dbSuppliers.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
           document.getElementById('asistenteSupplier').innerHTML = suppOpts;
-
-          document.getElementById('tbodyAsistenteCompras').innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted); font-size: 14px;">👆 Seleccione un proveedor arriba para ejecutar el análisis predictivo.</td></tr>';
+          document.getElementById('tbodyAsistenteCompras').innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted); font-size: 14px;">👆 Seleccione un proveedor arriba.</td></tr>';
           document.getElementById('asistenteCostoTotal').textContent = '$ 0,00';
-
           document.getElementById('modalAsistenteCompras').showModal();
-      } catch(e) {
-          console.error("Detalle del error del Asistente:", e);
-          alert("Error al cargar datos históricos para el asistente.");
-      } finally {
-          mostrarCarga(false);
-      }
+      } catch(e) { alert("Error al cargar datos históricos para el asistente."); } finally { mostrarCarga(false); }
   }
 
   function calcularSugerenciasCompra() {
       const suppId = document.getElementById('asistenteSupplier').value;
       if (!suppId) return;
-
       const diasAnalisis = parseInt(document.getElementById('asistenteDiasAnalisis').value) || 60;
       const mesesObjetivo = parseFloat(document.getElementById('asistenteMesesObjetivo').value) || 2;
-
-      // 1. Buscamos solo los productos que le compramos a este proveedor
       const prods = dbProducts.filter(p => p.promoLinked === suppId);
-
-      // 2. Definimos la ventana de tiempo para mirar hacia atrás
-      const hoy = new Date();
-      const fechaLimite = new Date();
-      fechaLimite.setDate(hoy.getDate() - diasAnalisis);
-
-      // 3. Calculadora de ventas pasadas (Frecuencia de salida)
+      const hoy = new Date(); const fechaLimite = new Date(); fechaLimite.setDate(hoy.getDate() - diasAnalisis);
       let ventasPorProducto = {};
-
       asisSalesHistory.forEach(venta => {
           if (venta.status === 'Anulada') return;
           const fechaVenta = new Date(venta.date || venta.createdAt);
-          
           if (fechaVenta >= fechaLimite && fechaVenta <= hoy) {
-              let items = [];
-              try { items = JSON.parse(venta.itemsJSON || '[]'); } catch(e) {}
-              items.forEach(item => {
-                  // Acumulamos las unidades vendidas por cada ID de producto
-                  ventasPorProducto[item.id] = (ventasPorProducto[item.id] || 0) + (Number(item.qty) || Number(item.quantity) || 0);
-              });
+              let items = []; try { items = JSON.parse(venta.itemsJSON || '[]'); } catch(e) {}
+              items.forEach(item => { ventasPorProducto[item.id] = (ventasPorProducto[item.id] || 0) + (Number(item.qty) || Number(item.quantity) || 0); });
           }
       });
-
       const tbody = document.getElementById('tbodyAsistenteCompras');
-      let html = '';
-      let costoTotalPedido = 0;
-
-      // 4. Cruzamos datos y generamos diagnósticos
+      let html = ''; let costoTotalPedido = 0;
       prods.forEach(p => {
           const qtyVendida = ventasPorProducto[p.id] || 0;
-          
-          // Matemáticas Logísticas
-          const ventaPromedioDiaria = qtyVendida / diasAnalisis;
-          const ventaPromedioMensual = ventaPromedioDiaria * 30;
-          
-          // Stock Ideal = Lo que vendo en 1 mes multiplicado por los meses que me quiero estoquear
+          const ventaPromedioMensual = (qtyVendida / diasAnalisis) * 30;
           const stockIdeal = Math.ceil(ventaPromedioMensual * mesesObjetivo);
           
-          // Stock Actual Total (sumando todas las sucursales)
-          const stockActual = Number(p.stock) || 0;
+          let stockActual = 0;
+          try { let sb = JSON.parse(p.stock_branches); for(let b in sb) if(b !== 'Fallados') stockActual += sb[b]; } catch(e) { stockActual = p.stock || 0; }
 
-          let aPedir = 0;
-          let estadoBadge = '';
-
-          // 5. El Cerebro dictamina qué hacer
+          let aPedir = 0; let estadoBadge = '';
           if (stockActual < stockIdeal) {
-              aPedir = stockIdeal - stockActual; // Faltan
-              if (stockActual <= (stockIdeal * 0.25)) {
-                  // Si tiene menos del 25% de lo ideal, es CRÍTICO
-                  estadoBadge = `<span style="background:#fee2e2; color:#dc2626; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">QUIEBRE (CRÍTICO)</span>`;
-              } else {
-                  estadoBadge = `<span style="background:#ffedd5; color:#ea580c; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">REPONER STOCK</span>`;
-              }
+              aPedir = stockIdeal - stockActual;
+              estadoBadge = stockActual <= (stockIdeal * 0.25) ? `<span style="background:#fee2e2; color:#dc2626; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">QUIEBRE</span>` : `<span style="background:#ffedd5; color:#ea580c; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">REPONER</span>`;
           } else if (stockActual > (stockIdeal * 1.5) && stockIdeal > 0) {
-              // Si tiene 50% más de lo ideal, es plata dormida
               estadoBadge = `<span style="background:#e0e7ff; color:#1d4ed8; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">SOBRESTOCK</span>`;
           } else if (stockIdeal === 0 && stockActual > 0) {
-              // Tiene stock pero no vendió ni 1 en el periodo analizado (Clavo)
-              estadoBadge = `<span style="background:#f3e8ff; color:#7e22ce; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">CLAVO (BAJA ROTACIÓN)</span>`;
+              estadoBadge = `<span style="background:#f3e8ff; color:#7e22ce; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">CLAVO</span>`;
           } else {
-              estadoBadge = `<span style="background:#dcfce7; color:#16a34a; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">NIVEL ÓPTIMO</span>`;
+              estadoBadge = `<span style="background:#dcfce7; color:#16a34a; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:bold;">ÓPTIMO</span>`;
           }
-
-          // Solo lo listamos si hay que pedir, o si rotó, o si tiene sobrestock importante
           if (aPedir > 0 || qtyVendida > 0 || stockActual > 0) {
-               html += `
-               <tr>
-                  <td style="padding: 12px 15px; border-bottom: 1px solid var(--line);"><strong>${escapeHtml(p.name)}</strong><br><small style="color:var(--muted);">${escapeHtml(p.code || 'S/N')}</small></td>
-                  <td style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">${ventaPromedioMensual.toFixed(1)} ud/mes</td>
-                  <td style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center; font-weight:bold; font-size: 14px;">${stockActual}</td>
-                  <td style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center; font-weight:bold; color:var(--primary); font-size: 14px;">${stockIdeal}</td>
-                  <td style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">${estadoBadge}</td>
-                  <td style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center; font-weight:900; color:${aPedir > 0 ? '#16a34a' : 'var(--muted)'}; font-size:16px;">
-                      ${aPedir > 0 ? '+ ' + aPedir : '-'}
-                  </td>
-               </tr>
-               `;
-               // Calculamos cuánta plata necesita para comprar esta sugerencia
+               html += `<tr><td style="padding: 12px 15px; border-bottom: 1px solid var(--line);"><strong>${escapeHtml(p.name)}</strong><br><small style="color:var(--muted);">${escapeHtml(p.code || 'S/N')}</small></td><td style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">${ventaPromedioMensual.toFixed(1)} ud/mes</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center; font-weight:bold; font-size: 14px;">${stockActual}</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center; font-weight:bold; color:var(--primary); font-size: 14px;">${stockIdeal}</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center;">${estadoBadge}</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--line); text-align:center; font-weight:900; color:${aPedir > 0 ? '#16a34a' : 'var(--muted)'}; font-size:16px;">${aPedir > 0 ? '+ ' + aPedir : '-'}</td></tr>`;
                costoTotalPedido += aPedir * (Number(p.cost) || 0);
           }
       });
-
-      if (html === '') {
-          html = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted);">No hay catálogo asociado a este proveedor.</td></tr>';
-      }
-
-      tbody.innerHTML = html;
-      document.getElementById('asistenteCostoTotal').textContent = currency(costoTotalPedido);
+      if (html === '') html = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--muted);">No hay catálogo asociado a este proveedor.</td></tr>';
+      tbody.innerHTML = html; document.getElementById('asistenteCostoTotal').textContent = currency(costoTotalPedido);
   }
 
   function exportarOrdenCompraExcel() {
       const suppId = document.getElementById('asistenteSupplier').value;
       if (!suppId) return alert("Seleccione un proveedor primero.");
-      
-      const selectSup = document.getElementById('asistenteSupplier');
-      const nombreProveedor = selectSup.options[selectSup.selectedIndex].text;
-
+      const nombreProveedor = document.getElementById('asistenteSupplier').options[document.getElementById('asistenteSupplier').selectedIndex].text;
       const tbody = document.getElementById('tbodyAsistenteCompras');
-      if (tbody.innerHTML.includes('No hay catálogo')) return alert("No hay datos para exportar.");
-
+      if (tbody.innerHTML.includes('No hay catálogo')) return alert("No hay datos.");
       const dataExport = [];
-      const rows = tbody.querySelectorAll('tr');
-
-      rows.forEach(tr => {
+      tbody.querySelectorAll('tr').forEach(tr => {
           const cols = tr.querySelectorAll('td');
           if (cols.length === 6) {
-              const cantPedirStr = cols[5].textContent.replace('+ ', '').trim();
-              const cantPedir = parseInt(cantPedirStr);
-
-              // Solo le mandamos al proveedor los artículos que SÍ o SÍ queremos comprar (>0)
+              const cantPedir = parseInt(cols[5].textContent.replace('+ ', '').trim());
               if (!isNaN(cantPedir) && cantPedir > 0) {
                   const prodText = cols[0].innerText.split('\n');
-                  dataExport.push({
-                      "CÓDIGO (SKU)": prodText.length > 1 ? prodText[1] : '',
-                      "PRODUCTO A PEDIR": cols[0].querySelector('strong').innerText,
-                      "CANTIDAD REQUERIDA": cantPedir
-                  });
+                  dataExport.push({ "CÓDIGO (SKU)": prodText.length > 1 ? prodText[1] : '', "PRODUCTO A PEDIR": cols[0].querySelector('strong').innerText, "CANTIDAD REQUERIDA": cantPedir });
               }
           }
       });
-
-      if (dataExport.length === 0) return alert("Todo tu stock está a niveles óptimos o de sobrestock. No hay unidades sugeridas para reponer a este proveedor.");
-
-      const ws = XLSX.utils.json_to_sheet(dataExport);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Orden_Compra");
-      
-      const cleanSupName = nombreProveedor.replace(/[^a-zA-Z0-9]/g, "_");
-      XLSX.writeFile(wb, `PEDIDO_${cleanSupName}_${todayISO()}.xlsx`);
+      if (dataExport.length === 0) return alert("No hay unidades sugeridas para pedir.");
+      const ws = XLSX.utils.json_to_sheet(dataExport); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Orden_Compra");
+      XLSX.writeFile(wb, `PEDIDO_${nombreProveedor.replace(/[^a-zA-Z0-9]/g, "_")}_${todayISO()}.xlsx`);
   }
-  
   
   initStock();
 </script>
