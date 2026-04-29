@@ -506,7 +506,9 @@
     
     let kCosto = 0, kVenta = 0, kAgotados = 0;
 
+    // MAGIA: Excluimos los cristales del control de inventario físico
     const filtrados = dbProducts.filter(p => {
+      if (p.category === 'Cristales') return false; 
       if (term && !(p.name||'').toLowerCase().includes(term) && !(p.code||'').toLowerCase().includes(term)) return false;
       return true;
     });
@@ -557,7 +559,8 @@
     const list = document.getElementById(`${prefix}Results`);
     if (!term) { list.classList.remove('active'); return; }
 
-    const filtrados = dbProducts.filter(p => (p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term)).slice(0, 8);
+    // MAGIA: Bloqueamos los cristales para que nadie intente transferirlos o ajustarlos por error
+    const filtrados = dbProducts.filter(p => p.category !== 'Cristales' && ((p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term))).slice(0, 8);
     
     list.innerHTML = filtrados.map(p => `
       <div class="autocomplete-item" onclick="selProd('${prefix}', '${p.id}', '${escapeHtml(p.name).replace(/'/g, "\\'")}', ${p.cost})">
