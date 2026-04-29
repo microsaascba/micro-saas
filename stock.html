@@ -129,7 +129,10 @@
 
         <div id="tab-inventario" class="tab-content active">
           <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center; flex-wrap:wrap; gap:10px;">
-            <input type="text" id="searchStock" class="input-box" placeholder="🔍 Buscar producto por nombre o código..." style="flex:1; max-width: 400px; margin:0;" onkeyup="renderStock()">
+            <input type="text" id="searchStock" class="input-box" placeholder="🔍 Buscar producto por nombre o código..." style="flex:1; min-width: 250px; margin:0;" onkeyup="renderStock()">
+            <select id="categoryFilter" class="input-box" style="width: auto; font-weight: bold; color: var(--muted);" onchange="renderStock()">
+                <option value="ALL">Todas las Categorías</option>
+            </select>
             <select id="branchFilter" class="input-box" style="width: auto; font-weight: bold;" onchange="renderStock()">
                 <option value="ALL">Global (Todas las Sucursales)</option>
             </select>
@@ -150,6 +153,9 @@
               </thead>
               <tbody id="tbodyStock"></tbody>
             </table>
+            <div id="stockRenderLimitMsg" style="text-align: center; padding: 10px; font-size: 11px; color: var(--muted); background: var(--panel-2); border-top: 1px solid var(--line); display: none;">
+                ⚠️ Se muestran los primeros 50 resultados para optimizar la velocidad. Utiliza el buscador para encontrar un artículo específico.
+            </div>
           </div>
         </div>
 
@@ -494,7 +500,10 @@
 
     } catch (e) { console.error("Error cargando stock:", e); }
     finally { 
-        mostrarCarga(false); 
+        mostrarCarga(false);
+      // Llenar el selector de Categorías
+      const categoriasUnicas = [...new Set(dbProducts.map(p => p.category))].filter(c => c && c !== 'Cristal').sort();
+      document.getElementById('categoryFilter').innerHTML = '<option value="ALL">Todas las Categorías</option>' + categoriasUnicas.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
         renderStock(); 
     }
   }
@@ -502,18 +511,30 @@
   function renderStock() {
     const term = document.getElementById('searchStock').value.toLowerCase().trim();
     const branchFilter = document.getElementById('branchFilter').value;
+    const catFilter = document.getElementById('categoryFilter').value;
     const tbody = document.getElementById('tbodyStock');
+    const limitMsg = document.getElementById('stockRenderLimitMsg');
     
     let kCosto = 0, kVenta = 0, kAgotados = 0;
 
-    // MAGIA: Excluimos los cristales del control de inventario físico
+    // Filtramos los productos según la búsqueda y la categoría
     const filtrados = dbProducts.filter(p => {
-      if (p.category === 'Cristales') return false; 
+      if (p.category === 'Cristal') return false; 
+      if (catFilter !== 'ALL' && p.category !== catFilter) return false;
       if (term && !(p.name||'').toLowerCase().includes(term) && !(p.code||'').toLowerCase().includes(term)) return false;
       return true;
     });
 
-    tbody.innerHTML = filtrados.map(p => {
+    // OPTIMIZACIÓN RENDIMIENTO: Solo dibujamos los primeros 50 resultados en pantalla
+    const productosAMostrar = filtrados.slice(0, 50);
+    
+    if (filtrados.length > 50) {
+        limitMsg.style.display = 'block';
+    } else {
+        limitMsg.style.display = 'none';
+    }
+
+    tbody.innerHTML = productosAMostrar.map(p => {
       let stockBranches = {};
       try { stockBranches = JSON.parse(p.stock_branches); } catch(e) { stockBranches = {"Central": p.stock || 0}; }
       
@@ -521,7 +542,6 @@
       for(let b in stockBranches) {
           if(b !== 'Fallados') stockGlobal += stockBranches[b];
       }
-      // Resguardo: si el cálculo global es distinto al almacenado, prima la sumatoria real de depósitos sanos.
       
       let stockLocal = branchFilter === 'ALL' ? stockGlobal : (stockBranches[branchFilter] || 0);
       
@@ -560,7 +580,7 @@
     if (!term) { list.classList.remove('active'); return; }
 
     // MAGIA: Bloqueamos los cristales para que nadie intente transferirlos o ajustarlos por error
-    const filtrados = dbProducts.filter(p => p.category !== 'Cristales' && ((p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term))).slice(0, 8);
+    const filtrados = dbProducts.filter(p => p.category !== 'Cristales' && 'Servicios' && 'Calibrado' ((p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term))).slice(0, 8);
     
     list.innerHTML = filtrados.map(p => `
       <div class="autocomplete-item" onclick="selProd('${prefix}', '${p.id}', '${escapeHtml(p.name).replace(/'/g, "\\'")}', ${p.cost})">
