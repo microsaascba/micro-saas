@@ -314,7 +314,12 @@
               </select>
             </div>
             
-            <div>
+            <div class="col-3">
+              <label style="font-size:11px; font-weight:bold; color:var(--primary);">Proveedor / Laboratorio *</label>
+              <select id="prodSupplier" class="input-box" required style="border-color: var(--primary);"></select>
+            </div>
+
+            <div class="col-2">
               <label style="font-size:11px; font-weight:bold; color:var(--muted);">Código / SKU</label>
               <input type="text" id="prodCode" class="input-box" placeholder="Vacío = Auto">
             </div>
@@ -418,6 +423,7 @@
                     <th>Foto</th>
                     <th>SKU</th>
                     <th>Modelo / Categoría</th>
+                    <th>Proveedor</th>
                     <th style="text-align:right;">P. Venta</th>
                     <th style="text-align:center;">Stock</th>
                     <th>Acciones</th>
@@ -471,13 +477,14 @@
       <strong style="font-size:13px;">Instrucciones de Subida:</strong><br>
       Sube un archivo .xlsx o .csv. Los únicos campos <strong>OBLIGATORIOS</strong> son:<br>
       <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">NOMBRE</span>, 
-      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">CATEGORIA</span> y 
+      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">CATEGORIA</span>, 
+      <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">PROVEEDOR</span> y
       <span style="background:#fef3c7; padding:2px 4px; border-radius:4px; font-family:monospace; font-weight:bold;">COSTO</span>.<br><br>
       Campos opcionales permitidos: <span style="font-family:monospace;">PRECIO, SKU, ESTADO, GASTOS, DESCRIPCION, COLOR, FRENTE, PATILLA, LENTE, TALLE, PESO, IMAGEN_1, IMAGEN_2, IMAGEN_3</span>.<br><br>
       <ul style="margin: 5px 0 0 15px; padding: 0;">
         <li><em>Si el campo PRECIO está vacío, se guardará en $0 (o mantendrá el precio viejo si el SKU ya existe).</em></li>
         <li><em>Si el campo SKU viene vacío, el sistema le asignará un código único automáticamente.</em></li>
-        <li><strong style="color:red;">ATENCIÓN:</strong> <em>La <strong>CATEGORIA</strong> debe existir previamente en el sistema. No se crearán categorías nuevas desde el Excel para evitar errores de tipeo.</em></li>
+        <li><strong style="color:red;">ATENCIÓN:</strong> <em>Tanto la <strong>CATEGORIA</strong> como el <strong>PROVEEDOR</strong> deben existir previamente en el sistema.</em></li>
       </ul>
     </div>
     
@@ -513,6 +520,7 @@
 <script>
   let dbProducts = [];
   let dbCategories = [];
+  let dbSuppliers = []; // Nueva base global para proveedores
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
 
   let pendingAdminAction = null;
@@ -601,17 +609,20 @@
     mostrarCarga(true);
     try {
       const ts = Date.now();
-      const [resP, resC] = await Promise.all([
+      const [resP, resC, resS] = await Promise.all([
         apiFetch(`/api/products?status=Todos&v=${ts}`),
-        apiFetch('/api/categories')
+        apiFetch('/api/categories'),
+        apiFetch('/api/suppliers') // Cargamos los proveedores desde el módulo contable
       ]);
       dbProducts = resP.ok ? await resP.json() : [];
       dbCategories = resC.ok ? await resC.json() : [];
+      dbSuppliers = resS.ok ? await resS.json() : [];
     } catch (e) {
         console.error("Error cargando base de datos", e);
     } finally { 
         mostrarCarga(false); 
-        actualizarSelectCats(); 
+        actualizarSelectCats();
+        actualizarSelectSuppliers(); 
         renderTable(); 
     }
   }
@@ -620,6 +631,12 @@
     const s = document.getElementById('prodCategory');
     const catList = dbCategories.map(c => c.name);
     s.innerHTML = '<option value="">Seleccione Categoría...</option>' + catList.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  }
+
+  function actualizarSelectSuppliers() {
+      const s = document.getElementById('prodSupplier');
+      s.innerHTML = '<option value="">Seleccione Proveedor...</option>' + 
+          dbSuppliers.map(sup => `<option value="${sup.id}">${escapeHtml(sup.name)}</option>`).join('');
   }
 
   // --- NUEVO GESTOR DE CATEGORÍAS ---
@@ -747,6 +764,7 @@
     document.getElementById('prodId').value = p.id;
     document.getElementById('prodName').value = p.name;
     document.getElementById('prodCategory').value = p.category;
+    document.getElementById('prodSupplier').value = p.supplierId || p.promoLinked || ''; // Compatibilidad inversa
     document.getElementById('prodCode').value = p.code || '';
     document.getElementById('prodDescription').value = p.description || '';
     
@@ -792,6 +810,7 @@
       
       document.getElementById('prodCost').disabled = false;
       document.getElementById('prodStatus').value = 'Activo';
+      document.getElementById('prodSupplier').value = ''; // Limpiamos el proveedor
       document.getElementById('prodMarkup').value = '';
       document.getElementById('btnDeleteProd').style.display = 'none';
       
@@ -832,6 +851,7 @@
         id,
         name: document.getElementById('prodName').value.trim(),
         category: document.getElementById('prodCategory').value,
+        supplierId: document.getElementById('prodSupplier').value, // Nuevo envío de proveedor obligatorio
         code: document.getElementById('prodCode').value.trim(),
         description: document.getElementById('prodDescription').value.trim(),
         
@@ -932,11 +952,17 @@
     tbody.innerHTML = filtrados.map(p => {
       const img = p.image1 || noFotoSvg;
       const isInactive = p.status === 'Inactivo';
+      
+      // Buscamos el nombre del proveedor para mostrarlo en la tabla
+      const supObj = dbSuppliers.find(s => s.id === p.supplierId || s.id === p.promoLinked);
+      const supName = supObj ? supObj.name : '-';
+
       return `
       <tr style="${isInactive ? 'opacity: 0.5;' : ''}">
         <td><img src="${img}" class="thumb-list" onclick="zoom(this.src)" onerror="this.onerror=null; this.src='${noFotoSvg}'"></td>
         <td><small class="badge" style="background:#e2e8f0; color:#1e293b;">${p.code || 'AUTO'}</small>${isInactive ? '<br><span style="color:red; font-size:10px; font-weight:bold;">INACTIVO</span>' : ''}</td>
         <td style="${isInactive ? 'text-decoration: line-through;' : ''}"><strong>${escapeHtml(p.name)}</strong><br><small style="color:#64748b">${escapeHtml(p.category || '-')}</small></td>
+        <td>${escapeHtml(supName)}</td>
         <td style="text-align:right; color:var(--primary); font-weight:800; font-size:15px;">${currency(p.price)}</td>
         <td style="text-align:center;"><span class="badge ${p.stock > 5 ? 'success' : 'danger'}">${p.stock || 0}</span></td>
         <td><button class="btn-outline" style="padding:4px 8px; font-size:11px;" onclick="editarProducto('${p.id}')">Editar</button></td>
@@ -952,27 +978,31 @@
   function exportarCatalogoExcel() {
     let dataExport = [];
     if (dbProducts.length === 0) {
-      dataExport.push({ "NOMBRE": "", "CATEGORIA": "", "SKU": "", "ESTADO": "Activo", "COSTO": 0, "GASTOS": 0, "PRECIO": 0, "DESCRIPCION": "", "COLOR": "", "FRENTE": "", "PATILLA": "", "LENTE": "", "TALLE": "", "PESO": "", "IMAGEN_1": "", "IMAGEN_2": "", "IMAGEN_3": "" });
+      dataExport.push({ "NOMBRE": "", "CATEGORIA": "", "PROVEEDOR": "", "SKU": "", "ESTADO": "Activo", "COSTO": 0, "GASTOS": 0, "PRECIO": 0, "DESCRIPCION": "", "COLOR": "", "FRENTE": "", "PATILLA": "", "LENTE": "", "TALLE": "", "PESO": "", "IMAGEN_1": "", "IMAGEN_2": "", "IMAGEN_3": "" });
     } else {
-      dataExport = dbProducts.map(p => ({
-        "NOMBRE": p.name || "", 
-        "CATEGORIA": p.category || "", 
-        "SKU": p.code || "",
-        "ESTADO": p.status || "Activo",
-        "COSTO": p.cost || 0, 
-        "GASTOS": p.expenses || 0, 
-        "PRECIO": p.price || 0,
-        "DESCRIPCION": p.description || "", 
-        "COLOR": p.color || "", 
-        "FRENTE": p.frente || "",
-        "PATILLA": p.patilla || "", 
-        "LENTE": p.lente || "", 
-        "TALLE": p.talle || "", 
-        "PESO": p.peso || "",
-        "IMAGEN_1": p.image1 && !p.image1.startsWith('data:') ? p.image1 : (p.image1 ? '[Archivo]' : ''),
-        "IMAGEN_2": p.image2 && !p.image2.startsWith('data:') ? p.image2 : (p.image2 ? '[Archivo]' : ''),
-        "IMAGEN_3": p.image3 && !p.image3.startsWith('data:') ? p.image3 : (p.image3 ? '[Archivo]' : '')
-      }));
+      dataExport = dbProducts.map(p => {
+        const supObj = dbSuppliers.find(s => s.id === p.supplierId || s.id === p.promoLinked);
+        return {
+          "NOMBRE": p.name || "", 
+          "CATEGORIA": p.category || "", 
+          "PROVEEDOR": supObj ? supObj.name : "",
+          "SKU": p.code || "",
+          "ESTADO": p.status || "Activo",
+          "COSTO": p.cost || 0, 
+          "GASTOS": p.expenses || 0, 
+          "PRECIO": p.price || 0,
+          "DESCRIPCION": p.description || "", 
+          "COLOR": p.color || "", 
+          "FRENTE": p.frente || "",
+          "PATILLA": p.patilla || "", 
+          "LENTE": p.lente || "", 
+          "TALLE": p.talle || "", 
+          "PESO": p.peso || "",
+          "IMAGEN_1": p.image1 && !p.image1.startsWith('data:') ? p.image1 : (p.image1 ? '[Archivo]' : ''),
+          "IMAGEN_2": p.image2 && !p.image2.startsWith('data:') ? p.image2 : (p.image2 ? '[Archivo]' : ''),
+          "IMAGEN_3": p.image3 && !p.image3.startsWith('data:') ? p.image3 : (p.image3 ? '[Archivo]' : '')
+        };
+      });
     }
     const ws = XLSX.utils.json_to_sheet(dataExport);
     const wb = XLSX.utils.book_new();
@@ -1010,20 +1040,28 @@
 
         const name = String(findVal(['nombre', 'name']) || '').trim();
         const categoryRaw = String(findVal(['categoria', 'categoría', 'category']) || '').trim();
+        const supplierRaw = String(findVal(['proveedor', 'supplier', 'laboratorio']) || '').trim();
         const cost = parseFloat(findVal(['costo', 'cost']));
         
-        if (!name || !categoryRaw || isNaN(cost)) { 
-            errores.push(`Fila ${index + 2}: Faltan campos obligatorios (Nombre, Categoría o Costo).`); 
+        if (!name || !categoryRaw || !supplierRaw || isNaN(cost)) { 
+            errores.push(`Fila ${index + 2}: Faltan campos obligatorios (Nombre, Categoría, Proveedor o Costo).`); 
             return; 
         }
 
         const catIndex = categoriasLower.indexOf(categoryRaw.toLowerCase());
         if (catIndex === -1) {
-            errores.push(`Fila ${index + 2}: La categoría "${categoryRaw}" NO EXISTE en el sistema. Debes crearla previamente o usar una existente.`);
+            errores.push(`Fila ${index + 2}: La categoría "${categoryRaw}" NO EXISTE en el sistema.`);
             return;
         }
         
+        const supIndex = dbSuppliers.findIndex(s => s.name.toLowerCase() === supplierRaw.toLowerCase());
+        if (supIndex === -1) {
+            errores.push(`Fila ${index + 2}: El proveedor "${supplierRaw}" NO EXISTE en el sistema. Debes crearlo en Contabilidad > Proveedores.`);
+            return;
+        }
+
         const category = categoriasExistentes[catIndex];
+        const supplierId = dbSuppliers[supIndex].id;
 
         const code = String(findVal(['sku', 'codigo', 'código']) || '').trim();
         let existingProd = code ? dbProducts.find(p => p.code === code) : null;
@@ -1053,6 +1091,7 @@
 
         prodUpdates.push({
           id, name, category, code, cost, price, expenses,
+          supplierId: supplierId,
           description: String(findVal(['descripcion', 'descripción']) || '').trim(),
           color: String(findVal(['color']) || '').trim(),
           frente: String(findVal(['frente']) || '').trim(),
