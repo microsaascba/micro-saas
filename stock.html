@@ -95,7 +95,7 @@
         </div>
       </div>
       <div class="topbar-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="exportarExcel()">⬇ Reporte Valorizado</button>
+        <button class="btn btn-outline" style="border-color: var(--success); color: var(--success);" onclick="abrirModalExportarStock()">⬇ Reporte Valorizado</button>
         <button class="btn btn-outline" style="border-color: #7e22ce; color: #7e22ce; font-weight: 800; background: #faf5ff;" onclick="abrirAsistenteCompras()">🤖 Asistente Compras</button>
       </div>
     </header>
@@ -249,7 +249,7 @@
             <h2 style="margin: 0 0 5px 0; font-size: 18px; color: var(--danger);">⚠️ Baja de Mercadería (Mermas)</h2>
             <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px;">Descuenta stock físico por incidencias. Requiere PIN de administrador para auditar la pérdida.</p>
 
-            <form onsubmit="pedirAuth('baja', null)">
+            <form onsubmit="pedirAuth('baja', event)">
                 <div style="position: relative; margin-bottom: 20px;">
                   <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Buscar Producto *</label>
                   <input type="hidden" id="bajaProdId" required>
@@ -304,6 +304,29 @@
       <button type="submit" class="btn" style="border: 1px solid var(--danger); color: var(--danger); background: transparent; padding: 10px 16px; border-radius: 8px; font-weight:bold; cursor:pointer;">Autorizar</button>
     </div>
   </form>
+</dialog>
+
+<dialog id="modalExportarStock" style="width: 100%; max-width: 450px; z-index: 10005;">
+  <div class="modal-content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+      <h2 style="margin: 0; font-size:18px; color: var(--success); display:flex; align-items:center; gap:8px;">⬇ Descargar Inventario</h2>
+      <button type="button" class="btn btn-light" style="padding: 6px 12px; border:none;" onclick="document.getElementById('modalExportarStock').close()">✕</button>
+    </div>
+    <form onsubmit="ejecutarExportacionExcel(event)">
+      <div style="margin-bottom: 15px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Filtrar por Depósito / Sucursal</label>
+        <select id="expStockBranch" class="input-box"></select>
+      </div>
+      <div style="margin-bottom: 25px;">
+        <label style="font-size: 11px; font-weight: bold; color: var(--muted); text-transform: uppercase;">Filtrar por Categoría</label>
+        <select id="expStockCategory" class="input-box"></select>
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-light" onclick="document.getElementById('modalExportarStock').close()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" style="background:#16a34a; border-color:#16a34a;">Descargar Excel</button>
+      </div>
+    </form>
+  </div>
 </dialog>
 
 <dialog id="modalAsistenteCompras" style="width: 100%; max-width: 1000px; z-index: 10005;">
@@ -442,7 +465,7 @@
   let dbSuppliers = [];
   let asisSalesHistory = [];
   const terminalActiva = localStorage.getItem('terminal_assigned_branch') || 'Central';
-  const PIN_ADMIN = "1234"; // Conectaremos con DB en el futuro
+  const PIN_ADMIN = "1234"; 
 
   // Sistema de Seguridad Multi-Acción
   let pendingAdminAction = null;
@@ -498,12 +521,13 @@
       document.getElementById('transMasivoDestino').innerHTML = branchOptionsSingle;
       document.getElementById('bajaBranch').innerHTML = branchOptionsSingle;
 
+      // Llenar el selector de Categorías para el filtro de inventario
+      const categoriasUnicas = [...new Set(dbProducts.map(p => p.category))].filter(c => c && c !== 'Cristal').sort();
+      document.getElementById('categoryFilter').innerHTML = '<option value="ALL">Todas las Categorías</option>' + categoriasUnicas.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+
     } catch (e) { console.error("Error cargando stock:", e); }
     finally { 
-        mostrarCarga(false);
-      // Llenar el selector de Categorías
-      const categoriasUnicas = [...new Set(dbProducts.map(p => p.category))].filter(c => c && c !== 'Cristales').sort();
-      document.getElementById('categoryFilter').innerHTML = '<option value="ALL">Todas las Categorías</option>' + categoriasUnicas.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+        mostrarCarga(false); 
         renderStock(); 
     }
   }
@@ -517,15 +541,14 @@
     
     let kCosto = 0, kVenta = 0, kAgotados = 0;
 
-    // Filtramos los productos según la búsqueda y la categoría
     const filtrados = dbProducts.filter(p => {
-      if (p.category === 'Cristales') return false; 
-      if (catFilter !== 'ALL' && p.category !== catFilter) return false;
+      const cat = p.category || '';
+      if (cat === 'Cristal' || cat === 'Cristales' || cat === 'Servicios' || cat === 'Calibrado') return false; 
+      if (catFilter !== 'ALL' && cat !== catFilter) return false;
       if (term && !(p.name||'').toLowerCase().includes(term) && !(p.code||'').toLowerCase().includes(term)) return false;
       return true;
     });
 
-    // OPTIMIZACIÓN RENDIMIENTO: Solo dibujamos los primeros 50 resultados en pantalla
     const productosAMostrar = filtrados.slice(0, 50);
     
     if (filtrados.length > 50) {
@@ -579,8 +602,12 @@
     const list = document.getElementById(`${prefix}Results`);
     if (!term) { list.classList.remove('active'); return; }
 
-    // MAGIA: Bloqueamos los cristales para que nadie intente transferirlos o ajustarlos por error
-    const filtrados = dbProducts.filter(p => p.category !== 'Cristales' && 'Servicios' && 'Calibrado' ((p.name||'').toLowerCase().includes(term) || (p.code||'').toLowerCase().includes(term))).slice(0, 8);
+    const filtrados = dbProducts.filter(p => {
+        const cat = p.category || '';
+        if (cat === 'Cristal' || cat === 'Cristales' || cat === 'Servicios' || cat === 'Calibrado') return false;
+        if (!(p.name||'').toLowerCase().includes(term) && !(p.code||'').toLowerCase().includes(term)) return false;
+        return true;
+    }).slice(0, 8);
     
     list.innerHTML = filtrados.map(p => `
       <div class="autocomplete-item" onclick="selProd('${prefix}', '${p.id}', '${escapeHtml(p.name).replace(/'/g, "\\'")}', ${p.cost})">
@@ -752,17 +779,15 @@
 
       mostrarCarga(true);
       try {
-          // Descontar del depósito origen
           branches[branch] -= qty;
 
-          // Si es dañada, la aislamos en un depósito virtual "Fallados". Si es robo o uso interno, desaparece del físico.
           if (reason === 'Mercadería Dañada') {
               branches['Fallados'] = (branches['Fallados'] || 0) + qty;
           }
           
           let newGlobal = 0;
           for(let b in branches) {
-              if (b !== 'Fallados') newGlobal += branches[b]; // Fallados no suma al capital comercial
+              if (b !== 'Fallados') newGlobal += branches[b];
           }
           
           p.stock = newGlobal;
@@ -870,7 +895,6 @@
             errores.push(`Fila ${index + 2}: SKU "${sku}" no existe en el sistema.`); return;
         }
 
-        // Calcular CPP
         const stockActualTotal = p.stock || 0;
         const costoActual = p.cost || 0;
         const totalValorAntiguo = stockActualTotal * costoActual;
@@ -972,34 +996,82 @@
     reader.readAsArrayBuffer(file);
   }
 
-  // --- EXPORTAR EXCEL ---
-  function exportarExcel() {
-    if (dbProducts.length === 0) return alert("No hay datos para exportar.");
-    const dataExport = dbProducts.map(p => {
-        let sb = {}; try { sb = JSON.parse(p.stock_branches); } catch(e) {}
-        let stockGlobalM = 0;
-        for(let b in sb) if(b !== 'Fallados') stockGlobalM += sb[b];
+  // --- EXPORTAR EXCEL INTELIGENTE (NUEVO) ---
+  function abrirModalExportarStock() {
+      // Poblar dinámicamente las sucursales en el modal
+      const branchOpts = '<option value="ALL">Todos los Depósitos (Global)</option>' + 
+          dbBranches.map(b => `<option value="${escapeHtml(b.name)}">${escapeHtml(b.name)}</option>`).join('');
+      document.getElementById('expStockBranch').innerHTML = branchOpts;
 
-        let row = {
-            "CÓDIGO (SKU)": p.code || '',
-            "PRODUCTO": p.name || '',
-            "CATEGORÍA": p.category || '',
-            "STOCK GLOBAL": stockGlobalM,
-            "COSTO UNITARIO": p.cost || 0,
-            "PVP": p.price || 0,
-            "CAPITAL TOTAL": stockGlobalM * (p.cost || 0)
-        };
-        dbBranches.forEach(b => {
-            row[`Stock ${b.name}`] = sb[b.name] || 0;
-        });
-        row[`Stock Fallados`] = sb['Fallados'] || 0;
-        return row;
-    });
+      // Poblar dinámicamente las categorías
+      const categoriasUnicas = [...new Set(dbProducts.map(p => p.category))].filter(c => c && c !== 'Cristal').sort();
+      const catOpts = '<option value="ALL">Todas las Categorías</option>' + 
+          categoriasUnicas.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+      document.getElementById('expStockCategory').innerHTML = catOpts;
 
-    const ws = XLSX.utils.json_to_sheet(dataExport);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Inventario Valorizado");
-    XLSX.writeFile(wb, `Reporte_Inventario_${todayISO()}.xlsx`);
+      document.getElementById('modalExportarStock').showModal();
+  }
+
+  function ejecutarExportacionExcel(e) {
+      e.preventDefault();
+      if (dbProducts.length === 0) return alert("No hay datos para exportar.");
+
+      const branchFilter = document.getElementById('expStockBranch').value;
+      const catFilter = document.getElementById('expStockCategory').value;
+
+      // Filtrar los productos excluyendo Cristales/Servicios y aplicando el filtro de categoría
+      const filtrados = dbProducts.filter(p => {
+          const cat = p.category || '';
+          if (cat === 'Cristal' || cat === 'Cristales' || cat === 'Servicios' || cat === 'Calibrado') return false; 
+          if (catFilter !== 'ALL' && cat !== catFilter) return false;
+          return true;
+      });
+
+      if (filtrados.length === 0) {
+          return alert("No hay productos que coincidan con los filtros seleccionados.");
+      }
+
+      const dataExport = filtrados.map(p => {
+          let sb = {}; try { sb = JSON.parse(p.stock_branches); } catch(err) {}
+
+          let stockGlobalM = 0;
+          for(let b in sb) if(b !== 'Fallados') stockGlobalM += sb[b];
+
+          let stockLocal = branchFilter === 'ALL' ? stockGlobalM : (sb[branchFilter] || 0);
+
+          let row = {
+              "CÓDIGO (SKU)": p.code || '',
+              "PRODUCTO": p.name || '',
+              "CATEGORÍA": p.category || '',
+              "COSTO UNITARIO": p.cost || 0,
+              "PVP": p.price || 0
+          };
+
+          // Si pidió "Todos", mostramos columnas para cada depósito
+          if (branchFilter === 'ALL') {
+              row["STOCK GLOBAL"] = stockGlobalM;
+              row["CAPITAL TOTAL (COSTO)"] = stockGlobalM * (p.cost || 0);
+              dbBranches.forEach(b => {
+                  row[`Stock ${b.name}`] = sb[b.name] || 0;
+              });
+              row[`Stock Fallados`] = sb['Fallados'] || 0;
+          } else {
+              // Si eligió un depósito específico, lo hacemos más limpio y puntual
+              row[`STOCK EN ${branchFilter.toUpperCase()}`] = stockLocal;
+              row[`CAPITAL EN ${branchFilter.toUpperCase()} (COSTO)`] = stockLocal * (p.cost || 0);
+          }
+
+          return row;
+      });
+
+      const ws = XLSX.utils.json_to_sheet(dataExport);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Inventario Valorizado");
+      
+      let fileName = `Reporte_Inventario_${branchFilter}_${catFilter}_${todayISO()}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      document.getElementById('modalExportarStock').close();
   }
 
   // --- ASISTENTE COMPRAS ---
